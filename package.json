@@ -1,0 +1,39 @@
+{
+    "name": "soundtracker.ts",
+    "homepage": "https://github.com/yannmazita/daw.ts",
+    "author": "mazita <dev.mazita@gmail.com>",
+    "private": true,
+    "version": "0.1.0",
+    "type": "module",
+    "main": "./dist/electron/main.js",
+    "scripts": {
+        "dev": "vite",
+        "build": "vue-tsc -b && vite build",
+        "preview": "vite preview",
+        "clean": "rm -rf ./dist && rm -f ./node_modules/.tmp/tsconfig.electron.tsbuildinfo",
+        "electron:compile": "tsc -b ./tsconfig.electron.json --verbose",
+        "electron:build": "npm run electron:compile && electron-builder",
+        "electron:dev": "npm run electron:compile && electron .",
+        "app:dev": "npm run electron:dev & npm run dev",
+        "app:build": "npm run build && npm run electron:build"
+    },
+    "dependencies": {
+        "pinia": "^2.1.7",
+        "tone": "^15.1.2",
+        "vue": "^3.4.31",
+        "vue-router": "^4.4.0"
+    },
+    "devDependencies": {
+        "@types/node": "^20.14.11",
+        "@vitejs/plugin-vue": "^5.0.5",
+        "autoprefixer": "^10.4.19",
+        "daisyui": "^4.12.10",
+        "electron": "^31.2.1",
+        "electron-builder": "^24.13.3",
+        "postcss": "^8.4.39",
+        "tailwindcss": "^3.4.6",
+        "typescript": "^5.2.2",
+        "vite": "^5.3.4",
+        "vue-tsc": "^2.0.24"
+    }
+}

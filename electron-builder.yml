@@ -1,0 +1,32 @@
+# electron-builder configuration file
+productName: "daw.ts"
+appId: "com.mazita.daw"
+directories:
+  output: "build"
+  buildResources: "assets"
+
+# Platform specific configurations
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  publisherName: "mazita"
+
+mac:
+  target:
+    - target: dmg
+      arch:
+        - x64
+  category: "public.app-category.utilities"
+
+linux:
+  target:
+    - target: pacman
+      arch:
+        - x64
+
+# Optional configurations
+asar: true
+extraMetadata:
+  main: "dist/electron/main.js"
