@@ -72,10 +72,6 @@ export class SequencerService {
         console.log(`loopEnabled = ${this.loopEnabled}`);
     }
 
-    public isLoopEnabled(): boolean {
-        return this.loopEnabled;
-    }
-
     public setNumSteps(numSteps: number) {
         this.stopSequence();
         this.sequencerStore.numSteps = numSteps;
