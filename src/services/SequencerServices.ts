@@ -75,6 +75,13 @@ export class SequencerService {
     public setNumSteps(numSteps: number) {
         this.stopSequence();
         this.sequencerStore.numSteps = numSteps;
+
+        // Restart the sequence if it's currently playing
+        /*
+        if (Tone.getTransport().state === 'started') {
+            this.playSequence();
+        }
+        */
     }
 
     public setNumTracks(numTracks: number) {
@@ -90,26 +97,30 @@ export class SequencerService {
     public playSequence() {
         this.stopSequence();
         this.initializeTrackInstruments();
-        Tone.getTransport().cancel();  // Clear existing events
+        Tone.getTransport().cancel();  // Clears existing events
+
+        //const noteDuration = `4n * ${4 / this.sequencerStore.numSteps}`;
+        //const noteDuration = `${Math.floor(16 / this.sequencerStore.numSteps)}n`;
+        const noteDuration = `16n`;
 
         const playStep = (time: number) => {
             this.sequencerStore.tracks.forEach((track, trackIndex) => {
                 const step = track.steps[this.sequencerStore.currentStep];
                 if (step.active) {
-                    this.trackInstruments[trackIndex].triggerAttackRelease("C2", "8n", time);
+                    this.trackInstruments[trackIndex].triggerAttackRelease("C2", noteDuration, time);
                     step.playing = true;
                     Tone.getDraw().schedule(() => {
                         step.playing = false;
-                    }, time + Tone.Time("8n").toSeconds());
+                    }, time + Tone.Time(noteDuration).toSeconds());
                 }
             });
 
             this.sequencerStore.currentStep = (this.sequencerStore.currentStep + 1) % this.sequencerStore.numSteps;
 
             if (this.loopEnabled || this.sequencerStore.currentStep !== 0) {
-                Tone.getTransport().schedule(playStep, `+8n`);
+                Tone.getTransport().schedule(playStep, `+${noteDuration}`);
             } else {
-                Tone.getTransport().schedule(this.stopSequence.bind(this), `+8n`);
+                Tone.getTransport().schedule(this.stopSequence.bind(this), `+${noteDuration}`);
             }
         };
         Tone.getTransport().schedule(playStep, 0);
