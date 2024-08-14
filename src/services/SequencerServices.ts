@@ -97,7 +97,7 @@ export class SequencerService {
             this.sequence.dispose();
         }
 
-        const noteDuration = "16n";
+        const stepDuration = "16n";
         const events: ((time: number) => void)[] = [];
 
         // Create an event for each step
@@ -108,14 +108,14 @@ export class SequencerService {
                     const currentStep = track.steps[step];
                     if (currentStep.active) {
                         // Trigger the instrument
-                        this.trackInstruments[trackIndex].triggerAttackRelease("C2", noteDuration, time);
+                        this.trackInstruments[trackIndex].triggerAttackRelease("C2", stepDuration, time);
 
                         currentStep.playing = true;
 
                         // Schedule setting playing state back to false
                         Tone.getDraw().schedule(() => {
                             currentStep.playing = false;
-                        }, time + Tone.Time(noteDuration).toSeconds());
+                        }, time + Tone.Time(stepDuration).toSeconds());
                     }
                 });
 
@@ -128,7 +128,7 @@ export class SequencerService {
             (time, step) => {
                 events[step](time);
             },
-            [...Array(this.sequencerStore.numSteps).keys()], noteDuration).start(0);
+            [...Array(this.sequencerStore.numSteps).keys()], stepDuration).start(0);
 
         this.sequence.loop = this.loopEnabled;
     }
