@@ -51,7 +51,13 @@ export class SequencerService {
     }
 
     public refreshTracks(newTrackCount: number) {
-        this.sequencerStore.adjustTrackCount(newTrackCount);
+        if (newTrackCount > this.sequencerStore.tracks.length) {
+            for (let i = this.sequencerStore.tracks.length; i < newTrackCount; i++) {
+                this.sequencerStore.addTrack(i);
+            }
+        } else if (newTrackCount < this.sequencerStore.tracks.length) {
+            this.sequencerStore.removeTracks(newTrackCount);
+        }
     }
 
     public toggleStepActiveState(trackId: number, stepIndex: number) {
@@ -135,10 +141,9 @@ export class SequencerService {
     }
 
     public stopSequence() {
-        const stopTime = Math.max(0, Tone.getTransport().seconds);
-        Tone.getTransport().stop(stopTime);
+        Tone.getTransport().stop();
         if (this.sequence) {
-            this.sequence.stop(stopTime);
+            this.sequence.stop();
         }
         this.sequencerStore.currentStep = 0;
     }

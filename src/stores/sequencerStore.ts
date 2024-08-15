@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { reactive, ref, Ref } from 'vue';
-import { SequencerTrack, SequencerStep } from '@/models/SequencerModels.ts';
+import { SequencerTrack } from '@/models/SequencerModels.ts';
 
 
 export const useSequencerStore = defineStore('sequencer', () => {
@@ -18,19 +18,6 @@ export const useSequencerStore = defineStore('sequencer', () => {
         tracks.splice(newTrackCount, tracks.length - newTrackCount);
     }
 
-    function adjustTrackCount(newCount: number) {
-        if (newCount < tracks.length) {
-            for (let i = tracks.length - 1; i >= newCount; i--) {
-                //tracks[i].cleanup();
-            }
-            tracks.length = newCount;   // this actually deletes the array elements
-        } else {
-            for (let i = tracks.length; i < newCount; i++) {
-                tracks.push(new SequencerTrack(i, numSteps.value));
-            }
-        }
-    }
-
     return {
         bpm,
         numTracks,
@@ -39,6 +26,5 @@ export const useSequencerStore = defineStore('sequencer', () => {
         addTrack,
         removeTracks,
         currentStep,
-        adjustTrackCount,
     }
 });
