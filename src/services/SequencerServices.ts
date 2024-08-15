@@ -66,9 +66,11 @@ export class SequencerService {
     };
 
     public toggleLoop() {
-        this.loopEnabled = !this.loopEnabled;
-        Tone.getTransport().loop = this.loopEnabled;
-        console.log(`loopEnabled = ${this.loopEnabled}`);
+        if (this.loopEnabled === !this.loopEnabled) {
+            this.loopEnabled = !this.loopEnabled;
+            Tone.getTransport().loop = this.loopEnabled;
+            console.log(`Loop enabled: ${this.loopEnabled}`);
+        }
     }
 
     public setNumSteps(numSteps: number) {
@@ -147,6 +149,8 @@ export class SequencerService {
     }
 
     public playSequence() {
+        if (this.isPlaying()) { return; }
+        if (this.isPlaying()) { return; }
         this.stopSequence();
         this.initializeTrackInstruments();
         this.updateSequence();
@@ -154,6 +158,8 @@ export class SequencerService {
     }
 
     public stopSequence() {
+        if (!this.isPlaying()) { return; }
+
         Tone.getTransport().stop();
         Tone.getTransport().cancel();
         this.sequencerStore.currentStep = 0;
