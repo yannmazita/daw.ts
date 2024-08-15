@@ -78,17 +78,15 @@ watch(loopEnabled, (newValue) => {
 watch(inputBpm, (newInputBpm) => {
     sequencerService?.setBpm(newInputBpm);
 })
-watch(inputTracks, (newInputTracks) => {
-    sequencerService?.setNumTracks(newInputTracks);
-});
-watch(inputTracks, (newValue, oldValue) => {
-    if (newValue !== oldValue) {
-        sequencerService?.refreshTracks(newValue);
+
+watch([inputTracks, inputSteps], ([newTracksValue, newStepsValue], [oldTracksValue, oldStepsValue]) => {
+    if (newTracksValue !== oldTracksValue) {
+        sequencerService?.setNumTracks(newTracksValue);
+    }
+    if (newStepsValue !== oldStepsValue) {
+        sequencerService?.setNumSteps(newStepsValue);
     }
 }, { immediate: true });
-watch(inputSteps, (newInputSteps) => {
-    sequencerService?.setNumSteps(newInputSteps);
-})
 
 onBeforeUnmount(() => {
     sequencerService?.dispose();
