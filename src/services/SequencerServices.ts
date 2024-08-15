@@ -99,15 +99,20 @@ export class SequencerService {
                 this.sequencerStore.tracks.forEach((track, trackIndex) => {
                     const currentStep = track.steps[step];
                     if (currentStep.active) {
+                        // Overlapping trigger times induce errors. A delay between triggers of different tracks to avoid this.
+                        const delayIncrement = 0.1 / this.sequencerStore.tracks.length; // Smaller fraction based on number of tracks
+                        const offsetTime = time + trackIndex * delayIncrement;  // Apply minimal adaptive delay
+
+
                         // Trigger the instrument
-                        this.trackInstruments[trackIndex].triggerAttackRelease("C2", stepDuration, time);
+                        this.trackInstruments[trackIndex].triggerAttackRelease("C2", stepDuration, offsetTime);
 
                         currentStep.playing = true;
 
                         // Schedule setting playing state back to false
                         Tone.getDraw().schedule(() => {
                             currentStep.playing = false;
-                        }, time + Tone.Time(stepDuration).toSeconds());
+                        }, offsetTime + Tone.Time(stepDuration).toSeconds());
                     }
                 });
 
