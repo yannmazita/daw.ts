@@ -50,6 +50,10 @@ export class SequencerService {
         }
     }
 
+    public refreshTracks(newTrackCount: number) {
+        this.sequencerStore.adjustTrackCount(newTrackCount);
+    }
+
     public toggleStepActiveState(trackId: number, stepIndex: number) {
         const track = this.sequencerStore.tracks.find(t => t.id === trackId);
         if (track) {
@@ -68,14 +72,12 @@ export class SequencerService {
     public setNumSteps(numSteps: number) {
         this.stopSequence();
         this.sequencerStore.numSteps = numSteps;
-        this.sequencerStore.adjustStepCount(numSteps);
         this.updateSequence();
     }
 
     public setNumTracks(numTracks: number) {
         this.stopSequence();
         this.sequencerStore.numTracks = numTracks;
-        this.sequencerStore.adjustTrackCount(numTracks);
         this.updateSequence();
     }
 
