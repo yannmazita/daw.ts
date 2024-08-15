@@ -21,6 +21,7 @@ export const useSequencerStore = defineStore('sequencer', () => {
                 tracks.push(new SequencerTrack(i, numSteps.value));
             }
         }
+        numTracks.value = newCount;
     }
 
     function adjustStepCount(newCount: number) {

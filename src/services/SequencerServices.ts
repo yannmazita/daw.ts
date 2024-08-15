@@ -67,15 +67,15 @@ export class SequencerService {
         this.stopSequence();
         this.sequencerStore.adjustStepCount(numSteps);
         this.updateSequence();
-        console.log(`sequence updated with ${numSteps} steps`);
     }
 
     public setNumTracks(numTracks: number) {
         this.stopSequence();
-        this.sequencerStore.numTracks = numTracks;
         this.sequencerStore.adjustTrackCount(numTracks);
         this.updateSequence();
-        console.log(`sequence updated with ${numTracks} tracks`);
+        if (Tone.getTransport().state === 'started') {
+            this.initializeTrackInstruments();
+        }
     }
 
     public setBpm(bpm: number) {
