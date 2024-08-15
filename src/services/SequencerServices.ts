@@ -7,7 +7,7 @@ export class SequencerService {
     private trackInstruments: Instrument[] = [];
     private instrumentPool: Record<InstrumentName, Instrument> = {} as Record<InstrumentName, Instrument>;
     public loopEnabled: boolean = false;
-    private sequence: Tone.Sequence<any> | null = null;
+    private scheduleId: number | null = null;
 
     constructor() {
         Tone.getTransport().bpm.value = this.sequencerStore.bpm;
@@ -59,17 +59,15 @@ export class SequencerService {
 
     public toggleLoop() {
         this.loopEnabled = !this.loopEnabled;
-        if (this.sequence) {
-            this.sequence.loop = this.loopEnabled;
-        }
+        Tone.getTransport().loop = this.loopEnabled;
         console.log(`loopEnabled = ${this.loopEnabled}`);
     }
 
     public setNumSteps(numSteps: number) {
         this.stopSequence();
-        this.sequencerStore.numSteps = numSteps;
         this.sequencerStore.adjustStepCount(numSteps);
         this.updateSequence();
+        console.log(`sequence updated with ${numSteps} steps`);
     }
 
     public setNumTracks(numTracks: number) {
@@ -77,6 +75,7 @@ export class SequencerService {
         this.sequencerStore.numTracks = numTracks;
         this.sequencerStore.adjustTrackCount(numTracks);
         this.updateSequence();
+        console.log(`sequence updated with ${numTracks} tracks`);
     }
 
     public setBpm(bpm: number) {
@@ -85,49 +84,37 @@ export class SequencerService {
     }
 
     private updateSequence() {
-        if (this.sequence) {
-            this.sequence.dispose();
+        if (this.scheduleId !== null) {
+            Tone.getTransport().clear(this.scheduleId);
         }
 
-        const stepDuration = "16n";
-        const events: ((time: number) => void)[] = [];
+        const stepDuration = Tone.Time("16n").toSeconds();
+        const totalDuration = stepDuration * this.sequencerStore.numSteps;
 
-        // Create an event for each step
-        for (let step = 0; step < this.sequencerStore.numSteps; step++) {
-            events.push((time: number) => {
-                // Handle each track for this step
-                this.sequencerStore.tracks.forEach((track, trackIndex) => {
-                    const currentStep = track.steps[step];
-                    if (currentStep.active) {
-                        // Overlapping trigger times induce errors. A delay between triggers of different tracks to avoid this.
-                        const delayIncrement = 0.1 / this.sequencerStore.tracks.length; // Smaller fraction based on number of tracks
-                        const offsetTime = time + trackIndex * delayIncrement;  // Apply minimal adaptive delay
+        this.scheduleId = Tone.getTransport().scheduleRepeat((time) => {
+            const currentStep = Math.floor(Tone.getTransport().seconds / stepDuration) % this.sequencerStore.numSteps;
 
+            this.sequencerStore.tracks.forEach((track, trackIndex) => {
+                const step = track.steps[currentStep];
+                if (step.active) {
+                    // Overlapping trigger times induce errors. A delay between triggers of different tracks to avoid this.
+                    //const offsetTime = time + (trackIndex * 0.01); // Small offset to avoid simultaneous triggers
+                    const delayIncrement = 0.1 / this.sequencerStore.tracks.length; // Smaller fraction based on number of tracks
+                    const offsetTime = time + trackIndex * delayIncrement;  // Apply minimal adaptive delay
+                    this.trackInstruments[trackIndex].triggerAttackRelease("C2", stepDuration, offsetTime);
 
-                        // Trigger the instrument
-                        this.trackInstruments[trackIndex].triggerAttackRelease("C2", stepDuration, offsetTime);
-
-                        currentStep.playing = true;
-
-                        // Schedule setting playing state back to false
-                        Tone.getDraw().schedule(() => {
-                            currentStep.playing = false;
-                        }, offsetTime + Tone.Time(stepDuration).toSeconds());
-                    }
-                });
-
-                // Update the current step in the store
-                this.sequencerStore.currentStep = step;
+                    step.playing = true;
+                    Tone.getDraw().schedule(() => {
+                        step.playing = false;
+                    }, offsetTime + stepDuration);
+                }
             });
-        }
 
-        this.sequence = new Tone.Sequence(
-            (time, step) => {
-                events[step](time);
-            },
-            [...Array(this.sequencerStore.numSteps).keys()], stepDuration).start(0);
+            this.sequencerStore.currentStep = currentStep;
+        }, stepDuration, 0, totalDuration);
 
-        this.sequence.loop = this.loopEnabled;
+        Tone.getTransport().loopEnd = totalDuration;
+        Tone.getTransport().loop = this.loopEnabled;
     }
 
     public playSequence() {
@@ -138,20 +125,13 @@ export class SequencerService {
     }
 
     public stopSequence() {
-        const stopTime = Math.max(0, Tone.getTransport().seconds);
-        Tone.getTransport().stop(stopTime);
-        if (this.sequence) {
-            this.sequence.stop(stopTime);
-        }
+        Tone.getTransport().stop();
+        Tone.getTransport().cancel();
         this.sequencerStore.currentStep = 0;
-    }
-
-    public dispose() {
-        if (this.sequence) {
-            this.sequence.dispose();
-        }
-        Object.values(this.instrumentPool).forEach(instrument => instrument.dispose());
-        this.instrumentPool = {} as Record<InstrumentName, Instrument>;
-        this.trackInstruments = [];
+        this.sequencerStore.tracks.forEach(track => {
+            track.steps.forEach(step => {
+                step.playing = false;
+            });
+        });
     }
 }

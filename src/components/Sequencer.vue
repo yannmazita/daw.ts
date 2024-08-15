@@ -46,7 +46,7 @@
 </template>
 
 <script setup lang="ts">
-import { watch, inject, ref, Ref, onBeforeUnmount } from 'vue';
+import { watch, inject, ref, Ref } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useSequencerStore } from '@/stores/sequencerStore.ts';
 import { sequencerServiceKey } from '@/utils/injection-keys.ts';
@@ -87,8 +87,4 @@ watch([inputTracks, inputSteps], ([newTracksValue, newStepsValue], [oldTracksVal
         sequencerService?.setNumSteps(newStepsValue);
     }
 }, { immediate: true });
-
-onBeforeUnmount(() => {
-    sequencerService?.dispose();
-});
 </script>
