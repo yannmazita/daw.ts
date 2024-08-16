@@ -117,12 +117,10 @@ export class SequencerService {
     }
 
     public playSequence(): void {
-        if (!this.isPlaying()) {
-            this.stopSequence();
-            this.initializeTrackInstruments();
-            this.scheduleSequence();
-            Tone.getTransport().start();
-        }
+        this.stopSequence();
+        this.initializeTrackInstruments();
+        this.scheduleSequence();
+        Tone.getTransport().start();
     }
 
     public stopSequence(): void {
