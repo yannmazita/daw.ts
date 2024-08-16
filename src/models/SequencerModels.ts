@@ -5,15 +5,18 @@ export class SequencerStep {
     public active: boolean;
     public playing: boolean;
     public instrument: Instrument;
+    public note: string;
 
     constructor(
         active: boolean = false,
         playing: boolean = false,
         instrument: Instrument = new Tone.Synth().toDestination(),
+        note: string = 'C2',
     ) {
         this.active = active;
         this.playing = playing;
         this.instrument = instrument
+        this.note = note;
     }
 
     public toggleStepActiveState() {

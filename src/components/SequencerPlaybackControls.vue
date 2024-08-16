@@ -6,7 +6,7 @@
         <AppSmallButton @click="sequencerService?.stopSequence()">
             {{ 'Stop' }}
         </AppSmallButton>
-        <AppSmallButton @click="sequencerService?.toggleLoop()">
+        <AppSmallButton @click="">
             {{ 'Loop' }}
         </AppSmallButton>
     </div>

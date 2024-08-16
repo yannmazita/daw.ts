@@ -4,12 +4,14 @@
     </div>
 </template>
 <script setup lang="ts">
-import { onBeforeUnmount } from 'vue';
-import { storeToRefs } from 'pinia';
-import { useSequencerStore } from '@/stores/sequencerStore.ts';
+import { onBeforeUnmount, inject, computed } from 'vue';
 import Track from '@/components/Track.vue';
+import { SequencerService } from '@/services/SequencerServices';
+import { sequencerServiceKey } from '@/utils/injection-keys';
 
-const { tracks } = storeToRefs(useSequencerStore());
+const sequencerService = inject<SequencerService>(sequencerServiceKey);
+const tracks = computed(() => sequencerService?.tracks.value);
+
 onBeforeUnmount(() => {
     //sequencerService?.dispose();
 })
