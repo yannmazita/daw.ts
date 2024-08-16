@@ -46,7 +46,7 @@
 </template>
 
 <script setup lang="ts">
-import { watch, inject, ref, Ref, onBeforeUnmount } from 'vue';
+import { inject, onBeforeUnmount, computed } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useSequencerStore } from '@/stores/sequencerStore.ts';
 import { sequencerServiceKey } from '@/utils/injection-keys.ts';
@@ -57,40 +57,25 @@ import Track from '@/components/Track.vue';
 
 const { tracks, numTracks, numSteps, bpm } = storeToRefs(useSequencerStore());
 const sequencerService = inject<SequencerService>(sequencerServiceKey);
-const inputTracks: Ref<number> = ref(numTracks.value);
-const inputSteps: Ref<number> = ref(numSteps.value);
-const inputBpm: Ref<number> = ref(bpm.value);
-const loopIcon: Ref<string> = ref("");
 
-const loopEnabled: Ref<boolean> = ref(sequencerService?.loopEnabled) as Ref<boolean>;
-// seems dumb
-watch(loopEnabled, (newValue) => {
-    if (newValue == true) {
-        loopIcon.value = "a";
-        console.log(loopIcon.value);
-    }
-    else {
-        loopIcon.value = "b";
-        console.log(loopIcon.value);
-    }
-})
-
-watch(inputBpm, (newInputBpm) => {
-    sequencerService?.setBpm(newInputBpm);
-})
-watch(inputTracks, (newInputTracks) => {
-    sequencerService?.setNumTracks(newInputTracks);
+const inputTracks = computed({
+    get: () => numTracks.value,
+    set: (val) => sequencerService?.setNumTracks(val)
 });
-watch(inputTracks, (newValue, oldValue) => {
-    if (newValue !== oldValue) {
-        sequencerService?.refreshTracks(newValue);
-    }
-}, { immediate: true });
-watch(inputSteps, (newInputSteps) => {
-    sequencerService?.setNumSteps(newInputSteps);
-})
+
+const inputSteps = computed({
+    get: () => numSteps.value,
+    set: (val) => sequencerService?.setNumSteps(val)
+});
+
+const inputBpm = computed({
+    get: () => bpm.value,
+    set: (val) => sequencerService?.setBpm(val)
+});
+
+const loopIcon = computed(() => sequencerService?.loopEnabled ? "a" : "b");
 
 onBeforeUnmount(() => {
-    sequencerService?.dispose();
-});
+    //sequencerService?.dispose();
+})
 </script>
