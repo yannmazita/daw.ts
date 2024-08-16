@@ -1,21 +1,25 @@
 import * as Tone from 'tone';
+import { ref, Ref } from 'vue';
 import { useSequencerStore } from '@/stores/sequencerStore.ts';
 import { Instrument, InstrumentName } from '@/utils/types.ts';
+import { SequencerStep, SequencerTrack } from '@/models/SequencerModels';
 
 export class SequencerService {
     private sequencerStore = useSequencerStore();
+    public tracks: Ref<SequencerTrack[]> = ref([]);
     private trackInstruments: Instrument[] = [];
     private instrumentPool: Record<InstrumentName, Instrument> = {} as Record<InstrumentName, Instrument>;
-    public loopEnabled: boolean = false;
-    private scheduleId: number | null = null;
-    private lookAhead: number = 16;  // Number of steps to look ahead and schedule
+    //public loopEnabled: boolean = false;
+    //private lookAhead: number = 16;  // Number of steps to look ahead and schedule
+    private stepDuration: string = '16n';
 
     constructor() {
         Tone.getTransport().bpm.value = this.sequencerStore.bpm;
+        this.initializeTracks();
         this.initializeInstrumentPool();
     }
 
-    private isPlaying(): boolean {
+    public isPlaying(): boolean {
         return Tone.getTransport().state === 'started';
     }
 
@@ -39,14 +43,18 @@ export class SequencerService {
         }
     }
 
-    private initializeInstrumentPool() {
+    private initializeTracks(): void {
+        this.tracks.value = Array.from({ length: this.sequencerStore.numTracks }, (_, i) => new SequencerTrack(i, this.sequencerStore.numSteps));
+    }
+
+    private initializeInstrumentPool(): void {
         Object.values(InstrumentName).forEach(name => {
             this.instrumentPool[name] = this.createInstrument(name);
         });
     }
 
-    private initializeTrackInstruments() {
-        this.trackInstruments = this.sequencerStore.tracks.map(() => this.instrumentPool[InstrumentName.Synth]);
+    private initializeTrackInstruments(): void {
+        this.trackInstruments = this.tracks.value.map(() => this.instrumentPool[InstrumentName.Synth]);
     }
 
     public setInstrumentForTrack(trackIndex: number, instrumentName: InstrumentName) {
@@ -55,118 +63,74 @@ export class SequencerService {
         }
     }
 
-    public toggleStepActiveState(trackId: number, stepIndex: number) {
-        const track = this.sequencerStore.tracks.find(t => t.id === trackId);
-        if (track) {
-            track.steps[stepIndex].toggleStepActiveState();
-            if (this.isPlaying()) {
-                this.checkAndRescheduleIfNeeded(stepIndex);
+    public toggleStepActiveState(trackIndex: number, stepIndex: number): void {
+        this.tracks.value[trackIndex].steps[stepIndex].toggleStepActiveState();
+    }
+
+    public setNumTracks(newCount: number) {
+        this.stopSequence();
+        if (newCount < this.tracks.value.length) {
+            this.tracks.value = this.tracks.value.slice(0, newCount);
+        } else {
+            const newTracks = Array.from({ length: newCount - this.tracks.value.length }, (_, i) =>
+                new SequencerTrack(this.tracks.value.length + i, this.sequencerStore.numSteps)
+            );
+            this.tracks.value = [...this.tracks.value, ...newTracks];
+        }
+        this.sequencerStore.numTracks = newCount;
+    }
+
+    public setNumSteps(newCount: number) {
+        this.stopSequence();
+        this.tracks.value.forEach(track => {
+            if (newCount < track.steps.length) {
+                track.steps.splice(newCount);
+            } else {
+                for (let i = track.steps.length; i < newCount; i++) {
+                    track.steps.push(new SequencerStep());
+                }
             }
-        }
-    };
-
-    public toggleLoop() {
-        if (this.loopEnabled === !this.loopEnabled) {
-            this.loopEnabled = !this.loopEnabled;
-            Tone.getTransport().loop = this.loopEnabled;
-            console.log(`Loop enabled: ${this.loopEnabled}`);
-        }
+        });
+        this.sequencerStore.numSteps = newCount;
     }
 
-    public setNumSteps(numSteps: number) {
-        this.stopSequence();
-        this.sequencerStore.adjustStepCount(numSteps);
-        this.updateSequence();
-        console.log(`sequence updated with ${numSteps} steps`);
+    public setBpm(newBpm: number): void {
+        Tone.getTransport().bpm.value = newBpm;
+        this.sequencerStore.bpm = newBpm;
     }
 
-    public setNumTracks(numTracks: number) {
-        this.stopSequence();
-        this.sequencerStore.numTracks = numTracks;
-        this.sequencerStore.adjustTrackCount(numTracks);
-        this.updateSequence();
-        console.log(`sequence updated with ${numTracks} tracks`);
-    }
-
-    public setBpm(bpm: number) {
-        this.sequencerStore.bpm = bpm;
-        Tone.getTransport().bpm.value = bpm;
-    }
-
-    private scheduleSteps(startStep: number, count: number, startTime: number, stepDuration: number) {
-        for (let i = 0; i < count; i++) {
-            const stepIndex = (startStep + i) % this.sequencerStore.numSteps;
-            this.sequencerStore.tracks.forEach((track, trackIndex) => {
-                const step = track.steps[stepIndex];
+    private scheduleSequence(): void {
+        Tone.getTransport().scheduleRepeat(time => {
+            this.tracks.value.forEach((track, trackIndex) => {
+                const step: SequencerStep = track.steps[this.sequencerStore.currentStep];
                 if (step.active) {
-                    const delayIncrement = 0.1 / this.sequencerStore.tracks.length;
-                    const offsetTime = startTime + i * stepDuration + trackIndex * delayIncrement;
-                    this.trackInstruments[trackIndex].triggerAttackRelease("C2", stepDuration, offsetTime);
+                    this.trackInstruments[trackIndex].triggerAttackRelease(step.note, this.stepDuration, time);
 
                     step.playing = true;
                     Tone.getDraw().schedule(() => {
                         step.playing = false;
-                    }, offsetTime + stepDuration);
+                    }, time + this.stepDuration);
                 }
             });
-        }
+            this.sequencerStore.currentStep = (this.sequencerStore.currentStep + 1) % this.sequencerStore.numSteps;
+        }, this.stepDuration);
     }
 
-    private checkAndRescheduleIfNeeded(changedStepIndex: number) {
-        if (!this.isPlaying()) { return; }
-
-        const currentStep = Math.floor(Tone.getTransport().seconds / Tone.Time("16n").toSeconds()) % this.sequencerStore.numSteps;
-        const endOfLookAhead = (currentStep + this.lookAhead) % this.sequencerStore.numSteps;
-        // Check if changed step is outside the current lookahead window
-        if ((currentStep <= endOfLookAhead && (changedStepIndex < currentStep || changedStepIndex > endOfLookAhead)) ||
-            (currentStep > endOfLookAhead && (changedStepIndex < currentStep && changedStepIndex > endOfLookAhead))) {
-            // Reschedule from current step
-            this.updateSequence(currentStep);
-        }
-    }
-
-    private updateSequence(startStep: number = 0) {
-        if (this.scheduleId !== null) {
-            Tone.getTransport().clear(this.scheduleId);
-        }
-        if (!this.isPlaying() && this.scheduleId !== null) {
-            Tone.getTransport().clear(this.scheduleId);
-            this.scheduleId = null; // Reset the schedule ID
-            return; // Exit if not playing to avoid auto-starting the transport
-        }
-
-        const stepDuration = Tone.Time("16n").toSeconds();
-        const scheduleAheadTime = stepDuration * this.lookAhead;
-
-        this.scheduleId = Tone.getTransport().scheduleRepeat((time) => {
-            const currentStep = Math.floor(Tone.getTransport().seconds / stepDuration) % this.sequencerStore.numSteps;
-            this.scheduleSteps(currentStep, this.lookAhead, time, stepDuration);
-        }, scheduleAheadTime, 0);
-
-        this.scheduleSteps(startStep, this.lookAhead, Tone.getTransport().now(), stepDuration);
-        Tone.getTransport().loopEnd = '1m';
-        Tone.getTransport().loop = this.loopEnabled;
-    }
-
-    public playSequence() {
-        if (this.isPlaying()) { return; }
-        if (this.isPlaying()) { return; }
+    public playSequence(): void {
         this.stopSequence();
         this.initializeTrackInstruments();
-        this.updateSequence();
+        this.scheduleSequence();
         Tone.getTransport().start();
     }
 
-    public stopSequence() {
-        if (!this.isPlaying()) { return; }
-
+    public stopSequence(): void {
         Tone.getTransport().stop();
         Tone.getTransport().cancel();
         this.sequencerStore.currentStep = 0;
-        this.sequencerStore.tracks.forEach(track => {
+        this.tracks.value.forEach(track => {
             track.steps.forEach(step => {
                 step.playing = false;
             });
-        });
+        })
     }
 }

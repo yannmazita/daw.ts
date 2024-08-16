@@ -17,9 +17,9 @@ interface Props {
     steps: SequencerStep[];
 }
 const props = defineProps<Props>();
-const sequencerService = inject(sequencerServiceKey) as SequencerService;
+const sequencerService = inject<SequencerService>(sequencerServiceKey);
 
 function toggleStepActiveState(index: number): void {
-    sequencerService.toggleStepActiveState(props.trackId, index);
+    sequencerService?.toggleStepActiveState(props.trackId, index);
 }
 </script>

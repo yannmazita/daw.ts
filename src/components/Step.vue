@@ -19,7 +19,6 @@ const classes = computed(() => ({
 
 const emit = defineEmits<{
     toggleActive: [value: void];
-    togglePlaying: [value: void];
 }>();
 
 function toggleStep() {
