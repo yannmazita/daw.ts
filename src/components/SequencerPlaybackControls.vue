@@ -6,17 +6,25 @@
         <AppSmallButton @click="sequencerService?.stopSequence()">
             {{ 'Stop' }}
         </AppSmallButton>
-        <AppSmallButton @click="">
-            {{ 'Loop' }}
-        </AppSmallButton>
+        <AppSmallCheckbox v-model="checked">
+            <template #rightLabel>
+                Loop
+            </template>
+        </AppSmallCheckbox>
     </div>
 </template>
 
 <script setup lang="ts">
-import { inject } from 'vue';
+import { watch, inject, ref, Ref } from 'vue';
 import { sequencerServiceKey } from '@/utils/injection-keys.ts';
 import { SequencerService } from '@/services/SequencerServices.ts';
 import AppSmallButton from '@/components/AppSmallButton.vue';
+import AppSmallCheckbox from '@/components/AppSmallCheckbox.vue';
 
-const sequencerService = inject<SequencerService>(sequencerServiceKey);
+const sequencerService = inject<SequencerService>(sequencerServiceKey) as SequencerService;
+const checked: Ref<boolean> = ref(false);
+
+watch(checked, (newValue) => {
+    sequencerService.loopEnabled = newValue;
+});
 </script>
