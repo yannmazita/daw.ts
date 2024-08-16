@@ -9,7 +9,7 @@ export class SequencerService {
     public tracks: Ref<SequencerTrack[]> = ref([]);
     private trackInstruments: Instrument[] = [];
     private instrumentPool: Record<InstrumentName, Instrument> = {} as Record<InstrumentName, Instrument>;
-    //public loopEnabled: boolean = false;
+    public loopEnabled: boolean = false;
     //private lookAhead: number = 16;  // Number of steps to look ahead and schedule
     private stepDuration: string = '16n';
 
@@ -67,6 +67,10 @@ export class SequencerService {
         this.tracks.value[trackIndex].steps[stepIndex].toggleStepActiveState();
     }
 
+    public toggleLoop(): void {
+        this.loopEnabled = !this.loopEnabled;
+    }
+
     public setNumTracks(newCount: number) {
         this.stopSequence();
         if (newCount < this.tracks.value.length) {
@@ -112,7 +116,12 @@ export class SequencerService {
                     }, time + this.stepDuration);
                 }
             });
-            this.sequencerStore.currentStep = (this.sequencerStore.currentStep + 1) % this.sequencerStore.numSteps;
+
+            if (this.loopEnabled || this.sequencerStore.currentStep + 1 < this.sequencerStore.numSteps) {
+                this.sequencerStore.currentStep = (this.sequencerStore.currentStep + 1) % this.sequencerStore.numSteps;
+            } else {
+                this.stopSequence();
+            }
         }, this.stepDuration);
     }
 
