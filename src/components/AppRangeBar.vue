@@ -1,12 +1,9 @@
 <template>
     <div id="app-range-bar-container" class="flex">
-        <AppInput v-model="model" type="range" :class="'range range-secondary'" :step="props.step" :max="props.max">
-        </AppInput>
+        <input v-model="model" type="range" class="range [--range-shdw:#5bcefa]" :step="props.step" :max="props.max">
     </div>
 </template>
 <script setup lang="ts">
-import AppInput from '@/components/AppInput.vue';
-
 interface Props {
     max?: number;
     step?: number;
