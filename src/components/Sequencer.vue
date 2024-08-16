@@ -10,4 +10,5 @@
 import SequencerSettings from '@/components/SequencerSettings.vue';
 import SequencerPlaybackControls from '@/components/SequencerPlaybackControls.vue';
 import SequencerTracks from '@/components/SequencerTracks.vue';
+
 </script>
