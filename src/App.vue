@@ -1,5 +1,6 @@
 <template>
     <div class="grid grid-cols-12">
+        <AppContextMenu></AppContextMenu>
         <div class="col-span-12">
             <AppTabBar></AppTabBar>
         </div>
@@ -10,5 +11,6 @@
 </template>
 
 <script setup lang="ts">
+import AppContextMenu from '@/components/AppContextMenu.vue';
 import AppTabBar from '@/components/AppTabBar.vue';
 </script>
