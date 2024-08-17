@@ -1,14 +1,14 @@
-import { Command } from "@/utils/interfaces";
+import { Command } from "@/utils/interfaces"
 
 export class AppContextMenuItem {
     public label: string;
-    public icon: string;
     private command: Command;
+    public icon: string | null;
 
-    constructor(label: string, icon: string, command: Command) {
+    constructor(label: string, command: Command, icon: string | null = null) {
         this.label = label;
-        this.icon = icon;
         this.command = command;
+        this.icon = icon;
     }
 
     public performAction(): void {
