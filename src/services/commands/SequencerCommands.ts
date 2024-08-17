@@ -12,6 +12,20 @@ export class RemoveTrackCommand {
     redo() { }
 }
 
+export class RemoveLastTrackCommand {
+    constructor() { }
+    execute() { }
+    undo() { }
+    redo() { }
+}
+
+export class ClearTracksCommand {
+    constructor() { }
+    execute() { }
+    undo() { }
+    redo() { }
+}
+
 export class AddStepCommand {
     constructor() { }
     execute() { }
@@ -20,6 +34,13 @@ export class AddStepCommand {
 }
 
 export class RemoveStepCommand {
+    constructor() { }
+    execute() { }
+    undo() { }
+    redo() { }
+}
+
+export class RemoveLastStepCommand {
     constructor() { }
     execute() { }
     undo() { }
