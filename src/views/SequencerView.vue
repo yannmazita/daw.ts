@@ -6,14 +6,14 @@
 </template>
 <script setup lang="ts">
 import { computed, provide } from 'vue';
-import { SequencerService } from '@/services/SequencerServices.ts';
+import { SequencerManager } from '@/services/SequencerManager';
+import { sequencerManagerKey } from '@/utils/injection-keys';
 import Sequencer from '@/components/Sequencer.vue';
-import { sequencerServiceKey } from '@/utils/injection-keys.ts';
 
 const visibleComponent = computed(() => {
     return null;
 });
 
-const sequencerService = new SequencerService();
-provide(sequencerServiceKey, sequencerService);
+const sequencerManager = new SequencerManager();
+provide(sequencerManagerKey, sequencerManager);
 </script>

@@ -31,26 +31,26 @@
 <script setup lang="ts">
 import { computed, inject, } from 'vue';
 import { storeToRefs } from 'pinia';
-import { SequencerService } from '@/services/SequencerServices';
+import { SequencerManager } from '@/services/SequencerManager';
 import { useSequencerStore } from '@/stores/sequencerStore';
-import { sequencerServiceKey } from '@/utils/injection-keys';
+import { sequencerManagerKey } from '@/utils/injection-keys';
 import AppInput from '@/components/AppInput.vue';
 
 const { numTracks, numSteps, bpm } = storeToRefs(useSequencerStore());
-const sequencerService = inject<SequencerService>(sequencerServiceKey);
+const sequencerManager = inject<SequencerManager>(sequencerManagerKey);
 
 const inputTracks = computed({
     get: () => numTracks.value,
-    set: (val) => sequencerService?.setNumTracks(val)
+    set: (val) => sequencerManager?.setNumTracks(val)
 });
 
 const inputSteps = computed({
     get: () => numSteps.value,
-    set: (val) => sequencerService?.setNumSteps(val)
+    set: (val) => sequencerManager?.setNumSteps(val)
 });
 
 const inputBpm = computed({
     get: () => bpm.value,
-    set: (val) => sequencerService?.setBpm(val)
+    set: (val) => sequencerManager?.setBpm(val)
 });
 </script>

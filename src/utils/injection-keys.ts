@@ -1,4 +1,4 @@
 import type { InjectionKey } from 'vue';
-import { SequencerService } from '@/services/SequencerServices.ts';
+import { SequencerManager } from '@/services/SequencerManager';
 
-export const sequencerServiceKey: InjectionKey<SequencerService> = Symbol('sequencerService');
+export const sequencerManagerKey: InjectionKey<SequencerManager> = Symbol('sequencerManager');

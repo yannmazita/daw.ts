@@ -8,18 +8,18 @@
 <script setup lang="ts">
 import { inject } from 'vue';
 import Step from '@/components/Step.vue';
-import { SequencerStep } from '@/models/SequencerModels.ts';
-import { SequencerService } from '@/services/SequencerServices';
-import { sequencerServiceKey } from '@/utils/injection-keys';
+import { SequencerStep } from '@/models/SequencerModels';
+import { SequencerManager } from '@/services/SequencerManager';
+import { sequencerManagerKey } from '@/utils/injection-keys';
 
 interface Props {
     trackId: number;
     steps: SequencerStep[];
 }
 const props = defineProps<Props>();
-const sequencerService = inject<SequencerService>(sequencerServiceKey);
+const sequencerManager = inject<SequencerManager>(sequencerManagerKey);
 
 function toggleStepActiveState(index: number): void {
-    sequencerService?.toggleStepActiveState(props.trackId, index);
+    sequencerManager?.toggleStepActiveState(props.trackId, index);
 }
 </script>
