@@ -1,8 +1,7 @@
-// directives/ClickOutside.ts
 import { DirectiveBinding } from 'vue';
 
 function handleClick(e: MouseEvent, el: HTMLElement, binding: DirectiveBinding) {
-    // Check if the click was outside the el and his children
+    // Check if the click was outside the element and its children
     if (!(el === e.target || el.contains(e.target as Node))) {
         // Call the provided method
         binding.value(e);
