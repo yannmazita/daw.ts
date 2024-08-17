@@ -71,6 +71,13 @@ export class SequencerService {
         this.loopEnabled = !this.loopEnabled;
     }
 
+    public addTrack(): void {
+        this.stopSequence();
+        const newTrack = new SequencerTrack(this.tracks.value.length, this.sequencerStore.numSteps);
+        this.tracks.value.push(newTrack);
+        this.sequencerStore.numTracks++;
+    }
+
     public setNumTracks(newCount: number) {
         this.stopSequence();
         if (newCount < this.tracks.value.length) {
