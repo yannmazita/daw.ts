@@ -4,11 +4,8 @@
     </div>
 </template>
 <script setup lang="ts">
-import { inject, computed } from 'vue';
+import { storeToRefs } from 'pinia';
 import Track from '@/components/Track.vue';
-import { sequencerTrackManagerKey } from '@/utils/injection-keys';
-import { SequencerTrackManager } from '@/services/SequencerTrackManager';
-
-const sequencerManager = inject<SequencerTrackManager>(sequencerTrackManagerKey) as SequencerTrackManager;
-const tracks = computed(() => sequencerManager.tracks.value);
+import { useSequencerStore } from '@/stores/sequencerStore';
+const { tracks } = storeToRefs(useSequencerStore());
 </script>

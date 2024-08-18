@@ -1,6 +1,5 @@
 import * as Tone from 'tone';
 import { SequencerInstrumentManager } from '@/services/SequencerInstrumentManager';
-import { SequencerTrackManager } from '@/services/SequencerTrackManager';
 import { useSequencerStore } from '@/stores/sequencerStore';
 import { SequencerStep } from '@/models/SequencerModels';
 
@@ -9,11 +8,11 @@ export class SequencerPlaybackManager {
     private stepDuration: string = '16n';
     public loopEnabled: boolean = false;
 
-    constructor(private sequencerTrackManager: SequencerTrackManager, private sequencerInstrumentManager: SequencerInstrumentManager) { }
+    constructor(private sequencerInstrumentManager: SequencerInstrumentManager) { }
 
     public playSequence(): void {
         this.stopSequence();
-        this.sequencerInstrumentManager.initializeTrackInstruments(this.sequencerTrackManager.tracks.value);
+        this.sequencerInstrumentManager.initializeTrackInstruments(this.sequencerStore.tracks);
         this.scheduleSequence();
         Tone.getTransport().start();
     }
@@ -22,7 +21,7 @@ export class SequencerPlaybackManager {
         Tone.getTransport().stop();
         Tone.getTransport().cancel();
         this.sequencerStore.currentStep = 0;
-        this.sequencerTrackManager.tracks.value.forEach(track => {
+        this.sequencerStore.tracks.forEach(track => {
             track.steps.forEach(step => {
                 step.playing = false;
             });
@@ -31,7 +30,7 @@ export class SequencerPlaybackManager {
 
     private scheduleSequence(): void {
         Tone.getTransport().scheduleRepeat(time => {
-            this.sequencerTrackManager.tracks.value.forEach((track, trackIndex) => {
+            this.sequencerStore.tracks.forEach((track, trackIndex) => {
                 const step: SequencerStep = track.steps[this.sequencerStore.currentStep];
                 if (step.active) {
                     this.sequencerInstrumentManager.trackInstruments[trackIndex].triggerAttackRelease(step.note, this.stepDuration, time);
