@@ -23,6 +23,7 @@ const trackManager = inject<SequencerTrackManager>(sequencerTrackManagerKey) as 
 function handleContextMenu(event: MouseEvent) {
     const items = [
         new AppContextMenuItem('Add track', new AddTrackCommand(trackManager)),
+        new AppContextMenuItem('Add track (relative)', new AddTrackCommand(trackManager)),
         new AppContextMenuItem('Remove track', new RemoveTrackCommand(trackManager)),
         new AppContextMenuItem('Remove last track', new RemoveLastTrackCommand(trackManager)),
     ];
