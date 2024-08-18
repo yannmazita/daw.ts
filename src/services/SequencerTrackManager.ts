@@ -1,10 +1,11 @@
 import { SequencerStep, SequencerTrack } from '@/models/SequencerModels';
 import { useSequencerStore } from '@/stores/sequencerStore';
+import { SequencerPlaybackManager } from './SequencerPlaybackManager';
 
 export class SequencerTrackManager {
     private sequencerStore = useSequencerStore();
 
-    constructor() {
+    constructor(private sequencerPlaybackManager: SequencerPlaybackManager) {
         this.initializeTracks();
     }
 
@@ -13,12 +14,14 @@ export class SequencerTrackManager {
     }
 
     public addTrack(trackIndex: number = this.sequencerStore.numTracks, numSteps: number = this.sequencerStore.numSteps): void {
+        this.sequencerPlaybackManager.stopSequence();
         const newTrack = new SequencerTrack(trackIndex, numSteps);
         this.sequencerStore.tracks.push(newTrack);
         this.sequencerStore.numTracks++;
     }
 
     public setNumTracks(newCount: number): void {
+        this.sequencerPlaybackManager.stopSequence();
         if (newCount < this.sequencerStore.tracks.length) {
             this.sequencerStore.tracks = this.sequencerStore.tracks.slice(0, newCount);
         } else {
@@ -31,6 +34,7 @@ export class SequencerTrackManager {
     }
 
     public setNumSteps(newCount: number): void {
+        this.sequencerPlaybackManager.stopSequence();
         this.sequencerStore.tracks.forEach(track => {
             if (newCount < track.steps.length) {
                 track.steps.splice(newCount);

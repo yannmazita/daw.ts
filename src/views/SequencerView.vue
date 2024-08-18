@@ -17,8 +17,8 @@ const visibleComponent = computed(() => {
 });
 
 const sequencerInstrumentManager = new SequencerInstrumentManager();
-const sequencerTrackManager = new SequencerTrackManager();
 const sequencerPlaybackManager = new SequencerPlaybackManager(sequencerInstrumentManager);
+const sequencerTrackManager = new SequencerTrackManager(sequencerPlaybackManager);
 
 provide(sequencerInstrumentManagerKey, sequencerInstrumentManager);
 provide(sequencerTrackManagerKey, sequencerTrackManager);
