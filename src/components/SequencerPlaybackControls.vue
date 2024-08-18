@@ -1,9 +1,9 @@
 <template>
     <div id="sequencer-container-playback" class="flex justify-center">
-        <AppSmallButton @click="sequencerManager?.playSequence()">
+        <AppSmallButton @click="playbackManager.playSequence()">
             {{ 'Play' }}
         </AppSmallButton>
-        <AppSmallButton @click="sequencerManager?.stopSequence()">
+        <AppSmallButton @click="playbackManager.stopSequence()">
             {{ 'Stop' }}
         </AppSmallButton>
         <AppSmallCheckbox v-model="checked">
@@ -16,15 +16,15 @@
 
 <script setup lang="ts">
 import { watch, inject, ref, Ref } from 'vue';
-import { sequencerManagerKey } from '@/utils/injection-keys';
-import { SequencerManager } from '@/services/SequencerManager';
+import { sequencerPlaybackManagerKey } from '@/utils/injection-keys';
+import { SequencerPlaybackManager } from '@/services/SequencerPlaybackManager';
 import AppSmallButton from '@/components/AppSmallButton.vue';
 import AppSmallCheckbox from '@/components/AppSmallCheckbox.vue';
 
-const sequencerManager = inject<SequencerManager>(sequencerManagerKey) as SequencerManager;
+const playbackManager = inject<SequencerPlaybackManager>(sequencerPlaybackManagerKey) as SequencerPlaybackManager;
 const checked: Ref<boolean> = ref(false);
 
 watch(checked, (newValue) => {
-    sequencerManager.loopEnabled = newValue;
+    playbackManager.loopEnabled = newValue;
 });
 </script>

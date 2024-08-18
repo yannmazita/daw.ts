@@ -9,17 +9,17 @@
 import { inject } from 'vue';
 import Step from '@/components/Step.vue';
 import { SequencerStep } from '@/models/SequencerModels';
-import { SequencerManager } from '@/services/SequencerManager';
-import { sequencerManagerKey } from '@/utils/injection-keys';
+import { sequencerTrackManagerKey } from '@/utils/injection-keys';
+import { SequencerTrackManager } from '@/services/SequencerTrackManager';
 
 interface Props {
     trackId: number;
     steps: SequencerStep[];
 }
 const props = defineProps<Props>();
-const sequencerManager = inject<SequencerManager>(sequencerManagerKey);
+const trackManager = inject<SequencerTrackManager>(sequencerTrackManagerKey) as SequencerTrackManager;
 
 function toggleStepActiveState(index: number): void {
-    sequencerManager?.toggleStepActiveState(props.trackId, index);
+    trackManager.toggleStepActiveState(props.trackId, index);
 }
 </script>

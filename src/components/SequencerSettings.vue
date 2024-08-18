@@ -31,26 +31,28 @@
 <script setup lang="ts">
 import { computed, inject, } from 'vue';
 import { storeToRefs } from 'pinia';
-import { SequencerManager } from '@/services/SequencerManager';
+import { sequencerPlaybackManagerKey, sequencerTrackManagerKey } from '@/utils/injection-keys';
+import { SequencerPlaybackManager } from '@/services/SequencerPlaybackManager';
+import { SequencerTrackManager } from '@/services/SequencerTrackManager';
 import { useSequencerStore } from '@/stores/sequencerStore';
-import { sequencerManagerKey } from '@/utils/injection-keys';
 import AppInput from '@/components/AppInput.vue';
 
 const { numTracks, numSteps, bpm } = storeToRefs(useSequencerStore());
-const sequencerManager = inject<SequencerManager>(sequencerManagerKey);
+const playbackManager = inject<SequencerPlaybackManager>(sequencerPlaybackManagerKey) as SequencerPlaybackManager;
+const trackManager = inject<SequencerTrackManager>(sequencerTrackManagerKey) as SequencerTrackManager;
 
 const inputTracks = computed({
     get: () => numTracks.value,
-    set: (val) => sequencerManager?.setNumTracks(val)
+    set: (val) => trackManager.setNumTracks(val)
 });
 
 const inputSteps = computed({
     get: () => numSteps.value,
-    set: (val) => sequencerManager?.setNumSteps(val)
+    set: (val) => trackManager.setNumSteps(val)
 });
 
 const inputBpm = computed({
     get: () => bpm.value,
-    set: (val) => sequencerManager?.setBpm(val)
+    set: (val) => playbackManager.setBpm(val)
 });
 </script>

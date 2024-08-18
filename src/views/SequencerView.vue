@@ -6,14 +6,21 @@
 </template>
 <script setup lang="ts">
 import { computed, provide } from 'vue';
-import { SequencerManager } from '@/services/SequencerManager';
-import { sequencerManagerKey } from '@/utils/injection-keys';
+import { SequencerInstrumentManager } from '@/services/SequencerInstrumentManager';
+import { SequencerPlaybackManager } from '@/services/SequencerPlaybackManager';
+import { SequencerTrackManager } from '@/services/SequencerTrackManager';
+import { sequencerInstrumentManagerKey, sequencerPlaybackManagerKey, sequencerTrackManagerKey } from '@/utils/injection-keys.ts';
 import Sequencer from '@/components/Sequencer.vue';
 
 const visibleComponent = computed(() => {
     return null;
 });
 
-const sequencerManager = new SequencerManager();
-provide(sequencerManagerKey, sequencerManager);
+const sequencerInstrumentManager = new SequencerInstrumentManager();
+const sequencerTrackManager = new SequencerTrackManager();
+const sequencerPlaybackManager = new SequencerPlaybackManager(sequencerTrackManager, sequencerInstrumentManager);
+
+provide(sequencerInstrumentManagerKey, sequencerInstrumentManager);
+provide(sequencerTrackManagerKey, sequencerTrackManager);
+provide(sequencerPlaybackManagerKey, sequencerPlaybackManager);
 </script>
