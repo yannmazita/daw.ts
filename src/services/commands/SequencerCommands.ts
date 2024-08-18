@@ -10,6 +10,15 @@ export class AddTrackCommand implements Command {
     redo() { }
 }
 
+export class AddTrackRelativeCommand implements Command {
+    constructor(private trackManager: SequencerTrackManager) { }
+    execute() {
+        this.trackManager.addTrack();
+    }
+    undo() { }
+    redo() { }
+}
+
 export class RemoveTrackCommand implements Command {
     constructor(private trackManager: SequencerTrackManager) { }
     execute() { }

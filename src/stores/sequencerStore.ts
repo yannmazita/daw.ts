@@ -9,7 +9,18 @@ export const useSequencerStore = defineStore('sequencer', () => {
     const numSteps: Ref<number> = ref(16);
     const currentStep: Ref<number> = ref(0);
     const tracks: Ref<SequencerTrack[]> = ref([]);
+    const rightClickTrackIndex: Ref<number | null> = ref(null);
+    const rightClickStepIndex: Ref<number | null> = ref(null);
 
+    function rightClickSelectStep(trackIndex: number, stepIndex: number): void {
+        rightClickTrackIndex.value = trackIndex;
+        rightClickStepIndex.value = stepIndex;
+    }
+
+    function clearRightClickSelection(): void {
+        rightClickTrackIndex.value = null;
+        rightClickStepIndex.value = null;
+    }
 
     return {
         bpm,
@@ -17,5 +28,9 @@ export const useSequencerStore = defineStore('sequencer', () => {
         numSteps,
         currentStep,
         tracks,
+        rightClickTrackIndex,
+        rightClickStepIndex,
+        rightClickSelectStep,
+        clearRightClickSelection,
     }
 });
