@@ -8,4 +8,13 @@ export default tseslint.config(
     ...tseslint.configs.strict,
     ...tseslint.configs.recommendedTypeChecked,
     ...tseslint.configs.stylisticTypeChecked,
+    {
+        languageOptions: {
+            parserOptions: {
+                project: './tsconfig.json',
+                sourceType: 'module',
+            },
+        },
+    },
+
 );
