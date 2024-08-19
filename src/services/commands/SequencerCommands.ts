@@ -5,13 +5,10 @@ import { SequencerTrackManager } from "../SequencerTrackManager";
 export class AddTrackCommand implements Command {
     private sequencerStore = useSequencerStore();
 
-    constructor(private trackManager: SequencerTrackManager, private upOrDown: string = "down") { }
+    constructor(private trackManager: SequencerTrackManager) { }
     execute() {
         if (this.sequencerStore.rightClickTrackIndex) {
-            this.trackManager.addTracks(this.sequencerStore.rightClickTrackIndex, this.upOrDown);
-        }
-        else {
-            this.trackManager.addTracks();
+            this.trackManager.addTrack(this.sequencerStore.rightClickTrackIndex);
         }
     }
     undo() { }
@@ -24,7 +21,7 @@ export class RemoveTrackCommand implements Command {
     constructor(private trackManager: SequencerTrackManager) { }
     execute() {
         if (this.sequencerStore.rightClickTrackIndex) {
-            this.trackManager.removeTracks(this.sequencerStore.rightClickTrackIndex);
+            this.trackManager.removeTrack(this.sequencerStore.rightClickTrackIndex);
         }
     }
     undo() { }

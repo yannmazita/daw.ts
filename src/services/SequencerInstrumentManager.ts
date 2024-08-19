@@ -45,4 +45,12 @@ export class SequencerInstrumentManager {
             this.trackInstruments[trackIndex] = this.instrumentPool[instrumentName];
         }
     }
+
+    public addInstrumentForTrack(position: number): void {
+        this.trackInstruments.splice(position, 0, this.instrumentPool[InstrumentName.Synth]);
+    }
+
+    public removeInstrumentForTrack(position: number): void {
+        this.trackInstruments.splice(position, 1);
+    }
 }
