@@ -3,24 +3,16 @@ import { Command } from "@/utils/interfaces";
 import { SequencerTrackManager } from "../SequencerTrackManager";
 
 export class AddTrackCommand implements Command {
-    constructor(private trackManager: SequencerTrackManager, private relative: boolean = false) { }
+    private sequencerStore = useSequencerStore();
+
+    constructor(private trackManager: SequencerTrackManager, private upOrDown: string = "down") { }
     execute() {
-        const store = useSequencerStore();
-        if (this.relative && store.rightClickTrackIndex) {
-            this.trackManager.addTrack(store.rightClickTrackIndex + 1);
+        if (this.sequencerStore.rightClickTrackIndex) {
+            this.trackManager.addTracks(this.sequencerStore.rightClickTrackIndex, this.upOrDown);
         }
         else {
-            this.trackManager.addTrack();
+            this.trackManager.addTracks();
         }
-    }
-    undo() { }
-    redo() { }
-}
-
-export class AddTrackRelativeCommand implements Command {
-    constructor(private trackManager: SequencerTrackManager) { }
-    execute() {
-        this.trackManager.addTrack();
     }
     undo() { }
     redo() { }

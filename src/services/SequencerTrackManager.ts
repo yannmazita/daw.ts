@@ -13,11 +13,35 @@ export class SequencerTrackManager {
         this.sequencerStore.tracks = Array.from({ length: this.sequencerStore.numTracks }, (_, i) => new SequencerTrack(i, this.sequencerStore.numSteps));
     }
 
-    public addTrack(trackIndex: number = this.sequencerStore.numTracks, numSteps: number = this.sequencerStore.numSteps): void {
+    public addTracks(insertPosition: number = this.sequencerStore.numTracks, upOrDown: string = "down", numberOfTracks: number = 1): void {
         this.sequencerPlaybackManager.stopSequence();
-        const newTrack = new SequencerTrack(trackIndex, numSteps);
-        this.sequencerStore.tracks.push(newTrack);
-        this.sequencerStore.numTracks++;
+
+        const newTracks = Array.from({ length: numberOfTracks }, (_, i) =>
+            new SequencerTrack(insertPosition + i, this.sequencerStore.numSteps)
+        );
+
+        if (upOrDown === "up") {
+            insertPosition = Math.max(0, insertPosition - numberOfTracks);
+            this.sequencerStore.tracks.splice(insertPosition, 0, ...newTracks);
+
+        }
+        else if (upOrDown === "down") {
+            this.sequencerStore.tracks.splice(insertPosition + 1, 0, ...newTracks);
+        }
+
+        // Every track following the block of inserted tracks still has its old id, we're updating it
+        this.sequencerStore.tracks.forEach((track, trackIndex) => {
+            if (track.id !== trackIndex) {
+                track.id = trackIndex;
+            }
+        });
+        this.sequencerStore.numTracks = this.sequencerStore.numTracks + numberOfTracks;
+    }
+
+    public removeTracks(deletePosition: number = this.sequencerStore.numTracks - 1, numberOfTracks: number = 1): void {
+        this.sequencerPlaybackManager.stopSequence();
+        this.sequencerStore.tracks.splice(deletePosition, numberOfTracks);
+        this.sequencerStore.numTracks = this.sequencerStore.numTracks - numberOfTracks;
     }
 
     public setNumTracks(newCount: number): void {
