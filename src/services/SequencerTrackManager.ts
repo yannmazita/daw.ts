@@ -1,39 +1,76 @@
-import { ref, Ref } from 'vue';
 import { SequencerStep, SequencerTrack } from '@/models/SequencerModels';
 import { useSequencerStore } from '@/stores/sequencerStore';
+import { SequencerPlaybackManager } from './SequencerPlaybackManager';
 
 export class SequencerTrackManager {
-    public tracks: Ref<SequencerTrack[]> = ref([]);
     private sequencerStore = useSequencerStore();
 
-    constructor() {
+    constructor(private sequencerPlaybackManager: SequencerPlaybackManager) {
         this.initializeTracks();
     }
 
     private initializeTracks(): void {
-        this.tracks.value = Array.from({ length: this.sequencerStore.numTracks }, (_, i) => new SequencerTrack(i, this.sequencerStore.numSteps));
+        this.sequencerStore.tracks = Array.from({ length: this.sequencerStore.numTracks }, (_, i) => new SequencerTrack(i, this.sequencerStore.numSteps));
     }
 
-    public addTrack(numSteps: number): void {
-        const newTrack = new SequencerTrack(this.tracks.value.length, numSteps);
-        this.tracks.value.push(newTrack);
-        this.sequencerStore.numTracks++;
+    /**
+    * Refreshes the id of each track to match its index in the tracks array.
+    * This is necessary because the id is used to determine the track index when rendering the sequencer tracks.
+    *
+    * @returns void
+    *
+    */
+    private refreshTracks(): void {
+        this.sequencerStore.tracks.forEach((track, trackIndex) => {
+            if (track.id !== trackIndex) {
+                track.id = trackIndex;
+            }
+        });
+    }
+
+    public addTracks(insertPosition: number = this.sequencerStore.numTracks, upOrDown: string = "down", numberOfTracks: number = 1): void {
+        this.sequencerPlaybackManager.stopSequence();
+
+        const newTracks = Array.from({ length: numberOfTracks }, (_, i) =>
+            new SequencerTrack(insertPosition + i, this.sequencerStore.numSteps)
+        );
+
+        if (upOrDown === "up") {
+            insertPosition = Math.max(0, insertPosition - numberOfTracks);
+            this.sequencerStore.tracks.splice(insertPosition, 0, ...newTracks);
+
+        }
+        else if (upOrDown === "down") {
+            this.sequencerStore.tracks.splice(insertPosition + 1, 0, ...newTracks);
+        }
+
+        this.refreshTracks();
+        this.sequencerStore.numTracks = this.sequencerStore.numTracks + numberOfTracks;
+    }
+
+    public removeTracks(deletePosition: number = this.sequencerStore.numTracks, numberOfTracks: number = 1): void {
+        this.sequencerPlaybackManager.stopSequence();
+        this.sequencerStore.tracks.splice(deletePosition, numberOfTracks);
+        this.refreshTracks();
+        this.sequencerStore.numTracks = this.sequencerStore.numTracks - numberOfTracks;
     }
 
     public setNumTracks(newCount: number): void {
-        if (newCount < this.tracks.value.length) {
-            this.tracks.value = this.tracks.value.slice(0, newCount);
+        this.sequencerPlaybackManager.stopSequence();
+        if (newCount < this.sequencerStore.tracks.length) {
+            this.sequencerStore.tracks = this.sequencerStore.tracks.slice(0, newCount);
         } else {
-            const newTracks = Array.from({ length: newCount - this.tracks.value.length }, (_, i) =>
-                new SequencerTrack(this.tracks.value.length + i, this.sequencerStore.numSteps)
+            const newTracks = Array.from({ length: newCount - this.sequencerStore.tracks.length }, (_, i) =>
+                new SequencerTrack(this.sequencerStore.tracks.length + i, this.sequencerStore.numSteps)
             );
-            this.tracks.value = [...this.tracks.value, ...newTracks];
+            this.sequencerStore.tracks = [...this.sequencerStore.tracks, ...newTracks];
         }
         this.sequencerStore.numTracks = newCount;
     }
 
     public setNumSteps(newCount: number): void {
-        this.tracks.value.forEach(track => {
+        this.sequencerPlaybackManager.stopSequence();
+        this.sequencerStore.tracks.forEach(track => {
             if (newCount < track.steps.length) {
                 track.steps.splice(newCount);
             } else {
@@ -46,6 +83,6 @@ export class SequencerTrackManager {
     }
 
     public toggleStepActiveState(trackIndex: number, stepIndex: number): void {
-        this.tracks.value[trackIndex].steps[stepIndex].toggleStepActiveState();
+        this.sequencerStore.tracks[trackIndex].steps[stepIndex].toggleStepActiveState();
     }
 }

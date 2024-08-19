@@ -1,28 +1,38 @@
+import { useSequencerStore } from "@/stores/sequencerStore";
 import { Command } from "@/utils/interfaces";
+import { SequencerTrackManager } from "../SequencerTrackManager";
 
 export class AddTrackCommand implements Command {
-    constructor() { }
-    execute() { }
+    private sequencerStore = useSequencerStore();
+
+    constructor(private trackManager: SequencerTrackManager, private upOrDown: string = "down") { }
+    execute() {
+        if (this.sequencerStore.rightClickTrackIndex) {
+            this.trackManager.addTracks(this.sequencerStore.rightClickTrackIndex, this.upOrDown);
+        }
+        else {
+            this.trackManager.addTracks();
+        }
+    }
     undo() { }
     redo() { }
 }
 
 export class RemoveTrackCommand implements Command {
-    constructor() { }
-    execute() { }
-    undo() { }
-    redo() { }
-}
+    private sequencerStore = useSequencerStore();
 
-export class RemoveLastTrackCommand implements Command {
-    constructor() { }
-    execute() { }
+    constructor(private trackManager: SequencerTrackManager) { }
+    execute() {
+        if (this.sequencerStore.rightClickTrackIndex) {
+            this.trackManager.removeTracks(this.sequencerStore.rightClickTrackIndex);
+        }
+    }
     undo() { }
     redo() { }
 }
 
 export class ClearTracksCommand implements Command {
-    constructor() { }
+    constructor(private trackManager: SequencerTrackManager) { }
     execute() { }
     undo() { }
     redo() { }
