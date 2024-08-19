@@ -19,15 +19,14 @@ export class AddTrackCommand implements Command {
 }
 
 export class RemoveTrackCommand implements Command {
-    constructor(private trackManager: SequencerTrackManager) { }
-    execute() { }
-    undo() { }
-    redo() { }
-}
+    private sequencerStore = useSequencerStore();
 
-export class RemoveLastTrackCommand implements Command {
     constructor(private trackManager: SequencerTrackManager) { }
-    execute() { }
+    execute() {
+        if (this.sequencerStore.rightClickTrackIndex) {
+            this.trackManager.removeTracks(this.sequencerStore.rightClickTrackIndex);
+        }
+    }
     undo() { }
     redo() { }
 }

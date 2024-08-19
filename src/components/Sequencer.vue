@@ -12,7 +12,7 @@ import { sequencerTrackManagerKey } from '@/utils/injection-keys';
 import { SequencerTrackManager } from '@/services/SequencerTrackManager';
 import { useContextMenuStore } from '@/stores/contextMenuStore';
 import { AppContextMenuItem } from '@/models/AppContextMenuItem';
-import { AddTrackCommand, RemoveTrackCommand, AddStepCommand, RemoveStepCommand, RemoveLastTrackCommand } from '@/services/commands/SequencerCommands';
+import { AddTrackCommand, RemoveTrackCommand, AddStepCommand, RemoveStepCommand } from '@/services/commands/SequencerCommands';
 import SequencerSettings from '@/components/SequencerSettings.vue';
 import SequencerPlaybackControls from '@/components/SequencerPlaybackControls.vue';
 import SequencerTracks from '@/components/SequencerTracks.vue';
@@ -25,7 +25,6 @@ function handleContextMenu(event: MouseEvent) {
         new AppContextMenuItem('Add track (up)', new AddTrackCommand(trackManager, "up")),
         new AppContextMenuItem('Add track (down)', new AddTrackCommand(trackManager, "down")),
         new AppContextMenuItem('Remove track', new RemoveTrackCommand(trackManager)),
-        new AppContextMenuItem('Remove last track', new RemoveLastTrackCommand(trackManager)),
     ];
     menuStore.showContextMenu(items, event.clientX, event.clientY);
 }

@@ -13,6 +13,21 @@ export class SequencerTrackManager {
         this.sequencerStore.tracks = Array.from({ length: this.sequencerStore.numTracks }, (_, i) => new SequencerTrack(i, this.sequencerStore.numSteps));
     }
 
+    /**
+    * Refreshes the id of each track to match its index in the tracks array.
+    * This is necessary because the id is used to determine the track index when rendering the sequencer tracks.
+    *
+    * @returns void
+    *
+    */
+    private refreshTracks(): void {
+        this.sequencerStore.tracks.forEach((track, trackIndex) => {
+            if (track.id !== trackIndex) {
+                track.id = trackIndex;
+            }
+        });
+    }
+
     public addTracks(insertPosition: number = this.sequencerStore.numTracks, upOrDown: string = "down", numberOfTracks: number = 1): void {
         this.sequencerPlaybackManager.stopSequence();
 
@@ -29,18 +44,14 @@ export class SequencerTrackManager {
             this.sequencerStore.tracks.splice(insertPosition + 1, 0, ...newTracks);
         }
 
-        // Every track following the block of inserted tracks still has its old id, we're updating it
-        this.sequencerStore.tracks.forEach((track, trackIndex) => {
-            if (track.id !== trackIndex) {
-                track.id = trackIndex;
-            }
-        });
+        this.refreshTracks();
         this.sequencerStore.numTracks = this.sequencerStore.numTracks + numberOfTracks;
     }
 
-    public removeTracks(deletePosition: number = this.sequencerStore.numTracks - 1, numberOfTracks: number = 1): void {
+    public removeTracks(deletePosition: number = this.sequencerStore.numTracks, numberOfTracks: number = 1): void {
         this.sequencerPlaybackManager.stopSequence();
         this.sequencerStore.tracks.splice(deletePosition, numberOfTracks);
+        this.refreshTracks();
         this.sequencerStore.numTracks = this.sequencerStore.numTracks - numberOfTracks;
     }
 
