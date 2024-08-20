@@ -15,14 +15,12 @@ interface Props {
     trackId: number;
     stepId: number;
     isActive: boolean;
-    isPlaying: boolean;
 }
 const props = defineProps<Props>();
 
 const classes = computed(() => ({
     'bg-ts-blue': props.isActive,
-    'border-ts-blue': props.isActive && !props.isPlaying,
-    'border-ts-pink': props.isPlaying
+    'border-ts-blue': props.isActive,
 }));
 
 const trackManager = inject<SequencerTrackManager>(sequencerTrackManagerKey) as SequencerTrackManager;

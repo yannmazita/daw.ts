@@ -24,7 +24,7 @@ export class SequencerTrackManager {
         this.sequencerStore.tracks = [...this.sequencerStore.tracks];
     }
 
-    private triggerReactiveUpdate(): void {
+    private triggerReactivityUpdate(): void {
         this.sequencerStore.tracks = [...this.sequencerStore.tracks];
     }
 
@@ -33,7 +33,7 @@ export class SequencerTrackManager {
         const newTrack = new SequencerTrack(insertPosition + 1, this.sequencerStore.numSteps);
         this.sequencerStore.tracks.splice(insertPosition + 1, 0, newTrack);
         this.updateTrackIds();
-        this.triggerReactiveUpdate();
+        this.triggerReactivityUpdate();
         this.sequencerStore.numTracks = this.sequencerStore.numTracks + 1;
         this.instrumentManager.addInstrumentForTrack(insertPosition + 1);
     }
@@ -42,7 +42,7 @@ export class SequencerTrackManager {
         this.playbackManager.stopSequence();
         this.sequencerStore.tracks.splice(deletePosition, 1);
         this.updateTrackIds();
-        this.triggerReactiveUpdate();
+        this.triggerReactivityUpdate();
         this.sequencerStore.numTracks = this.sequencerStore.numTracks - 1;
         this.instrumentManager.removeInstrumentForTrack(deletePosition);
     }
@@ -75,7 +75,7 @@ export class SequencerTrackManager {
                 }
             }
         });
-        this.triggerReactiveUpdate();
+        this.triggerReactivityUpdate();
         this.sequencerStore.numSteps = newCount;
     }
 

@@ -11,21 +11,28 @@ export class SequencerPlaybackManager {
     constructor(private sequencerInstrumentManager: SequencerInstrumentManager) { }
 
     public playSequence(): void {
-        this.stopSequence();
+        if (this.sequencerStore.isPlaying) {
+            this.stopSequence();
+        }
+        this.sequencerStore.isPlaying = true;
         //this.sequencerInstrumentManager.initializeTrackInstruments(this.sequencerStore.tracks);
         this.scheduleSequence();
         Tone.getTransport().start();
     }
 
+    public pauseSequence(): void {
+        if (!this.sequencerStore.isPlaying) {
+            return;
+        }
+        this.sequencerStore.isPlaying = false;
+        Tone.getTransport().pause();
+    }
+
     public stopSequence(): void {
+        this.sequencerStore.isPlaying = false;
         Tone.getTransport().stop();
         Tone.getTransport().cancel();
         this.sequencerStore.currentStep = 0;
-        this.sequencerStore.tracks.forEach(track => {
-            track.steps.forEach(step => {
-                step.playing = false;
-            });
-        })
     }
 
     private scheduleSequence(): void {
@@ -34,11 +41,6 @@ export class SequencerPlaybackManager {
                 const step: SequencerStep = track.steps[this.sequencerStore.currentStep];
                 if (step.active) {
                     this.sequencerInstrumentManager.trackInstruments[trackIndex].triggerAttackRelease(step.note, this.stepDuration, time);
-
-                    step.playing = true;
-                    Tone.getDraw().schedule(() => {
-                        step.playing = false;
-                    }, time + this.stepDuration);
                 }
             });
 

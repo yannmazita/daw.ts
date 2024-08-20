@@ -3,6 +3,9 @@
         <AppSmallButton @click="playbackManager.playSequence()">
             {{ 'Play' }}
         </AppSmallButton>
+        <AppSmallButton @click="playbackManager.pauseSequence()" :disabled="!isPlaying">
+            {{ 'Pause' }}
+        </AppSmallButton>
         <AppSmallButton @click="playbackManager.stopSequence()">
             {{ 'Stop' }}
         </AppSmallButton>
@@ -16,6 +19,8 @@
 
 <script setup lang="ts">
 import { watch, inject, ref, Ref } from 'vue';
+import { useSequencerStore } from '@/stores/sequencerStore';
+import { storeToRefs } from 'pinia';
 import { sequencerPlaybackManagerKey } from '@/utils/injection-keys';
 import { SequencerPlaybackManager } from '@/services/SequencerPlaybackManager';
 import AppSmallButton from '@/components/AppSmallButton.vue';
@@ -27,4 +32,6 @@ const checked: Ref<boolean> = ref(false);
 watch(checked, (newValue) => {
     playbackManager.loopEnabled = newValue;
 });
+
+const { isPlaying } = storeToRefs(useSequencerStore());
 </script>
