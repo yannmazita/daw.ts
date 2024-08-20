@@ -7,6 +7,7 @@ export class SequencerPlaybackManager {
     private sequencerStore = useSequencerStore();
     private stepDuration: string = '16n';
     public loopEnabled: boolean = false;
+    private sequenceID: number | null = null;
 
     constructor(private sequencerInstrumentManager: SequencerInstrumentManager) { }
 
@@ -24,6 +25,9 @@ export class SequencerPlaybackManager {
         if (!this.sequencerStore.isPlaying) {
             return;
         }
+        else if (this.sequenceID) {
+            Tone.getTransport().clear(this.sequenceID);
+        }
         this.sequencerStore.isPlaying = false;
         Tone.getTransport().pause();
     }
@@ -32,11 +36,14 @@ export class SequencerPlaybackManager {
         this.sequencerStore.isPlaying = false;
         Tone.getTransport().stop();
         Tone.getTransport().cancel();
+        if (this.sequenceID) {
+            Tone.getTransport().clear(this.sequenceID);
+        }
         this.sequencerStore.currentStep = 0;
     }
 
     private scheduleSequence(): void {
-        Tone.getTransport().scheduleRepeat(time => {
+        this.sequenceID = Tone.getTransport().scheduleRepeat(time => {
             this.sequencerStore.tracks.forEach((track, trackIndex) => {
                 const step: SequencerStep = track.steps[this.sequencerStore.currentStep];
                 if (step.active) {
