@@ -8,8 +8,8 @@ export class AddTrackCommand implements Command {
 
     constructor(private trackManager: SequencerTrackManager) { }
     execute() {
-        if (this.sequencerStore.rightClickTrackIndex) {
-            this.trackManager.addTrack(this.sequencerStore.rightClickTrackIndex);
+        if (this.sequencerStore.rightClickTrackPos) {
+            this.trackManager.addTrack(this.sequencerStore.rightClickTrackPos);
         }
     }
     undo() { }
@@ -21,8 +21,8 @@ export class RemoveTrackCommand implements Command {
 
     constructor(private trackManager: SequencerTrackManager) { }
     execute() {
-        if (this.sequencerStore.rightClickTrackIndex) {
-            this.trackManager.removeTrack(this.sequencerStore.rightClickTrackIndex);
+        if (this.sequencerStore.rightClickTrackPos) {
+            this.trackManager.removeTrack(this.sequencerStore.rightClickTrackPos);
         }
     }
     undo() { }
