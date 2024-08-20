@@ -10,18 +10,26 @@ export class SequencerPlaybackManager {
 
     constructor(private sequencerInstrumentManager: SequencerInstrumentManager) { }
 
-    public isPlaying(): boolean {
-        return Tone.getTransport().state === 'started';
-    }
-
     public playSequence(): void {
-        this.stopSequence();
+        if (this.sequencerStore.isPlaying) {
+            this.stopSequence();
+        }
+        this.sequencerStore.isPlaying = true;
         //this.sequencerInstrumentManager.initializeTrackInstruments(this.sequencerStore.tracks);
         this.scheduleSequence();
         Tone.getTransport().start();
     }
 
+    public pauseSequence(): void {
+        if (!this.sequencerStore.isPlaying) {
+            return;
+        }
+        this.sequencerStore.isPlaying = false;
+        Tone.getTransport().pause();
+    }
+
     public stopSequence(): void {
+        this.sequencerStore.isPlaying = false;
         Tone.getTransport().stop();
         Tone.getTransport().cancel();
         this.sequencerStore.currentStep = 0;
