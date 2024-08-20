@@ -1,15 +1,12 @@
 export class SequencerStep {
     public active: boolean;
-    public playing: boolean;
     public note: string;
 
     constructor(
         active: boolean = false,
-        playing: boolean = false,
         note: string = 'C2',
     ) {
         this.active = active;
-        this.playing = playing;
         this.note = note;
     }
 

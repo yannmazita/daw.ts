@@ -1,7 +1,7 @@
 <template>
     <div class="flex flex-row" @contextmenu.prevent="handleRightClick(props.trackId)">
-        <Step v-for="(step, index) in props.steps" :key="index" :isActive="step.active" :isPlaying="step.playing"
-            :trackId="props.trackId" :stepId="index">
+        <Step v-for="(step, index) in props.steps" :key="index" :isActive="step.active" :trackId="props.trackId"
+            :stepId="index">
         </Step>
     </div>
 </template>
