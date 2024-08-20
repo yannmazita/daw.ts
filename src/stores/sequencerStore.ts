@@ -1,6 +1,7 @@
 import { SequencerTrack } from '@/models/SequencerModels';
 import { defineStore } from 'pinia';
-import { ref, Ref } from 'vue';
+import { reactive, ref, Ref } from 'vue';
+import { StepPosition } from '@/utils/interfaces';
 
 
 export const useSequencerStore = defineStore('sequencer', () => {
@@ -9,17 +10,25 @@ export const useSequencerStore = defineStore('sequencer', () => {
     const numSteps: Ref<number> = ref(16);
     const currentStep: Ref<number> = ref(0);
     const tracks: Ref<SequencerTrack[]> = ref([]);
-    const rightClickTrackIndex: Ref<number | null> = ref(null);
-    const rightClickStepIndex: Ref<number | null> = ref(null);
+    const rightClickStepPos: StepPosition = reactive({ trackIndex: null, stepIndex: null });
+    const rightClickTrackPos: Ref<number | null> = ref(null);
 
     function rightClickSelectStep(trackIndex: number, stepIndex: number): void {
-        rightClickTrackIndex.value = trackIndex;
-        rightClickStepIndex.value = stepIndex;
+        rightClickStepPos.trackIndex = trackIndex;
+        rightClickStepPos.stepIndex = stepIndex;
     }
 
-    function clearRightClickSelection(): void {
-        rightClickTrackIndex.value = null;
-        rightClickStepIndex.value = null;
+    function rightClickSelectTrack(trackIndex: number): void {
+        rightClickTrackPos.value = trackIndex;
+    }
+
+    function clearRightClickSelectStepPos(): void {
+        rightClickStepPos.trackIndex = null;
+        rightClickStepPos.stepIndex = null;
+    }
+
+    function clearRightClickSelectTrackPos(): void {
+        rightClickTrackPos.value = null
     }
 
     return {
@@ -28,9 +37,11 @@ export const useSequencerStore = defineStore('sequencer', () => {
         numSteps,
         currentStep,
         tracks,
-        rightClickTrackIndex,
-        rightClickStepIndex,
+        rightClickStepPos,
         rightClickSelectStep,
-        clearRightClickSelection,
+        clearRightClickSelectStepPos,
+        rightClickTrackPos,
+        rightClickSelectTrack,
+        clearRightClickSelectTrackPos,
     }
 });

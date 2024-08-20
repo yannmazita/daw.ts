@@ -1,4 +1,5 @@
 import { useSequencerStore } from "@/stores/sequencerStore";
+import { useUIStore } from "@/stores/uiStore";
 import { Command } from "@/utils/interfaces";
 import { SequencerTrackManager } from "../SequencerTrackManager";
 
@@ -7,8 +8,8 @@ export class AddTrackCommand implements Command {
 
     constructor(private trackManager: SequencerTrackManager) { }
     execute() {
-        if (this.sequencerStore.rightClickTrackIndex) {
-            this.trackManager.addTrack(this.sequencerStore.rightClickTrackIndex);
+        if (this.sequencerStore.rightClickTrackPos) {
+            this.trackManager.addTrack(this.sequencerStore.rightClickTrackPos);
         }
     }
     undo() { }
@@ -20,38 +21,20 @@ export class RemoveTrackCommand implements Command {
 
     constructor(private trackManager: SequencerTrackManager) { }
     execute() {
-        if (this.sequencerStore.rightClickTrackIndex) {
-            this.trackManager.removeTrack(this.sequencerStore.rightClickTrackIndex);
+        if (this.sequencerStore.rightClickTrackPos) {
+            this.trackManager.removeTrack(this.sequencerStore.rightClickTrackPos);
         }
     }
     undo() { }
     redo() { }
 }
 
-export class ClearTracksCommand implements Command {
-    constructor(private trackManager: SequencerTrackManager) { }
-    execute() { }
-    undo() { }
-    redo() { }
-}
-
-export class AddStepCommand implements Command {
+export class OpenTrackSettings implements Command {
+    private uiStore = useUIStore();
     constructor() { }
-    execute() { }
-    undo() { }
-    redo() { }
-}
-
-export class RemoveStepCommand implements Command {
-    constructor() { }
-    execute() { }
-    undo() { }
-    redo() { }
-}
-
-export class RemoveLastStepCommand implements Command {
-    constructor() { }
-    execute() { }
+    execute() {
+        this.uiStore.toggleSequencerTrackSettingsDialog();
+    }
     undo() { }
     redo() { }
 }

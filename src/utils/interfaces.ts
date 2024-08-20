@@ -3,3 +3,8 @@ export interface Command {
     undo(): void;
     redo(): void;
 }
+
+export interface StepPosition {
+    trackIndex: number | null;
+    stepIndex: number | null;
+}
