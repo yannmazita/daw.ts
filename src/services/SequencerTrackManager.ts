@@ -1,16 +1,18 @@
 import { SequencerStep, SequencerTrack } from '@/models/SequencerModels';
 import { useSequencerStore } from '@/stores/sequencerStore';
 import { SequencerPlaybackManager } from './SequencerPlaybackManager';
+import { SequencerInstrumentManager } from './SequencerInstrumentManager';
 
 export class SequencerTrackManager {
     private sequencerStore = useSequencerStore();
 
-    constructor(private playbackManager: SequencerPlaybackManager) {
+    constructor(private playbackManager: SequencerPlaybackManager, private instrumentManager: SequencerInstrumentManager) {
         this.initializeTracks();
     }
 
     private initializeTracks(): void {
         this.sequencerStore.tracks = Array.from({ length: this.sequencerStore.numTracks }, (_, i) => new SequencerTrack(i, this.sequencerStore.numSteps));
+        this.instrumentManager.initializeTrackInstruments();
     }
 
     private updateTrackIds(): void {
@@ -33,14 +35,16 @@ export class SequencerTrackManager {
         this.updateTrackIds();
         this.triggerReactiveUpdate();
         this.sequencerStore.numTracks = this.sequencerStore.numTracks + 1;
+        this.instrumentManager.addInstrumentForTrack(insertPosition + 1);
     }
 
-    public removeTrack(deletePosition: number = this.sequencerStore.numTracks, numberOfTracks: number = 1): void {
+    public removeTrack(deletePosition: number = this.sequencerStore.numTracks): void {
         this.playbackManager.stopSequence();
-        this.sequencerStore.tracks.splice(deletePosition, numberOfTracks);
+        this.sequencerStore.tracks.splice(deletePosition, 1);
         this.updateTrackIds();
         this.triggerReactiveUpdate();
-        this.sequencerStore.numTracks = this.sequencerStore.numTracks - numberOfTracks;
+        this.sequencerStore.numTracks = this.sequencerStore.numTracks - 1;
+        this.instrumentManager.removeInstrumentForTrack(deletePosition);
     }
 
     public setNumTracks(newCount: number): void {
@@ -54,6 +58,10 @@ export class SequencerTrackManager {
             this.sequencerStore.tracks = [...this.sequencerStore.tracks, ...newTracks];
         }
         this.sequencerStore.numTracks = newCount;
+        this.sequencerStore.tracks.forEach((_, trackId) => {
+            this.instrumentManager.addInstrumentForTrack(trackId);
+        }
+        );
     }
 
     public setNumSteps(newCount: number): void {

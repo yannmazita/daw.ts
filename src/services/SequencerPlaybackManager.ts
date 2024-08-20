@@ -12,7 +12,7 @@ export class SequencerPlaybackManager {
 
     public playSequence(): void {
         this.stopSequence();
-        this.sequencerInstrumentManager.initializeTrackInstruments(this.sequencerStore.tracks);
+        //this.sequencerInstrumentManager.initializeTrackInstruments(this.sequencerStore.tracks);
         this.scheduleSequence();
         Tone.getTransport().start();
     }

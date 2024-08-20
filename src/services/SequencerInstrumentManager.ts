@@ -1,8 +1,9 @@
 import * as Tone from 'tone';
 import { Instrument, InstrumentName } from '@/utils/types.ts';
-import { SequencerTrack } from '@/models/SequencerModels';
+import { useSequencerStore } from '@/stores/sequencerStore';
 
 export class SequencerInstrumentManager {
+    private sequencerStore = useSequencerStore();
     public instrumentPool: Record<InstrumentName, Instrument> = {} as Record<InstrumentName, Instrument>;
     public trackInstruments: Instrument[] = [];
 
@@ -36,8 +37,8 @@ export class SequencerInstrumentManager {
         });
     }
 
-    public initializeTrackInstruments(tracks: SequencerTrack[]): void {
-        this.trackInstruments = tracks.map(() => this.instrumentPool[InstrumentName.Synth]);
+    public initializeTrackInstruments(): void {
+        this.trackInstruments = this.sequencerStore.tracks.map(() => this.instrumentPool[InstrumentName.Synth]);
     }
 
     public setInstrumentForTrack(trackIndex: number, instrumentName: InstrumentName) {
@@ -46,8 +47,8 @@ export class SequencerInstrumentManager {
         }
     }
 
-    public addInstrumentForTrack(position: number): void {
-        this.trackInstruments.splice(position, 0, this.instrumentPool[InstrumentName.Synth]);
+    public addInstrumentForTrack(position: number, instrumentName: InstrumentName = InstrumentName.Synth): void {
+        this.trackInstruments.splice(position, 0, this.instrumentPool[instrumentName]);
     }
 
     public removeInstrumentForTrack(position: number): void {

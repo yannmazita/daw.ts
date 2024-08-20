@@ -1,4 +1,5 @@
 import { useSequencerStore } from "@/stores/sequencerStore";
+import { useUIStore } from "@/stores/uiStore";
 import { Command } from "@/utils/interfaces";
 import { SequencerTrackManager } from "../SequencerTrackManager";
 
@@ -28,30 +29,12 @@ export class RemoveTrackCommand implements Command {
     redo() { }
 }
 
-export class ClearTracksCommand implements Command {
-    constructor(private trackManager: SequencerTrackManager) { }
-    execute() { }
-    undo() { }
-    redo() { }
-}
-
-export class AddStepCommand implements Command {
+export class OpenTrackSettings implements Command {
+    private uiStore = useUIStore();
     constructor() { }
-    execute() { }
-    undo() { }
-    redo() { }
-}
-
-export class RemoveStepCommand implements Command {
-    constructor() { }
-    execute() { }
-    undo() { }
-    redo() { }
-}
-
-export class RemoveLastStepCommand implements Command {
-    constructor() { }
-    execute() { }
+    execute() {
+        this.uiStore.toggleSequencerTrackSettingsDialog();
+    }
     undo() { }
     redo() { }
 }
