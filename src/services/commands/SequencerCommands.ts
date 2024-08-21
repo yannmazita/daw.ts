@@ -1,5 +1,5 @@
 import { useSequencerStore } from "@/stores/sequencerStore";
-import { useUIStore } from "@/stores/uiStore";
+import { useDialogStore } from "@/stores/dialogStore";
 import { Command } from "@/utils/interfaces";
 import { SequencerTrackManager } from "../SequencerTrackManager";
 
@@ -30,10 +30,10 @@ export class RemoveTrackCommand implements Command {
 }
 
 export class OpenTrackSettings implements Command {
-    private uiStore = useUIStore();
+    private dialogStore = useDialogStore();
     constructor() { }
     execute() {
-        this.uiStore.toggleSequencerTrackSettingsDialog();
+        this.dialogStore.toggleSequencerTrackSettingsDialog();
     }
     undo() { }
     redo() { }

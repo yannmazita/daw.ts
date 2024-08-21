@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref, Ref } from 'vue';
 
-export const useUIStore = defineStore('ui', () => {
+export const useDialogStore = defineStore('dialog', () => {
     const sequencerTrackSettingsDialogVisible: Ref<boolean> = ref(false);
 
     function toggleSequencerTrackSettingsDialog() {
