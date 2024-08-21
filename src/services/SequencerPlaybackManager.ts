@@ -44,15 +44,24 @@ export class SequencerPlaybackManager {
 
     private scheduleSequence(): void {
         this.sequenceID = Tone.getTransport().scheduleRepeat(time => {
-            this.sequencerStore.tracks.forEach((track, trackIndex) => {
-                const step: SequencerStep = track.steps[this.sequencerStore.currentStep];
-                if (step.active) {
-                    this.sequencerInstrumentManager.trackInstruments[trackIndex].triggerAttackRelease(step.note, this.stepDuration, time);
-                }
-            });
+            if (this.sequencerStore.currentStep < this.sequencerStore.numSteps) {
+                this.sequencerStore.tracks.forEach((track, trackIndex) => {
+                    const step: SequencerStep = track.steps[this.sequencerStore.currentStep];
+                    if (step.active) {
+                        this.sequencerInstrumentManager.trackInstruments[trackIndex].triggerAttackRelease(step.note, this.stepDuration, time);
+                    }
+                });
 
-            if (this.loopEnabled || this.sequencerStore.currentStep + 1 < this.sequencerStore.numSteps) {
-                this.sequencerStore.currentStep = (this.sequencerStore.currentStep + 1) % this.sequencerStore.numSteps;
+                // Advance the current step or handle the end of the sequence
+                if (this.loopEnabled || this.sequencerStore.currentStep + 1 < this.sequencerStore.numSteps) {
+                    this.sequencerStore.currentStep = (this.sequencerStore.currentStep + 1) % this.sequencerStore.numSteps;
+                } else {
+                    // Stop the sequence if looping is not enabled and we're at the last step
+                    this.sequencerStore.currentStep++;  // Increment to potentially go beyond numSteps to naturally stop
+                    if (this.sequencerStore.currentStep >= this.sequencerStore.numSteps) {
+                        this.stopSequence();
+                    }
+                }
             } else {
                 this.stopSequence();
             }
