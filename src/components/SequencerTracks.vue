@@ -6,27 +6,34 @@
 </template>
 <script setup lang="ts">
 import { storeToRefs } from 'pinia';
-import Track from '@/components/Track.vue';
-import { useSequencerStore } from '@/stores/sequencerStore';
-const { tracks } = storeToRefs(useSequencerStore());
-import { inject } from 'vue';
-import { sequencerInstrumentManagerKey, sequencerTrackManagerKey } from '@/utils/injection-keys';
+import { inject, markRaw } from 'vue';
+import { sequencerTrackManagerKey } from '@/utils/injection-keys';
 import { SequencerTrackManager } from '@/services/SequencerTrackManager';
-import { SequencerInstrumentManager } from '@/services/SequencerInstrumentManager';
+import { useSequencerStore } from '@/stores/sequencerStore';
 import { useContextMenuStore } from '@/stores/contextMenuStore';
 import { AppContextMenuItem } from '@/models/AppContextMenuItem';
 import { AddTrackCommand, RemoveTrackCommand, OpenTrackSettings } from '@/services/commands/SequencerCommands';
+import { AppDialogWindowItem } from '@/models/AppDialogWindowItem';
+import { ShowActiveComponentCommand } from '@/services/commands/DialogCommands';
+import Track from '@/components/Track.vue';
+import SequencerTrackSettingsDialogInstrumentsContent from '@/components/SequencerTrackSettingsDialogInstrumentsContent.vue';
+import SequencerTrackSettingsDialogEffectsContent from '@/components/SequencerTrackSettingsDialogEffectsContent.vue';
 
 const menuStore = useContextMenuStore();
+const { tracks } = storeToRefs(useSequencerStore());
 const trackManager = inject<SequencerTrackManager>(sequencerTrackManagerKey) as SequencerTrackManager;
-const instrumentManager = inject<SequencerInstrumentManager>(sequencerInstrumentManagerKey) as SequencerInstrumentManager;
 
 function handleContextMenu(event: MouseEvent) {
-    const items = [
+    const dialogWindowItems = [
+        new AppDialogWindowItem('Instruments', new ShowActiveComponentCommand(markRaw(SequencerTrackSettingsDialogInstrumentsContent))),
+        new AppDialogWindowItem('Effects', new ShowActiveComponentCommand(markRaw(SequencerTrackSettingsDialogEffectsContent))),
+    ];
+
+    const contextMenuItems = [
         new AppContextMenuItem('Add track', new AddTrackCommand(trackManager)),
         new AppContextMenuItem('Remove track', new RemoveTrackCommand(trackManager)),
-        new AppContextMenuItem('Track settings', new OpenTrackSettings()),
+        new AppContextMenuItem('Track settings', new OpenTrackSettings(dialogWindowItems, 0, 0, true)),
     ];
-    menuStore.showContextMenu(items, event.clientX, event.clientY);
+    menuStore.openContextMenu(contextMenuItems, event.clientX, event.clientY);
 }
 </script>
