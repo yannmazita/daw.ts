@@ -8,7 +8,7 @@ export const useContextMenuStore = defineStore('contextMenu', () => {
     const xPos: Ref<number> = ref(0);
     const yPos: Ref<number> = ref(0);
 
-    function showContextMenu(menuItems: AppContextMenuItem[], x: number, y: number) {
+    function openContextMenu(menuItems: AppContextMenuItem[], x: number, y: number) {
         visible.value = true;
         items.value = menuItems;
         xPos.value = x;
@@ -24,7 +24,7 @@ export const useContextMenuStore = defineStore('contextMenu', () => {
         visible,
         xPos,
         yPos,
-        showContextMenu,
+        openContextMenu,
         closeContextMenu,
     }
 });
