@@ -8,11 +8,17 @@ function handleClick(e: MouseEvent, el: HTMLElement, binding: DirectiveBinding) 
     }
 }
 
+
 export default {
-    mounted(el: HTMLElement, binding: DirectiveBinding) {
-        document.addEventListener('click', (e) => handleClick(e, el, binding));
+    beforeMount(el: HTMLElement, binding: DirectiveBinding<any>) {
+        // Attach an event listener to the document
+        el.clickOutsideEvent = function(event: MouseEvent) {
+            handleClick(event, el, binding);
+        };
+        document.addEventListener('click', el.clickOutsideEvent);
     },
-    unmounted(el: HTMLElement, binding: DirectiveBinding) {
-        document.removeEventListener('click', (e) => handleClick(e, el, binding));
+    unmounted(el: HTMLElement) {
+        // Remove the event listener from the document
+        document.removeEventListener('click', el.clickOutsideEvent);
     }
 };
