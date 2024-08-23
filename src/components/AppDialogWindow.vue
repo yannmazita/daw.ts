@@ -1,6 +1,5 @@
 <template>
-    <div v-if="dialog.visible" id="dialog-window-container"
-        :style="dialog.centered ? styleObjectCentered : styleObjectNotCentered" class="fixed z-50">
+    <div v-if="dialog.visible" id="dialog-window-container" :style="styleObject" class="fixed z-40">
         <div id="dialog-window-list-container">
             <ul>
                 <li v-for="(item, index) in dialog.items" :key="index" @click="item.performAction()"
@@ -16,18 +15,12 @@
 </template>
 <script setup lang="ts">
 import { useDialogStore } from '@/stores/dialogStore';
-import { computed, } from 'vue';
+import { computed } from 'vue';
 
 const dialog = useDialogStore();
 
-const styleObjectNotCentered = computed(() => ({
+const styleObject = computed(() => ({
     top: `${dialog.yPos}px`,
     left: `${dialog.xPos}px`,
-}));
-
-const styleObjectCentered = computed(() => ({
-    top: '50%',
-    left: '50%',
-    transform: 'translate(-50%, -50%)',
 }));
 </script>

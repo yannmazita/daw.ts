@@ -8,6 +8,8 @@ export const useDialogStore = defineStore('dialog', () => {
     const activeComponent: Ref<Component | null> = ref(null);
     const xPos: Ref<number> = ref(0);
     const yPos: Ref<number> = ref(0);
+    const adjustX: Ref<number> = ref(0);
+    const adjustY: Ref<number> = ref(0);
     const centered: Ref<boolean> = ref(false);
 
     /**
@@ -30,11 +32,17 @@ export const useDialogStore = defineStore('dialog', () => {
      * @param centered A boolean value that indicates whether the dialog window should be centered.
      */
     function openDialog(dialogItems: AppDialogWindowItem[], x: number, y: number, centered: boolean): void {
-        visible.value = true;
         if (!centered) {
             xPos.value = x;
             yPos.value = y;
         }
+        else {
+            xPos.value = window.innerWidth / 2;
+            yPos.value = window.innerHeight / 2;
+            //adjustX.value = xPos - [dialog width];
+            //adjustY.value = yPos - [dialog height];
+        }
+        visible.value = true;
         items.value = dialogItems;
     }
 
