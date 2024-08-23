@@ -14,7 +14,7 @@
     </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { useDialogStore } from '@/stores/dialogStore';
 import { computed, nextTick, watch, onMounted } from 'vue';
 
