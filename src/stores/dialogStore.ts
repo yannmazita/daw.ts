@@ -8,8 +8,8 @@ export const useDialogStore = defineStore('dialog', () => {
     const activeComponent: Ref<Component | null> = ref(null);
     const xPos: Ref<number> = ref(0);
     const yPos: Ref<number> = ref(0);
-    const adjustX: Ref<number> = ref(0);
-    const adjustY: Ref<number> = ref(0);
+    //const adjustX: Ref<number> = ref(0);
+    //const adjustY: Ref<number> = ref(0);
     const centered: Ref<boolean> = ref(false);
 
     /**
@@ -19,6 +19,15 @@ export const useDialogStore = defineStore('dialog', () => {
      */
     function setActiveComponent(component: Component): void {
         activeComponent.value = component;
+    }
+
+    function adjustDialogPosition(elementId: string) {
+        const dialogElement = document.getElementById(elementId);
+        if (dialogElement) {
+            const rect = dialogElement.getBoundingClientRect();
+            xPos.value -= rect.width / 2;
+            yPos.value -= rect.height / 2;
+        }
     }
 
     /**
@@ -33,14 +42,14 @@ export const useDialogStore = defineStore('dialog', () => {
      */
     function openDialog(dialogItems: AppDialogWindowItem[], x: number, y: number, centered: boolean): void {
         if (!centered) {
+            centered = false;
             xPos.value = x;
             yPos.value = y;
         }
         else {
+            centered = true;
             xPos.value = window.innerWidth / 2;
             yPos.value = window.innerHeight / 2;
-            //adjustX.value = xPos - [dialog width];
-            //adjustY.value = yPos - [dialog height];
         }
         visible.value = true;
         items.value = dialogItems;
@@ -64,5 +73,6 @@ export const useDialogStore = defineStore('dialog', () => {
         openDialog,
         closeDialog,
         centered,
+        adjustDialogPosition,
     };
 });
