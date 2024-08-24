@@ -11,7 +11,10 @@ export default {
             colors: {
                 'ts-blue': '#5bcefa',
                 'ts-pink': '#f5a9b8',
-            }
+            },
+            translate: {
+                'half-negative': '-50%',
+            },
         },
         screens: {
             'xs': '430px',
