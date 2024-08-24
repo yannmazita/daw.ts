@@ -3,12 +3,13 @@ import { Component, Ref, ref } from 'vue';
 import { AppDialogWindowItem } from '@/models/AppDialogWindowItem';
 
 export const useDialogStore = defineStore('dialog', () => {
-    const items = ref<AppDialogWindowItem[]>([]);
-    const visible = ref(false);
+    const items: Ref<AppDialogWindowItem[]> = ref([]);
+    const visible: Ref<boolean> = ref(false);
     const activeComponent: Ref<Component | null> = ref(null);
-    const xPos = ref(0);
-    const yPos = ref(0);
-    const centered = ref(false);
+    const xPos: Ref<number> = ref(0);
+    const yPos: Ref<number> = ref(0);
+    const centered: Ref<boolean> = ref(false);
+    const title: Ref<string> = ref('');
 
     function setActiveComponent(component: Component): void {
         activeComponent.value = component;
@@ -19,7 +20,8 @@ export const useDialogStore = defineStore('dialog', () => {
         yPos.value = y;
     }
 
-    function openDialog(dialogItems: AppDialogWindowItem[], x: number, y: number, shouldBeCentered: boolean) {
+    function openDialog(dialogTitle: string, dialogItems: AppDialogWindowItem[], x: number, y: number, shouldBeCentered: boolean) {
+        title.value = dialogTitle;
         items.value = dialogItems;
         centered.value = shouldBeCentered;
         visible.value = true;
@@ -36,6 +38,8 @@ export const useDialogStore = defineStore('dialog', () => {
     function closeDialog() {
         visible.value = false;
         centered.value = false;
+        items.value = [];
+        activeComponent.value = null;
     }
 
     return {
@@ -48,6 +52,7 @@ export const useDialogStore = defineStore('dialog', () => {
         setActiveComponent,
         setAdjustedPosition,
         openDialog,
-        closeDialog
+        closeDialog,
+        title,
     };
 });

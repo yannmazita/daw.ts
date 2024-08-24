@@ -32,7 +32,7 @@ function handleContextMenu(event: MouseEvent) {
     const contextMenuItems = [
         new AppContextMenuItem('Add track', new AddTrackCommand(trackManager)),
         new AppContextMenuItem('Remove track', new RemoveTrackCommand(trackManager)),
-        new AppContextMenuItem('Track settings', new OpenTrackSettings(dialogWindowItems, 0, 0, true)),
+        new AppContextMenuItem('Track settings', new OpenTrackSettings("Track settings", dialogWindowItems, 0, 0, true)),
     ];
     menuStore.openContextMenu(contextMenuItems, event.clientX, event.clientY);
 }
