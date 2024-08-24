@@ -42,7 +42,7 @@ export class SequencerInstrumentManager {
     }
 
     public setInstrumentForTrack(trackIndex: number, instrumentName: InstrumentName) {
-        if (trackIndex >= 0 && trackIndex < this.trackInstruments.length) {
+        if (trackIndex >= 0 && trackIndex < this.trackInstruments.length && this.instrumentPool[instrumentName]) {
             this.trackInstruments[trackIndex] = this.instrumentPool[instrumentName];
         }
     }
