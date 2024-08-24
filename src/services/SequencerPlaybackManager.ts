@@ -2,6 +2,7 @@ import * as Tone from 'tone';
 import { SequencerInstrumentManager } from '@/services/SequencerInstrumentManager';
 import { useSequencerStore } from '@/stores/sequencerStore';
 import { SequencerStep } from '@/models/SequencerModels';
+import { InstrumentName } from '@/utils/types';
 
 export class SequencerPlaybackManager {
     private sequencerStore = useSequencerStore();
@@ -48,7 +49,12 @@ export class SequencerPlaybackManager {
                 this.sequencerStore.tracks.forEach((track, trackIndex) => {
                     const step: SequencerStep = track.steps[this.sequencerStore.currentStep];
                     if (step.active) {
-                        this.sequencerInstrumentManager.trackInstruments[trackIndex].triggerAttackRelease(step.note, this.stepDuration, time);
+                        if (this.sequencerInstrumentManager.trackInstruments[trackIndex] === this.sequencerInstrumentManager.instrumentPool[InstrumentName.NoiseSynth]) {
+                            this.sequencerInstrumentManager.trackInstruments[trackIndex].triggerAttackRelease(this.stepDuration, time);
+                        }
+                        else {
+                            this.sequencerInstrumentManager.trackInstruments[trackIndex].triggerAttackRelease(step.note, this.stepDuration, time);
+                        }
                     }
                 });
 
