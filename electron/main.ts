@@ -4,12 +4,15 @@ class Main {
     mainWindow: BrowserWindow | null = null;
 
     init() {
+        // eslint-disable-next-line @typescript-eslint/unbound-method
         app.on('ready', this.createWindow);
+        // eslint-disable-next-line @typescript-eslint/unbound-method
         app.on('window-all-closed', this.onWindowAllClosed);
+        // eslint-disable-next-line @typescript-eslint/unbound-method
         app.on('activate', this.onActivate);
     }
 
-    private createWindow(): void {
+    private async createWindow(): Promise<void> {
         this.mainWindow = new BrowserWindow({
             width: 800,
             height: 600,
@@ -18,7 +21,7 @@ class Main {
             }
         });
 
-        this.mainWindow.loadURL('http://localhost:5173');
+        await this.mainWindow.loadURL('http://localhost:5173');
         this.mainWindow.on('closed', () => {
             this.mainWindow = null;
         });
@@ -30,9 +33,9 @@ class Main {
         }
     }
 
-    private onActivate(): void {
+    private async onActivate(): Promise<void> {
         if (BrowserWindow.getAllWindows().length === 0) {
-            this.createWindow();
+            await this.createWindow();
         }
     }
 }
