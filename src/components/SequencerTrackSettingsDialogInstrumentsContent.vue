@@ -4,7 +4,7 @@
         <div class="flex flex-row justify-center w-full">
             <select v-model="selectedInstrument" class="select select-bordered select-sm w-full max-w-xs">
                 <option disabled value="">Select an instrument</option>
-                <option v-for="(instrument, name) in instrumentPool" :key="name" :value="name">
+                <option v-for="(_, name) in instrumentPool" :key="name" :value="name">
                     {{ name }}
                 </option>
             </select>
