@@ -7,7 +7,7 @@ import { DialogInstance } from '@/utils/interfaces';
 export const useDialogStore = defineStore('dialog', () => {
     const dialogs: Ref<DialogInstance[]> = ref([]);
 
-    function openDialog(id: string, dialogTitle: string, dialogItems: AppDialogWindowItem[], x: number, y: number, shouldBeCentered: boolean, context: any = {}): void {
+    function openDialog(id: string, dialogTitle: string, dialogItems: AppDialogWindowItem[], x: number, y: number, shouldBeCentered: boolean, context: unknown): void {
         dialogs.value.push({
             id,
             title: dialogTitle,
