@@ -1,4 +1,6 @@
 <template>
+    <!-- Context Menu Component -->
+    <!-- Displays a context menu at the specified position if visible. The menu items are interactable and can trigger specific actions. -->
     <div ref="contextMenu" v-if="menu.visible" id="app-context-menu-container" :style="styleObject"
         class="fixed z-50 bg-white shadow-lg border-gray-200 border p-2">
         <ul>
@@ -18,20 +20,24 @@ import { AppContextMenuItem } from '@/models/AppContextMenuItem';
 import { onClickOutside } from '@vueuse/core';
 import { ref, Ref } from 'vue';
 
+// Context menu state and reference to the menu element.
 const menu = useContextMenuStore();
 const contextMenu: Ref<HTMLElement | null> = ref(null);
 
+// Use onClickOutside from VueUse to close the context menu when clicking outside of it.
 onClickOutside(contextMenu, () => {
     menu.closeContextMenu();
 });
 
+// Compute the style object for positioning the context menu based on store values.
 const styleObject = computed(() => ({
-    top: `${menu.yPos}px`,
-    left: `${menu.xPos}px`,
+    top: `${menu.yPos}px`, // Vertical position from the store.
+    left: `${menu.xPos}px`, // Horizontal position from the store.
 }));
 
+// Handle clicking on a menu item by performing the action and closing the menu.
 function handleItemClick(item: AppContextMenuItem) {
-    item.performAction();
-    menu.closeContextMenu();
+    item.performAction(); // Trigger the associated action.
+    menu.closeContextMenu(); // Close the menu after action.
 }
 </script>

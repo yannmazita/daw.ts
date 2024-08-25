@@ -1,7 +1,9 @@
 <template>
+    <!-- Container for sequencer settings -->
     <div id="sequencer-settings-container" class="flex flex-row justify-center">
         <div class="flex flew-row">
-            <div class="">
+            <!-- Tracks input field -->
+            <div>
                 <span>
                     Tracks:
                 </span>
@@ -9,7 +11,8 @@
                     class="input input-bordered input-xs text-center w-10">
                 </AppInput>
             </div>
-            <div class="">
+            <!-- Steps input field -->
+            <div>
                 <span>
                     Steps:
                 </span>
@@ -17,7 +20,8 @@
                     class="input input-bordered input-xs text-center w-10">
                 </AppInput>
             </div>
-            <div class="">
+            <!-- BPM input field -->
+            <div>
                 <span>
                     BPM:
                 </span>
@@ -29,7 +33,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, inject, } from 'vue';
+import { computed, inject } from 'vue';
 import { storeToRefs } from 'pinia';
 import { sequencerPlaybackManagerKey, sequencerTrackManagerKey } from '@/utils/injection-keys';
 import { SequencerPlaybackManager } from '@/services/SequencerPlaybackManager';
@@ -41,6 +45,7 @@ const { numTracks, numSteps, bpm } = storeToRefs(useSequencerStore());
 const playbackManager = inject<SequencerPlaybackManager>(sequencerPlaybackManagerKey) as SequencerPlaybackManager;
 const trackManager = inject<SequencerTrackManager>(sequencerTrackManagerKey) as SequencerTrackManager;
 
+// Computed properties for inputs, with getters and setters for immediate updates
 const inputTracks = computed({
     get: () => numTracks.value,
     set: (val) => trackManager.setNumTracks(val)
