@@ -23,14 +23,19 @@ export const useDialogStore = defineStore('dialog', () => {
      * @param context Context or additional data associated with the dialog.
      */
     function openDialog(id: string, dialogTitle: string, dialogItems: AppDialogWindowItem[], x: number, y: number, shouldBeCentered: boolean, context: unknown): void {
+        const angle = dialogs.value.length * 0.5;   // Spiral angle increment per dialog
+        const distance = 20 * dialogs.value.length; // Distance from center increases
+        const offsetX = Math.cos(angle) * distance;
+        const offsetY = Math.sin(angle) * distance;
+
         dialogs.value.push({
             id,
             title: dialogTitle,
             items: dialogItems,
             visible: true,
             activeComponent: null,
-            xPos: shouldBeCentered ? window.innerWidth / 2 : x,
-            yPos: shouldBeCentered ? window.innerHeight / 2 : y,
+            xPos: shouldBeCentered ? window.innerWidth / 2 + offsetX : x,
+            yPos: shouldBeCentered ? window.innerHeight / 2 + offsetY : y,
             centered: shouldBeCentered,
             context
         });
