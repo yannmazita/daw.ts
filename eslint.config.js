@@ -12,7 +12,7 @@ export default tseslint.config(
     {
         languageOptions: {
             parserOptions: {
-                project: true,
+                project: ['./tsconfig.app.json', './tsconfig.node.json', './tsconfig.electron.json', './tsconfig.configs.json'],
                 sourceType: 'module',
             },
         },
@@ -20,4 +20,7 @@ export default tseslint.config(
             '@typescript-eslint': tsPlugin,
         },
     },
+    {
+        ignores: ['dist/'],
+    }
 );
