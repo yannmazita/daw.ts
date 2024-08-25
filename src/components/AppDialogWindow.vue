@@ -1,7 +1,7 @@
 <template>
     <!-- Multi-Dialog Container -->
     <!-- Iterates over multiple dialog instances and renders each one based on visibility and context. -->
-    <div v-for="(dialog, index) in dialogs" :key="index">
+    <div v-for="(dialog, index) in dialogs" :key="index" @click="setActiveDialog(dialog.id)">
         <div ref="dialogWindow" v-if="dialog.visible" id="dialog-window-container"
             :style="getStyle(dialog as DialogInstance)" class="fixed z-40 bg-white w-3/6 h-2/6 p-2 flex flex-col">
             <!-- Dialog Title Bar -->
@@ -35,7 +35,7 @@ import { useDialogStore } from '@/stores/dialogStore';
 import AppTitleBar from '@/components/AppTitleBar.vue';
 import { DialogInstance } from '@/utils/interfaces';
 
-const { dialogs, closeDialog } = useDialogStore();
+const { dialogs, setActiveDialog, closeDialog } = useDialogStore();
 
 // Calculates the CSS styles for positioning each dialog based on whether it is centered.
 function getStyle(dialog: DialogInstance) {
@@ -48,7 +48,8 @@ function getStyle(dialog: DialogInstance) {
             top: '50%',
             left: '50%',
             // Combine translation values for the offset
-            transform: `translate(calc(-50% + ${offsetX}px), calc(-50% + ${offsetY}px))`
+            transform: `translate(calc(-50% + ${offsetX}px), calc(-50% + ${offsetY}px))`,
+            zIndex: dialog.zIndex
         };
     } else {
         return {
