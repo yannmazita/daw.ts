@@ -13,7 +13,7 @@
                     </ul>
                 </div>
                 <div id="dialog-window-content-container" class="col-span-2 border border-ts-blue ml-1">
-                    <component :is="dialog.activeComponent"></component>
+                    <component :is="dialog.activeComponent" :context="dialog.context"></component>
                 </div>
             </div>
         </div>
