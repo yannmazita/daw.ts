@@ -1,15 +1,25 @@
+// File: SequencerPlaybackManager.ts
+// Description: Manages the playback of sequences within the sequencer, controlling transport and handling sequencing logic.
+
 import * as Tone from 'tone';
 import { SequencerInstrumentManager } from '@/services/SequencerInstrumentManager';
 import { useSequencerStore } from '@/stores/sequencerStore';
 import { SequencerStep } from '@/models/SequencerModels';
 import { InstrumentName } from '@/utils/types';
 
+/**
+ * Manages playback operations for the sequencer, including play, pause, stop, and sequence scheduling.
+ */
 export class SequencerPlaybackManager {
     private sequencerStore = useSequencerStore();
     private stepDuration = '16n';
     public loopEnabled = false;
     private sequenceID: number | null = null;
 
+    /**
+     * Constructs the SequencerPlaybackManager.
+     * @param sequencerInstrumentManager The instrument manager to interact with during playback.
+     */
     constructor(private sequencerInstrumentManager: SequencerInstrumentManager) { }
 
     public playSequence(): void {
@@ -43,6 +53,9 @@ export class SequencerPlaybackManager {
         this.sequencerStore.currentStep = 0;
     }
 
+    /**
+     * Schedules the sequence for playback using Tone.js' Transport.
+     */
     private scheduleSequence(): void {
         this.sequenceID = Tone.getTransport().scheduleRepeat(time => {
             if (this.sequencerStore.currentStep < this.sequencerStore.numSteps) {
@@ -74,6 +87,10 @@ export class SequencerPlaybackManager {
         }, this.stepDuration);
     }
 
+    /**
+     * Sets the beats per minute (BPM) for the sequence playback.
+     * @param newBpm The new BPM value to set.
+     */
     public setBpm(newBpm: number): void {
         Tone.getTransport().bpm.value = newBpm;
         this.sequencerStore.bpm = newBpm;
