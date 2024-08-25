@@ -1,6 +1,6 @@
 <template>
     <div v-for="(dialog, index) in dialogs" :key="index">
-        <div ref="dialogWindow" v-if="dialog.visible" id="dialog-window-container" :style="getStyle(dialog)"
+        <div ref="dialogWindow" v-if="dialog.visible" id="dialog-window-container" :style="getStyle(dialog as DialogInstance)"
             class="fixed z-40 bg-white w-3/6 h-2/6 p-2 flex flex-col">
             <AppTitleBar @close="() => handleClose(dialog.id)" :title="dialog.title" />
             <div class="pt-2 h-full w-full grid grid-cols-3">

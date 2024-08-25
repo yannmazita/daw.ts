@@ -1,7 +1,10 @@
 {
   "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.configs.tsbuildinfo",
     "target": "ESNext",
     "module": "ESNext",
+    "moduleResolution": "node",
+    "allowSyntheticDefaultImports": true,
     "strict": true,
     "skipLibCheck": true,
     "noEmit": true,

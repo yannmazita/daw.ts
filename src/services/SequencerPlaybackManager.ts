@@ -6,8 +6,8 @@ import { InstrumentName } from '@/utils/types';
 
 export class SequencerPlaybackManager {
     private sequencerStore = useSequencerStore();
-    private stepDuration: string = '16n';
-    public loopEnabled: boolean = false;
+    private stepDuration = '16n';
+    public loopEnabled = false;
     private sequenceID: number | null = null;
 
     constructor(private sequencerInstrumentManager: SequencerInstrumentManager) { }

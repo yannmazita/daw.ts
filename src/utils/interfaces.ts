@@ -21,5 +21,5 @@ export interface DialogInstance {
     yPos: number;
     centered: boolean;
     title: string;
-    context: any;
+    context: unknown;
 }

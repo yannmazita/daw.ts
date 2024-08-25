@@ -8,7 +8,6 @@ import HomeView from '@/views/HomeView.vue';
 import SettingsView from '@/views/SettingsView.vue';
 import TrackerView from '@/views/TrackerView.vue';
 import SequencerView from '@/views/SequencerView.vue';
-import ClickOutside from '@/utils/directives/ClickOutside';
 
 const pinia = createPinia()
 const router = createRouter({
@@ -37,4 +36,4 @@ const router = createRouter({
     ]
 })
 
-createApp(App).use(router).use(pinia).directive('click-outside', ClickOutside).mount('#app')
+createApp(App).use(router).use(pinia).mount('#app')
