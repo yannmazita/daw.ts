@@ -1,5 +1,4 @@
 import daisyui from 'daisyui';
-import defaultTheme from 'tailwindcss/defaultTheme';
 
 export default {
     content: [
@@ -16,10 +15,6 @@ export default {
                 'half-negative': '-50%',
             },
         },
-        screens: {
-            'xs': '430px',
-            ...defaultTheme.screens,
-        }
     },
     plugins: [
         daisyui,
