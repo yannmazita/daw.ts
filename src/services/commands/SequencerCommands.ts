@@ -32,9 +32,9 @@ export class RemoveTrackCommand implements Command {
 
 export class OpenTrackSettings implements Command {
     private dialogStore = useDialogStore();
-    constructor(private dialogTitle: string, private dialogItems: AppDialogWindowItem[], private xPos: number, private yPos: number, private shouldBeCentered: boolean) { }
+    constructor(private id: string, private dialogTitle: string, private dialogItems: AppDialogWindowItem[], private xPos: number, private yPos: number, private shouldBeCentered: boolean) { }
     execute() {
-        this.dialogStore.openDialog(this.dialogTitle, this.dialogItems, this.xPos, this.yPos, this.shouldBeCentered);
+        this.dialogStore.openDialog(this.id, this.dialogTitle, this.dialogItems, this.xPos, this.yPos, this.shouldBeCentered);
     }
     undo() { }
     redo() { }

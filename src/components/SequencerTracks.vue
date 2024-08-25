@@ -15,6 +15,7 @@ import { AppContextMenuItem } from '@/models/AppContextMenuItem';
 import { AddTrackCommand, RemoveTrackCommand, OpenTrackSettings } from '@/services/commands/SequencerCommands';
 import { AppDialogWindowItem } from '@/models/AppDialogWindowItem';
 import { ShowActiveComponentCommand } from '@/services/commands/DialogCommands';
+import {v4 as uuidv4} from 'uuid';
 import Track from '@/components/Track.vue';
 import SequencerTrackSettingsDialogInstrumentsContent from '@/components/SequencerTrackSettingsDialogInstrumentsContent.vue';
 import SequencerTrackSettingsDialogEffectsContent from '@/components/SequencerTrackSettingsDialogEffectsContent.vue';
@@ -24,15 +25,16 @@ const { tracks } = storeToRefs(useSequencerStore());
 const trackManager = inject<SequencerTrackManager>(sequencerTrackManagerKey) as SequencerTrackManager;
 
 function handleContextMenu(event: MouseEvent) {
+    const dialogId = uuidv4();
     const dialogWindowItems = [
-        new AppDialogWindowItem('Instruments', new ShowActiveComponentCommand(markRaw(SequencerTrackSettingsDialogInstrumentsContent))),
-        new AppDialogWindowItem('Effects', new ShowActiveComponentCommand(markRaw(SequencerTrackSettingsDialogEffectsContent))),
+        new AppDialogWindowItem('Instruments', new ShowActiveComponentCommand(dialogId, markRaw(SequencerTrackSettingsDialogInstrumentsContent))),
+        new AppDialogWindowItem('Effects', new ShowActiveComponentCommand(dialogId, markRaw(SequencerTrackSettingsDialogEffectsContent))),
     ];
 
     const contextMenuItems = [
         new AppContextMenuItem('Add track', new AddTrackCommand(trackManager)),
         new AppContextMenuItem('Remove track', new RemoveTrackCommand(trackManager)),
-        new AppContextMenuItem('Track settings', new OpenTrackSettings("Track settings", dialogWindowItems, 0, 0, true)),
+        new AppContextMenuItem('Track settings', new OpenTrackSettings(dialogId, "Track Settings", dialogWindowItems, event.clientX, event.clientY, true)),
     ];
     menuStore.openContextMenu(contextMenuItems, event.clientX, event.clientY);
 }

@@ -1,58 +1,43 @@
 import { defineStore } from 'pinia';
-import { Component, Ref, ref } from 'vue';
+import { Component, ref, Ref } from 'vue';
 import { AppDialogWindowItem } from '@/models/AppDialogWindowItem';
+import { DialogInstance } from '@/utils/interfaces';
+
 
 export const useDialogStore = defineStore('dialog', () => {
-    const items: Ref<AppDialogWindowItem[]> = ref([]);
-    const visible: Ref<boolean> = ref(false);
-    const activeComponent: Ref<Component | null> = ref(null);
-    const xPos: Ref<number> = ref(0);
-    const yPos: Ref<number> = ref(0);
-    const centered: Ref<boolean> = ref(false);
-    const title: Ref<string> = ref('');
+    const dialogs: Ref<DialogInstance[]> = ref([]);
 
-    function setActiveComponent(component: Component): void {
-        activeComponent.value = component;
+    function openDialog(id: string, dialogTitle: string, dialogItems: AppDialogWindowItem[], x: number, y: number, shouldBeCentered: boolean): void {
+        dialogs.value.push({
+            id,
+            title: dialogTitle,
+            items: dialogItems,
+            visible: true,
+            activeComponent: null,
+            xPos: shouldBeCentered ? window.innerWidth / 2 : x,
+            yPos: shouldBeCentered ? window.innerHeight / 2 : y,
+            centered: shouldBeCentered,
+        });
     }
 
-    function setAdjustedPosition(x: number, y: number) {
-        xPos.value = x;
-        yPos.value = y;
-    }
-
-    function openDialog(dialogTitle: string, dialogItems: AppDialogWindowItem[], x: number, y: number, shouldBeCentered: boolean) {
-        title.value = dialogTitle;
-        items.value = dialogItems;
-        centered.value = shouldBeCentered;
-        visible.value = true;
-        if (!shouldBeCentered) {
-            xPos.value = x;
-            yPos.value = y;
-        } else {
-            // Will be adjusted after rendering
-            xPos.value = x;
-            yPos.value = y;
+    function closeDialog(id: string) {
+        const index = dialogs.value.findIndex(d => d.id === id);
+        if (index !== -1) {
+            dialogs.value.splice(index, 1);
         }
     }
 
-    function closeDialog() {
-        visible.value = false;
-        centered.value = false;
-        items.value = [];
-        activeComponent.value = null;
+    function setActiveComponent(id: string, component: Component) {
+        const dialog = dialogs.value.find(d => d.id === id);
+        if (dialog) {
+            dialog.activeComponent = component;
+        }
     }
 
     return {
-        items,
-        visible,
-        activeComponent,
-        xPos,
-        yPos,
-        centered,
-        setActiveComponent,
-        setAdjustedPosition,
+        dialogs,
         openDialog,
         closeDialog,
-        title,
+        setActiveComponent
     };
 });

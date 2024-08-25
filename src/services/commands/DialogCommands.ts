@@ -3,11 +3,11 @@ import { useDialogStore } from '@/stores/dialogStore';
 import { Component } from 'vue';
 
 export class ShowActiveComponentCommand implements Command {
-    constructor(private activeComponent: Component) { }
+    constructor(private id: string, private activeComponent: Component) { }
 
     execute() {
         const dialogStore = useDialogStore();
-        dialogStore.setActiveComponent(this.activeComponent);
+        dialogStore.setActiveComponent(this.id, this.activeComponent);
     }
     undo() { }
     redo() { }
