@@ -68,7 +68,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, defineProps, defineEmits } from 'vue';
+import { defineProps, defineEmits } from 'vue';
 import { useWindow } from '@/components/AppWindowManager/useWindow'
 import { WindowProps } from '@/components/AppWindowManager/types';
 import AppResizableContainer from '@/components/AppResizableContainer.vue';
