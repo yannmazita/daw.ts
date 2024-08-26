@@ -43,7 +43,7 @@
 */
 
 <template>
-    <AppResizableContainer v-if="isActiveData" style=" overflow-wrap: break-word;"
+    <AppResizableContainer v-if="isActiveData" style="overflow-wrap: break-word;"
         class="grid grid-rows-[30px_1fr] border border-black shadow-inner box-content text-white" :width="widthData"
         :height="heightData" :left="leftData" :top="topData" :minWidth="minWidthData" :min-height="minHeightData"
         :maxWidth="maxWidthData" :maxHeight="maxHeightData" :active="isResizingData" :fitParent="true"
@@ -67,231 +67,148 @@
     </AppResizableContainer>
 </template>
 
-<script>
-import {
-    defineComponent,
-    toRefs,
-    ref,
-    watch,
-    onMounted,
-} from "vue";
+<script setup lang="ts">
+import { ref, watch, onMounted, defineProps, defineEmits } from 'vue';
 import AppResizableContainer from '@/components/AppResizableContainer.vue';
-export default defineComponent({
-    components: { AppResizableContainer },
-    props: {
-        top: {
-            type: Number,
-        },
-        left: {
-            type: Number,
-        },
-        width: {
-            type: Number,
-        },
-        height: {
-            type: Number,
-        },
-        minWidth: {
-            type: Number,
-        },
-        minHeight: {
-            type: Number,
-        },
-        isResizing: {
-            type: Array,
-        },
-        isActive: {
-            type: Boolean,
-        },
-        titleIcon: {
-            type: String,
-        },
-        isMaximized: {
-            type: Boolean,
-        },
-        maxWidth: {
-            type: Number,
-        },
-        maxHeight: {
-            type: Number,
-        },
-        title: {
-            type: String,
-        },
-        windowInnerWidth: {
-            type: Number,
-        },
-        windowId: {
-            type: String,
-        },
-        isButtonMaximized: {
-            type: Boolean,
-        },
-        isButtonMinimized: {
-            type: Boolean,
-        },
-    },
-    setup(props, ctx) {
-        const {
-            top,
-            left,
-            width,
-            height,
-            minWidth,
-            minHeight,
-            isResizing,
-            isActive,
-            maxWidth,
-            maxHeight,
-            title,
-            titleIcon,
-            windowInnerWidth,
-            windowId,
-            isMaximized,
-            isButtonMaximized,
-            isButtonMinimized,
-        } = toRefs(props);
-        const topData = ref(top.value);
-        const leftData = ref(left.value);
-        const widthData = ref(width.value);
-        const heightData = ref(height.value);
-        const minWidthData = ref(minWidth.value);
-        const minHeightData = ref(minHeight.value);
-        const isResizingData = ref(isResizing.value);
-        const isActiveData = ref(isActive.value);
-        const isMaximizedData = ref(isMaximized.value);
-        const maxWidthData = ref(maxWidth.value);
-        const maxHeightData = ref(maxHeight.value);
-        const titleData = ref(title.value);
-        const windowInnerWidthData = ref(windowInnerWidth.value);
-        const windowIdData = ref(windowId.value);
-        const titleIconData = ref(titleIcon.value);
-        const isButtonMaximizedData = ref(isButtonMaximized.value);
-        const isButtonMinimizedData = ref(isButtonMinimized.value);
-        const buttonsCol = ref(1);
-        const buttonAreaWidth = ref(0);
-        const buttonCol = () => {
-            buttonsCol.value = 1;
-            if (isButtonMaximizedData.value) {
-                buttonsCol.value++;
-            }
-            if (isButtonMinimizedData.value) {
-                buttonsCol.value++;
-            }
-            buttonAreaWidth.value = buttonsCol.value * 46.6;
-        };
-        const endDrag = (data) => {
-            leftData.value = data.left;
-        };
-        const endResize = (data) => {
-            widthData.value = data.width;
-        };
-        const minimize = () => {
-            ctx.emit("clickMin", windowIdData.value);
-        };
-        const activeMouse = () => {
-            ctx.emit("clickWindow", windowIdData.value);
-        };
-        const maximize = () => {
-            if (isMaximizedData.value) {
-                isMaximizedData.value = false;
-            } else {
-                isMaximizedData.value = true;
-            }
-        };
-        const close = () => {
-            ctx.emit("clickDestroy", windowIdData.value);
-        };
-        watch(windowInnerWidth, (newValue) => {
-            windowInnerWidthData.value = newValue;
-            if (leftData.value + widthData.value > windowInnerWidthData.value) {
-                leftData.value = windowInnerWidthData.value - widthData.value;
-            }
-        });
-        watch(top, (newValue) => {
-            topData.value = newValue;
-        });
-        watch(left, (newValue) => {
-            leftData.value = newValue;
-        });
-        watch(width, (newValue) => {
-            widthData.value = newValue;
-        });
-        watch(height, (newValue) => {
-            heightData.value = newValue;
-        });
-        watch(minWidth, (newValue) => {
-            minWidthData.value = newValue;
-        });
-        watch(minHeight, (newValue) => {
-            minHeightData.value = newValue;
-        });
-        watch(isResizing, (newValue) => {
-            isResizingData.value = newValue;
-        });
-        watch(isActive, (newValue) => {
-            isActiveData.value = newValue;
-        });
-        watch(isMaximized, (newValue) => {
-            isMaximizedData.value = newValue;
-        });
-        watch(maxWidth, (newValue) => {
-            maxWidthData.value = newValue;
-        });
-        watch(maxHeight, (newValue) => {
-            maxHeightData.value = newValue;
-        });
-        watch(title, (newValue) => {
-            titleData.value = newValue;
-        });
-        watch(titleIcon, (newValue) => {
-            titleIconData.value = newValue;
-        }),
-            watch(windowId, (newValue) => {
-                windowIdData.value = newValue;
-            });
-        watch(isButtonMaximized, (newValue) => {
-            isButtonMaximizedData.value = newValue;
-            buttonCol();
-        });
-        watch(isButtonMinimized, (newValue) => {
-            isButtonMinimizedData.value = newValue;
-            buttonCol();
-        });
-        onMounted(() => {
-            buttonCol();
-        });
-        return {
-            topData,
-            leftData,
-            widthData,
-            heightData,
-            minWidthData,
-            minHeightData,
-            isResizingData,
-            isActiveData,
-            isMaximizedData,
-            maxWidthData,
-            maxHeightData,
-            titleData,
-            windowInnerWidthData,
-            windowIdData,
-            isButtonMaximizedData,
-            isButtonMinimizedData,
-            buttonsCol,
-            buttonAreaWidth,
-            titleIconData,
-            buttonCol,
-            endDrag,
-            endResize,
-            minimize,
-            activeMouse,
-            maximize,
-            close,
-        };
-    },
+
+interface Props {
+    top: number;
+    left: number;
+    width: number;
+    height: number;
+    minWidth: number;
+    minHeight: number;
+    isResizing: boolean[];
+    isActive: boolean;
+    titleIcon: string;
+    isMaximized: boolean;
+    maxWidth: number;
+    maxHeight: number;
+    title: string;
+    windowInnerWidth: number;
+    windowId: string;
+    isButtonMaximized: boolean;
+    isButtonMinimized: boolean;
+}
+
+const props = defineProps<Props>();
+const emit = defineEmits(['clickMin', 'clickWindow', 'clickDestroy']);
+
+const topData = ref(props.top);
+const leftData = ref(props.left);
+const widthData = ref(props.width);
+const heightData = ref(props.height);
+const minWidthData = ref(props.minWidth);
+const minHeightData = ref(props.minHeight);
+const isResizingData = ref(props.isResizing);
+const isActiveData = ref(props.isActive);
+const isMaximizedData = ref(props.isMaximized);
+const maxWidthData = ref(props.maxWidth);
+const maxHeightData = ref(props.maxHeight);
+const titleData = ref(props.title);
+const windowInnerWidthData = ref(props.windowInnerWidth);
+const windowIdData = ref(props.windowId);
+const titleIconData = ref(props.titleIcon);
+const isButtonMaximizedData = ref(props.isButtonMaximized);
+const isButtonMinimizedData = ref(props.isButtonMinimized);
+const buttonsCol = ref(1);
+const buttonAreaWidth = ref(0);
+
+const buttonCol = () => {
+    buttonsCol.value = 1;
+    if (isButtonMaximizedData.value) {
+        buttonsCol.value++;
+    }
+    if (isButtonMinimizedData.value) {
+        buttonsCol.value++;
+    }
+    buttonAreaWidth.value = buttonsCol.value * 46.6;
+};
+
+const endDrag = (data: { left: number }) => {
+    leftData.value = data.left;
+};
+
+const endResize = (data: { width: number }) => {
+    widthData.value = data.width;
+};
+
+const minimize = () => {
+    emit("clickMin", windowIdData.value);
+};
+
+const activeMouse = () => {
+    emit("clickWindow", windowIdData.value);
+};
+
+const maximize = () => {
+    isMaximizedData.value = !isMaximizedData.value;
+};
+
+const close = () => {
+    emit("clickDestroy", windowIdData.value);
+};
+
+watch(() => props.windowInnerWidth, (newValue) => {
+    windowInnerWidthData.value = newValue;
+    if (leftData.value + widthData.value > windowInnerWidthData.value) {
+        leftData.value = windowInnerWidthData.value - widthData.value;
+    }
+}, { immediate: true });
+watch(() => props.top, (newValue) => {
+    topData.value = newValue;
+}, { immediate: true });
+watch(() => props.left, (newValue) => {
+    leftData.value = newValue;
+}, { immediate: true });
+watch(() => props.width, (newValue) => {
+    widthData.value = newValue;
+}, { immediate: true });
+watch(() => props.height, (newValue) => {
+    heightData.value = newValue;
+}, { immediate: true });
+watch(() => props.minWidth, (newValue) => {
+    minWidthData.value = newValue;
+}, { immediate: true });
+watch(() => props.minHeight, (newValue) => {
+    minHeightData.value = newValue;
+}, { immediate: true });
+watch(() => props.maxWidth, (newValue) => {
+    maxWidthData.value = newValue;
+}, { immediate: true });
+watch(() => props.maxHeight, (newValue) => {
+    maxHeightData.value = newValue;
+}, { immediate: true });
+watch(() => props.isResizing, (newValue) => {
+    isResizingData.value = newValue;
+}, { immediate: true });
+watch(() => props.isActive, (newValue) => {
+    isActiveData.value = newValue;
+}, { immediate: true });
+watch(() => props.isMaximized, (newValue) => {
+    isMaximizedData.value = newValue;
+}, { immediate: true });
+watch(() => props.title, (newValue) => {
+    titleData.value = newValue;
+}, { immediate: true });
+watch(() => props.titleIcon, (newValue) => {
+    titleIconData.value = newValue;
+}, { immediate: true });
+watch(() => props.isButtonMaximized, (newValue) => {
+    isButtonMaximizedData.value = newValue;
+    buttonCol();
+}, { immediate: true });
+watch(() => props.isButtonMinimized, (newValue) => {
+    isButtonMinimizedData.value = newValue;
+    buttonCol();
+}, { immediate: true });
+
+
+onMounted(() => {
+    buttonCol();
 });
 </script>
+
 <style lang="css" scoped>
 @import '@/css/windows10.css';
 </style>
