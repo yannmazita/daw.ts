@@ -43,60 +43,27 @@
 */
 
 
-<template>
-    <div ref="parent" class="resizable-component" :style="style">
-        <slot />
-        <div v-for="el in active" v-show="!maximize" :key="el" :class="'resizable-' + el" />
-    </div>
-</template>
+export interface ResizableProps {
+    width?: number | string;
+    minWidth?: number;
+    maxWidth?: number;
+    height?: number | string;
+    minHeight?: number;
+    maxHeight?: number;
+    left?: number | string;
+    top?: number | string;
+    active?: ("r" | "rb" | "b" | "lb" | "l" | "lt" | "t" | "rt")[];
+    fitParent?: boolean;
+    dragSelector?: string;
+    maximize?: boolean;
+    disableAttributes?: ("l" | "t" | "w" | "h")[];
+}
 
-<script setup lang="ts">
-import { computed } from 'vue';
-import { useResizable } from '@/components/AppResizableContainer/useResizable';
-import { ResizableProps, ResizeEventData } from '@/components/AppResizableContainer/types';
-
-const props = withDefaults(defineProps<ResizableProps>(), {
-    width: undefined,
-    minWidth: 0,
-    maxWidth: undefined,
-    height: undefined,
-    minHeight: 0,
-    maxHeight: undefined,
-    left: 0,
-    top: 0,
-    active: () => ["r", "rb", "b", "lb", "l", "lt", "t", "rt"],
-    fitParent: false,
-    dragSelector: undefined,
-    maximize: false,
-    disableAttributes: () => [],
-});
-
-const emit = defineEmits<{
-    (e: 'mount'): void
-    (e: 'destroy'): void
-    (e: 'resize:start', data: ResizeEventData): void
-    (e: 'resize:move', data: ResizeEventData): void
-    (e: 'resize:end', data: ResizeEventData): void
-    (e: 'drag:start', data: ResizeEventData): void
-    (e: 'drag:move', data: ResizeEventData): void
-    (e: 'drag:end', data: ResizeEventData): void
-    (e: 'maximize', data: { state: boolean }): void
-}>();
-
-const {
-    parent,
-    style,
-    handleMove,
-    handleDown,
-    handleUp,
-    emitEvent,
-} = useResizable(props, emit);
-
-// Expose events
-defineExpose({
-    onMount: () => emitEvent('mount'),
-    onDestroy: () => emitEvent('destroy'),
-});
-</script>
-
-<style src="@/components/AppResizableContainer/styles.css" scoped></style>
+export interface ResizeEventData {
+    eventName: string;
+    left: number | string;
+    top: number | string;
+    width: number | string;
+    height: number | string;
+    cmp: any;
+}

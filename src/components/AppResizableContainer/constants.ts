@@ -43,60 +43,21 @@
 */
 
 
-<template>
-    <div ref="parent" class="resizable-component" :style="style">
-        <slot />
-        <div v-for="el in active" v-show="!maximize" :key="el" :class="'resizable-' + el" />
-    </div>
-</template>
+export const ELEMENT_MASK = {
+    "resizable-r": { bit: 0b0001, cursor: "e-resize" },
+    "resizable-rb": { bit: 0b0011, cursor: "se-resize" },
+    "resizable-b": { bit: 0b0010, cursor: "s-resize" },
+    "resizable-lb": { bit: 0b0110, cursor: "sw-resize" },
+    "resizable-l": { bit: 0b0100, cursor: "w-resize" },
+    "resizable-lt": { bit: 0b1100, cursor: "nw-resize" },
+    "resizable-t": { bit: 0b1000, cursor: "n-resize" },
+    "resizable-rt": { bit: 0b1001, cursor: "ne-resize" },
+    "drag-el": { bit: 0b1111, cursor: "pointer" },
+} as const;
 
-<script setup lang="ts">
-import { computed } from 'vue';
-import { useResizable } from '@/components/AppResizableContainer/useResizable';
-import { ResizableProps, ResizeEventData } from '@/components/AppResizableContainer/types';
-
-const props = withDefaults(defineProps<ResizableProps>(), {
-    width: undefined,
-    minWidth: 0,
-    maxWidth: undefined,
-    height: undefined,
-    minHeight: 0,
-    maxHeight: undefined,
-    left: 0,
-    top: 0,
-    active: () => ["r", "rb", "b", "lb", "l", "lt", "t", "rt"],
-    fitParent: false,
-    dragSelector: undefined,
-    maximize: false,
-    disableAttributes: () => [],
-});
-
-const emit = defineEmits<{
-    (e: 'mount'): void
-    (e: 'destroy'): void
-    (e: 'resize:start', data: ResizeEventData): void
-    (e: 'resize:move', data: ResizeEventData): void
-    (e: 'resize:end', data: ResizeEventData): void
-    (e: 'drag:start', data: ResizeEventData): void
-    (e: 'drag:move', data: ResizeEventData): void
-    (e: 'drag:end', data: ResizeEventData): void
-    (e: 'maximize', data: { state: boolean }): void
-}>();
-
-const {
-    parent,
-    style,
-    handleMove,
-    handleDown,
-    handleUp,
-    emitEvent,
-} = useResizable(props, emit);
-
-// Expose events
-defineExpose({
-    onMount: () => emitEvent('mount'),
-    onDestroy: () => emitEvent('destroy'),
-});
-</script>
-
-<style src="@/components/AppResizableContainer/styles.css" scoped></style>
+export const CALC_MASK = {
+    l: 0b0001,
+    t: 0b0010,
+    w: 0b0100,
+    h: 0b1000,
+} as const;
