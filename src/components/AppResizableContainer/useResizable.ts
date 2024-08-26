@@ -42,45 +42,20 @@
 * SOFTWARE.
 */
 
-import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
-import { ResizableProps, ResizeEventData } from './types';
+import { onMounted, watch } from 'vue';
+import { ResizableProps } from './types';
+import { useResizableState } from './useResizableState';
+import { useResizableStyle } from './useResizableStyle';
+import { useResizableEvents } from './useResizableEvents';
+import { useResizableActions } from './useResizableActions';
 import { ELEMENT_MASK, CALC_MASK } from './constants';
 
 export function useResizable(props: ResizableProps, emit: (event: string, ...args: any[]) => void) {
-    const parent = ref<HTMLElement | null>(null);
-    const w = ref<number | string>(props.width ?? 0);
-    const h = ref<number | string>(props.height ?? 0);
-    const minW = ref(props.minWidth);
-    const minH = ref(props.minHeight);
-    const maxW = ref(props.maxWidth);
-    const maxH = ref(props.maxHeight);
-    const l = ref<number | string>(props.left);
-    const t = ref<number | string>(props.top);
-    const mouseX = ref(0);
-    const mouseY = ref(0);
-    const offsetX = ref(0);
-    const offsetY = ref(0);
-    const parentSize = ref({ width: 0, height: 0 });
-    const resizeState = ref(0);
-    const dragElements = ref<HTMLElement[]>([]);
-    const dragState = ref(false);
-    const calcMap = ref(0b1111);
-    const prevState = ref<{ w: number | string; h: number | string; l: number | string; t: number | string; } | null>(null);
-
-    const style = computed(() => ({
-        ...(calcMap.value & CALC_MASK.w && {
-            width: typeof w.value === "number" ? `${w.value}px` : w.value,
-        }),
-        ...(calcMap.value & CALC_MASK.h && {
-            height: typeof h.value === "number" ? `${h.value}px` : h.value,
-        }),
-        ...(calcMap.value & CALC_MASK.l && {
-            left: typeof l.value === "number" ? `${l.value}px` : l.value,
-        }),
-        ...(calcMap.value & CALC_MASK.t && {
-            top: typeof t.value === "number" ? `${t.value}px` : t.value,
-        }),
-    }));
+    const state = useResizableState(props);
+    const style = useResizableStyle(state);
+    const { emitEvent } = useResizableEvents(props, state, emit, handleMove, handleDown, handleUp);
+    const { setMaximize, restoreSize, setupDragElements } = useResizableActions(props, state, emitEvent);
+    const { parent, w, h, minW, minH, maxW, maxH, l, t, mouseX, mouseY, offsetX, offsetY, parentSize, resizeState, dragElements, dragState, calcMap, prevState } = state;
 
     watch(() => props.maxWidth, (value) => { maxW.value = value; });
     watch(() => props.maxHeight, (value) => { maxH.value = value; });
@@ -96,53 +71,92 @@ export function useResizable(props: ResizableProps, emit: (event: string, ...arg
         emitEvent("maximize", { state: value });
     });
 
-    // ... (include all the helper functions like setMaximize, restoreSize, setupDragElements, etc.)
+    function handleRightResize(diffX: number) {
+        if (!dragState.value && Number(w.value) + diffX < minW.value) {
+            offsetX.value = diffX - (diffX = minW.value - Number(w.value));
+        } else if (
+            !dragState.value &&
+            maxW.value &&
+            Number(w.value) + diffX > maxW.value &&
+            (!props.fitParent || Number(w.value) + Number(l.value) < parentSize.value.width)
+        ) {
+            offsetX.value = diffX - (diffX = maxW.value - Number(w.value));
+        } else if (
+            props.fitParent &&
+            Number(l.value) + Number(w.value) + diffX > parentSize.value.width
+        ) {
+            offsetX.value = diffX - (diffX = parentSize.value.width - Number(l.value) - Number(w.value));
+        }
 
-    function restoreSize() {
-        if (prevState.value) {
-            l.value = prevState.value.l;
-            t.value = prevState.value.t;
-            h.value = prevState.value.h;
-            w.value = prevState.value.w;
+        if (calcMap.value & CALC_MASK.w) {
+            w.value = Number(w.value) + (dragState.value ? 0 : diffX);
         }
     }
 
-    function setMaximize(value: boolean) {
-        const parentEl = parent.value!.parentElement!;
-        if (value) {
-            prevState.value = { w: w.value, h: h.value, l: l.value, t: t.value };
-            t.value = l.value = 0;
-            w.value = parentEl.clientWidth;
-            h.value = parentEl.clientHeight;
-        } else {
-            restoreSize();
+    function handleBottomResize(diffY: number) {
+        if (!dragState.value && Number(h.value) + diffY < minH.value) {
+            offsetY.value = diffY - (diffY = minH.value - Number(h.value));
+        } else if (
+            !dragState.value &&
+            maxH.value &&
+            Number(h.value) + diffY > maxH.value &&
+            (!props.fitParent || Number(h.value) + Number(t.value) < parentSize.value.height)
+        ) {
+            offsetY.value = diffY - (diffY = maxH.value - Number(h.value));
+        } else if (
+            props.fitParent &&
+            Number(t.value) + Number(h.value) + diffY > parentSize.value.height
+        ) {
+            offsetY.value = diffY - (diffY = parentSize.value.height - Number(t.value) - Number(h.value));
+        }
+
+        if (calcMap.value & CALC_MASK.h) {
+            h.value = Number(h.value) + (dragState.value ? 0 : diffY);
         }
     }
 
-    function setupDragElements(selector?: string) {
-        if (!selector) return;
-        const oldList = parent.value!.querySelectorAll(".drag-el");
-        oldList.forEach((el) => {
-            el.classList.remove("drag-el");
-        });
+    function handleLeftResize(diffX: number) {
+        if (!dragState.value && Number(w.value) - diffX < minW.value) {
+            offsetX.value = diffX - (diffX = Number(w.value) - minW.value);
+        } else if (
+            !dragState.value &&
+            maxW.value &&
+            Number(w.value) - diffX > maxW.value &&
+            Number(l.value) >= 0
+        ) {
+            offsetX.value = diffX - (diffX = Number(w.value) - maxW.value);
+        } else if (props.fitParent && Number(l.value) + diffX < 0) {
+            offsetX.value = diffX - (diffX = -Number(l.value));
+        }
 
-        const nodeList = parent.value!.querySelectorAll(selector);
-        nodeList.forEach((el) => {
-            el.classList.add("drag-el");
-        });
-        dragElements.value = Array.from(nodeList) as HTMLElement[];
+        if (calcMap.value & CALC_MASK.l) {
+            l.value = Number(l.value) + diffX;
+        }
+        if (calcMap.value & CALC_MASK.w) {
+            w.value = Number(w.value) - (dragState.value ? 0 : diffX);
+        }
     }
 
-    function emitEvent(eventName: string, additionalOptions?: object) {
-        emit(eventName, {
-            eventName,
-            left: l.value,
-            top: t.value,
-            width: w.value,
-            height: h.value,
-            cmp: parent.value,
-            ...additionalOptions,
-        });
+    function handleTopResize(diffY: number) {
+        if (!dragState.value && Number(h.value) - diffY < minH.value) {
+            offsetY.value = diffY - (diffY = Number(h.value) - minH.value);
+        } else if (
+            !dragState.value &&
+            maxH.value &&
+            Number(h.value) - diffY > maxH.value &&
+            Number(t.value) >= 0
+        ) {
+            offsetY.value = diffY - (diffY = Number(h.value) - maxH.value);
+        } else if (props.fitParent && Number(t.value) + diffY < 0) {
+            offsetY.value = diffY - (diffY = -Number(t.value));
+        }
+
+        if (calcMap.value & CALC_MASK.t) {
+            t.value = Number(t.value) + diffY;
+        }
+        if (calcMap.value & CALC_MASK.h) {
+            h.value = Number(h.value) - (dragState.value ? 0 : diffY);
+        }
     }
 
     function handleMove(event: MouseEvent | TouchEvent) {
@@ -191,91 +205,19 @@ export function useResizable(props: ResizableProps, emit: (event: string, ...arg
             offsetX.value = offsetY.value = 0;
 
             if (resizeState.value & ELEMENT_MASK["resizable-r"].bit) {
-                if (!dragState.value && Number(w.value) + diffX < minW.value) {
-                    offsetX.value = diffX - (diffX = minW.value - Number(w.value));
-                } else if (
-                    !dragState.value &&
-                    maxW.value &&
-                    Number(w.value) + diffX > maxW.value &&
-                    (!props.fitParent || Number(w.value) + Number(l.value) < parentSize.value.width)
-                ) {
-                    offsetX.value = diffX - (diffX = maxW.value - Number(w.value));
-                } else if (
-                    props.fitParent &&
-                    Number(l.value) + Number(w.value) + diffX > parentSize.value.width
-                ) {
-                    offsetX.value = diffX - (diffX = parentSize.value.width - Number(l.value) - Number(w.value));
-                }
-
-                if (calcMap.value & CALC_MASK.w) {
-                    w.value = Number(w.value) + (dragState.value ? 0 : diffX);
-                }
+                handleRightResize(diffX);
             }
 
             if (resizeState.value & ELEMENT_MASK["resizable-b"].bit) {
-                if (!dragState.value && Number(h.value) + diffY < minH.value) {
-                    offsetY.value = diffY - (diffY = minH.value - Number(h.value));
-                } else if (
-                    !dragState.value &&
-                    maxH.value &&
-                    Number(h.value) + diffY > maxH.value &&
-                    (!props.fitParent || Number(h.value) + Number(t.value) < parentSize.value.height)
-                ) {
-                    offsetY.value = diffY - (diffY = maxH.value - Number(h.value));
-                } else if (
-                    props.fitParent &&
-                    Number(t.value) + Number(h.value) + diffY > parentSize.value.height
-                ) {
-                    offsetY.value = diffY - (diffY = parentSize.value.height - Number(t.value) - Number(h.value));
-                }
-
-                if (calcMap.value & CALC_MASK.h) {
-                    h.value = Number(h.value) + (dragState.value ? 0 : diffY);
-                }
+                handleBottomResize(diffY);
             }
 
             if (resizeState.value & ELEMENT_MASK["resizable-l"].bit) {
-                if (!dragState.value && Number(w.value) - diffX < minW.value) {
-                    offsetX.value = diffX - (diffX = Number(w.value) - minW.value);
-                } else if (
-                    !dragState.value &&
-                    maxW.value &&
-                    Number(w.value) - diffX > maxW.value &&
-                    Number(l.value) >= 0
-                ) {
-                    offsetX.value = diffX - (diffX = Number(w.value) - maxW.value);
-                } else if (props.fitParent && Number(l.value) + diffX < 0) {
-                    offsetX.value = diffX - (diffX = -Number(l.value));
-                }
-
-                if (calcMap.value & CALC_MASK.l) {
-                    l.value = Number(l.value) + diffX;
-                }
-                if (calcMap.value & CALC_MASK.w) {
-                    w.value = Number(w.value) - (dragState.value ? 0 : diffX);
-                }
+                handleLeftResize(diffX);
             }
 
             if (resizeState.value & ELEMENT_MASK["resizable-t"].bit) {
-                if (!dragState.value && Number(h.value) - diffY < minH.value) {
-                    offsetY.value = diffY - (diffY = Number(h.value) - minH.value);
-                } else if (
-                    !dragState.value &&
-                    maxH.value &&
-                    Number(h.value) - diffY > maxH.value &&
-                    Number(t.value) >= 0
-                ) {
-                    offsetY.value = diffY - (diffY = Number(h.value) - maxH.value);
-                } else if (props.fitParent && Number(t.value) + diffY < 0) {
-                    offsetY.value = diffY - (diffY = -Number(t.value));
-                }
-
-                if (calcMap.value & CALC_MASK.t) {
-                    t.value = Number(t.value) + diffY;
-                }
-                if (calcMap.value & CALC_MASK.h) {
-                    h.value = Number(h.value) - (dragState.value ? 0 : diffY);
-                }
+                handleTopResize(diffY);
             }
 
             mouseX.value = eventX;
@@ -288,7 +230,6 @@ export function useResizable(props: ResizableProps, emit: (event: string, ...arg
 
     function handleDown(event: MouseEvent | TouchEvent) {
         const target = event.target as HTMLElement;
-
         if (target.closest && target.closest(".resizable-component") !== parent.value) {
             return;
         }
@@ -343,7 +284,6 @@ export function useResizable(props: ResizableProps, emit: (event: string, ...arg
 
             const eventName = !dragState.value ? "resize:end" : "drag:end";
             emitEvent(eventName);
-
             dragState.value = false;
         }
     }
@@ -392,24 +332,6 @@ export function useResizable(props: ResizableProps, emit: (event: string, ...arg
                     calcMap.value &= ~CALC_MASK.h;
             }
         });
-
-        document.documentElement.addEventListener("mousemove", handleMove, true);
-        document.documentElement.addEventListener("mousedown", handleDown, true);
-        document.documentElement.addEventListener("mouseup", handleUp, true);
-        document.documentElement.addEventListener("touchmove", handleMove, true);
-        document.documentElement.addEventListener("touchstart", handleDown, true);
-        document.documentElement.addEventListener("touchend", handleUp, true);
-        emit("mount");
-    });
-
-    onBeforeUnmount(() => {
-        document.documentElement.removeEventListener("mousemove", handleMove, true);
-        document.documentElement.removeEventListener("mousedown", handleDown, true);
-        document.documentElement.removeEventListener("mouseup", handleUp, true);
-        document.documentElement.removeEventListener("touchmove", handleMove, true);
-        document.documentElement.removeEventListener("touchstart", handleDown, true);
-        document.documentElement.removeEventListener("touchend", handleUp, true);
-        emit("destroy");
     });
 
     return {
@@ -447,9 +369,5 @@ export function useResizable(props: ResizableProps, emit: (event: string, ...arg
         restoreSize,
         setupDragElements,
         emitEvent,
-
-        // Might delete
-        ELEMENT_MASK,
-        CALC_MASK,
     };
 }
