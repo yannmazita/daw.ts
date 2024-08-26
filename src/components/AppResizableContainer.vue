@@ -14,7 +14,7 @@
 * GNU General Public License for more details.
 *
 * You should have received a copy of the GNU General Public License
-* along with Project X. If not, see https://www.gnu.org/licenses/.
+* along with daw.ts. If not, see https://www.gnu.org/licenses/.
 */
 
 /*
@@ -53,8 +53,24 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
 
-type ResizeHandle = 'r' | 'rb' | 'b' | 'lb' | 'l' | 'lt' | 't' | 'rt';
-type ElementAttributes = 'l' | 't' | 'w' | 'h';
+const ELEMENT_MASK = {
+    "resizable-r": { bit: 0b0001, cursor: "e-resize" },
+    "resizable-rb": { bit: 0b0011, cursor: "se-resize" },
+    "resizable-b": { bit: 0b0010, cursor: "s-resize" },
+    "resizable-lb": { bit: 0b0110, cursor: "sw-resize" },
+    "resizable-l": { bit: 0b0100, cursor: "w-resize" },
+    "resizable-lt": { bit: 0b1100, cursor: "nw-resize" },
+    "resizable-t": { bit: 0b1000, cursor: "n-resize" },
+    "resizable-rt": { bit: 0b1001, cursor: "ne-resize" },
+    "drag-el": { bit: 0b1111, cursor: "pointer" },
+} as const;
+
+const CALC_MASK = {
+    l: 0b0001,
+    t: 0b0010,
+    w: 0b0100,
+    h: 0b1000,
+} as const;
 
 interface Props {
     width?: number | string;
@@ -65,171 +81,161 @@ interface Props {
     maxHeight?: number;
     left?: number | string;
     top?: number | string;
-    active?: ResizeHandle[];
+    active?: Array<"r" | "rb" | "b" | "lb" | "l" | "lt" | "t" | "rt">;
     fitParent?: boolean;
     dragSelector?: string;
     maximize?: boolean;
-    disableAttributes?: ElementAttributes[];
+    disableAttributes?: Array<"l" | "t" | "w" | "h">;
 }
 
 const props = withDefaults(defineProps<Props>(), {
+    width: undefined,
     minWidth: 0,
+    maxWidth: undefined,
+    height: undefined,
     minHeight: 0,
+    maxHeight: undefined,
     left: 0,
     top: 0,
-    active: ['r', 'rb', 'b', 'lb', 'l', 'lt', 't', 'rt'] as ResizeHandle[],
+    active: () => ["r", "rb", "b", "lb", "l", "lt", "t", "rt"],
     fitParent: false,
+    dragSelector: undefined,
     maximize: false,
-    disableAttributes: [] as ElementAttributes[],
+    disableAttributes: () => [],
 });
 
 const emit = defineEmits<{
-    (e: 'resize:start' | 'resize:move' | 'resize:end' | 'drag:start' | 'drag:move' | 'drag:end', data: any): void,
+    (e: 'mount'): void
+    (e: 'destroy'): void
+    (e: 'resize:start', data: ResizeEventData): void
+    (e: 'resize:move', data: ResizeEventData): void
+    (e: 'resize:end', data: ResizeEventData): void
+    (e: 'drag:start', data: ResizeEventData): void
+    (e: 'drag:move', data: ResizeEventData): void
+    (e: 'drag:end', data: ResizeEventData): void
     (e: 'maximize', data: { state: boolean }): void
 }>();
 
 const parent = ref<HTMLElement | null>(null);
-const state = ref({
-    width: props.width,
-    height: props.height,
-    minWidth: props.minWidth,
-    minHeight: props.minHeight,
-    maxWidth: props.maxWidth,
-    maxHeight: props.maxHeight,
-    left: props.left,
-    top: props.top,
-    mouseX: 0,
-    mouseY: 0,
-    offsetX: 0,
-    offsetY: 0,
-    parentSize: { width: 0, height: 0 },
-    resizeState: 0,
-    dragElements: [] as HTMLElement[],
-    dragState: false,
-    calcMap: 0b1111 as number,
-    prevState: null as { width: number | string; height: number | string; left: number | string; top: number | string; } | null
-});
+const w = ref<number | string>(props.width ?? 0);
+const h = ref<number | string>(props.height ?? 0);
+const minW = ref(props.minWidth);
+const minH = ref(props.minHeight);
+const maxW = ref(props.maxWidth);
+const maxH = ref(props.maxHeight);
+const l = ref<number | string>(props.left);
+const t = ref<number | string>(props.top);
+const mouseX = ref(0);
+const mouseY = ref(0);
+const offsetX = ref(0);
+const offsetY = ref(0);
+const parentSize = ref({ width: 0, height: 0 });
+const resizeState = ref(0);
+const dragElements = ref<HTMLElement[]>([]);
+const dragState = ref(false);
+const calcMap = ref(0b1111);
+const prevState = ref<{ w: number | string; h: number | string; l: number | string; t: number | string; } | null>(null);
+
+interface ResizeEventData {
+    eventName: string;
+    left: number | string;
+    top: number | string;
+    width: number | string;
+    height: number | string;
+    cmp: any;
+}
 
 const style = computed(() => ({
-    width: typeof state.value.width === 'number' ? `${state.value.width}px` : state.value.width,
-    height: typeof state.value.height === 'number' ? `${state.value.height}px` : state.value.height,
-    left: typeof state.value.left === 'number' ? `${state.value.left}px` : state.value.left,
-    top: typeof state.value.top === 'number' ? `${state.value.top}px` : state.value.top,
+    ...(calcMap.value & CALC_MASK.w && {
+        width: typeof w.value === "number" ? `${w.value}px` : w.value,
+    }),
+    ...(calcMap.value & CALC_MASK.h && {
+        height: typeof h.value === "number" ? `${h.value}px` : h.value,
+    }),
+    ...(calcMap.value & CALC_MASK.l && {
+        left: typeof l.value === "number" ? `${l.value}px` : l.value,
+    }),
+    ...(calcMap.value & CALC_MASK.t && {
+        top: typeof t.value === "number" ? `${t.value}px` : t.value,
+    }),
 }));
 
-function applyDimensionConstraints() {
-    const { width, height, minWidth, minHeight, maxWidth, maxHeight } = state.value;
-
-    // Apply minimum width and height
-    if (minWidth && width < minWidth) {
-        state.value.width = minWidth;
-    }
-    if (minHeight && height < minHeight) {
-        state.value.height = minHeight;
-    }
-
-    // Apply maximum width and height
-    if (maxWidth && width > maxWidth) {
-        state.value.width = maxWidth;
-    }
-    if (maxHeight && height > maxHeight) {
-        state.value.height = maxHeight;
-    }
-
-    // Ensure the component fits within the parent if `fitParent` is true
-    if (props.fitParent) {
-        if (width + state.value.left > parentEl.clientWidth) {
-            state.value.width = parentEl.clientWidth - state.value.left;
-        }
-        if (height + state.value.top > parentEl.clientHeight) {
-            state.value.height = parentEl.clientHeight - state.value.top;
-        }
-    }
-}
-
-function setupReactiveWatchers() {
-    // Setup watchers on props to re-apply constraints when they change
-    watch(() => props.width, (newWidth) => {
-        state.value.width = newWidth;
-        applyDimensionConstraints();
-    });
-    watch(() => props.height, (newHeight) => {
-        state.value.height = newHeight;
-        applyDimensionConstraints();
-    });
-    watch(() => props.left, (newLeft) => {
-        state.value.left = newLeft;
-    });
-    watch(() => props.top, (newTop) => {
-        state.value.top = newTop;
-    });
-}
-
-function setupComponent() {
-    // Ensure the component adheres to the initial props values
-    const parentEl = parent.value?.parentElement;
-    if (!parentEl) return;
-
-    // Set initial width and height based on props or parent element's dimensions
-    if (props.width === undefined || props.width === 'auto') {
-        state.value.width = parentEl.clientWidth;
-    } else if (typeof props.width === 'string') {
-        state.value.width = parseFloat(props.width) || parentEl.clientWidth;
-    }
-
-    if (props.height === undefined || props.height === 'auto') {
-        state.value.height = parentEl.clientHeight;
-    } else if (typeof props.height === 'string') {
-        state.value.height = parseFloat(props.height) || parentEl.clientHeight;
-    }
-
-    // Set initial positions based on props or calculate based on element's current position
-    if (typeof props.left !== 'number') {
-        state.value.left = parent.value!.offsetLeft - parentEl.offsetLeft;
-    }
-
-    if (typeof props.top !== 'number') {
-        state.value.top = parent.value!.offsetTop - parentEl.offsetTop;
-    }
-
-    // Check and apply constraints to width and height
-    applyDimensionConstraints();
-
-    // Setup reactive watchers if properties change
-    setupReactiveWatchers();
-
-    // Setup initial drag elements if a selector is provided
-    setupDragElements(props.dragSelector);
-}
-
-function teardownComponent() {
-    // Remove event listeners from the document or window
-    document.documentElement.removeEventListener('mousemove', handleMove, true);
-    document.documentElement.removeEventListener('mousedown', handleDown, true);
-    document.documentElement.removeEventListener('mouseup', handleUp, true);
-    document.documentElement.removeEventListener('touchmove', handleMove, true);
-    document.documentElement.removeEventListener('touchstart', handleDown, true);
-    document.documentElement.removeEventListener('touchend', handleUp, true);
-
-    // Emit a custom event if necessary, to notify of component teardown
-    emit('destroy');
-}
-
+watch(() => props.maxWidth, (value) => { maxW.value = value; });
+watch(() => props.maxHeight, (value) => { maxH.value = value; });
+watch(() => props.minWidth, (value) => { minW.value = value; });
+watch(() => props.minHeight, (value) => { minH.value = value; });
+watch(() => props.width, (value) => { if (typeof value === "number") w.value = value; });
+watch(() => props.height, (value) => { if (typeof value === "number") h.value = value; });
+watch(() => props.left, (value) => { if (typeof value === "number") l.value = value; });
+watch(() => props.top, (value) => { if (typeof value === "number") t.value = value; });
+watch(() => props.dragSelector, (selector) => { setupDragElements(selector); });
+watch(() => props.maximize, (value) => {
+    setMaximize(value);
+    emitEvent("maximize", { state: value });
+});
 
 onMounted(() => {
-    setupComponent();
+    if (!props.width) {
+        w.value = parent.value!.parentElement!.clientWidth;
+    } else if (props.width !== "auto") {
+        if (typeof props.width !== "number") w.value = parent.value!.clientWidth;
+    }
+    if (!props.height) {
+        h.value = parent.value!.parentElement!.clientHeight;
+    } else if (props.height !== "auto") {
+        if (typeof props.height !== "number") h.value = parent.value!.clientHeight;
+    }
+    if (typeof props.left !== "number") {
+        l.value = parent.value!.offsetLeft - parent.value!.parentElement!.offsetLeft;
+    }
+    if (typeof props.top !== "number") {
+        t.value = parent.value!.offsetTop - parent.value!.parentElement!.offsetTop;
+    }
+
+    const wNum = typeof w.value === 'number' ? w.value : parseFloat(w.value);
+    const hNum = typeof h.value === 'number' ? h.value : parseFloat(h.value);
+
+    if (minW.value && wNum < minW.value) w.value = minW.value;
+    if (minH.value && hNum < minH.value) h.value = minH.value;
+    if (maxW.value && wNum > maxW.value) w.value = maxW.value;
+    if (maxH.value && hNum > maxH.value) h.value = maxH.value;
+
+    setMaximize(props.maximize);
+    setupDragElements(props.dragSelector);
+
+    props.disableAttributes.forEach((attr) => {
+        switch (attr) {
+            case "l":
+                calcMap.value &= ~CALC_MASK.l;
+                break;
+            case "t":
+                calcMap.value &= ~CALC_MASK.t;
+                break;
+            case "w":
+                calcMap.value &= ~CALC_MASK.w;
+                break;
+            case "h":
+                calcMap.value &= ~CALC_MASK.h;
+        }
+    });
+
     document.documentElement.addEventListener("mousemove", handleMove, true);
     document.documentElement.addEventListener("mousedown", handleDown, true);
     document.documentElement.addEventListener("mouseup", handleUp, true);
     document.documentElement.addEventListener("touchmove", handleMove, true);
     document.documentElement.addEventListener("touchstart", handleDown, true);
     document.documentElement.addEventListener("touchend", handleUp, true);
-    emit('mount');
+    emit("mount");
 });
 
 onBeforeUnmount(() => {
-    teardownComponent();
-    emit('destroy');
+    document.documentElement.removeEventListener("mousemove", handleMove, true);
+    document.documentElement.removeEventListener("mousedown", handleDown, true);
+    document.documentElement.removeEventListener("mouseup", handleUp, true);
+    document.documentElement.removeEventListener("touchmove", handleMove, true);
+    document.documentElement.removeEventListener("touchstart", handleDown, true);
+    document.documentElement.removeEventListener("touchend", handleUp, true);
+    emit("destroy");
 });
 
 function setMaximize(value: boolean) {
