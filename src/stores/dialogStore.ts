@@ -6,11 +6,14 @@ import { Component, ref, Ref } from 'vue';
 import { AppDialogWindowItem } from '@/models/AppDialogWindowItem';
 import { DialogInstance } from '@/utils/interfaces';
 
+let highestZIndex = 100;
+
 /**
  * A store for managing dialog windows within the application.
  */
 export const useDialogStore = defineStore('dialog', () => {
     const dialogs: Ref<DialogInstance[]> = ref([]);
+    const activeDialogId: Ref<string | null> = ref(null);
 
     /**
      * Opens a new dialog window with specified properties.
@@ -23,16 +26,22 @@ export const useDialogStore = defineStore('dialog', () => {
      * @param context Context or additional data associated with the dialog.
      */
     function openDialog(id: string, dialogTitle: string, dialogItems: AppDialogWindowItem[], x: number, y: number, shouldBeCentered: boolean, context: unknown): void {
+        const angle = dialogs.value.length * 0.5;   // Spiral angle increment per dialog
+        const distance = 20 * dialogs.value.length; // Distance from center increases
+        const offsetX = Math.cos(angle) * distance;
+        const offsetY = Math.sin(angle) * distance;
+
         dialogs.value.push({
             id,
             title: dialogTitle,
             items: dialogItems,
             visible: true,
             activeComponent: null,
-            xPos: shouldBeCentered ? window.innerWidth / 2 : x,
-            yPos: shouldBeCentered ? window.innerHeight / 2 : y,
+            xPos: shouldBeCentered ? window.innerWidth / 2 + offsetX : x,
+            yPos: shouldBeCentered ? window.innerHeight / 2 + offsetY : y,
             centered: shouldBeCentered,
-            context
+            context,
+            zIndex: highestZIndex++,
         });
     }
 
@@ -59,10 +68,19 @@ export const useDialogStore = defineStore('dialog', () => {
         }
     }
 
+    function setActiveDialog(id: string): void {
+        activeDialogId.value = id;
+        const dialog = dialogs.value.find(d => d.id === id);
+        if (dialog) {
+            dialog.zIndex = highestZIndex++;
+        }
+    }
+
     return {
         dialogs,
         openDialog,
         closeDialog,
-        setActiveComponent
+        setActiveComponent,
+        setActiveDialog,
     };
 });

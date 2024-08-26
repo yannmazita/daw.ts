@@ -1,19 +1,10 @@
 <template>
-    <!-- Main grid container dividing the application into sections -->
-    <div class="grid grid-cols-12">
-        <!-- Context menu for providing additional options on user interaction -->
+    <main class="h-screen w-full overflow-hidden">
         <AppContextMenu></AppContextMenu>
-        <!-- Centralized dialog window for displaying dynamic content -->
         <AppDialogWindow></AppDialogWindow>
-        <!-- Full-width tab bar for navigation between different sections of the application -->
-        <div class="col-span-12">
-            <AppTabBar></AppTabBar>
-        </div>
-        <!-- Main content area that will render the different pages based on routing -->
-        <main class="col-span-12 p-3 overflow-auto">
-            <router-view></router-view>
-        </main>
-    </div>
+        <AppTabBar></AppTabBar>
+        <router-view></router-view>
+    </main>
 </template>
 
 <script setup lang="ts">

@@ -11,10 +11,10 @@ import { Component } from "vue";
 export interface Command {
     /** Executes the command's main action. */
     execute(): void;
-    
+
     /** Reverts the action previously executed by the command. */
     undo(): void;
-    
+
     /** Re-executes the action previously undone. */
     redo(): void;
 }
@@ -26,7 +26,7 @@ export interface Command {
 export interface StepPosition {
     /** The index of the track within the sequencer, or null if not applicable. */
     trackIndex: number | null;
-    
+
     /** The index of the step within the track, or null if not applicable. */
     stepIndex: number | null;
 }
@@ -38,28 +38,31 @@ export interface StepPosition {
 export interface DialogInstance {
     /** A unique identifier for the dialog instance. */
     id: string;
-    
+
     /** A list of items to be displayed or interacted with within the dialog. */
     items: AppDialogWindowItem[];
-    
+
     /** Indicates whether the dialog is currently visible to the user. */
     visible: boolean;
-    
+
     /** The Vue component that is currently active or displayed in the dialog. */
     activeComponent: Component | null;
-    
+
     /** The horizontal position of the dialog on the screen. */
     xPos: number;
-    
+
     /** The vertical position of the dialog on the screen. */
     yPos: number;
-    
+
     /** Whether the dialog should be centered on the screen. */
     centered: boolean;
-    
+
     /** The title of the dialog, typically displayed in a title bar. */
     title: string;
-    
+
     /** Additional context or data associated with the dialog, which can vary based on its use. */
     context: unknown;
+
+    /** The z-index of the dialog, used to determine its stacking order relative to other elements. */
+    zIndex: number;
 }
