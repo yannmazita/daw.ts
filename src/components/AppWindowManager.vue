@@ -44,10 +44,11 @@
 
 <template>
     <AppResizableContainer v-if="isActiveData" style=" overflow-wrap: break-word;"
-        class="grid grid-rows-[30px_1fr] border border-black shadow-inner box-content text-white"
-        :dragSelector="'.toolbar'" :top=topData :left=leftData :width=widthData :height=heightData :maxWidth=maxWidthData
-        :maxHeight=maxHeightData :minWidth=minWidthData :min-height=minHeightData :active=isResizingData
-        :maximize=isMaximizedData :fitParent=true @drag:end="endDrag" @resize:end="endResize" @mousedown="activeMouse">
+        class="grid grid-rows-[30px_1fr] border border-black shadow-inner box-content text-white" :width="widthData"
+        :height="heightData" :left="leftData" :top="topData" :minWidth="minWidthData" :min-height="minHeightData"
+        :maxWidth="maxWidthData" :maxHeight="maxHeightData" :active="isResizingData" :fitParent="true"
+        :dragSelector="'.toolbar'" :maximize="isMaximizedData" @drag:end="endDrag" @resize:end="endResize"
+        @mousedown="activeMouse">
         <div :class="`toolbar grid items-center pl-1 select-none backdrop-blur-[5px] bg-black opacity-65`"
             :style="`grid-template-columns: 24px 1fr ${buttonAreaWidth}px; `">
             <div class="size-4 bg-cover justify-self-center" :style="`background-image: url('${titleIconData}');`" />
