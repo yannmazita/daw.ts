@@ -18,10 +18,10 @@
 */
 
 /*
-* Original code derived from vue-resizable,
+* Original code derived from Vue-Window-Manager,
 * licensed under the MIT License.
 *
-* Copyright (c) 2018 nikitasnv
+* Copyright (c) 2023 YUMA OBATA
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -42,57 +42,5 @@
 * SOFTWARE.
 */
 
-
-<template>
-    <div ref="parent" class="resizable-component" :style="style">
-        <slot />
-        <div v-for="el in active" v-show="!maximize" :key="el" :class="'resizable-' + el" />
-    </div>
-</template>
-
-<script setup lang="ts">
-import { useResizable } from '@/components/AppResizableContainer/useResizable';
-import { ResizableProps, ResizeEventData } from '@/components/AppResizableContainer/types';
-
-const props = withDefaults(defineProps<ResizableProps>(), {
-    width: undefined,
-    minWidth: 0,
-    maxWidth: undefined,
-    height: undefined,
-    minHeight: 0,
-    maxHeight: undefined,
-    left: 0,
-    top: 0,
-    active: () => ["r", "rb", "b", "lb", "l", "lt", "t", "rt"],
-    fitParent: false,
-    dragSelector: undefined,
-    maximize: false,
-    disableAttributes: () => [],
-});
-
-const emit = defineEmits<{
-    (e: 'mount'): void
-    (e: 'destroy'): void
-    (e: 'resize:start', data: ResizeEventData): void
-    (e: 'resize:move', data: ResizeEventData): void
-    (e: 'resize:end', data: ResizeEventData): void
-    (e: 'drag:start', data: ResizeEventData): void
-    (e: 'drag:move', data: ResizeEventData): void
-    (e: 'drag:end', data: ResizeEventData): void
-    (e: 'maximize', data: { state: boolean }): void
-}>();
-
-const {
-    parent,
-    style,
-    emitEvent,
-} = useResizable(props, emit);
-
-// Expose events
-defineExpose({
-    onMount: () => emitEvent('mount'),
-    onDestroy: () => emitEvent('destroy'),
-});
-</script>
-
-<style src="@/components/AppResizableContainer/styles.css" scoped></style>
+.toolbar {
+}
