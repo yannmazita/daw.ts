@@ -69,8 +69,8 @@
 
 <script setup lang="ts">
 import { defineProps, defineEmits } from 'vue';
-import { useWindow } from '@/components/AppWindowManager/useWindow'
-import { WindowProps } from '@/components/AppWindowManager/types';
+import { useWindow } from '@/components/AppWindow/useWindow'
+import { WindowProps } from '@/components/AppWindow/types';
 import VueResizable from 'vue-resizable';
 
 const props = defineProps<WindowProps>();
@@ -109,5 +109,5 @@ const {
 </script>
 
 <style lang="css" scoped>
-@import '@/components/AppWindowManager/styles.css';
+@import '@/components/AppWindow/styles.css';
 </style>
