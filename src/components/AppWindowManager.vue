@@ -71,7 +71,6 @@
 import { defineProps, defineEmits } from 'vue';
 import { useWindow } from '@/components/AppWindowManager/useWindow'
 import { WindowProps } from '@/components/AppWindowManager/types';
-import AppResizableContainer from '@/components/AppResizableContainer.vue';
 import VueResizable from 'vue-resizable';
 
 const props = defineProps<WindowProps>();
