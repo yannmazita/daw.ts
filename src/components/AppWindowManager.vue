@@ -43,7 +43,7 @@
 */
 
 <template>
-    <AppResizableContainer v-if="isActiveData" style="overflow-wrap: break-word;"
+    <VueResizable v-if="isActiveData" style="overflow-wrap: break-word;"
         class="grid grid-rows-[30px_1fr] border border-black shadow-inner box-content text-white" :width="widthData"
         :height="heightData" :left="leftData" :top="topData" :minWidth="minWidthData" :min-height="minHeightData"
         :maxWidth="maxWidthData" :maxHeight="maxHeightData" :active="isResizingData" :fitParent="true"
@@ -64,7 +64,7 @@
             </div>
         </div>
         <slot />
-    </AppResizableContainer>
+    </VueResizable>
 </template>
 
 <script setup lang="ts">
@@ -72,6 +72,7 @@ import { defineProps, defineEmits } from 'vue';
 import { useWindow } from '@/components/AppWindowManager/useWindow'
 import { WindowProps } from '@/components/AppWindowManager/types';
 import AppResizableContainer from '@/components/AppResizableContainer.vue';
+import VueResizable from 'vue-resizable';
 
 const props = defineProps<WindowProps>();
 const emit = defineEmits<{
