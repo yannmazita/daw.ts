@@ -50,7 +50,7 @@ export interface WindowProps {
     height: number;
     minWidth: number;
     minHeight: number;
-    isResizing: boolean[];
+    isResizing: string[];
     isActive: boolean;
     titleIcon: string;
     isMaximized: boolean;
