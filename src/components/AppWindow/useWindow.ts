@@ -43,10 +43,10 @@
 */
 
 import { onMounted, watch } from "vue";
-import { useWindowState } from './useWindowState.ts';
-import { WindowProps } from "@/components/AppWindowManager/types";
+import { useWindowState } from '@/components/AppWindow/useWindowState.ts';
+import { WindowProps } from "@/components/AppWindow/types";
 
-export function useWindow(props: WindowProps, emit: (event: string, ...args: any[]) => void) {
+export function useWindow(props: WindowProps, emit: (event: string, ...args: unknown[]) => void) {
     const {
         topData,
         leftData,
@@ -107,8 +107,10 @@ export function useWindow(props: WindowProps, emit: (event: string, ...args: any
 
     watch(() => props.windowInnerWidth, (newValue) => {
         windowInnerWidthData.value = newValue;
-        if (leftData.value + widthData.value > windowInnerWidthData.value) {
-            leftData.value = windowInnerWidthData.value - widthData.value;
+        if (windowInnerWidthData.value !== null) {
+            if (leftData.value + widthData.value > windowInnerWidthData.value) {
+                leftData.value = windowInnerWidthData.value - widthData.value;
+            }
         }
     }, { immediate: true });
     watch(() => props.top, (newValue) => {

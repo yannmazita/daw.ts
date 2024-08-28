@@ -44,21 +44,21 @@
 
 
 export interface WindowProps {
-    top: number;
-    left: number;
-    width: number;
-    height: number;
-    minWidth: number;
-    minHeight: number;
-    isResizing: string[];
     isActive: boolean;
-    titleIcon: string;
-    isMaximized: boolean;
+    width: number;
+    minWidth: number;
     maxWidth: number;
+    height: number;
+    minHeight: number;
     maxHeight: number;
+    left: number;
+    top: number;
+    isMaximized: boolean;
     title: string;
-    windowInnerWidth: number;
-    windowId: string;
+    titleIcon: string;
     isButtonMaximized: boolean;
     isButtonMinimized: boolean;
+    isResizing: ('r' | 'rb' | 'b' | 'lb' | 'l' | 'lt' | 't' | 'rt')[];
+    windowInnerWidth: number | null;
+    windowId: string;
 }
