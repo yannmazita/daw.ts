@@ -52,6 +52,7 @@ const resizing = ref(false);
 const resizeDirection = ref('');
 let lastMouseX = 0;
 let lastMouseY = 0;
+//let resizeObserver: ResizeObserver | null = null;
 
 const styleObject = reactive({
     top: `${pos.y}px`,
@@ -82,9 +83,25 @@ function startResize(direction: string, event: MouseEvent) {
 
 onMounted(() => {
     const parent = component.value?.parentElement;
-    const parentRect = parent?.getBoundingClientRect();
+    const parentRect = reactive({ width: 0, height: 0 });
 
     document.addEventListener('mousemove', (event) => {
+
+        if (parent && parentRect) {
+            parentRect.width = parent.clientWidth;
+            parentRect.height = parent.clientHeight;
+
+            /*
+            // Initialize ResizeObserver
+            resizeObserver = new ResizeObserver(entries => {
+                for (let entry of entries) {
+                    parentRect.width = entry.contentRect.width;
+                    parentRect.height = entry.contentRect.height;
+                }
+            });
+            resizeObserver.observe(parent);
+            */
+        }
 
         if (dragging.value) {
             const dx = event.clientX - lastMouseX;
@@ -157,6 +174,11 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
+    /*
+    if (resizeObserver && component.value?.parentElement) {
+        resizeObserver.unobserve(component.value.parentElement);
+    }
+    */
     document.removeEventListener('mousemove', () => { });
     document.removeEventListener('mouseup', () => { });
 });
