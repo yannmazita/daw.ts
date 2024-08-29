@@ -8,7 +8,7 @@
 
 <script setup lang="ts">
 import AppWindow from '@/components/AppWindow.vue';
-import { WindowProps } from '@/components/AppWindow/types';
+import { WindowProps } from '@/utils/interfaces';
 import Sequencer from '@/components/Sequencer.vue';
 
 const windowProp: WindowProps = {
@@ -26,7 +26,7 @@ const windowProp: WindowProps = {
     maxWidth: 1280,
     maxHeight: 720,
     windowId: '1',
-    windowInnerWidth: null,
+    windowInnerWidth: 0,
     title: 'Sequencer',
     titleIcon: '',
 };
