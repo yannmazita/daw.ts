@@ -22,11 +22,29 @@
 <script setup lang="ts">
 import { ref, reactive, watchEffect } from 'vue';
 
+interface Props {
+    minimumWidth?: number;
+    maximumWidth?: number;
+    minimumHeight?: number;
+    maximumHeight?: number;
+    initialWidth?: number;
+    initialHeight?: number;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+    minimumWidth: 320,
+    maximumWidth: 1000,
+    minimumHeight: 240,
+    maximumHeight: 1000,
+    initialWidth: 800,
+    initialHeight: 600,
+});
+
 const pos = reactive({
     x: 100,
     y: 100,
-    width: 200,
-    height: 150,
+    width: Math.min(Math.max(props.initialWidth, props.minimumWidth), props.maximumWidth),
+    height: Math.min(Math.max(props.initialHeight, props.minimumHeight), props.maximumHeight),
 });
 
 const dragging = ref(false);
@@ -73,42 +91,49 @@ document.addEventListener('mousemove', (event) => {
     }
 
     if (resizing.value) {
-        const dx = event.clientX - lastMouseX;
-        const dy = event.clientY - lastMouseY;
+        let dx = event.clientX - lastMouseX;
+        let dy = event.clientY - lastMouseY;
+
         switch (resizeDirection.value) {
             case 'se':
-                pos.width += dx;
-                pos.height += dy;
+                pos.width = Math.min(Math.max(pos.width + dx, props.minimumWidth), props.maximumWidth);
+                pos.height = Math.min(Math.max(pos.height + dy, props.minimumHeight), props.maximumHeight);
                 break;
             case 'sw':
-                pos.width -= dx;
-                pos.x += dx;
-                pos.height += dy;
+                dx = Math.min(Math.max(pos.width - dx, props.minimumWidth), props.maximumWidth) - pos.width;
+                pos.width += dx;
+                pos.x -= dx;
+                pos.height = Math.min(Math.max(pos.height + dy, props.minimumHeight), props.maximumHeight);
                 break;
             case 'nw':
-                pos.width -= dx;
-                pos.height -= dy;
-                pos.x += dx;
-                pos.y += dy;
+                dx = Math.min(Math.max(pos.width - dx, props.minimumWidth), props.maximumWidth) - pos.width;
+                dy = Math.min(Math.max(pos.height - dy, props.minimumHeight), props.maximumHeight) - pos.height;
+                pos.width += dx;
+                pos.height += dy;
+                pos.x -= dx;
+                pos.y -= dy;
                 break;
             case 'ne':
-                pos.width += dx;
-                pos.height -= dy;
-                pos.y += dy;
+                pos.width = Math.min(Math.max(pos.width + dx, props.minimumWidth), props.maximumWidth);
+                dy = Math.min(Math.max(pos.height - dy, props.minimumHeight), props.maximumHeight) - pos.height;
+                pos.height += dy;
+                pos.y -= dy;
                 break;
             case 'north':
-                pos.height -= dy;
-                pos.y += dy;
+                dy = Math.min(Math.max(pos.height - dy, props.minimumHeight), props.maximumHeight) - pos.height;
+                pos.height += dy;
+                pos.y -= dy;
                 break;
             case 'south':
-                pos.height += dy;
+                pos.height = Math.min(Math.max(pos.height + dy, props.minimumHeight), props.maximumHeight);
                 break;
             case 'east':
-                pos.width += dx;
+                pos.width = Math.min(Math.max(pos.width + dx, props.minimumWidth), props.maximumWidth);
                 break;
             case 'west':
-                pos.width -= dx;
-                pos.x += dx;
+                dx = Math.min(Math.max(pos.width - dx, props.minimumWidth), props.maximumWidth) - pos.width;
+                pos.width += dx;
+                pos.x -= dx;
                 break;
         }
         lastMouseX = event.clientX;
@@ -182,7 +207,6 @@ document.addEventListener('mouseup', () => {
 .east,
 .west {
     background-color: transparent;
-    /* Makes it less intrusive */
 }
 
 .north,

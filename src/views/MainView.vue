@@ -1,5 +1,5 @@
 <template>
-    <AppDrag>
+    <AppDrag :minimum-width="500" :minimum-height="500">
         <Sequencer></Sequencer>
     </AppDrag>
 </template>
