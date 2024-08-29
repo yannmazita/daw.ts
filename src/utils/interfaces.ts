@@ -66,23 +66,3 @@ export interface DialogInstance {
     /** The z-index of the dialog, used to determine its stacking order relative to other elements. */
     zIndex: number;
 }
-
-export interface WindowProps {
-    isActive: boolean;
-    isMaximized: boolean;
-    top: number;
-    left: number;
-    width: number;
-    height: number;
-    minWidth: number;
-    minHeight: number;
-    isResizing: ('r' | 'rb' | 'b' | 'lb' | 'l' | 'lt' | 't' | 'rt')[];
-    title: string;
-    titleIcon: string;
-    isButtonMaximized: boolean;
-    isButtonMinimized: boolean;
-    maxWidth: number;
-    maxHeight: number;
-    windowInnerWidth: number;
-    windowId: string;
-}

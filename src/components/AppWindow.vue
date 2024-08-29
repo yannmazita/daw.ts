@@ -46,7 +46,7 @@
     <VueResizable v-if="isActiveData" style="overflow-wrap: break-word;"
         class="grid grid-rows-[30px_1fr] border border-black shadow-inner box-content text-white" :width="widthData"
         :height="heightData" :left="leftData" :top="topData" :minWidth="minWidthData" :min-height="minHeightData"
-        :maxWidth="maxWidthData" :maxHeight="maxHeightData" :active="isResizingData" :fitParent="true"
+        :maxWidth="maxWidthData" :maxHeight="maxHeightData" :active="isResizingData" :fitParent="false"
         :dragSelector="'.toolbar'" :maximize="isMaximizedData" @drag:end="endDrag" @resize:end="endResize"
         @mousedown="activeMouse">
         <div :class="`toolbar grid items-center pl-1 select-none backdrop-blur-[5px] bg-black opacity-65`"
@@ -71,25 +71,27 @@
 import { ref, watch, onMounted, defineProps, defineEmits } from 'vue';
 import VueResizable from 'vue-resizable';
 
-const props = defineProps({
-    top: Number,
-    left: Number,
-    width: Number,
-    height: Number,
-    minWidth: Number,
-    minHeight: Number,
-    isResizing: Array,
-    isActive: Boolean,
-    titleIcon: String,
-    isMaximized: Boolean,
-    maxWidth: Number,
-    maxHeight: Number,
-    title: String,
-    windowInnerWidth: Number,
-    windowId: String,
-    isButtonMaximized: Boolean,
-    isButtonMinimized: Boolean,
-});
+interface Props {
+    top: number;
+    left: number;
+    width: number;
+    height: number;
+    minWidth: number;
+    minHeight: number;
+    isDragging: boolean;
+    isResizing: ('r' | 'rb' | 'b' | 'lb' | 'l' | 'lt' | 't' | 'rt')[];
+    isActive: boolean;
+    isMaximized: boolean;
+    maxWidth: number;
+    maxHeight: number;
+    title: string;
+    windowInnerWidth: number;
+    windowId: string;
+    titleIcon: string;
+    isButtonMaximized: boolean;
+    isButtonMinimized: boolean;
+}
+const props = defineProps<Props>();
 
 const emits = defineEmits(['clickMin', 'clickWindow', 'clickDestroy']);
 
