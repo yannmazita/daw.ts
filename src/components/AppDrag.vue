@@ -1,7 +1,7 @@
 <template>
     <div ref="componentRef" class="draggable-resizable bg-yellow-300" :style="styleObject">
         <div class="title-bar" @mousedown="startDrag">
-            Drag Me
+            Drag Me Up!
         </div>
         <div class="content">
             <slot></slot>
@@ -149,16 +149,56 @@ onMounted(() => {
     });
 
     function adjustSize(dx: number, dy: number, expandRight: boolean, expandDown: boolean) {
-        if (parentRect) {
+        // Currently there is a bug when resizing using the north handle and encountering the parent's top boundary
+        // Trying to resize past the boundary will mean the component grows from the bottom.
 
-            const newWidth = Math.min(Math.max(pos.width + (expandRight ? dx : -dx), props.minimumWidth), props.maximumWidth, parentRect.right - pos.x);
-            const newHeight = Math.min(Math.max(pos.height + (expandDown ? dy : -dy), props.minimumHeight), props.maximumHeight, parentRect.bottom - pos.y);
+        if (resizeDirection.value === 'north') {
+            const newHeight = Math.min(Math.max(pos.height - dy, props.minimumHeight), props.maximumHeight);
+            if (newHeight > props.minimumHeight) {
+                const newY = pos.y + dy;
+                if (newY >= parentRect.top && newY + newHeight <= parentRect.bottom) {
+                    pos.y = newY;
+                    pos.height = newHeight;
+                } else {
+                    // Adjust height only to prevent moving with the mouse
+                    pos.height = newHeight;
+                }
+            }
+        } else {
+            const newWidth = Math.min(Math.max(pos.width + (expandRight ? dx : -dx), props.minimumWidth), props.maximumWidth);
+            const newHeight = Math.min(Math.max(pos.height + (expandDown ? dy : -dy), props.minimumHeight), props.maximumHeight);
 
-            if (!expandRight) pos.x += pos.width - newWidth;
-            if (!expandDown) pos.y += pos.height - newHeight;
+            // Adjust x position for west resizing
+            if (!expandRight && newWidth > props.minimumWidth) {
+                const newX = pos.x + dx;
+                if (newX >= parentRect.left && newX + newWidth <= parentRect.right) {
+                    pos.x = newX;
+                    pos.width = newWidth;
+                } else {
+                    // Adjust width only to prevent moving with the mouse
+                    pos.width = newWidth;
+                }
+            } else if (expandRight) {
+                if (pos.x + newWidth <= parentRect.right) {
+                    pos.width = newWidth;
+                }
+            }
 
-            pos.width = newWidth;
-            pos.height = newHeight;
+            // Adjust y position for north resizing (handled above) and south resizing
+            if (!expandDown && newHeight > props.minimumHeight) {
+                const newY = pos.y + dy;
+                if (newY >= parentRect.top && newY + newHeight <= parentRect.bottom) {
+                    pos.y = newY;
+                    pos.height = newHeight;
+                } else {
+                    // Adjust height only to prevent moving with the mouse
+                    pos.height = newHeight;
+                }
+            } else if (expandDown) {
+                if (pos.y + newHeight <= parentRect.bottom) {
+                    pos.height = newHeight;
+                }
+            }
         }
     }
 });
