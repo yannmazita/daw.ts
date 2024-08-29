@@ -1,5 +1,5 @@
 <template>
-    <div ref="component" class="draggable-resizable" :style="styleObject">
+    <div ref="componentRef" class="draggable-resizable bg-yellow-300" :style="styleObject">
         <div class="title-bar" @mousedown="startDrag">
             Drag Me
         </div>
@@ -20,7 +20,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, watchEffect, onMounted, onUnmounted } from 'vue';
+import { ref, reactive, watchEffect, Ref, onMounted } from 'vue';
 
 interface Props {
     minimumWidth?: number;
@@ -39,20 +39,19 @@ const props = withDefaults(defineProps<Props>(), {
     initialHeight: 600,
 });
 
-const component = ref<HTMLDivElement | null>(null);
 const pos = reactive({
-    x: 100,
-    y: 100,
+    x: 0,
+    y: 0,
     width: Math.min(Math.max(props.initialWidth, props.minimumWidth), props.maximumWidth),
     height: Math.min(Math.max(props.initialHeight, props.minimumHeight), props.maximumHeight),
 });
 
+const componentRef: Ref<HTMLDivElement | null> = ref(null);
 const dragging = ref(false);
 const resizing = ref(false);
 const resizeDirection = ref('');
 let lastMouseX = 0;
 let lastMouseY = 0;
-//let resizeObserver: ResizeObserver | null = null;
 
 const styleObject = reactive({
     top: `${pos.y}px`,
@@ -81,39 +80,27 @@ function startResize(direction: string, event: MouseEvent) {
     lastMouseY = event.clientY;
 }
 
+function componentDebug() {
+    const parent = componentRef.value?.parentElement;
+    const parentRect = parent?.getBoundingClientRect();
+    console.log(`Parent width: ${parentRect?.width}, height: ${parentRect?.height}`);
+    console.log(`Component width: ${pos.width}, height: ${pos.height}`);
+    console.log(`Component position: x: ${pos.x}, y: ${pos.y}`);
+    console.log(`Component style: ${styleObject.width}, ${styleObject.height}`);
+}
+
 onMounted(() => {
-    const parent = component.value?.parentElement;
-    const parentRect = reactive({ width: 0, height: 0 });
+    const parent = componentRef.value?.parentElement;
+    const parentRect = parent?.getBoundingClientRect();
 
     document.addEventListener('mousemove', (event) => {
-
-        if (parent && parentRect) {
-            parentRect.width = parent.clientWidth;
-            parentRect.height = parent.clientHeight;
-
-            /*
-            // Initialize ResizeObserver
-            resizeObserver = new ResizeObserver(entries => {
-                for (let entry of entries) {
-                    parentRect.width = entry.contentRect.width;
-                    parentRect.height = entry.contentRect.height;
-                }
-            });
-            resizeObserver.observe(parent);
-            */
-        }
-
-        if (dragging.value) {
+        if (dragging.value && parentRect) {
             const dx = event.clientX - lastMouseX;
             const dy = event.clientY - lastMouseY;
-            const newX = pos.x + dx;
-            const newY = pos.y + dy;
 
-            // Restrict movement within the parent container
-            if (parentRect) {
-                pos.x = Math.min(Math.max(newX, 0), parentRect.width - pos.width);
-                pos.y = Math.min(Math.max(newY, 0), parentRect.height - pos.height);
-            }
+            // Adjust pos.x and pos.y to consider the parent's position
+            pos.x = Math.max(parentRect.left, Math.min(pos.x + dx, parentRect.right - pos.width));
+            pos.y = Math.max(parentRect.top, Math.min(pos.y + dy, parentRect.bottom - pos.height));
 
             lastMouseX = event.clientX;
             lastMouseY = event.clientY;
@@ -128,16 +115,16 @@ onMounted(() => {
                     adjustSize(dx, dy, true, true);
                     break;
                 case 'sw':
-                    adjustSize(-dx, dy, false, true);
+                    adjustSize(dx, dy, false, true);
                     break;
                 case 'nw':
-                    adjustSize(-dx, -dy, false, false);
+                    adjustSize(dx, dy, false, false);
                     break;
                 case 'ne':
-                    adjustSize(dx, -dy, true, false);
+                    adjustSize(dx, dy, true, false);
                     break;
                 case 'north':
-                    adjustSize(0, -dy, false, false);
+                    adjustSize(0, dy, false, false);
                     break;
                 case 'south':
                     adjustSize(0, dy, true, true);
@@ -146,9 +133,10 @@ onMounted(() => {
                     adjustSize(dx, 0, true, true);
                     break;
                 case 'west':
-                    adjustSize(-dx, 0, false, false);
+                    adjustSize(dx, 0, false, false);
                     break;
             }
+
             lastMouseX = event.clientX;
             lastMouseY = event.clientY;
         }
@@ -161,28 +149,19 @@ onMounted(() => {
     });
 
     function adjustSize(dx: number, dy: number, expandRight: boolean, expandDown: boolean) {
-        if (!parentRect) return;
-        const newWidth = Math.min(Math.max(pos.width + (expandRight ? dx : -dx), props.minimumWidth), props.maximumWidth, parentRect.width - pos.x);
-        const newHeight = Math.min(Math.max(pos.height + (expandDown ? dy : -dy), props.minimumHeight), props.maximumHeight, parentRect.height - pos.y);
+        if (parentRect) {
 
-        if (!expandRight) pos.x += pos.width - newWidth;
-        if (!expandDown) pos.y += pos.height - newHeight;
+            const newWidth = Math.min(Math.max(pos.width + (expandRight ? dx : -dx), props.minimumWidth), props.maximumWidth, parentRect.right - pos.x);
+            const newHeight = Math.min(Math.max(pos.height + (expandDown ? dy : -dy), props.minimumHeight), props.maximumHeight, parentRect.bottom - pos.y);
 
-        pos.width = newWidth;
-        pos.height = newHeight;
+            if (!expandRight) pos.x += pos.width - newWidth;
+            if (!expandDown) pos.y += pos.height - newHeight;
+
+            pos.width = newWidth;
+            pos.height = newHeight;
+        }
     }
 });
-
-onUnmounted(() => {
-    /*
-    if (resizeObserver && component.value?.parentElement) {
-        resizeObserver.unobserve(component.value.parentElement);
-    }
-    */
-    document.removeEventListener('mousemove', () => { });
-    document.removeEventListener('mouseup', () => { });
-});
-
 </script>
 
 <style scoped>
