@@ -20,7 +20,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, watchEffect } from 'vue';
+import { ref, reactive, watchEffect, onMounted, onUnmounted } from 'vue';
 
 interface Props {
     minimumWidth?: number;
@@ -30,7 +30,6 @@ interface Props {
     initialWidth?: number;
     initialHeight?: number;
 }
-
 const props = withDefaults(defineProps<Props>(), {
     minimumWidth: 320,
     maximumWidth: 1000,
@@ -40,6 +39,7 @@ const props = withDefaults(defineProps<Props>(), {
     initialHeight: 600,
 });
 
+const component = ref<HTMLDivElement | null>(null);
 const pos = reactive({
     x: 100,
     y: 100,
@@ -80,72 +80,87 @@ function startResize(direction: string, event: MouseEvent) {
     lastMouseY = event.clientY;
 }
 
-document.addEventListener('mousemove', (event) => {
-    if (dragging.value) {
-        const dx = event.clientX - lastMouseX;
-        const dy = event.clientY - lastMouseY;
-        pos.x += dx;
-        pos.y += dy;
-        lastMouseX = event.clientX;
-        lastMouseY = event.clientY;
-    }
+onMounted(() => {
+    const parent = component.value?.parentElement;
+    const parentRect = parent?.getBoundingClientRect();
 
-    if (resizing.value) {
-        let dx = event.clientX - lastMouseX;
-        let dy = event.clientY - lastMouseY;
+    document.addEventListener('mousemove', (event) => {
 
-        switch (resizeDirection.value) {
-            case 'se':
-                pos.width = Math.min(Math.max(pos.width + dx, props.minimumWidth), props.maximumWidth);
-                pos.height = Math.min(Math.max(pos.height + dy, props.minimumHeight), props.maximumHeight);
-                break;
-            case 'sw':
-                dx = Math.min(Math.max(pos.width - dx, props.minimumWidth), props.maximumWidth) - pos.width;
-                pos.width += dx;
-                pos.x -= dx;
-                pos.height = Math.min(Math.max(pos.height + dy, props.minimumHeight), props.maximumHeight);
-                break;
-            case 'nw':
-                dx = Math.min(Math.max(pos.width - dx, props.minimumWidth), props.maximumWidth) - pos.width;
-                dy = Math.min(Math.max(pos.height - dy, props.minimumHeight), props.maximumHeight) - pos.height;
-                pos.width += dx;
-                pos.height += dy;
-                pos.x -= dx;
-                pos.y -= dy;
-                break;
-            case 'ne':
-                pos.width = Math.min(Math.max(pos.width + dx, props.minimumWidth), props.maximumWidth);
-                dy = Math.min(Math.max(pos.height - dy, props.minimumHeight), props.maximumHeight) - pos.height;
-                pos.height += dy;
-                pos.y -= dy;
-                break;
-            case 'north':
-                dy = Math.min(Math.max(pos.height - dy, props.minimumHeight), props.maximumHeight) - pos.height;
-                pos.height += dy;
-                pos.y -= dy;
-                break;
-            case 'south':
-                pos.height = Math.min(Math.max(pos.height + dy, props.minimumHeight), props.maximumHeight);
-                break;
-            case 'east':
-                pos.width = Math.min(Math.max(pos.width + dx, props.minimumWidth), props.maximumWidth);
-                break;
-            case 'west':
-                dx = Math.min(Math.max(pos.width - dx, props.minimumWidth), props.maximumWidth) - pos.width;
-                pos.width += dx;
-                pos.x -= dx;
-                break;
+        if (dragging.value) {
+            const dx = event.clientX - lastMouseX;
+            const dy = event.clientY - lastMouseY;
+            const newX = pos.x + dx;
+            const newY = pos.y + dy;
+
+            // Restrict movement within the parent container
+            if (parentRect) {
+                pos.x = Math.min(Math.max(newX, 0), parentRect.width - pos.width);
+                pos.y = Math.min(Math.max(newY, 0), parentRect.height - pos.height);
+            }
+
+            lastMouseX = event.clientX;
+            lastMouseY = event.clientY;
         }
-        lastMouseX = event.clientX;
-        lastMouseY = event.clientY;
+
+        if (resizing.value) {
+            let dx = event.clientX - lastMouseX;
+            let dy = event.clientY - lastMouseY;
+
+            switch (resizeDirection.value) {
+                case 'se':
+                    adjustSize(dx, dy, true, true);
+                    break;
+                case 'sw':
+                    adjustSize(-dx, dy, false, true);
+                    break;
+                case 'nw':
+                    adjustSize(-dx, -dy, false, false);
+                    break;
+                case 'ne':
+                    adjustSize(dx, -dy, true, false);
+                    break;
+                case 'north':
+                    adjustSize(0, -dy, false, false);
+                    break;
+                case 'south':
+                    adjustSize(0, dy, true, true);
+                    break;
+                case 'east':
+                    adjustSize(dx, 0, true, true);
+                    break;
+                case 'west':
+                    adjustSize(-dx, 0, false, false);
+                    break;
+            }
+            lastMouseX = event.clientX;
+            lastMouseY = event.clientY;
+        }
+    });
+
+    document.addEventListener('mouseup', () => {
+        dragging.value = false;
+        resizing.value = false;
+        resizeDirection.value = '';
+    });
+
+    function adjustSize(dx: number, dy: number, expandRight: boolean, expandDown: boolean) {
+        if (!parentRect) return;
+        const newWidth = Math.min(Math.max(pos.width + (expandRight ? dx : -dx), props.minimumWidth), props.maximumWidth, parentRect.width - pos.x);
+        const newHeight = Math.min(Math.max(pos.height + (expandDown ? dy : -dy), props.minimumHeight), props.maximumHeight, parentRect.height - pos.y);
+
+        if (!expandRight) pos.x += pos.width - newWidth;
+        if (!expandDown) pos.y += pos.height - newHeight;
+
+        pos.width = newWidth;
+        pos.height = newHeight;
     }
 });
 
-document.addEventListener('mouseup', () => {
-    dragging.value = false;
-    resizing.value = false;
-    resizeDirection.value = '';
+onUnmounted(() => {
+    document.removeEventListener('mousemove', () => { });
+    document.removeEventListener('mouseup', () => { });
 });
+
 </script>
 
 <style scoped>
