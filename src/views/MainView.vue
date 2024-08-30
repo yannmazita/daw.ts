@@ -1,13 +1,20 @@
 <template>
+    <button @click="windowStore.createWindow()">Open Window</button>
     <div class="bg-blue-700 h-14">boudary test</div>
-    <div class="flex size-3/4 bg-green-700">
-        <AppDrag :minimum-width="500" :minimum-height="500">
-            <Sequencer></Sequencer>
-        </AppDrag>
+    <div class="size-3/4 bg-green-700" v-for="win in windows" :key="win.id">
+        <AppDrag :id="win.id"></AppDrag>
     </div>
 </template>
 
-<script setup>
-import AppDrag from '@/components/AppDrag.vue'
-import Sequencer from '@/components/Sequencer.vue'
+<script setup lang="ts">
+import AppDrag from '@/components/AppDrag.vue';
+import { onMounted } from 'vue';
+import { useWindowStore } from '@/stores/windowsStore';
+
+const windowStore = useWindowStore();
+const windows = windowStore.windows;
+
+onMounted(() => {
+    windowStore.createWindow();
+})
 </script>

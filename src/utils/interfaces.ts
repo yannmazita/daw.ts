@@ -66,3 +66,34 @@ export interface DialogInstance {
     /** The z-index of the dialog, used to determine its stacking order relative to other elements. */
     zIndex: number;
 }
+
+export interface WindowState {
+    id: string;
+    isVisible: boolean;
+    windowComponent: unknown;
+    windowComponentKey: string;    // To force re-rendering if needed
+    xPos: number;
+    yPos: number;
+    minimumWidth: number;
+    maximumWidth: number;
+    minimumHeight: number;
+    maximumHeight: number;
+    initialWidth: number;
+    initialHeight: number;
+    windowProps: object;
+}
+
+export interface WindowStateInit {
+    isVisible?: boolean;
+    windowComponent?: unknown;
+    windowComponentKey?: string;    // To force re-rendering if needed
+    xPos?: number;
+    yPos?: number;
+    minimumWidth?: number;
+    maximumWidth?: number;
+    minimumHeight?: number;
+    maximumHeight?: number;
+    initialWidth?: number;
+    initialHeight?: number;
+    windowProps?: object;
+}

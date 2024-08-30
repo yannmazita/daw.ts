@@ -8,8 +8,8 @@
                 <button class="" @click="closeComponent">X</button>
             </div>
         </div>
-        <div class="">
-            <slot></slot>
+        <div>
+            <component :is="currentWindow.windowComponent" :key="currentWindow.windowComponentKey" v-bind="currentWindow.windowProps"></component>
         </div>
         <!-- Corner resizers -->
         <div class="resizer se" @mousedown="event => startResize('se', event)"></div>
@@ -25,30 +25,23 @@
 </template>
 
 <script setup lang="ts">
+import { useWindowStore } from '@/stores/windowsStore';
+import { WindowState } from '@/utils/interfaces';
 import { ref, reactive, watchEffect, Ref, onMounted } from 'vue';
 
-interface Props {
-    minimumWidth?: number;
-    maximumWidth?: number;
-    minimumHeight?: number;
-    maximumHeight?: number;
-    initialWidth?: number;
-    initialHeight?: number;
-}
-const props = withDefaults(defineProps<Props>(), {
-    minimumWidth: 320,
-    maximumWidth: 1000,
-    minimumHeight: 240,
-    maximumHeight: 1000,
-    initialWidth: 800,
-    initialHeight: 600,
-});
+const props = defineProps<{
+    id: string;
+}>();
+
+const windowStore = useWindowStore();
+const currentWindow: WindowState = windowStore.windows.find(w => w.id === props.id) as WindowState; // unsafe
+
 
 const pos = reactive({
-    x: 0,
-    y: 0,
-    width: Math.min(Math.max(props.initialWidth, props.minimumWidth), props.maximumWidth),
-    height: Math.min(Math.max(props.initialHeight, props.minimumHeight), props.maximumHeight),
+    x: currentWindow.xPos,
+    y: currentWindow.yPos,
+    width: Math.min(Math.max(currentWindow.initialWidth, currentWindow.minimumWidth), currentWindow.maximumWidth),
+    height: Math.min(Math.max(currentWindow.initialHeight, currentWindow.minimumHeight), currentWindow.maximumHeight),
 });
 
 const componentRef: Ref<HTMLDivElement | null> = ref(null);
@@ -163,8 +156,8 @@ onMounted(() => {
         // Trying to resize past the boundary will mean the component grows from the bottom.
 
         if (resizeDirection.value === 'north') {
-            const newHeight = Math.min(Math.max(pos.height - dy, props.minimumHeight), props.maximumHeight);
-            if (newHeight > props.minimumHeight) {
+            const newHeight = Math.min(Math.max(pos.height - dy, currentWindow.minimumHeight), currentWindow.maximumHeight);
+            if (newHeight > currentWindow.minimumHeight) {
                 const newY = pos.y + dy;
                 if (newY >= parentRect.top && newY + newHeight <= parentRect.bottom) {
                     pos.y = newY;
@@ -175,11 +168,11 @@ onMounted(() => {
                 }
             }
         } else {
-            const newWidth = Math.min(Math.max(pos.width + (expandRight ? dx : -dx), props.minimumWidth), props.maximumWidth);
-            const newHeight = Math.min(Math.max(pos.height + (expandDown ? dy : -dy), props.minimumHeight), props.maximumHeight);
+            const newWidth = Math.min(Math.max(pos.width + (expandRight ? dx : -dx), currentWindow.minimumWidth), currentWindow.maximumWidth);
+            const newHeight = Math.min(Math.max(pos.height + (expandDown ? dy : -dy), currentWindow.minimumHeight), currentWindow.maximumHeight);
 
             // Adjust x position for west resizing
-            if (!expandRight && newWidth > props.minimumWidth) {
+            if (!expandRight && newWidth > currentWindow.minimumWidth) {
                 const newX = pos.x + dx;
                 if (newX >= parentRect.left && newX + newWidth <= parentRect.right) {
                     pos.x = newX;
@@ -195,7 +188,7 @@ onMounted(() => {
             }
 
             // Adjust y position for north resizing (handled above) and south resizing
-            if (!expandDown && newHeight > props.minimumHeight) {
+            if (!expandDown && newHeight > currentWindow.minimumHeight) {
                 const newY = pos.y + dy;
                 if (newY >= parentRect.top && newY + newHeight <= parentRect.bottom) {
                     pos.y = newY;
