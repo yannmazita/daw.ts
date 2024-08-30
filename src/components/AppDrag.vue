@@ -1,9 +1,14 @@
 <template>
-    <div ref="componentRef" class="draggable-resizable bg-yellow-300" :style="styleObject">
-        <div class="title-bar" @mousedown="startDrag">
-            Drag Me Up!
+    <div v-if="isVisible" ref="componentRef" class="draggable-resizable bg-yellow-300" :style="styleObject">
+        <div class="flex justify-between bg-[#f0f0f0] p-1.5 cursor-move" @mousedown="startDrag">
+            <div class="w-fit">
+                Drag Me Up!
+            </div>
+            <div class="w-fit">
+                <button class="" @click="closeComponent">X</button>
+            </div>
         </div>
-        <div class="content">
+        <div class="">
             <slot></slot>
         </div>
         <!-- Corner resizers -->
@@ -47,6 +52,7 @@ const pos = reactive({
 });
 
 const componentRef: Ref<HTMLDivElement | null> = ref(null);
+const isVisible = ref(true);
 const dragging = ref(false);
 const resizing = ref(false);
 const resizeDirection = ref('');
@@ -78,6 +84,10 @@ function startResize(direction: string, event: MouseEvent) {
     resizeDirection.value = direction;
     lastMouseX = event.clientX;
     lastMouseY = event.clientY;
+}
+
+function closeComponent() {
+    isVisible.value = false;
 }
 
 function componentDebug() {
@@ -210,16 +220,6 @@ onMounted(() => {
     border: 1px solid black;
 }
 
-.title-bar {
-    background-color: #f0f0f0;
-    padding: 5px;
-    cursor: move;
-}
-
-.content {
-    padding: 10px;
-}
-
 .resizer {
     position: absolute;
     background-color: red;
@@ -297,5 +297,17 @@ onMounted(() => {
 .west {
     left: 0;
     cursor: w-resize;
+}
+
+.close-button {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: 16px;
+    color: black;
 }
 </style>
