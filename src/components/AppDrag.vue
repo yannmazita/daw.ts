@@ -298,16 +298,4 @@ onMounted(() => {
     left: 0;
     cursor: w-resize;
 }
-
-.close-button {
-    position: absolute;
-    right: 10px;
-    top: 50%;
-    transform: translateY(-50%);
-    border: none;
-    background: none;
-    cursor: pointer;
-    font-size: 16px;
-    color: black;
-}
 </style>
