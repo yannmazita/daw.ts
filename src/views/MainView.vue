@@ -1,8 +1,7 @@
 <template>
     <button @click="windowStore.createWindow()">Open Window</button>
-    <div class="bg-blue-700 h-14">boudary test</div>
-    <div class="size-3/4 bg-green-700" v-for="win in windows" :key="win.id">
-        <AppDrag :id="win.id"></AppDrag>
+    <div class="relative size-full overflow-auto">
+        <AppDrag v-for="window in windows" :key="window.id" :id="window.id" />
     </div>
 </template>
 
@@ -18,3 +17,12 @@ onMounted(() => {
     windowStore.createWindow();
 })
 </script>
+
+<style>
+.window-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+}
+</style>

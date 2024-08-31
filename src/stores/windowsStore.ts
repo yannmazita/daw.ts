@@ -7,6 +7,7 @@ import AppDefaultWindow from '@/components/AppDefaultWindow.vue';
 
 export const useWindowStore = defineStore('windows', () => {
     const windows = ref<WindowState[]>([]);
+
     const defaultWindowState: WindowState = {
         id: uuidv4(),
         isVisible: true,
@@ -24,7 +25,9 @@ export const useWindowStore = defineStore('windows', () => {
     };
 
     function createWindow(initState?: WindowStateInit) {
-        windows.value.push({ ...defaultWindowState, ...initState });
+        const defaultState: WindowState | object = {};
+        Object.assign(defaultState, defaultWindowState);
+        windows.value.push({ ...{ id: uuidv4(), isVisible: true, windowComponent: markRaw(AppDefaultWindow), windowComponentKey: uuidv4(), xPos: 100, yPos: 100, minimumWidth: 320, maximumWidth: 1024, minimumHeight: 240, maximumHeight: 768, initialWidth: 640, initialHeight: 480, windowProps: {} }, ...initState });
     }
 
     function closeWindow(id: string) {
@@ -34,13 +37,12 @@ export const useWindowStore = defineStore('windows', () => {
         }
     }
 
-    function updatePosition(id: string, newX: number, newY: number) {
-        const window = windows.value.find(w => w.id === id);
-        if (window) {
-            window.xPos = newX;
-            window.yPos = newY;
+    function updateWindow(id: string, updates: Partial<WindowState>) {
+        const index = windows.value.findIndex(w => w.id === id);
+        if (index !== -1) {
+            windows.value[index] = { ...windows.value[index], ...updates };
         }
     }
 
-    return { windows, createWindow, closeWindow, updatePosition };
+    return { windows, createWindow, closeWindow, updateWindow };
 });

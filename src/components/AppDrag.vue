@@ -9,7 +9,7 @@
             </div>
         </div>
         <div>
-            <component :is="currentWindow.windowComponent" :key="currentWindow.windowComponentKey" v-bind="currentWindow.windowProps"></component>
+            <component :is="windowComponent" :key="windowComponentKey" v-bind="windowProps"></component>
         </div>
         <!-- Corner resizers -->
         <div class="resizer se" @mousedown="event => startResize('se', event)"></div>
@@ -25,59 +25,35 @@
 </template>
 
 <script setup lang="ts">
-import { useWindowStore } from '@/stores/windowsStore';
-import { WindowState } from '@/utils/interfaces';
-import { ref, reactive, watchEffect, Ref, onMounted } from 'vue';
+import { ref, reactive, watchEffect, Ref, onMounted, onUnmounted } from 'vue';
+import { useDragState } from '@/composables/useDragState';
+import { useDraggable } from '@/composables/useDraggable';
+import { useResizable } from '@/composables/useResizable';
 
 const props = defineProps<{
     id: string;
 }>();
 
-const windowStore = useWindowStore();
-const currentWindow: WindowState = windowStore.windows.find(w => w.id === props.id) as WindowState; // unsafe
-
-
-const pos = reactive({
-    x: currentWindow.xPos,
-    y: currentWindow.yPos,
-    width: Math.min(Math.max(currentWindow.initialWidth, currentWindow.minimumWidth), currentWindow.maximumWidth),
-    height: Math.min(Math.max(currentWindow.initialHeight, currentWindow.minimumHeight), currentWindow.maximumHeight),
-});
-
 const componentRef: Ref<HTMLDivElement | null> = ref(null);
-const isVisible = ref(true);
-const dragging = ref(false);
-const resizing = ref(false);
-const resizeDirection = ref('');
-let lastMouseX = 0;
-let lastMouseY = 0;
+
+const dragState = useDragState();
+const { isVisible, windowComponent, windowComponentKey, xPos, yPos, windowProps, resizing, width, height } = dragState;
+const { startResize, stopResize, handleResize } = useResizable(dragState);
+const { startDrag, stopDrag, handleDrag } = useDraggable(dragState);
 
 const styleObject = reactive({
-    top: `${pos.y}px`,
-    left: `${pos.x}px`,
-    width: `${pos.width}px`,
-    height: `${pos.height}px`,
+    top: `${yPos.value}px`,
+    left: `${xPos.value}px`,
+    width: `${width.value}px`,
+    height: `${height.value}px`,
 });
 
 watchEffect(() => {
-    styleObject.top = `${pos.y}px`;
-    styleObject.left = `${pos.x}px`;
-    styleObject.width = `${pos.width}px`;
-    styleObject.height = `${pos.height}px`;
+    styleObject.top = `${yPos.value}px`;
+    styleObject.left = `${xPos.value}px`;
+    styleObject.width = `${width.value}px`;
+    styleObject.height = `${height.value}px`;
 });
-
-function startDrag(event: MouseEvent) {
-    dragging.value = true;
-    lastMouseX = event.clientX;
-    lastMouseY = event.clientY;
-}
-
-function startResize(direction: string, event: MouseEvent) {
-    resizing.value = true;
-    resizeDirection.value = direction;
-    lastMouseX = event.clientX;
-    lastMouseY = event.clientY;
-}
 
 function closeComponent() {
     isVisible.value = false;
@@ -87,123 +63,42 @@ function componentDebug() {
     const parent = componentRef.value?.parentElement;
     const parentRect = parent?.getBoundingClientRect();
     console.log(`Parent width: ${parentRect?.width}, height: ${parentRect?.height}`);
-    console.log(`Component width: ${pos.width}, height: ${pos.height}`);
-    console.log(`Component position: x: ${pos.x}, y: ${pos.y}`);
+    console.log(`Component width: ${width.value}, height: ${height.value}`);
+    console.log(`Component position: x: ${xPos.value}, y: ${yPos.value}`);
     console.log(`Component style: ${styleObject.width}, ${styleObject.height}`);
 }
 
 onMounted(() => {
-    const parent = componentRef.value?.parentElement;
-    const parentRect = parent?.getBoundingClientRect();
-
     document.addEventListener('mousemove', (event) => {
-        if (dragging.value && parentRect) {
-            const dx = event.clientX - lastMouseX;
-            const dy = event.clientY - lastMouseY;
-
-            // Adjust pos.x and pos.y to consider the parent's position
-            pos.x = Math.max(parentRect.left, Math.min(pos.x + dx, parentRect.right - pos.width));
-            pos.y = Math.max(parentRect.top, Math.min(pos.y + dy, parentRect.bottom - pos.height));
-
-            lastMouseX = event.clientX;
-            lastMouseY = event.clientY;
+        if (componentRef.value !== null) {
+            handleDrag(event, componentRef.value);
         }
 
-        if (resizing.value) {
-            let dx = event.clientX - lastMouseX;
-            let dy = event.clientY - lastMouseY;
-
-            switch (resizeDirection.value) {
-                case 'se':
-                    adjustSize(dx, dy, true, true);
-                    break;
-                case 'sw':
-                    adjustSize(dx, dy, false, true);
-                    break;
-                case 'nw':
-                    adjustSize(dx, dy, false, false);
-                    break;
-                case 'ne':
-                    adjustSize(dx, dy, true, false);
-                    break;
-                case 'north':
-                    adjustSize(0, dy, false, false);
-                    break;
-                case 'south':
-                    adjustSize(0, dy, true, true);
-                    break;
-                case 'east':
-                    adjustSize(dx, 0, true, true);
-                    break;
-                case 'west':
-                    adjustSize(dx, 0, false, false);
-                    break;
-            }
-
-            lastMouseX = event.clientX;
-            lastMouseY = event.clientY;
+        if (componentRef.value !== null && resizing.value) {
+            handleResize(event, componentRef.value);
         }
     });
 
     document.addEventListener('mouseup', () => {
-        dragging.value = false;
-        resizing.value = false;
-        resizeDirection.value = '';
+        stopDrag();
+        stopResize();
     });
+});
 
-    function adjustSize(dx: number, dy: number, expandRight: boolean, expandDown: boolean) {
-        // Currently there is a bug when resizing using the north handle and encountering the parent's top boundary
-        // Trying to resize past the boundary will mean the component grows from the bottom.
-
-        if (resizeDirection.value === 'north') {
-            const newHeight = Math.min(Math.max(pos.height - dy, currentWindow.minimumHeight), currentWindow.maximumHeight);
-            if (newHeight > currentWindow.minimumHeight) {
-                const newY = pos.y + dy;
-                if (newY >= parentRect.top && newY + newHeight <= parentRect.bottom) {
-                    pos.y = newY;
-                    pos.height = newHeight;
-                } else {
-                    // Adjust height only to prevent moving with the mouse
-                    pos.height = newHeight;
-                }
-            }
-        } else {
-            const newWidth = Math.min(Math.max(pos.width + (expandRight ? dx : -dx), currentWindow.minimumWidth), currentWindow.maximumWidth);
-            const newHeight = Math.min(Math.max(pos.height + (expandDown ? dy : -dy), currentWindow.minimumHeight), currentWindow.maximumHeight);
-
-            // Adjust x position for west resizing
-            if (!expandRight && newWidth > currentWindow.minimumWidth) {
-                const newX = pos.x + dx;
-                if (newX >= parentRect.left && newX + newWidth <= parentRect.right) {
-                    pos.x = newX;
-                    pos.width = newWidth;
-                } else {
-                    // Adjust width only to prevent moving with the mouse
-                    pos.width = newWidth;
-                }
-            } else if (expandRight) {
-                if (pos.x + newWidth <= parentRect.right) {
-                    pos.width = newWidth;
-                }
-            }
-
-            // Adjust y position for north resizing (handled above) and south resizing
-            if (!expandDown && newHeight > currentWindow.minimumHeight) {
-                const newY = pos.y + dy;
-                if (newY >= parentRect.top && newY + newHeight <= parentRect.bottom) {
-                    pos.y = newY;
-                    pos.height = newHeight;
-                } else {
-                    // Adjust height only to prevent moving with the mouse
-                    pos.height = newHeight;
-                }
-            } else if (expandDown) {
-                if (pos.y + newHeight <= parentRect.bottom) {
-                    pos.height = newHeight;
-                }
-            }
+onUnmounted(() => {
+    document.removeEventListener('mousemove', (event) => {
+        if (componentRef.value !== null) {
+            handleDrag(event, componentRef.value);
         }
-    }
+
+        if (componentRef.value !== null && resizing.value) {
+            handleResize(event, componentRef.value);
+        }
+    });
+    document.removeEventListener('mouseup', () => {
+        stopDrag();
+        stopResize();
+    });
 });
 </script>
 
