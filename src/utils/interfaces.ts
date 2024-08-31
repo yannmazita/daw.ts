@@ -97,3 +97,26 @@ export interface WindowStateInit {
     initialHeight?: number;
     windowProps?: object;
 }
+
+export interface Window {
+    id: string;
+    isVisible: boolean;
+    windowComponent: unknown;
+    windowComponentKey: string;    // To force re-rendering if needed
+    xPos: number;
+    yPos: number;
+    minimumWidth: number;
+    maximumWidth: number;
+    minimumHeight: number;
+    maximumHeight: number;
+    initialWidth: number;
+    initialHeight: number;
+    windowProps: object;
+    dragging: boolean;
+    resizing: boolean;
+    resizeDirection: string;
+    lastMouseX: number;
+    lastMouseY: number;
+    width: number;
+    height: number;
+}

@@ -1,20 +1,21 @@
 <template>
-    <button @click="windowStore.createWindow()">Open Window</button>
+    <button @click="windowsStore.createWindow()">Open Window</button>
     <div class="relative size-full overflow-auto">
-        <AppDrag v-for="window in windows" :key="window.id" :id="window.id" />
+        <AppDrag v-for="[id, window] of windows" :key="id" :id="window.id" />
     </div>
 </template>
 
 <script setup lang="ts">
 import AppDrag from '@/components/AppDrag.vue';
 import { onMounted } from 'vue';
-import { useWindowStore } from '@/stores/windowsStore';
+import { useWindowsStore } from '@/stores/useWindowsStore';
+import { storeToRefs } from 'pinia';
 
-const windowStore = useWindowStore();
-const windows = windowStore.windows;
+const windowsStore = useWindowsStore();
+const { windows } = storeToRefs(windowsStore);
 
 onMounted(() => {
-    windowStore.createWindow();
+    windowsStore.createWindow();
 })
 </script>
 

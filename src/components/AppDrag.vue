@@ -1,5 +1,6 @@
 <template>
-    <div v-if="isVisible" ref="componentRef" class="draggable-resizable bg-yellow-300" :style="styleObject">
+    <div v-if="currentWindow?.isVisible" ref="componentRef" class="draggable-resizable bg-yellow-300"
+        :style="styleObject">
         <div class="flex justify-between bg-[#f0f0f0] p-1.5 cursor-move" @mousedown="startDrag">
             <div class="w-fit">
                 Drag Me Up!
@@ -9,7 +10,8 @@
             </div>
         </div>
         <div>
-            <component :is="windowComponent" :key="windowComponentKey" v-bind="windowProps"></component>
+            <component :is="currentWindow.windowComponent" :key="currentWindow.windowComponentKey"
+                v-bind="currentWindow.windowProps"></component>
         </div>
         <!-- Corner resizers -->
         <div class="resizer se" @mousedown="event => startResize('se', event)"></div>
@@ -25,10 +27,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, watchEffect, Ref, onMounted, onUnmounted } from 'vue';
-import { useDragState } from '@/composables/useDragState';
+import { ref, Ref, onMounted, onUnmounted, computed } from 'vue';
+import { useWindowsStore } from '@/stores/useWindowsStore';
 import { useDraggable } from '@/composables/useDraggable';
 import { useResizable } from '@/composables/useResizable';
+import { Window } from '@/utils/interfaces';
 
 const props = defineProps<{
     id: string;
@@ -36,36 +39,29 @@ const props = defineProps<{
 
 const componentRef: Ref<HTMLDivElement | null> = ref(null);
 
-const dragState = useDragState();
-const { isVisible, windowComponent, windowComponentKey, xPos, yPos, windowProps, resizing, width, height } = dragState;
-const { startResize, stopResize, handleResize } = useResizable(dragState);
-const { startDrag, stopDrag, handleDrag } = useDraggable(dragState);
+const windowsStore = useWindowsStore();
+const currentWindow = computed(() => windowsStore.windows.get(props.id));
+const { startResize, stopResize, handleResize } = useResizable(currentWindow.value as Window);
+const { startDrag, stopDrag, handleDrag } = useDraggable(props.id);
 
-const styleObject = reactive({
-    top: `${yPos.value}px`,
-    left: `${xPos.value}px`,
-    width: `${width.value}px`,
-    height: `${height.value}px`,
-});
-
-watchEffect(() => {
-    styleObject.top = `${yPos.value}px`;
-    styleObject.left = `${xPos.value}px`;
-    styleObject.width = `${width.value}px`;
-    styleObject.height = `${height.value}px`;
-});
+const styleObject = computed(() => ({
+    top: `${currentWindow.value?.yPos}px`,
+    left: `${currentWindow.value?.xPos}px`,
+    width: `${currentWindow.value?.width}px`,
+    height: `${currentWindow.value?.height}px`
+}));
 
 function closeComponent() {
-    isVisible.value = false;
+    // something
 }
 
 function componentDebug() {
     const parent = componentRef.value?.parentElement;
     const parentRect = parent?.getBoundingClientRect();
     console.log(`Parent width: ${parentRect?.width}, height: ${parentRect?.height}`);
-    console.log(`Component width: ${width.value}, height: ${height.value}`);
-    console.log(`Component position: x: ${xPos.value}, y: ${yPos.value}`);
-    console.log(`Component style: ${styleObject.width}, ${styleObject.height}`);
+    console.log(`Component width: ${currentWindow.value?.width}, height: ${currentWindow.value?.height}`);
+    console.log(`Component position: x: ${currentWindow.value?.xPos}, y: ${currentWindow.value?.yPos}`);
+    console.log(`Component style: ${styleObject.value.width}, ${styleObject.value.height}`);
 }
 
 onMounted(() => {
@@ -74,7 +70,7 @@ onMounted(() => {
             handleDrag(event, componentRef.value);
         }
 
-        if (componentRef.value !== null && resizing.value) {
+        if (componentRef.value !== null && currentWindow.value?.resizing) {
             handleResize(event, componentRef.value);
         }
     });
@@ -91,7 +87,7 @@ onUnmounted(() => {
             handleDrag(event, componentRef.value);
         }
 
-        if (componentRef.value !== null && resizing.value) {
+        if (componentRef.value !== null && currentWindow.value?.resizing) {
             handleResize(event, componentRef.value);
         }
     });

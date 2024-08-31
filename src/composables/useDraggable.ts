@@ -1,15 +1,16 @@
-import { useDragState } from './useDragState';
+import { useWindowsStore } from "@/stores/useWindowsStore";
+import { computed } from "vue";
 
-export function useDraggable(state: ReturnType<typeof useDragState>) {
+export function useDraggable(id: string) {
+    const store = useWindowsStore();
+    const currentWindow = computed(() => store.windows.get(id));
 
     function startDrag(event: MouseEvent) {
-        state.dragging.value = true;
-        state.lastMouseX.value = event.clientX;
-        state.lastMouseY.value = event.clientY;
+        store.updateWindow(id, { dragging: true, lastMouseX: event.clientX, lastMouseY: event.clientY })
     }
 
     function stopDrag() {
-        state.dragging.value = false;
+        store.updateWindow(id, { dragging: false });
     }
 
     function handleDrag(event: MouseEvent, rootElement: HTMLDivElement) {
@@ -17,16 +18,15 @@ export function useDraggable(state: ReturnType<typeof useDragState>) {
         const parentRect = parent?.getBoundingClientRect();
 
         //if (parentRect) {
-        if (state.dragging.value && parentRect) {
-            const dx = event.clientX - state.lastMouseX.value;
-            const dy = event.clientY - state.lastMouseY.value;
+        if (currentWindow.value.dragging && parentRect) {
+            const dx = event.clientX - currentWindow.value.lastMouseX;
+            const dy = event.clientY - currentWindow.value.lastMouseY;
 
             // Adjust pos.x and pos.y to consider the parent's position
-            state.xPos.value = Math.max(parentRect.left, Math.min(state.xPos.value + dx, parentRect.right - state.width.value));
-            state.yPos.value = Math.max(parentRect.top, Math.min(state.yPos.value + dy, parentRect.bottom - state.height.value));
+            const xPos = Math.max(parentRect.left, Math.min(currentWindow.value.xPos + dx, parentRect.right - currentWindow.value.width));
+            const yPos = Math.max(parentRect.top, Math.min(currentWindow.value.yPos + dy, parentRect.bottom - currentWindow.value.height));
 
-            state.lastMouseX.value = event.clientX;
-            state.lastMouseY.value = event.clientY;
+            store.updateWindow(id, { xPos: xPos, yPos: yPos, lastMouseX: event.clientX, lastMouseY: event.clientY });
         }
     }
 

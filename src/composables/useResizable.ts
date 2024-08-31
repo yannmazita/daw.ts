@@ -1,19 +1,17 @@
-import { useDragState } from './useDragState';
+import { Window } from "@/utils/interfaces";
 
-export function useResizable(state: ReturnType<typeof useDragState>) {
+export function useResizable(currentWindow: Window) {
 
     function startResize(direction: string, event: MouseEvent) {
-        const { resizing, resizeDirection, lastMouseX, lastMouseY } = state;
-        resizing.value = true;
-        resizeDirection.value = direction;
-        lastMouseX.value = event.clientX;
-        lastMouseY.value = event.clientY;
+        currentWindow.resizing = true;
+        currentWindow.resizeDirection = direction;
+        currentWindow.lastMouseX = event.clientX;
+        currentWindow.lastMouseY = event.clientY;
     }
 
     function stopResize() {
-        const { resizing, resizeDirection } = state;
-        resizing.value = false;
-        resizeDirection.value = '';
+        currentWindow.resizing = false;
+        currentWindow.resizeDirection = '';
     }
 
     function adjustSize(rootElement: HTMLDivElement, dx: number, dy: number, expandRight: boolean, expandDown: boolean) {
@@ -22,66 +20,64 @@ export function useResizable(state: ReturnType<typeof useDragState>) {
 
         const parent = rootElement.parentElement;
         const parentRect = parent?.getBoundingClientRect();
-        const { xPos, yPos, width, height, minimumWidth, maximumWidth, minimumHeight, maximumHeight } = state;
+        const { width, height, minimumWidth, maximumWidth, minimumHeight, maximumHeight } = currentWindow;
 
-        if (state.resizeDirection.value === 'north') {
-            const newHeight = Math.min(Math.max(state.height.value - dy, state.minimumHeight.value), state.maximumHeight.value);
-            if (newHeight > state.minimumHeight.value) {
-                const newY = state.yPos.value + dy;
+        if (currentWindow.resizeDirection === 'north') {
+            const newHeight = Math.min(Math.max(currentWindow.height - dy, currentWindow.minimumHeight), currentWindow.maximumHeight);
+            if (newHeight > currentWindow.minimumHeight) {
+                const newY = currentWindow.yPos + dy;
                 if (newY >= parentRect.top && newY + newHeight <= parentRect.bottom) {
-                    yPos.value = newY;
-                    height.value = newHeight;
+                    currentWindow.yPos = newY;
+                    currentWindow.height = newHeight;
                 } else {
                     // Adjust height only to prevent moving with the mouse
-                    height.value = newHeight;
+                    currentWindow.height = newHeight;
                 }
             }
         } else {
-            const newWidth = Math.min(Math.max(width.value + (expandRight ? dx : -dx), minimumWidth.value), maximumWidth.value);
-            const newHeight = Math.min(Math.max(height.value + (expandDown ? dy : -dy), minimumHeight.value), maximumHeight.value);
+            const newWidth = Math.min(Math.max(width + (expandRight ? dx : -dx), minimumWidth), maximumWidth);
+            const newHeight = Math.min(Math.max(height + (expandDown ? dy : -dy), minimumHeight), maximumHeight);
 
-            // Adjust xPos.value position for west resizing
-            if (!expandRight && newWidth > minimumWidth.value) {
-                const newX = xPos.value + dx;
+            // Adjust currentWindow.xPos position for west resizing
+            if (!expandRight && newWidth > minimumWidth) {
+                const newX = currentWindow.xPos + dx;
                 if (newX >= parentRect.left && newX + newWidth <= parentRect.right) {
-                    xPos.value = newX;
-                    width.value = newWidth;
+                    currentWindow.xPos = newX;
+                    currentWindow.width = newWidth;
                 } else {
                     // Adjust width only to prevent moving with the mouse
-                    width.value = newWidth;
+                    currentWindow.width = newWidth;
                 }
             } else if (expandRight) {
-                if (xPos.value + newWidth <= parentRect.right) {
-                    width.value = newWidth;
+                if (currentWindow.xPos + newWidth <= parentRect.right) {
+                    currentWindow.width = newWidth;
                 }
             }
 
-            // Adjust yPos.value position for north resizing (handled above) and south resizing
-            if (!expandDown && newHeight > minimumHeight.value) {
-                const newY = yPos.value + dy;
+            // Adjust currentWindow.yPos position for north resizing (handled above) and south resizing
+            if (!expandDown && newHeight > minimumHeight) {
+                const newY = currentWindow.yPos + dy;
                 if (newY >= parentRect.top && newY + newHeight <= parentRect.bottom) {
-                    yPos.value = newY;
-                    height.value = newHeight;
+                    currentWindow.yPos = newY;
+                    currentWindow.height = newHeight;
                 } else {
                     // Adjust height only to prevent moving with the mouse
-                    height.value = newHeight;
+                    currentWindow.height = newHeight;
                 }
             } else if (expandDown) {
-                if (yPos.value + newHeight <= parentRect.bottom) {
-                    height.value = newHeight;
+                if (currentWindow.yPos + newHeight <= parentRect.bottom) {
+                    currentWindow.height = newHeight;
                 }
             }
         }
     }
 
     function handleResize(event: MouseEvent, rootElement: HTMLDivElement) {
-        const { lastMouseX, lastMouseY, resizing, resizeDirection } = state;
+        if (currentWindow.resizing) {
+            const dx = event.clientX - currentWindow.lastMouseX;
+            const dy = event.clientY - currentWindow.lastMouseY;
 
-        if (resizing.value) {
-            const dx = event.clientX - lastMouseX.value;
-            const dy = event.clientY - lastMouseY.value;
-
-            switch (resizeDirection.value) {
+            switch (currentWindow.resizeDirection) {
                 case 'se':
                     adjustSize(rootElement, dx, dy, true, true);
                     break;
@@ -109,8 +105,8 @@ export function useResizable(state: ReturnType<typeof useDragState>) {
             }
         }
 
-        lastMouseX.value = event.clientX;
-        lastMouseY.value = event.clientY;
+        currentWindow.lastMouseX = event.clientX;
+        currentWindow.lastMouseY = event.clientY;
     }
 
     return {
