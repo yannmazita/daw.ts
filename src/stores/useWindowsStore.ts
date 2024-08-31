@@ -7,29 +7,6 @@ import AppDefaultWindow from '@/components/AppDefaultWindow.vue';
 export const useWindowsStore = defineStore('windows', () => {
     const windows = reactive(new Map<string, Window>());
 
-    const defaultWindowProperties: Window = {
-        id: uuidv4(),
-        isVisible: true,
-        windowComponent: markRaw(AppDefaultWindow),
-        windowComponentKey: uuidv4(),
-        xPos: 100,
-        yPos: 100,
-        minimumWidth: 320,
-        maximumWidth: 1024,
-        minimumHeight: 240,
-        maximumHeight: 768,
-        initialWidth: 640,
-        initialHeight: 480,
-        windowProps: {},
-        dragging: false,
-        resizing: false,
-        resizeDirection: '',
-        lastMouseX: 0,
-        lastMouseY: 0,
-        width: 640,
-        height: 480,
-    };
-
     function createWindow(initState?: Partial<Window>) {
         const id = uuidv4();
         const newWindow: Window = {
@@ -47,7 +24,7 @@ export const useWindowsStore = defineStore('windows', () => {
             maximumHeight: 768,
             initialWidth: 640,
             initialHeight: 480,
-            windowProps: {},
+            windowProps: { id: id },
             dragging: false,
             resizing: false,
             resizeDirection: '',
@@ -76,7 +53,6 @@ export const useWindowsStore = defineStore('windows', () => {
 
     return {
         windows,
-        defaultWindowProperties,
         createWindow,
         closeWindow,
         updateWindow,
