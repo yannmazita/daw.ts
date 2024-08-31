@@ -46,7 +46,7 @@
     <VueResizable v-if="isActiveData" style="overflow-wrap: break-word;"
         class="grid grid-rows-[30px_1fr] border border-black shadow-inner box-content text-white" :width="widthData"
         :height="heightData" :left="leftData" :top="topData" :minWidth="minWidthData" :min-height="minHeightData"
-        :maxWidth="maxWidthData" :maxHeight="maxHeightData" :active="isResizingData" :fitParent="true"
+        :maxWidth="maxWidthData" :maxHeight="maxHeightData" :active="isResizingData" :fitParent="false"
         :dragSelector="'.toolbar'" :maximize="isMaximizedData" @drag:end="endDrag" @resize:end="endResize"
         @mousedown="activeMouse">
         <div :class="`toolbar grid items-center pl-1 select-none backdrop-blur-[5px] bg-black opacity-65`"
@@ -68,44 +68,97 @@
 </template>
 
 <script setup lang="ts">
-import { defineProps, defineEmits } from 'vue';
-import { useWindow } from '@/components/AppWindow/useWindow'
-import { WindowProps } from '@/components/AppWindow/types';
+import { ref, watch, onMounted, defineProps, defineEmits } from 'vue';
 import VueResizable from 'vue-resizable';
 
-const props = defineProps<WindowProps>();
-const emit = defineEmits<{
-    (e: 'clickMin'): void
-    (e: 'clickWindow'): void
-    (e: 'clickDestroy'): void
-}>();
+interface Props {
+    top: number;
+    left: number;
+    width: number;
+    height: number;
+    minWidth: number;
+    minHeight: number;
+    isDragging: boolean;
+    isResizing: ('r' | 'rb' | 'b' | 'lb' | 'l' | 'lt' | 't' | 'rt')[];
+    isActive: boolean;
+    isMaximized: boolean;
+    maxWidth: number;
+    maxHeight: number;
+    title: string;
+    windowInnerWidth: number;
+    windowId: string;
+    titleIcon: string;
+    isButtonMaximized: boolean;
+    isButtonMinimized: boolean;
+}
+const props = defineProps<Props>();
 
-const {
-    isActiveData,
-    heightData,
-    leftData,
-    endDrag,
-    widthData,
-    endResize,
-    minimize,
-    activeMouse,
-    maximize,
-    close,
-    topData,
-    minWidthData,
-    minHeightData,
-    maxWidthData,
-    maxHeightData,
-    isResizingData,
-    isMaximizedData,
-    isButtonMinimizedData,
-    isButtonMaximizedData,
-    buttonAreaWidth,
-    titleIconData,
-    titleData,
-    buttonsCol,
-} = useWindow(props, emit);
+const emits = defineEmits(['clickMin', 'clickWindow', 'clickDestroy']);
 
+const topData = ref(props.top);
+const leftData = ref(props.left);
+const widthData = ref(props.width);
+const heightData = ref(props.height);
+const minWidthData = ref(props.minWidth);
+const minHeightData = ref(props.minHeight);
+const isResizingData = ref(props.isResizing);
+const isActiveData = ref(props.isActive);
+const isMaximizedData = ref(props.isMaximized);
+const maxWidthData = ref(props.maxWidth);
+const maxHeightData = ref(props.maxHeight);
+const titleData = ref(props.title);
+const windowInnerWidthData = ref(props.windowInnerWidth);
+const windowIdData = ref(props.windowId);
+const titleIconData = ref(props.titleIcon);
+const isButtonMaximizedData = ref(props.isButtonMaximized);
+const isButtonMinimizedData = ref(props.isButtonMinimized);
+const buttonsCol = ref(1);
+const buttonAreaWidth = ref(0);
+
+const buttonCol = () => {
+    buttonsCol.value = 1;
+    if (isButtonMaximizedData.value) {
+        buttonsCol.value++;
+    }
+    if (isButtonMinimizedData.value) {
+        buttonsCol.value++;
+    }
+    buttonAreaWidth.value = buttonsCol.value * 46.6;
+};
+
+const endDrag = (data: { left: number }) => {
+    leftData.value = data.left;
+};
+
+const endResize = (data: { width: number }) => {
+    widthData.value = data.width;
+};
+
+const minimize = () => {
+    emits('clickMin', windowIdData.value);
+};
+
+const activeMouse = () => {
+    emits('clickWindow', windowIdData.value);
+};
+
+const maximize = () => {
+    isMaximizedData.value = !isMaximizedData.value;
+};
+
+const close = () => {
+    emits('clickDestroy', windowIdData.value);
+};
+
+// Watchers
+watch(() => props.windowInnerWidth, (newValue) => {
+    windowInnerWidthData.value = newValue;
+    if (leftData.value + widthData.value > windowInnerWidthData.value) {
+        leftData.value = windowInnerWidthData.value - widthData.value;
+    }
+});
+
+onMounted(buttonCol);
 </script>
 
 <style lang="css" scoped>
