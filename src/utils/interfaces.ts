@@ -70,6 +70,7 @@ export interface DialogInstance {
 export interface Window {
     id: string;
     isVisible: boolean;
+    isMaximized: boolean;
     windowComponent: unknown;
     windowComponentKey: string;    // To force re-rendering if needed
     xPos: number;
@@ -80,6 +81,7 @@ export interface Window {
     maximumHeight: number;
     initialWidth: number;
     initialHeight: number;
+    restoreSize: { width: number, height: number, xPos: number, yPos: number };
     windowProps: object;
     dragging: boolean;
     resizing: boolean;

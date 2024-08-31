@@ -6,7 +6,9 @@
                 Drag Me Up!
             </div>
             <div class="w-fit">
-                <button class="" @click="closeComponent">X</button>
+                <button class="mx-2" @click="maximizeComponent">{{ currentWindow.isMaximized ? 'Restore' : 'Maximize'
+                    }}</button>
+                <button class="mx-2" @click="closeComponent">Close</button>
             </div>
         </div>
         <div>
@@ -44,23 +46,19 @@ const { startResize, stopResize, handleResize } = useResizable(props.id);
 const { startDrag, stopDrag, handleDrag } = useDraggable(props.id);
 
 const styleObject = computed(() => ({
-    top: `${currentWindow.value?.yPos}px`,
-    left: `${currentWindow.value?.xPos}px`,
-    width: `${currentWindow.value?.width}px`,
-    height: `${currentWindow.value?.height}px`
+    top: currentWindow.value?.isMaximized ? '0' : `${currentWindow.value?.yPos}px`,
+    left: currentWindow.value?.isMaximized ? '0' : `${currentWindow.value?.xPos}px`,
+    width: currentWindow.value?.isMaximized ? '100%' : `${currentWindow.value?.width}px`,
+    height: currentWindow.value?.isMaximized ? '100%' : `${currentWindow.value?.height}px`,
+    //position: currentWindow.value?.isMaximized ? 'fixed' : 'absolute' // Use fixed to cover the whole viewport
 }));
 
 function closeComponent() {
-    // something
+    windowsStore.closeWindow(props.id);
 }
 
-function componentDebug() {
-    const parent = componentRef.value?.parentElement;
-    const parentRect = parent?.getBoundingClientRect();
-    console.log(`Parent width: ${parentRect?.width}, height: ${parentRect?.height}`);
-    console.log(`Component width: ${currentWindow.value?.width}, height: ${currentWindow.value?.height}`);
-    console.log(`Component position: x: ${currentWindow.value?.xPos}, y: ${currentWindow.value?.yPos}`);
-    console.log(`Component style: ${styleObject.value.width}, ${styleObject.value.height}`);
+function maximizeComponent() {
+    windowsStore.maximizeWindow(props.id);
 }
 
 onMounted(() => {

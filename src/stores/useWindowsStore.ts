@@ -12,18 +12,20 @@ export const useWindowsStore = defineStore('windows', () => {
         const newWindow: Window = {
             id,
             isVisible: true,
+            isMaximized: false,
             windowComponent: markRaw(AppDefaultWindow),
             windowComponentKey: uuidv4(),
             xPos: 100,
             yPos: 100,
-            width: 640,
-            height: 480,
+            width: 800,
+            height: 600,
             minimumWidth: 320,
             maximumWidth: 1024,
             minimumHeight: 240,
             maximumHeight: 768,
-            initialWidth: 640,
-            initialHeight: 480,
+            initialWidth: 800,
+            initialHeight: 600,
+            restoreSize: { width: 640, height: 480, xPos: 100, yPos: 100 },
             windowProps: { id: id },
             dragging: false,
             resizing: false,
@@ -47,6 +49,23 @@ export const useWindowsStore = defineStore('windows', () => {
         }
     }
 
+    function maximizeWindow(id: string) {
+        const window = windows.get(id);
+        if (window) {
+            if (!window.isMaximized) {
+                window.restoreSize = { width: window.width, height: window.height, xPos: window.xPos, yPos: window.yPos };
+                window.isMaximized = true;
+            } else {
+                window.width = window.restoreSize.width;
+                window.height = window.restoreSize.height;
+                window.xPos = window.restoreSize.xPos;
+                window.yPos = window.restoreSize.yPos;
+                window.isMaximized = false;
+            }
+            windows.set(id, window);
+        }
+    }
+
     function getWindow(id: string): Window | undefined {
         return windows.get(id);
     }
@@ -56,6 +75,7 @@ export const useWindowsStore = defineStore('windows', () => {
         createWindow,
         closeWindow,
         updateWindow,
+        maximizeWindow,
         getWindow,
     };
 })
