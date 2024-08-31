@@ -1,17 +1,19 @@
+import { useWindowsStore } from "@/stores/useWindowsStore";
 import { Window } from "@/utils/interfaces";
+import { computed, Ref } from "vue";
+import { useDebounce } from "./useDebounce";
 
-export function useResizable(currentWindow: Window) {
+export function useResizable(id: string) {
+    const store = useWindowsStore();
+    const currentWindow = computed(() => store.windows.get(id)) as Ref<Window>;
+    const { debounce } = useDebounce();
 
     function startResize(direction: string, event: MouseEvent) {
-        currentWindow.resizing = true;
-        currentWindow.resizeDirection = direction;
-        currentWindow.lastMouseX = event.clientX;
-        currentWindow.lastMouseY = event.clientY;
+        store.updateWindow(id, { resizing: true, resizeDirection: direction, lastMouseX: event.clientX, lastMouseY: event.clientY });
     }
 
     function stopResize() {
-        currentWindow.resizing = false;
-        currentWindow.resizeDirection = '';
+        store.updateWindow(id, { resizing: false, resizeDirection: '' });
     }
 
     function adjustSize(rootElement: HTMLDivElement, dx: number, dy: number, expandRight: boolean, expandDown: boolean) {
@@ -20,64 +22,60 @@ export function useResizable(currentWindow: Window) {
 
         const parent = rootElement.parentElement;
         const parentRect = parent?.getBoundingClientRect();
-        const { width, height, minimumWidth, maximumWidth, minimumHeight, maximumHeight } = currentWindow;
 
-        if (currentWindow.resizeDirection === 'north') {
-            const newHeight = Math.min(Math.max(currentWindow.height - dy, currentWindow.minimumHeight), currentWindow.maximumHeight);
-            if (newHeight > currentWindow.minimumHeight) {
-                const newY = currentWindow.yPos + dy;
+        if (currentWindow.value.resizeDirection === 'north') {
+            const newHeight = Math.min(Math.max(currentWindow.value.height - dy, currentWindow.value.minimumHeight), currentWindow.value.maximumHeight);
+            if (newHeight > currentWindow.value.minimumHeight) {
+                const newY = currentWindow.value.yPos + dy;
                 if (newY >= parentRect.top && newY + newHeight <= parentRect.bottom) {
-                    currentWindow.yPos = newY;
-                    currentWindow.height = newHeight;
+                    store.updateWindow(id, { yPos: newY, height: newHeight });
                 } else {
                     // Adjust height only to prevent moving with the mouse
-                    currentWindow.height = newHeight;
+                    store.updateWindow(id, { height: newHeight });
                 }
             }
         } else {
-            const newWidth = Math.min(Math.max(width + (expandRight ? dx : -dx), minimumWidth), maximumWidth);
-            const newHeight = Math.min(Math.max(height + (expandDown ? dy : -dy), minimumHeight), maximumHeight);
+            const newWidth = Math.min(Math.max(currentWindow.value.width + (expandRight ? dx : -dx), currentWindow.value.minimumWidth), currentWindow.value.maximumWidth);
+            const newHeight = Math.min(Math.max(currentWindow.value.height + (expandDown ? dy : -dy), currentWindow.value.minimumHeight), currentWindow.value.maximumHeight);
 
-            // Adjust currentWindow.xPos position for west resizing
-            if (!expandRight && newWidth > minimumWidth) {
-                const newX = currentWindow.xPos + dx;
+            // Adjust currentWindow.value.xPos position for west resizing
+            if (!expandRight && newWidth > currentWindow.value.minimumWidth) {
+                const newX = currentWindow.value.xPos + dx;
                 if (newX >= parentRect.left && newX + newWidth <= parentRect.right) {
-                    currentWindow.xPos = newX;
-                    currentWindow.width = newWidth;
+                    store.updateWindow(id, { xPos: newX, width: newWidth });
                 } else {
                     // Adjust width only to prevent moving with the mouse
-                    currentWindow.width = newWidth;
+                    store.updateWindow(id, { width: newWidth });
                 }
             } else if (expandRight) {
-                if (currentWindow.xPos + newWidth <= parentRect.right) {
-                    currentWindow.width = newWidth;
+                if (currentWindow.value.xPos + newWidth <= parentRect.right) {
+                    store.updateWindow(id, { width: newWidth });
                 }
             }
 
-            // Adjust currentWindow.yPos position for north resizing (handled above) and south resizing
-            if (!expandDown && newHeight > minimumHeight) {
-                const newY = currentWindow.yPos + dy;
+            // Adjust currentWindow.value.yPos position for north resizing (handled above) and south resizing
+            if (!expandDown && newHeight > currentWindow.value.minimumHeight) {
+                const newY = currentWindow.value.yPos + dy;
                 if (newY >= parentRect.top && newY + newHeight <= parentRect.bottom) {
-                    currentWindow.yPos = newY;
-                    currentWindow.height = newHeight;
+                    store.updateWindow(id, { yPos: newY, height: newHeight });
                 } else {
                     // Adjust height only to prevent moving with the mouse
-                    currentWindow.height = newHeight;
+                    store.updateWindow(id, { height: newHeight });
                 }
             } else if (expandDown) {
-                if (currentWindow.yPos + newHeight <= parentRect.bottom) {
-                    currentWindow.height = newHeight;
+                if (currentWindow.value.yPos + newHeight <= parentRect.bottom) {
+                    store.updateWindow(id, { height: newHeight });
                 }
             }
         }
     }
 
     function handleResize(event: MouseEvent, rootElement: HTMLDivElement) {
-        if (currentWindow.resizing) {
-            const dx = event.clientX - currentWindow.lastMouseX;
-            const dy = event.clientY - currentWindow.lastMouseY;
+        if (currentWindow.value.resizing) {
+            const dx = event.clientX - currentWindow.value.lastMouseX;
+            const dy = event.clientY - currentWindow.value.lastMouseY;
 
-            switch (currentWindow.resizeDirection) {
+            switch (currentWindow.value.resizeDirection) {
                 case 'se':
                     adjustSize(rootElement, dx, dy, true, true);
                     break;
@@ -94,7 +92,7 @@ export function useResizable(currentWindow: Window) {
                     adjustSize(rootElement, 0, dy, false, false);
                     break;
                 case 'south':
-                    adjustSize(rootElement, 0, dy, true, true);
+                    adjustSize(rootElement, 0, dy, false, true);
                     break;
                 case 'east':
                     adjustSize(rootElement, dx, 0, true, true);
@@ -105,8 +103,7 @@ export function useResizable(currentWindow: Window) {
             }
         }
 
-        currentWindow.lastMouseX = event.clientX;
-        currentWindow.lastMouseY = event.clientY;
+        store.updateWindow(id, { lastMouseX: event.clientX, lastMouseY: event.clientY });
     }
 
     return {

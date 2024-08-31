@@ -41,7 +41,7 @@ const componentRef: Ref<HTMLDivElement | null> = ref(null);
 
 const windowsStore = useWindowsStore();
 const currentWindow = computed(() => windowsStore.windows.get(props.id));
-const { startResize, stopResize, handleResize } = useResizable(currentWindow.value as Window);
+const { startResize, stopResize, handleResize } = useResizable(props.id);
 const { startDrag, stopDrag, handleDrag } = useDraggable(props.id);
 
 const styleObject = computed(() => ({
