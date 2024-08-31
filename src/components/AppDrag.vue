@@ -31,7 +31,6 @@ import { ref, Ref, onMounted, onUnmounted, computed } from 'vue';
 import { useWindowsStore } from '@/stores/useWindowsStore';
 import { useDraggable } from '@/composables/useDraggable';
 import { useResizable } from '@/composables/useResizable';
-import { Window } from '@/utils/interfaces';
 
 const props = defineProps<{
     id: string;

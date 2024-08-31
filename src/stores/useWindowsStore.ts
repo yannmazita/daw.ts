@@ -1,5 +1,5 @@
-import { Window, WindowStateInit } from '@/utils/interfaces';
-import { markRaw, reactive, Ref, ref } from 'vue';
+import { Window } from '@/utils/interfaces';
+import { markRaw, reactive } from 'vue';
 import { v4 as uuidv4 } from 'uuid';
 import { defineStore } from 'pinia';
 import AppDefaultWindow from '@/components/AppDefaultWindow.vue';
