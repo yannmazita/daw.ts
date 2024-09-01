@@ -66,6 +66,18 @@ export const useWindowsStore = defineStore('windows', () => {
         }
     }
 
+    function minimizeWindow(id: string) {
+        const window = windows.get(id);
+        if (window) {
+            if (window.isVisible) {
+                window.isVisible = false;
+            } else {
+                window.isVisible = true;
+            }
+            windows.set(id, window);
+        }
+    }
+
     function getWindow(id: string): Window | undefined {
         return windows.get(id);
     }
@@ -76,6 +88,7 @@ export const useWindowsStore = defineStore('windows', () => {
         closeWindow,
         updateWindow,
         maximizeWindow,
+        minimizeWindow,
         getWindow,
     };
 })

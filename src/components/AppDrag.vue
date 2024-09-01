@@ -1,11 +1,12 @@
 <template>
-    <div v-if="currentWindow?.isVisible" ref="componentRef" class="draggable-resizable bg-yellow-300"
+    <div v-show="currentWindow?.isVisible" ref="componentRef" class="draggable-resizable bg-yellow-300"
         :style="styleObject">
         <div class="flex justify-between bg-[#f0f0f0] p-1.5 cursor-move" @mousedown="startDrag">
             <div class="w-fit">
                 Drag Me Up!
             </div>
             <div class="w-fit">
+                <button class="mx-2" @click="minimizeComponent">Minimize</button>
                 <button class="mx-2" @click="maximizeComponent">{{ currentWindow.isMaximized ? 'Restore' : 'Maximize'
                     }}</button>
                 <button class="mx-2" @click="closeComponent">Close</button>
@@ -59,6 +60,10 @@ function closeComponent() {
 
 function maximizeComponent() {
     windowsStore.maximizeWindow(props.id);
+}
+
+function minimizeComponent() {
+    windowsStore.minimizeWindow(props.id);
 }
 
 onMounted(() => {
