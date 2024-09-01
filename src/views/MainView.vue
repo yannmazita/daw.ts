@@ -7,7 +7,8 @@
 
 <script setup lang="ts">
 import AppWindow from '@/components/AppWindow.vue';
-import { onMounted } from 'vue';
+import Sequencer from '@/components/Sequencer.vue';
+import { markRaw, onMounted } from 'vue';
 import { useWindowsStore } from '@/stores/useWindowsStore';
 import { storeToRefs } from 'pinia';
 
@@ -15,15 +16,6 @@ const windowsStore = useWindowsStore();
 const { windows } = storeToRefs(windowsStore);
 
 onMounted(() => {
-    windowsStore.createWindow();
+    windowsStore.createWindow({ windowComponent: markRaw(Sequencer) });
 })
 </script>
-
-<style>
-.window-container {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    overflow: auto;
-}
-</style>
