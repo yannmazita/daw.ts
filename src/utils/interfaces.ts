@@ -69,7 +69,7 @@ export interface DialogInstance {
 
 export interface Window {
     id: string;
-    isVisible: boolean;
+    isMinimized: boolean;
     isMaximized: boolean;
     windowComponent: unknown;
     windowComponentKey: string;    // To force re-rendering if needed

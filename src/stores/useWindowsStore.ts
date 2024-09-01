@@ -11,7 +11,7 @@ export const useWindowsStore = defineStore('windows', () => {
         const id = uuidv4();
         const newWindow: Window = {
             id,
-            isVisible: true,
+            isMinimized: false,
             isMaximized: false,
             windowComponent: markRaw(AppDefaultWindow),
             windowComponentKey: uuidv4(),
@@ -69,10 +69,10 @@ export const useWindowsStore = defineStore('windows', () => {
     function minimizeWindow(id: string) {
         const window = windows.get(id);
         if (window) {
-            if (window.isVisible) {
-                window.isVisible = false;
+            if (window.isMinimized) {
+                window.isMinimized = false;
             } else {
-                window.isVisible = true;
+                window.isMinimized = true;
             }
             windows.set(id, window);
         }

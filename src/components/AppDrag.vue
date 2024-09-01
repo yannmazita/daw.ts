@@ -1,5 +1,5 @@
 <template>
-    <div v-show="currentWindow?.isVisible" ref="componentRef" class="draggable-resizable bg-yellow-300"
+    <div v-show="!currentWindow?.isMinimized" ref="componentRef" class="draggable-resizable bg-yellow-300"
         :style="styleObject">
         <div class="flex justify-between bg-[#f0f0f0] p-1.5 cursor-move" @mousedown="startDrag">
             <div class="w-fit">
