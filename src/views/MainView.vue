@@ -1,6 +1,6 @@
 <template>
     <button @click="windowsStore.createWindow()">Open Window</button>
-    <div class="relative size-full overflow-auto">
+    <div class="relative size-full overflow-hidden">
         <AppWindow v-for="[id, window] of windows" :key="id" :id="window.id" />
     </div>
 </template>

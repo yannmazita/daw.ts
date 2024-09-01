@@ -13,7 +13,7 @@
                 <button class="mx-2" @click="closeComponent">Close</button>
             </div>
         </div>
-        <div>
+        <div class="content-container">
             <component :is="currentWindow.windowComponent" :key="currentWindow.windowComponentKey"
                 v-bind="currentWindow.windowProps"></component>
         </div>
@@ -73,9 +73,16 @@ function minimizeComponent() {
 </script>
 
 <style scoped>
+.content-container {
+    flex: 1;
+    overflow: auto;
+}
+
 .draggable-resizable {
     position: absolute;
     border: 1px solid black;
+    display: flex;
+    flex-direction: column;
 }
 
 .resizer {
