@@ -1,26 +1,17 @@
 import { useWindowsStore } from "@/stores/useWindowsStore";
 import { Window } from "@/utils/interfaces";
 import { computed, Ref } from "vue";
-import { useDebounce } from "./useDebounce";
 
 export function useResizable(id: string) {
     const store = useWindowsStore();
     const currentWindow = computed(() => store.windows.get(id)) as Ref<Window>;
-    const { debounce } = useDebounce();
+    let rootElement: HTMLDivElement | null = null;
 
-    function startResize(direction: string, event: MouseEvent) {
-        store.updateWindow(id, { resizing: true, resizeDirection: direction, lastMouseX: event.clientX, lastMouseY: event.clientY });
-    }
-
-    function stopResize() {
-        store.updateWindow(id, { resizing: false, resizeDirection: '' });
-    }
-
-    function adjustSize(rootElement: HTMLDivElement, dx: number, dy: number, expandRight: boolean, expandDown: boolean) {
+    function adjustSize(dx: number, dy: number, expandRight: boolean, expandDown: boolean) {
         // Currently there is a bug when resizing using the north handle and encountering the parent's top boundary
         // Trying to resize past the boundary will mean the component grows from the bottom.
 
-        const parent = rootElement.parentElement;
+        const parent = rootElement?.parentElement;
         const parentRect = parent?.getBoundingClientRect();
 
         if (currentWindow.value.resizeDirection === 'north') {
@@ -70,44 +61,56 @@ export function useResizable(id: string) {
         }
     }
 
-    function handleResize(event: MouseEvent, rootElement: HTMLDivElement) {
+    function handleResize(event: MouseEvent) {
         if (currentWindow.value.resizing) {
             const dx = event.clientX - currentWindow.value.lastMouseX;
             const dy = event.clientY - currentWindow.value.lastMouseY;
 
             switch (currentWindow.value.resizeDirection) {
                 case 'se':
-                    adjustSize(rootElement, dx, dy, true, true);
+                    adjustSize(dx, dy, true, true);
                     break;
                 case 'sw':
-                    adjustSize(rootElement, dx, dy, false, true);
+                    adjustSize(dx, dy, false, true);
                     break;
                 case 'nw':
-                    adjustSize(rootElement, dx, dy, false, false);
+                    adjustSize(dx, dy, false, false);
                     break;
                 case 'ne':
-                    adjustSize(rootElement, dx, dy, true, false);
+                    adjustSize(dx, dy, true, false);
                     break;
                 case 'north':
-                    adjustSize(rootElement, 0, dy, false, false);
+                    adjustSize(0, dy, false, false);
                     break;
                 case 'south':
-                    adjustSize(rootElement, 0, dy, false, true);
+                    adjustSize(0, dy, false, true);
                     break;
                 case 'east':
-                    adjustSize(rootElement, dx, 0, true, true);
+                    adjustSize(dx, 0, true, true);
                     break;
                 case 'west':
-                    adjustSize(rootElement, dx, 0, false, false);
+                    adjustSize(dx, 0, false, false);
                     break;
             }
-        }
 
-        store.updateWindow(id, { lastMouseX: event.clientX, lastMouseY: event.clientY });
+            store.updateWindow(id, { lastMouseX: event.clientX, lastMouseY: event.clientY });
+        }
+    }
+
+    function toggleResize(direction: string, event: MouseEvent, element: HTMLDivElement | null) {
+        rootElement = element;
+        store.updateWindow(id, { resizing: true, resizeDirection: direction, lastMouseX: event.clientX, lastMouseY: event.clientY });
+        document.addEventListener('mousemove', handleResize);
+        document.addEventListener('mouseup', stopResize, { once: true });
+    }
+
+    function stopResize() {
+        store.updateWindow(id, { resizing: false, resizeDirection: '' });
+        document.removeEventListener('mousemove', handleResize);
     }
 
     return {
-        startResize,
+        toggleResize,
         stopResize,
         handleResize,
     }

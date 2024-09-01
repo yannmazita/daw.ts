@@ -1,7 +1,8 @@
 <template>
     <div v-show="!currentWindow?.isMinimized" ref="componentRef" class="draggable-resizable bg-yellow-300"
         :style="styleObject">
-        <div class="flex justify-between bg-[#f0f0f0] p-1.5 cursor-move" @mousedown="startDrag">
+        <div class="flex justify-between bg-[#f0f0f0] p-1.5 cursor-move"
+            @mousedown="(event) => toggleDrag(event, componentRef)">
             <div class="w-fit">
                 Drag Me Up!
             </div>
@@ -17,20 +18,24 @@
                 v-bind="currentWindow.windowProps"></component>
         </div>
         <!-- Corner resizers -->
-        <div class="resizer se" @mousedown="event => startResize('se', event)"></div>
-        <div class="resizer sw" @mousedown="event => startResize('sw', event)"></div>
-        <div class="resizer nw" @mousedown="event => startResize('nw', event)"></div>
-        <div class="resizer ne" @mousedown="event => startResize('ne', event)"></div>
+        <div class="resizer se" @mousedown="event => toggleResize('se', event, componentRef)"></div>
+        <div class="resizer sw" @mousedown="event => toggleResize('sw', event, componentRef)"></div>
+        <div class="resizer nw" @mousedown="event => toggleResize('nw', event, componentRef)"></div>
+        <div class="resizer ne" @mousedown="event => toggleResize('ne', event, componentRef)"></div>
         <!-- Border resizers -->
-        <div class="resizer north" @mousedown="event => startResize('north', event)"></div>
-        <div class="resizer south" @mousedown="event => startResize('south', event)"></div>
-        <div class="resizer east" @mousedown="event => startResize('east', event)"></div>
-        <div class="resizer west" @mousedown="event => startResize('west', event)"></div>
+        <div class="resizer north" @mousedown="event => toggleResize('north', event, componentRef)">
+        </div>
+        <div class="resizer south" @mousedown="event => toggleResize('south', event, componentRef)">
+        </div>
+        <div class="resizer east" @mousedown="event => toggleResize('east', event, componentRef)">
+        </div>
+        <div class="resizer west" @mousedown="event => toggleResize('west', event, componentRef)">
+        </div>
     </div>
 </template>
 
 <script setup lang="ts">
-import { ref, Ref, onMounted, onUnmounted, computed } from 'vue';
+import { ref, Ref, computed } from 'vue';
 import { useWindowsStore } from '@/stores/useWindowsStore';
 import { useDraggable } from '@/composables/useDraggable';
 import { useResizable } from '@/composables/useResizable';
@@ -43,8 +48,8 @@ const componentRef: Ref<HTMLDivElement | null> = ref(null);
 
 const windowsStore = useWindowsStore();
 const currentWindow = computed(() => windowsStore.windows.get(props.id));
-const { startResize, stopResize, handleResize } = useResizable(props.id);
-const { startDrag, stopDrag, handleDrag } = useDraggable(props.id);
+const { toggleResize } = useResizable(props.id);
+const { toggleDrag } = useDraggable(props.id);
 
 const styleObject = computed(() => ({
     top: currentWindow.value?.isMaximized ? '0' : `${currentWindow.value?.yPos}px`,
@@ -65,39 +70,6 @@ function maximizeComponent() {
 function minimizeComponent() {
     windowsStore.minimizeWindow(props.id);
 }
-
-onMounted(() => {
-    document.addEventListener('mousemove', (event) => {
-        if (componentRef.value !== null) {
-            handleDrag(event, componentRef.value);
-        }
-
-        if (componentRef.value !== null && currentWindow.value?.resizing) {
-            handleResize(event, componentRef.value);
-        }
-    });
-
-    document.addEventListener('mouseup', () => {
-        stopDrag();
-        stopResize();
-    });
-});
-
-onUnmounted(() => {
-    document.removeEventListener('mousemove', (event) => {
-        if (componentRef.value !== null) {
-            handleDrag(event, componentRef.value);
-        }
-
-        if (componentRef.value !== null && currentWindow.value?.resizing) {
-            handleResize(event, componentRef.value);
-        }
-    });
-    document.removeEventListener('mouseup', () => {
-        stopDrag();
-        stopResize();
-    });
-});
 </script>
 
 <style scoped>

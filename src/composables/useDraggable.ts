@@ -4,21 +4,14 @@ import { computed } from "vue";
 export function useDraggable(id: string) {
     const store = useWindowsStore();
     const currentWindow = computed(() => store.windows.get(id));
+    let rootElement: HTMLDivElement | null = null;
 
-    function startDrag(event: MouseEvent) {
-        store.updateWindow(id, { dragging: true, lastMouseX: event.clientX, lastMouseY: event.clientY })
-    }
-
-    function stopDrag() {
-        store.updateWindow(id, { dragging: false });
-    }
-
-    function handleDrag(event: MouseEvent, rootElement: HTMLDivElement) {
-        const parent = rootElement.parentElement;
+    function handleDrag(event: MouseEvent) {
+        const parent = rootElement?.parentElement;
         const parentRect = parent?.getBoundingClientRect();
 
         //if (parentRect) {
-        if (currentWindow.value.dragging && parentRect) {
+        if (currentWindow?.value?.dragging && parentRect) {
             const dx = event.clientX - currentWindow.value.lastMouseX;
             const dy = event.clientY - currentWindow.value.lastMouseY;
 
@@ -30,8 +23,20 @@ export function useDraggable(id: string) {
         }
     }
 
+    function stopDrag() {
+        store.updateWindow(id, { dragging: false });
+        document.removeEventListener('mousemove', handleDrag);
+    }
+
+    function toggleDrag(event: MouseEvent, element: HTMLDivElement | null) {
+        rootElement = element;
+        store.updateWindow(id, { dragging: true, lastMouseX: event.clientX, lastMouseY: event.clientY })
+        document.addEventListener('mousemove', handleDrag);
+        document.addEventListener('mouseup', stopDrag, { once: true });
+    }
+
     return {
-        startDrag,
+        toggleDrag,
         stopDrag,
         handleDrag,
     }
