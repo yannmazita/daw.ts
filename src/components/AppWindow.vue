@@ -13,9 +13,10 @@
                 <button class="mx-2" @click="closeComponent">Close</button>
             </div>
         </div>
-        <div class="content-container">
+        <div class="content-container" :class="dynamicClasses">
             <component :is="currentWindow.windowComponent" :key="currentWindow.windowComponentKey"
-                v-bind="currentWindow.windowProps"></component>
+                v-bind="currentWindow.windowProps" @add-classes="(classes) => updateDynamicClasses(classes)">
+            </component>
         </div>
         <!-- Corner resizers -->
         <div class="resizer se" @mousedown="event => toggleResize('se', event, componentRef)"></div>
@@ -45,6 +46,7 @@ const props = defineProps<{
 }>();
 
 const componentRef: Ref<HTMLDivElement | null> = ref(null);
+const dynamicClasses: Ref<object> = ref({});
 
 const windowsStore = useWindowsStore();
 const currentWindow = computed(() => windowsStore.windows.get(props.id));
@@ -69,6 +71,11 @@ function maximizeComponent() {
 
 function minimizeComponent() {
     windowsStore.minimizeWindow(props.id);
+}
+
+function updateDynamicClasses(classes: object) {
+    console.log('updateDynamicClasses', classes);
+    Object.assign(dynamicClasses.value, classes);
 }
 </script>
 
