@@ -90,4 +90,5 @@ export interface Window {
     lastMouseY: number;
     width: number;
     height: number;
+    zIndex: number;
 }

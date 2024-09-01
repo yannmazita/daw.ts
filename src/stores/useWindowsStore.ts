@@ -9,6 +9,7 @@ export const useWindowsStore = defineStore('windows', () => {
 
     function createWindow(initState?: Partial<Window>) {
         const id = uuidv4();
+        const defaultZIndex = 100
         const newWindow: Window = {
             id,
             isMinimized: false,
@@ -32,6 +33,7 @@ export const useWindowsStore = defineStore('windows', () => {
             resizeDirection: '',
             lastMouseX: 0,
             lastMouseY: 0,
+            zIndex: defaultZIndex + windows.size,   // New windows opened sequentially are on top
             ...initState,
         };
         windows.set(id, newWindow);
@@ -78,6 +80,15 @@ export const useWindowsStore = defineStore('windows', () => {
         }
     }
 
+    function focusWindow(id: string) {
+        const highestZIndex = Math.max(...Array.from(windows.values()).map(w => w.zIndex)) + 1;
+        const window = windows.get(id);
+        if (window) {
+            window.zIndex = highestZIndex;
+            windows.set(id, window);
+        }
+    }
+
     function getWindow(id: string): Window | undefined {
         return windows.get(id);
     }
@@ -89,6 +100,7 @@ export const useWindowsStore = defineStore('windows', () => {
         updateWindow,
         maximizeWindow,
         minimizeWindow,
+        focusWindow,
         getWindow,
     };
 })

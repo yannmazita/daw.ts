@@ -1,6 +1,6 @@
 <template>
     <div v-show="!currentWindow?.isMinimized" ref="componentRef" class="draggable-resizable bg-yellow-300"
-        :style="styleObject">
+        :style="styleObject" @mousedown="focusWindow">
         <div class="flex justify-between bg-[#f0f0f0] p-1.5 cursor-move"
             @mousedown="(event) => toggleDrag(event, componentRef)">
             <div class="w-fit">
@@ -58,6 +58,7 @@ const styleObject = computed(() => ({
     left: currentWindow.value?.isMaximized ? '0' : `${currentWindow.value?.xPos}px`,
     width: currentWindow.value?.isMaximized ? '100%' : `${currentWindow.value?.width}px`,
     height: currentWindow.value?.isMaximized ? '100%' : `${currentWindow.value?.height}px`,
+    zIndex: currentWindow.value?.zIndex,
     //position: currentWindow.value?.isMaximized ? 'fixed' : 'absolute' // Use fixed to cover the whole viewport
 }));
 
@@ -71,6 +72,10 @@ function maximizeComponent() {
 
 function minimizeComponent() {
     windowsStore.minimizeWindow(props.id);
+}
+
+function focusWindow() {
+    windowsStore.focusWindow(props.id);
 }
 
 function updateDynamicClasses(classes: object) {
