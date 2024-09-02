@@ -1,4 +1,4 @@
-// File: AppDialogWindowItem.ts
+// File: AppWindowDualPaneItem.ts
 // Description: Defines the structure of items used in application dialog windows, encapsulating a command and optional icon.
 
 import { Command } from "@/utils/interfaces";
@@ -6,7 +6,7 @@ import { Command } from "@/utils/interfaces";
 /**
  * Represents an item in a dialog window, containing a label, an associated command, and optionally an icon.
  */
-export class AppDialogWindowItem {
+export class AppWindowDualPaneItem {
     /**
      * Initializes a new instance of the AppDialogWindowItem class.
      * @param label - The display text for the item.

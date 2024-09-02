@@ -13,7 +13,24 @@
                 <button class="mx-2" @click="closeComponent">Close</button>
             </div>
         </div>
-        <div class="content-container" :class="dynamicClasses">
+        <!-- Dialog Content Area -->
+        <div v-if="dualPaneItems" class="p-2 h-full w-full grid grid-cols-3">
+            <div class="col-span-1 border border-ts-blue mr-1">
+                <ul>
+                    <li v-for="(item, itemIndex) in dualPaneItems" :key="itemIndex" @click="item.performAction()"
+                        class="cursor-pointer hover:bg-gray-100">
+                        {{ item.label }}
+                    </li>
+                </ul>
+            </div>
+            <div class="content-container col-span-2" :class="dynamicClasses">
+                <component :is="currentWindow.windowComponent" :key="currentWindow.windowComponentKey"
+                    v-bind="currentWindow.windowProps" @add-classes="(classes) => updateDynamicClasses(classes)">
+                </component>
+            </div>
+        </div>
+        <!-- Normal Content Area -->
+        <div v-else class="content-container" :class="dynamicClasses">
             <component :is="currentWindow.windowComponent" :key="currentWindow.windowComponentKey"
                 v-bind="currentWindow.windowProps" @add-classes="(classes) => updateDynamicClasses(classes)">
             </component>
@@ -40,10 +57,16 @@ import { ref, Ref, computed } from 'vue';
 import { useWindowsStore } from '@/stores/useWindowsStore';
 import { useDraggable } from '@/composables/useDraggable';
 import { useResizable } from '@/composables/useResizable';
+import { AppWindowDualPaneItem } from '@/models/AppWindowDualPaneItem';
 
-const props = defineProps<{
+interface Props {
     id: string;
-}>();
+    dualPaneItems?: AppWindowDualPaneItem[];
+}
+
+const props = withDefaults(defineProps<Props>(), {
+    //defaults
+});
 
 const componentRef: Ref<HTMLDivElement | null> = ref(null);
 const dynamicClasses: Ref<object> = ref({});
