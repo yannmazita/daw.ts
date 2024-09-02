@@ -79,7 +79,6 @@ function focusWindow() {
 }
 
 function updateDynamicClasses(classes: object) {
-    console.log('updateDynamicClasses', classes);
     Object.assign(dynamicClasses.value, classes);
 }
 </script>
