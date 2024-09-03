@@ -1,10 +1,10 @@
 // File: AppWindowDualPaneItem.ts
-// Description: Defines the structure of items used in application dialog windows, encapsulating a command and optional icon.
+// Description: Defines the structure of items used in application dual pane windows, encapsulating a command and optional icon.
 
 import { Command } from "@/utils/interfaces";
 
 /**
- * Represents an item in a dialog window, containing a label, an associated command, and optionally an icon.
+ * Represents an item in a dual pane window, containing a label, an associated command, and optionally an icon.
  */
 export class AppWindowDualPaneItem {
     /**
@@ -20,7 +20,7 @@ export class AppWindowDualPaneItem {
     }
 
     /**
-     * Executes the command associated with this dialog window item.
+     * Executes the command associated with this dual pane window item.
      */
     public performAction(): void {
         this.command.execute();
