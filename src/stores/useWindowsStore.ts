@@ -6,10 +6,10 @@ import AppDefaultWindow from '@/components/AppDefaultWindow.vue';
 
 export const useWindowsStore = defineStore('windows', () => {
     const windows = reactive(new Map<string, Window>());
+    let currentZIndex = 100;
 
     function createWindow(initState?: Partial<Window>) {
         const id = uuidv4();
-        const defaultZIndex = 100
         const newWindow: Window = {
             id,
             isMinimized: false,
@@ -33,7 +33,7 @@ export const useWindowsStore = defineStore('windows', () => {
             resizeDirection: '',
             lastMouseX: 0,
             lastMouseY: 0,
-            zIndex: defaultZIndex + windows.size,   // New windows opened sequentially are on top
+            zIndex: currentZIndex++,
             ...initState,
         };
         windows.set(id, newWindow);
@@ -85,6 +85,7 @@ export const useWindowsStore = defineStore('windows', () => {
         const window = windows.get(id);
         if (window) {
             window.zIndex = highestZIndex;
+            currentZIndex = highestZIndex + 1;
             windows.set(id, window);
         }
     }
