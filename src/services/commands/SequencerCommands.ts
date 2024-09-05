@@ -1,11 +1,11 @@
 // File: SequencerCommands.ts
 // Description: Defines command classes to handle context menu actions related to the sequencer.
-
 import { useSequencerStore } from "@/stores/sequencerStore";
 import { useWindowsStore } from "@/stores/useWindowsStore";
-import { Command } from "@/utils/interfaces";
+import { Command, WindowDualPaneContent } from "@/utils/interfaces";
 import { SequencerTrackManager } from "@/services/SequencerTrackManager";
-import { AppWindowDualPaneItem } from "@/models/AppWindowDualPaneItem";
+import SequencerTrackSettingsWelcomePane from "@/components/SequencerTrackSettingsWelcomePane.vue";
+import { markRaw } from "vue";
 
 /**
  * Command to add a track to the sequencer.
@@ -80,14 +80,13 @@ export class OpenTrackSettings implements Command {
     /**
      * Initializes a new instance of the OpenTrackSettings class.
      */
-    constructor() {
-    }
+    constructor(private dualPaneContents: WindowDualPaneContent[], private trackIndex: number) { }
 
     /**
      * Opens a window with the specified settings.
      */
     execute(): void {
-        this.windowsStore.createWindow();
+        this.windowsStore.createWindow({ windowComponent: markRaw(SequencerTrackSettingsWelcomePane), windowProps: { dualPaneContents: this.dualPaneContents, trackIndex: this.trackIndex } });
     }
 
     /**

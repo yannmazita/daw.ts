@@ -1,5 +1,5 @@
 <template>
-    <div id="sequencer-track-settings-dialog-effects-content-container">
+    <div id="sequencer-track-settings-effects-pane-container">
         Effects content
     </div>
 </template>

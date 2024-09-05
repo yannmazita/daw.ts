@@ -1,4 +1,4 @@
-import { Window } from '@/utils/interfaces';
+import { Window, WindowDualPaneContent } from '@/utils/interfaces';
 import { markRaw, reactive } from 'vue';
 import { v4 as uuidv4 } from 'uuid';
 import { defineStore } from 'pinia';
@@ -94,6 +94,25 @@ export const useWindowsStore = defineStore('windows', () => {
         return windows.get(id);
     }
 
+    function setWindowComponent(id: string, component: any) {
+        const window = windows.get(id);
+        if (window) {
+            window.windowComponent = markRaw(component);
+            window.windowComponentKey = uuidv4();
+            windows.set(id, window);
+        }
+    }
+
+    function getDualPaneContent(id: string): WindowDualPaneContent[] | null {
+        const window = windows.get(id);
+        if (window) {
+            if (window.windowProps?.dualPaneContents) {
+                return window.windowProps.dualPaneContents;
+            }
+        }
+        return null;
+    }
+
     return {
         windows,
         createWindow,
@@ -103,5 +122,7 @@ export const useWindowsStore = defineStore('windows', () => {
         minimizeWindow,
         focusWindow,
         getWindow,
+        setWindowComponent,
+        getDualPaneContent,
     };
 })
