@@ -1,7 +1,6 @@
 <template>
     <main class="h-screen w-full overflow-hidden">
         <AppContextMenu></AppContextMenu>
-        <AppDialogWindow></AppDialogWindow>
         <AppTabBar></AppTabBar>
         <router-view></router-view>
     </main>
@@ -14,7 +13,6 @@ import { SequencerPlaybackManager } from '@/services/SequencerPlaybackManager';
 import { SequencerTrackManager } from '@/services/SequencerTrackManager';
 import { sequencerInstrumentManagerKey, sequencerPlaybackManagerKey, sequencerTrackManagerKey } from '@/utils/injection-keys.ts';
 import AppContextMenu from '@/components/AppContextMenu.vue';
-import AppDialogWindow from '@/components/AppDialogWindow.vue';
 import AppTabBar from '@/components/AppTabBar.vue';
 
 // Instantiating the managers responsible for handling specific parts of the sequencer logic
