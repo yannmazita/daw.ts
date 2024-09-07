@@ -52,6 +52,10 @@ export const useSequencerStore = defineStore('sequencer', () => {
         rightClickTrackPos.value = null;
     }
 
+    function isRightClickStepPosValid(): boolean {
+        return rightClickStepPos.trackIndex !== null && rightClickStepPos.stepIndex !== null;
+    }
+
     return {
         bpm,
         numTracks,
@@ -65,5 +69,6 @@ export const useSequencerStore = defineStore('sequencer', () => {
         rightClickSelectTrack,
         clearRightClickSelectTrackPos,
         isPlaying,
+        isRightClickStepPosValid,
     };
 });

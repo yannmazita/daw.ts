@@ -13,30 +13,39 @@ import { SequencerTrackManager } from '@/services/SequencerTrackManager';
 import { useSequencerStore } from '@/stores/sequencerStore';
 import { useContextMenuStore } from '@/stores/contextMenuStore';
 import { AppContextMenuItem } from '@/models/AppContextMenuItem';
-import { AddTrackCommand, RemoveTrackCommand, OpenTrackSettings } from '@/services/commands/SequencerCommands';
+import { AddTrackCommand, RemoveTrackCommand, OpenTrackSettings, OpenStepSettings } from '@/services/commands/SequencerCommands';
 import Track from '@/components/Track.vue';
 import { WindowDualPaneContent } from '@/utils/interfaces';
 import SequencerTrackSettingsInstrumentsPane from './SequencerTrackSettingsInstrumentsPane.vue';
 import SequencerTrackSettingsEffectsPane from './SequencerTrackSettingsEffectsPane.vue';
 
+const sequencerStore = useSequencerStore();
 const menuStore = useContextMenuStore();
 const { tracks } = storeToRefs(useSequencerStore());
 const trackManager = inject<SequencerTrackManager>(sequencerTrackManagerKey) as SequencerTrackManager;
 
-// Handles right-click context menu for track operations
-function handleContextMenu(event: MouseEvent, trackIndex: number) {
+function createContextMenuItems(trackIndex: number) {
     const contents: WindowDualPaneContent[] = [
         { label: 'Instrument', component: markRaw(SequencerTrackSettingsInstrumentsPane) },
         { label: 'Effects', component: markRaw(SequencerTrackSettingsEffectsPane) },
     ]
-
-    // Items to show in the context menu
     const contextMenuItems = [
         new AppContextMenuItem('Add track', new AddTrackCommand(trackManager)),
         new AppContextMenuItem('Remove track', new RemoveTrackCommand(trackManager)),
         new AppContextMenuItem('Track settings', new OpenTrackSettings(contents, trackIndex)),
     ];
+
+    if (sequencerStore.isRightClickStepPosValid()) {
+        contextMenuItems.push(new AppContextMenuItem('Step settings', new OpenStepSettings()));
+    }
+
+    return contextMenuItems;
+}
+
+// Handles right-click context menu for track operations
+function handleContextMenu(event: MouseEvent, trackIndex: number) {
+    const items = createContextMenuItems(trackIndex);
     // Opens the context menu at the click location
-    menuStore.openContextMenu(contextMenuItems, event.clientX, event.clientY);
+    menuStore.openContextMenu(items, event.clientX, event.clientY);
 }
 </script>

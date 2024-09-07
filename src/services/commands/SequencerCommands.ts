@@ -28,14 +28,7 @@ export class AddTrackCommand implements Command {
         }
     }
 
-    /**
-     * Placeholder for undo functionality.
-     */
     undo(): void { /* Undo logic if required */ }
-
-    /**
-     * Placeholder for redo functionality.
-     */
     redo(): void { /* Redo logic if required */ }
 }
 
@@ -60,14 +53,7 @@ export class RemoveTrackCommand implements Command {
         }
     }
 
-    /**
-     * Placeholder for undo functionality.
-     */
     undo(): void { /* Undo logic if required */ }
-
-    /**
-     * Placeholder for redo functionality.
-     */
     redo(): void { /* Redo logic if required */ }
 }
 
@@ -89,13 +75,13 @@ export class OpenTrackSettings implements Command {
         this.windowsStore.createWindow({ windowComponent: markRaw(SequencerTrackSettingsWelcomePane), windowProps: { dualPaneContents: this.dualPaneContents, trackIndex: this.trackIndex } });
     }
 
-    /**
-     * Placeholder for undo functionality.
-     */
     undo(): void { /* Undo logic if required */ }
+    redo(): void { /* Redo logic if required */ }
+}
 
-    /**
-     * Placeholder for redo functionality.
-     */
+export class OpenStepSettings implements Command {
+
+    execute(): void { /* Execute logic */ }
+    undo(): void { /* Undo logic if required */ }
     redo(): void { /* Redo logic if required */ }
 }
