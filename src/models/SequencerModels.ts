@@ -1,6 +1,8 @@
 // File: SequencerModels.ts
 // Description: Defines the core data models used in the sequencer, including step and track configurations.
 
+import { Note } from "@/utils/types";
+
 /**
  * Represents a single step in a sequencer track.
  */
@@ -12,7 +14,7 @@ export class SequencerStep {
      */
     constructor(
         public active = false,
-        public note = 'C2',
+        public note: Note = Note.C4,
         private _velocity = 1,
         //public modulation = 0,
     ) {

@@ -13,6 +13,23 @@
                 <template #rightLabel>Apply to all tracks</template>
             </AppSmallCheckbox>
         </div>
+        <div id="sequencer-step-settings-note-container" class="grid grid-cols-3 items-end">
+            <div>
+                note {{ noteValue }}
+                <select v-model="noteValue" class="select select-bordered select-sm w-full max-w-xs">
+                    <option disabled value="">Select a note</option>
+                    <option v-for="note in Object.keys(Note)" :key="note" :value="note">
+                        {{ note }}
+                    </option>
+                </select>
+            </div>
+            <AppSmallCheckbox v-model="checks.noteApplyToTrack">
+                <template #rightLabel>Apply to track</template>
+            </AppSmallCheckbox>
+            <AppSmallCheckbox v-model="checks.noteApplyToAllTracks">
+                <template #rightLabel>Apply to all tracks</template>
+            </AppSmallCheckbox>
+        </div>
     </div>
 </template>
 <script setup lang="ts">
@@ -21,6 +38,7 @@ import { sequencerTrackManagerKey } from '@/utils/injection-keys';
 import { SequencerTrackManager } from '@/services/SequencerTrackManager';
 import AppRangeBar from '@/components/AppRangeBar.vue';
 import AppSmallCheckbox from '@/components/AppSmallCheckbox.vue';
+import { Note } from '@/utils/types';
 
 const props = defineProps<{
     trackIndex: number
@@ -31,10 +49,13 @@ defineOptions({
 })
 
 const trackManager = inject<SequencerTrackManager>(sequencerTrackManagerKey) as SequencerTrackManager;
+const noteValue = ref(trackManager.getStepNote(props.trackIndex, props.stepIndex));
 const velocityValue = ref(trackManager.getStepVelocity(props.trackIndex, props.stepIndex));
 const checks = reactive({
     velocityApplyToTrack: false,
     velocityApplyToAllTracks: false,
+    noteApplyToTrack: false,
+    noteApplyToAllTracks: false,
 });
 
 watchEffect(() => {
@@ -44,6 +65,13 @@ watchEffect(() => {
         trackManager.setStepVelocityToAllTracks(velocityValue.value);
     } else {
         trackManager.setStepVelocity(props.trackIndex, props.stepIndex, velocityValue.value);
+    }
+    if (checks.noteApplyToTrack) {
+        trackManager.setStepNoteToTrack(props.trackIndex, noteValue.value);
+    } else if (checks.noteApplyToAllTracks) {
+        trackManager.setStepNoteToAllTracks(noteValue.value);
+    } else {
+        trackManager.setStepNote(props.trackIndex, props.stepIndex, noteValue.value);
     }
 });
 

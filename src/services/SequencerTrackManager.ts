@@ -5,6 +5,7 @@ import { SequencerStep, SequencerTrack } from '@/models/SequencerModels';
 import { useSequencerStore } from '@/stores/sequencerStore';
 import { SequencerPlaybackManager } from './SequencerPlaybackManager';
 import { SequencerInstrumentManager } from './SequencerInstrumentManager';
+import { Note } from '@/utils/types';
 
 /**
  * Manages the operations related to tracks in the sequencer, including their creation, deletion, and updating.
@@ -166,5 +167,50 @@ export class SequencerTrackManager {
                 step.velocity = velocity;
             });
         });
+    }
+
+    /**
+     * Gets the note of a step in a track.
+     * @param trackIndex The index of the track containing the step.
+     * @param stepIndex The index of the step to get the note from.
+     * @param note The new note value to set.
+     */
+    public setStepNote(trackIndex: number, stepIndex: number, note: Note): void {
+        const track = this.sequencerStore.tracks[trackIndex];
+        track.steps[stepIndex].note = note;
+    }
+
+    /**
+     * Sets the note of all steps in a specific track.
+     * @param trackIndex The index of the track.
+     * @param note The note value to set for all steps.
+     */
+    public setStepNoteToTrack(trackIndex: number, note: Note): void {
+        const track = this.sequencerStore.tracks[trackIndex];
+        track.steps.forEach(step => {
+            step.note = note;
+        });
+    }
+
+    /**
+     * Sets the note of all steps in all tracks.
+     * @param note The note value to set for all steps.
+     */
+    public setStepNoteToAllTracks(note: Note): void {
+        this.sequencerStore.tracks.forEach(track => {
+            track.steps.forEach(step => {
+                step.note = note;
+            });
+        });
+    }
+
+    /**
+     * Gets the note of a step in a track.
+     * @param trackIndex The index of the track containing the step.
+     * @param stepIndex The index of the step to get the velocity from.
+     * @returns The note of the step.
+     */
+    public getStepNote(trackIndex: number, stepIndex: number): Note {
+        return this.sequencerStore.tracks[trackIndex].steps[stepIndex].note;
     }
 }
