@@ -1,7 +1,13 @@
 # daw.ts
 
 Work in progress!
-Digital Audio Workstation built with [vuejs](https://vuejs.org/), [tonejs](https://tonejs.github.io/) and [electron](https://www.electronjs.org/)
+Digital Audio Workstation built with [vue](https://vuejs.org/), [tonejs](https://tonejs.github.io/) and [electron](https://www.electronjs.org/)
+
+
+[demo.mp4](https://github.com/user-attachments/assets/c770a4fd-16d4-4ab7-8394-521e64280193)
+
+
+
 
 ## Running
 - Start the UI with :

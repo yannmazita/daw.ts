@@ -16,8 +16,8 @@ export const useSequencerStore = defineStore('sequencer', () => {
     const numSteps: Ref<number> = ref(16);
     const currentStep: Ref<number> = ref(0);
     const tracks: Ref<SequencerTrack[]> = ref([]);
-    const rightClickStepPos: StepPosition = reactive({ trackIndex: null, stepIndex: null });
-    const rightClickTrackPos: Ref<number | null> = ref(null);
+    const rightClickStepPos: StepPosition = reactive({ trackIndex: -1, stepIndex: -1 });
+    const rightClickTrackPos: Ref<number> = ref(-1);
 
     /**
      * Records the position of a right-click on a step for context-sensitive actions.
@@ -41,15 +41,31 @@ export const useSequencerStore = defineStore('sequencer', () => {
      * Clears the recorded position of a right-click on a step.
      */
     function clearRightClickSelectStepPos(): void {
-        rightClickStepPos.trackIndex = null;
-        rightClickStepPos.stepIndex = null;
+        rightClickStepPos.trackIndex = -1;
+        rightClickStepPos.stepIndex = -1;
     }
 
     /**
      * Clears the recorded position of a right-click on a track.
      */
     function clearRightClickSelectTrackPos(): void {
-        rightClickTrackPos.value = null;
+        rightClickTrackPos.value = -1;
+    }
+
+    /**
+     * Checks if the right-click track position is valid.
+     * @returns True if the right-click step position is valid, false otherwise.
+     */
+    function isRightClickTrackPosValid(): boolean {
+        return rightClickTrackPos.value !== -1;
+    }
+
+    /**
+     * Checks if the right-click step position is valid.
+     * @returns True if the right-click step position is valid, false otherwise.
+     */
+    function isRightClickStepPosValid(): boolean {
+        return rightClickStepPos.trackIndex !== -1 && rightClickStepPos.stepIndex !== -1;
     }
 
     return {
@@ -65,5 +81,7 @@ export const useSequencerStore = defineStore('sequencer', () => {
         rightClickSelectTrack,
         clearRightClickSelectTrackPos,
         isPlaying,
+        isRightClickStepPosValid,
+        isRightClickTrackPosValid,
     };
 });
