@@ -10,9 +10,21 @@ export class SequencerStep {
      * @param active - Indicates whether the step is active (note will play).
      * @param note - The musical note associated with the step.
      */
-    constructor(public active = false, public note = 'C2') {
+    constructor(
+        public active = false,
+        public note = 'C2',
+        private _velocity = 127, // MIDI standard for max velocity
+        //public modulation = 0,
+    ) {
         this.active = active;
         this.note = note;
+    }
+
+    public get velocity() {
+        return this._velocity;
+    }
+    public set velocity(value) {
+        this._velocity = Math.min(127, Math.max(0, value));
     }
 
     /**

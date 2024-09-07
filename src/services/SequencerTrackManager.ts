@@ -122,4 +122,13 @@ export class SequencerTrackManager {
     public toggleStepActiveState(trackIndex: number, stepIndex: number): void {
         this.sequencerStore.tracks[trackIndex].steps[stepIndex].toggleStepActiveState();
     }
+
+    public getStepVelocity(trackIndex: number, stepIndex: number): number {
+        return this.sequencerStore.tracks[trackIndex].steps[stepIndex].velocity;
+    }
+
+    public setStepVelocity(trackIndex: number, stepIndex: number, velocity: number): void {
+        const track = this.sequencerStore.tracks[trackIndex];
+        track.steps[stepIndex].velocity = velocity;
+    }
 }

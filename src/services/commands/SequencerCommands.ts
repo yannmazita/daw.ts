@@ -5,6 +5,7 @@ import { useWindowsStore } from "@/stores/useWindowsStore";
 import { Command, WindowDualPaneContent } from "@/utils/interfaces";
 import { SequencerTrackManager } from "@/services/SequencerTrackManager";
 import SequencerTrackSettingsWelcomePane from "@/components/SequencerTrackSettingsWelcomePane.vue";
+import SequencerStepSettings from "@/components/SequencerStepSettings.vue";
 import { markRaw } from "vue";
 
 /**
@@ -23,7 +24,7 @@ export class AddTrackCommand implements Command {
      * Executes the command to add a track at the position stored in the sequencer store.
      */
     execute(): void {
-        if (this.sequencerStore.rightClickTrackPos !== null) {
+        if (this.sequencerStore.isRightClickTrackPosValid()) {
             this.trackManager.addTrack(this.sequencerStore.rightClickTrackPos);
         }
     }
@@ -48,7 +49,7 @@ export class RemoveTrackCommand implements Command {
      * Executes the command to remove a track at the position stored in the sequencer store.
      */
     execute(): void {
-        if (this.sequencerStore.rightClickTrackPos !== null) {
+        if (this.sequencerStore.isRightClickTrackPosValid()) {
             this.trackManager.removeTrack(this.sequencerStore.rightClickTrackPos);
         }
     }
@@ -79,9 +80,23 @@ export class OpenTrackSettings implements Command {
     redo(): void { /* Redo logic if required */ }
 }
 
+/**
+ * Command to open step settings in a window.
+ */
 export class OpenStepSettings implements Command {
+    private windowsStore = useWindowsStore();
 
-    execute(): void { /* Execute logic */ }
+    /**
+     * Initializes a new instance of the OpenTrackSettings class.
+     */
+    constructor(private trackIndex: number, private stepIndex: number) { }
+
+    /**
+     * Opens a window with the specified settings.
+     */
+    execute(): void {
+        this.windowsStore.createWindow({ windowComponent: markRaw(SequencerStepSettings), windowProps: { trackIndex: this.trackIndex, stepIndex: this.stepIndex } });
+    }
     undo(): void { /* Undo logic if required */ }
     redo(): void { /* Redo logic if required */ }
 }

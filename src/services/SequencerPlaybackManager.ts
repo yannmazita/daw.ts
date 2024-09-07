@@ -60,17 +60,18 @@ export class SequencerPlaybackManager {
         this.sequenceID = Tone.getTransport().scheduleRepeat(time => {
             if (this.sequencerStore.currentStep < this.sequencerStore.numSteps) {
                 this.sequencerStore.tracks.forEach((track, trackIndex) => {
-                    const step: SequencerStep = track.steps[this.sequencerStore.currentStep];
+                    const step: SequencerStep = track.steps[this.sequencerStore.currentStep] as SequencerStep;
                     if (step.active) {
                         if (this.sequencerInstrumentManager.trackInstruments[trackIndex] === this.sequencerInstrumentManager.instrumentPool[InstrumentName.NoiseSynth]) {
-                            this.sequencerInstrumentManager.trackInstruments[trackIndex].triggerAttackRelease(this.stepDuration, time);
+                            this.sequencerInstrumentManager.trackInstruments[trackIndex].triggerAttackRelease(this.stepDuration, time, step.velocity);
                         }
                         else {
-                            this.sequencerInstrumentManager.trackInstruments[trackIndex].triggerAttackRelease(step.note, this.stepDuration, time);
+                            this.sequencerInstrumentManager.trackInstruments[trackIndex].triggerAttackRelease(step.note, this.stepDuration, time, step.velocity);
                         }
                     }
                 });
 
+                // Barely works, manual playback using range is somewhat broken
                 // Advance the current step or handle the end of the sequence
                 if (this.loopEnabled || this.sequencerStore.currentStep + 1 < this.sequencerStore.numSteps) {
                     this.sequencerStore.currentStep = (this.sequencerStore.currentStep + 1) % this.sequencerStore.numSteps;

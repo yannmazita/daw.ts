@@ -36,7 +36,7 @@ function createContextMenuItems(trackIndex: number) {
     ];
 
     if (sequencerStore.isRightClickStepPosValid()) {
-        contextMenuItems.push(new AppContextMenuItem('Step settings', new OpenStepSettings()));
+        contextMenuItems.push(new AppContextMenuItem('Step settings', new OpenStepSettings(sequencerStore.rightClickStepPos.trackIndex as number, sequencerStore.rightClickStepPos.stepIndex as number)));
     }
 
     return contextMenuItems;
