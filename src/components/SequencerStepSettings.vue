@@ -3,7 +3,7 @@
     <div class="flex flex-col justify-center">
         <div id="sequencer-step-settings-velocity-container" class="grid grid-cols-3 items-end">
             <div>
-                velocity {{ velocityValue }} :
+                velocity: {{ velocityValue }}
                 <AppRangeBar v-model="velocityValue" :step="1" :max="127" />
             </div>
             <AppSmallCheckbox v-model="checks.velocityApplyToTrack">
@@ -15,7 +15,7 @@
         </div>
         <div id="sequencer-step-settings-note-container" class="grid grid-cols-3 items-end">
             <div>
-                note {{ noteValue }}
+                note: {{ noteValue }}
                 <select v-model="noteValue" class="select select-bordered select-sm w-full max-w-xs">
                     <option disabled value="">Select a note</option>
                     <option v-for="note in Object.keys(Note)" :key="note" :value="note">
