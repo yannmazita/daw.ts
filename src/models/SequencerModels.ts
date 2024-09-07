@@ -13,7 +13,7 @@ export class SequencerStep {
     constructor(
         public active = false,
         public note = 'C2',
-        private _velocity = 127, // MIDI standard for max velocity
+        private _velocity = 1,
         //public modulation = 0,
     ) {
         this.active = active;
@@ -24,7 +24,7 @@ export class SequencerStep {
         return this._velocity;
     }
     public set velocity(value) {
-        this._velocity = Math.min(127, Math.max(0, value));
+        this._velocity = Math.min(127, Math.max(0, value)); // 127 is the MIDI standard for max velocity
     }
 
     /**
