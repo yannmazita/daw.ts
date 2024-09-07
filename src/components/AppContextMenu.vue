@@ -1,6 +1,4 @@
 <template>
-    <!-- Context Menu Component -->
-    <!-- Displays a context menu at the specified position if visible. The menu items are interactable and can trigger specific actions. -->
     <div ref="contextMenu" v-if="menu.visible" id="app-context-menu-container" :style="styleObject"
         class="fixed z-[1000000] bg-white shadow-lg border-gray-200 border p-2">
         <ul>
