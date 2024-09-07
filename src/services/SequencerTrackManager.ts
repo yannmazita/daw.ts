@@ -123,12 +123,48 @@ export class SequencerTrackManager {
         this.sequencerStore.tracks[trackIndex].steps[stepIndex].toggleStepActiveState();
     }
 
+    /**
+     * Gets the velocity of a step in a track.
+     * @param trackIndex The index of the track containing the step.
+     * @param stepIndex The index of the step to get the velocity from.
+     * @returns The velocity of the step.
+     */
     public getStepVelocity(trackIndex: number, stepIndex: number): number {
         return this.sequencerStore.tracks[trackIndex].steps[stepIndex].velocity;
     }
 
+    /**
+     * Sets the velocity of a step in a track.
+     * @param trackIndex The index of the track containing the step.
+     * @param stepIndex The index of the step to set the velocity for.
+     * @param velocity The new velocity value to set.
+     */
     public setStepVelocity(trackIndex: number, stepIndex: number, velocity: number): void {
         const track = this.sequencerStore.tracks[trackIndex];
         track.steps[stepIndex].velocity = velocity;
+    }
+
+    /**
+     * Sets the velocity of all steps in a specific track.
+     * @param trackIndex The index of the track.
+     * @param velocity The velocity value to set for all steps.
+     */
+    public setStepVelocityToTrack(trackIndex: number, velocity: number): void {
+        const track = this.sequencerStore.tracks[trackIndex];
+        track.steps.forEach(step => {
+            step.velocity = velocity;
+        });
+    }
+
+    /**
+     * Sets the velocity of all steps in all tracks.
+     * @param velocity The velocity value to set for all steps.
+     */
+    public setStepVelocityToAllTracks(velocity: number): void {
+        this.sequencerStore.tracks.forEach(track => {
+            track.steps.forEach(step => {
+                step.velocity = velocity;
+            });
+        });
     }
 }
