@@ -1,6 +1,6 @@
 # daw.ts
 
-Work in progress!
+Work in progress! Very early stage.
 Digital Audio Workstation built with [vue](https://vuejs.org/), [tonejs](https://tonejs.github.io/) and [electron](https://www.electronjs.org/)
 
 
