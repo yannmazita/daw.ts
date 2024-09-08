@@ -1,10 +1,11 @@
 # daw.ts
 
 Work in progress! Very early stage.
+
 Digital Audio Workstation built with [vue](https://vuejs.org/), [tonejs](https://tonejs.github.io/) and [electron](https://www.electronjs.org/)
 
 
-[demo.mp4](https://github.com/user-attachments/assets/c770a4fd-16d4-4ab7-8394-521e64280193)
+[daw-demo](https://github.com/user-attachments/assets/c770a4fd-16d4-4ab7-8394-521e64280193)
 
 
 
