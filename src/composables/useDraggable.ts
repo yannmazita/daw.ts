@@ -1,26 +1,34 @@
 import { useWindowsStore } from "@/stores/useWindowsStore";
-import { computed } from "vue";
+import { computed, ref } from "vue";
 
 export function useDraggable(id: string) {
     const store = useWindowsStore();
     const currentWindow = computed(() => store.windows.get(id));
-    let rootElement: HTMLDivElement | null = null;
+    const rootElement = ref<HTMLDivElement | null>(null);
+    const heightOffset = ref(0);
 
     function handleDrag(event: MouseEvent) {
-        const parent = rootElement?.parentElement;
-        const parentRect = parent?.getBoundingClientRect();
+        const parent = rootElement.value?.parentElement;
+        if (!parent || !currentWindow?.value?.dragging) return;
 
-        //if (parentRect) {
-        if (currentWindow?.value?.dragging && parentRect) {
-            const dx = event.clientX - currentWindow.value.lastMouseX;
-            const dy = event.clientY - currentWindow.value.lastMouseY;
+        const parentRect = parent.getBoundingClientRect();
+        const dx = event.clientX - currentWindow.value.lastMouseX;
+        const dy = event.clientY - currentWindow.value.lastMouseY;
 
-            // Adjust pos.x and pos.y to consider the parent's position
-            const xPos = Math.max(parentRect.left, Math.min(currentWindow.value.xPos + dx, parentRect.right - currentWindow.value.width));
-            const yPos = Math.max(parentRect.top, Math.min(currentWindow.value.yPos + dy, parentRect.bottom - currentWindow.value.height));
+        // Calculate the new position relative to the parent
+        const newXPos = currentWindow.value.xPos + dx;
+        const newYPos = currentWindow.value.yPos + dy;
 
-            store.updateWindow(id, { xPos: xPos, yPos: yPos, lastMouseX: event.clientX, lastMouseY: event.clientY });
-        }
+        // Constrain the new position within the parent boundaries, accounting for status bar height at the bottom
+        const xPos = Math.max(0, Math.min(newXPos, parentRect.width - currentWindow.value.width));
+        const yPos = Math.max(0, Math.min(newYPos, parentRect.height - currentWindow.value.height - heightOffset.value));
+
+        store.updateWindow(id, {
+            xPos,
+            yPos,
+            lastMouseX: event.clientX,
+            lastMouseY: event.clientY
+        });
     }
 
     function stopDrag() {
@@ -29,8 +37,21 @@ export function useDraggable(id: string) {
     }
 
     function toggleDrag(event: MouseEvent, element: HTMLDivElement | null) {
-        rootElement = element;
-        store.updateWindow(id, { dragging: true, lastMouseX: event.clientX, lastMouseY: event.clientY })
+        rootElement.value = element;
+
+        // Calculate and store the status bar height
+        if (element) {
+            const statusBar: HTMLElement | null = element.querySelector('.status-bar');
+            const statusBarHeight = statusBar ? statusBar.offsetHeight : 0;
+
+            heightOffset.value = statusBarHeight * 2;
+        }
+
+        store.updateWindow(id, {
+            dragging: true,
+            lastMouseX: event.clientX,
+            lastMouseY: event.clientY
+        });
         document.addEventListener('mousemove', handleDrag);
         document.addEventListener('mouseup', stopDrag, { once: true });
     }

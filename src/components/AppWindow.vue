@@ -1,7 +1,7 @@
 <template>
     <div v-show="!currentWindow?.isMinimized" ref="componentRef" class="draggable-resizable bg-gray-600"
         :style="styleObject" @mousedown="focusWindow">
-        <div class="flex justify-between bg-[#f0f0f0] p-1.5 cursor-move"
+        <div class="flex justify-between bg-[#f0f0f0] p-1.5 cursor-move status-bar"
             @mousedown="(event) => toggleDrag(event, componentRef)">
             <div class="w-fit">
                 Drag Me Up!
