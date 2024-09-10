@@ -41,10 +41,7 @@ export function useDraggable(id: string) {
 
         // Calculate and store the status bar height
         if (element) {
-            const statusBar: HTMLElement | null = element.querySelector('.status-bar');
-            const statusBarHeight = statusBar ? statusBar.offsetHeight : 0;
-
-            heightOffset.value = statusBarHeight;
+            heightOffset.value = (element.parentElement?.offsetTop ?? 0);
         }
 
         store.updateWindow(id, {
