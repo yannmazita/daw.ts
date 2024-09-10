@@ -44,7 +44,7 @@ export function useDraggable(id: string) {
             const statusBar: HTMLElement | null = element.querySelector('.status-bar');
             const statusBarHeight = statusBar ? statusBar.offsetHeight : 0;
 
-            heightOffset.value = statusBarHeight * 2;
+            heightOffset.value = statusBarHeight;
         }
 
         store.updateWindow(id, {
