@@ -5,6 +5,7 @@ import type { InjectionKey } from 'vue';
 import { SequencerInstrumentManager } from '@/services/SequencerInstrumentManager';
 import { SequencerPlaybackManager } from '@/services/SequencerPlaybackManager';
 import { SequencerTrackManager } from '@/services/SequencerTrackManager';
+import { PianoRollPlaybackManager } from '@/services/PianoRollPlaybackManager';
 
 /**
  * Vue injection key for providing and injecting `SequencerInstrumentManager` instances.
@@ -23,3 +24,9 @@ export const sequencerPlaybackManagerKey: InjectionKey<SequencerPlaybackManager>
  * This key is used for type-safe injection of the track manager, enabling track management functionalities across the application.
  */
 export const sequencerTrackManagerKey: InjectionKey<SequencerTrackManager> = Symbol('sequencerTrackManager');
+
+/**
+ * Vue injection key for providing and injecting `PianoRollPlaybackManager` instances.
+ * This key is used to ensure type-safe injection of the piano roll playback manager across the application.
+ **/
+export const pianoRollPlaybackManagerKey: InjectionKey<PianoRollPlaybackManager> = Symbol('pianoRollPlaybackManager');

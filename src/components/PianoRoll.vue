@@ -1,54 +1,38 @@
 <template>
-    <canvas ref="canvas" :width="width" :height="height"></canvas>
+    <div class="relative select-none">
+        <canvas ref="canvas" :width="width" :height="height" @mousedown="handleMouseDown" @mousemove="handleMouseMove"
+            @mouseup="handleMouseUp"></canvas>
+    </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue';
+import { onMounted, ref, watch, inject, Ref } from 'vue';
+import { storeToRefs } from 'pinia';
+import { PianoRollPlaybackManager } from '@/services/PianoRollPlaybackManager';
+import { pianoRollPlaybackManagerKey } from '@/utils/injection-keys';
+import { usePianoRollCanvas } from '@/composables/usePianoRollCanvas';
+import { usePianoRollStore } from '@/stores/usePianoRollStore';
+import { usePianoRollEvents } from '@/composables/usePianoRollEvents';
 
 const canvas = ref<HTMLCanvasElement | null>(null);
 const width = ref(window.innerWidth);
 const height = ref(800);
-const pixelsPerBeat = ref(100);
-const pitchesToShow = ref(88);
+const { pixelsPerBeat, pitchesToShow } = storeToRefs(usePianoRollStore());
+
+const pianoManager = inject<PianoRollPlaybackManager>(pianoRollPlaybackManagerKey) as PianoRollPlaybackManager;
+const { drawGrid } = usePianoRollCanvas(canvas as Ref<HTMLCanvasElement>, width, height, pixelsPerBeat, pitchesToShow);
+const { handleMouseDown, handleMouseMove, handleMouseUp } = usePianoRollEvents(canvas as Ref<HTMLCanvasElement>, height, pianoManager, drawGrid);
 
 onMounted(() => {
     drawGrid();
 });
 
-watch([pixelsPerBeat], () => {
+watch([pixelsPerBeat, pitchesToShow], () => {
     drawGrid();
 });
-
-function drawGrid() {
-    const ctx = canvas.value?.getContext('2d');
-    if (!ctx) return;
-
-    ctx.clearRect(0, 0, width.value, height.value);
-    drawHorizontalLines(ctx);
-    drawVerticalLines(ctx);
-}
-
-function drawHorizontalLines(ctx: CanvasRenderingContext2D) {
-    for (let i = 0; i <= height.value; i += pixelsPerBeat.value) {
-        ctx.beginPath();
-        ctx.moveTo(0, i);
-        ctx.lineTo(width.value, i);
-        ctx.stroke();
-    }
-}
-
-function drawVerticalLines(ctx: CanvasRenderingContext2D) {
-    const keyHeight = height.value / pitchesToShow.value;
-    for (let i = 0; i <= pitchesToShow.value; i++) {
-        ctx.beginPath();
-        ctx.moveTo(i * keyHeight, 0);
-        ctx.lineTo(i * keyHeight, height.value);
-        ctx.stroke();
-    }
-}
 </script>
 
-<style>
+<style scoped>
 canvas {
     border: 1px solid black;
 }
