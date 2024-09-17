@@ -12,7 +12,7 @@ export default tseslint.config(
     {
         languageOptions: {
             parserOptions: {
-                project: ['./tsconfig.app.json', './tsconfig.node.json', './tsconfig.electron.json', './tsconfig.configs.json'],
+                project: ['./tsconfig.app.json', './tsconfig.node.json', './tsconfig.electron.json', './tsconfig.configs.json', './vitest.config.ts'],
                 sourceType: 'module',
             },
         },

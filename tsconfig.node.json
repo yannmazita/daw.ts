@@ -7,7 +7,11 @@
     "moduleResolution": "bundler",
     "allowSyntheticDefaultImports": true,
     "strict": true,
-    "noEmit": true
+    "noEmit": true,
+    "types": ["jsdom"],
+    "paths": {
+      "@/*": ["./src/*"]
+    },
   },
   "include": ["vite.config.ts"]
 }

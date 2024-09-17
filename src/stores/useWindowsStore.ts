@@ -36,7 +36,7 @@ export const useWindowsStore = defineStore('windows', () => {
             zIndex: currentZIndex++,
             ...initState,
         };
-        windows.set(id, newWindow);
+        windows.set(newWindow.id, newWindow);
     }
 
     function closeWindow(id: string) {
