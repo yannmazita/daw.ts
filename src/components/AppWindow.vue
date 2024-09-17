@@ -99,7 +99,6 @@ function minimizeComponent() {
 }
 
 function focusWindow() {
-    // z-index updates only when clicking titlebar
     windowsStore.focusWindow(props.id);
 }
 
