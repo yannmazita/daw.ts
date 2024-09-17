@@ -1,5 +1,5 @@
 <template>
-    <div id="sequencer-container flex justify-center">
+    <div id="sequencer-container">
         <SequencerStepTracker></SequencerStepTracker>
         <SequencerSettings></SequencerSettings>
         <SequencerTracks></SequencerTracks>

@@ -1,6 +1,6 @@
 <template>
     <!-- Playback control section for the sequencer -->
-    <div id="sequencer-container-playback" class="flex justify-center">
+    <div id="sequencer-playback-container" class="flex justify-center">
         <!-- Button to start the sequence playback -->
         <AppSmallButton @click="playbackManager.playSequence()">
             Play
