@@ -2,7 +2,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { SequencerPlaybackManager } from '@/services/SequencerPlaybackManager';
 import { SequencerInstrumentManager } from '@/services/SequencerInstrumentManager';
 import * as Tone from 'tone';
-import { useSequencerStore } from '@/stores/sequencerStore';
 import { reactive, ref } from 'vue';
 
 // Mocking of Tone.js
