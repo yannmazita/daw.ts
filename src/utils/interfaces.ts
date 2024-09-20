@@ -28,6 +28,13 @@ export interface StepPosition {
     stepIndex: number | null;
 }
 
+export interface PianoRollNote {
+    id: string;
+    x: number;
+    y: number;
+    length: number;
+}
+
 export interface Window {
     id: string;
     isMinimized: boolean;

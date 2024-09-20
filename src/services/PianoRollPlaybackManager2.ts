@@ -1,5 +1,3 @@
-// File: PianoRollPlaybackManager.ts
-// Description: Manages the playback within the piano roll.
 import { usePianoRollStore } from '@/stores/usePianoRollStore';
 import { storeToRefs } from 'pinia';
 import * as Tone from 'tone';
@@ -7,56 +5,55 @@ import * as Tone from 'tone';
 export class PianoRollPlaybackManager {
     private pianoRollStore = usePianoRollStore();
     private synth = new Tone.PolySynth(Tone.Synth).toDestination();
+    private noteDuration = "8n";
     public loopEnabled = false;
-    private playbackPart?: Tone.Part;
-    private transportStarted = false;
+    private playbackPart?: Tone.Part<any>;
 
     constructor() {
-        if (!this.transportStarted) {
-            Tone.getTransport().start();
-            this.transportStarted = true;
-        }
+        Tone.getTransport().start();
     }
 
     public playNote(pitch: number, duration = "8n") {
-        const frequency = Tone.Frequency(pitch, "midi").toFrequency();
-        this.synth.triggerAttackRelease(frequency, duration);
+        // Convert MIDI number to frequency and play the note
+        this.synth.triggerAttackRelease(Tone.Midi(21 + pitch).toFrequency(), duration, Tone.now());
     }
 
+    /**
+     * Schedules notes for playback using the current state from the piano roll store.
+     */
     public scheduleNotes() {
-        const { notes, pixelsPerBeat, pitchesToShow, height } = storeToRefs(this.pianoRollStore);
-        const totalBeats = Math.ceil(Math.max(...notes.value.map(note => (note.x + note.length) / pixelsPerBeat.value)));
+        const { notes, pixelsPerBeat, pitchesToShow } = storeToRefs(this.pianoRollStore);
+        const height = 800;
 
+        // Dispose existing part if any
         if (this.playbackPart) {
             this.playbackPart.dispose();
         }
 
+        // Create a new part
         this.playbackPart = new Tone.Part((time, event) => {
-            const pitch = Tone.Midi(Math.floor(event.note.y / (height.value / pitchesToShow.value)) + 21).toFrequency();
-            //const duration = Tone.Time(event.note.length / pixelsPerBeat.value).toSeconds();
+            const pitch = Tone.Midi(Math.floor((event.note.y / (height / pitchesToShow.value)) + 21)).toFrequency();
             const duration = Tone.Time((event.note.length / pixelsPerBeat.value) + "n").toSeconds();
             this.synth.triggerAttackRelease(pitch, duration, time);
         }, notes.value.map(note => ({
-            time: Tone.Time((note.x / pixelsPerBeat.value), "n").toSeconds(),
+            time: Tone.Time((note.x / pixelsPerBeat.value) + "n").toSeconds(),
             note
         })));
 
+        // Configure looping if enabled
         if (this.loopEnabled) {
             this.playbackPart.loop = true;
-            //this.playbackPart.loopEnd = Tone.Time(totalBeats, "4n").toSeconds();
-            this.playbackPart.loopEnd = '1m';
+            this.playbackPart.loopEnd = '1m'; // Set loop end dynamically if needed
         } else {
             this.playbackPart.loop = false;
         }
 
         this.playbackPart.start(0);
-        Tone.getTransport().scheduleRepeat((time) => {
-            const currentPosition = Tone.getTransport().position;
-            const currentBeat = currentPosition.toString().split(":")[1]; // Get the beat component
-            this.pianoRollStore.setPlaybackPosition(parseFloat(currentBeat));
-        }, "16n");
     }
 
+    /**
+     * Starts the playback of the piano roll sequence.
+     */
     public startPlayback(): void {
         if (!this.pianoRollStore.isPlaying) {
             this.scheduleNotes();
@@ -65,6 +62,9 @@ export class PianoRollPlaybackManager {
         }
     }
 
+    /**
+     * Stops the playback of the piano roll sequence, disposing of any scheduled parts.
+     */
     public stopPlayback(): void {
         if (this.playbackPart) {
             this.playbackPart.stop();
@@ -73,14 +73,17 @@ export class PianoRollPlaybackManager {
         }
         Tone.getTransport().stop();
         this.pianoRollStore.isPlaying = false;
-        this.pianoRollStore.setPlaybackPosition(0);
     }
 
+    /**
+     * Pauses the playback of the piano roll sequence.
+     */
     public pausePlayback(): void {
-        if (this.pianoRollStore.isPlaying) {
-            Tone.getTransport().pause();
-            this.pianoRollStore.isPlaying = false;
+        if (!this.pianoRollStore.isPlaying) {
+            return;
         }
+        this.pianoRollStore.isPlaying = false;
+        Tone.getTransport().pause();
     }
 
     public setBpm(newBpm: number): void {

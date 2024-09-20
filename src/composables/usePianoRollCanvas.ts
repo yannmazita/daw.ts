@@ -1,54 +1,57 @@
 // File: src/composables/usePianoRollCanvas.ts
-// Description: 
 import { usePianoRollStore } from '@/stores/usePianoRollStore';
-import { Ref } from 'vue';
+import { storeToRefs } from 'pinia';
+import { Ref, computed } from 'vue';
 
 export function usePianoRollCanvas(
     canvasRef: Ref<HTMLCanvasElement>,
-    width: Ref<number>,
-    height: Ref<number>,
-    pixelsPerBeat: Ref<number>,
-    pitchesToShow: Ref<number>,
 ) {
-    const store = usePianoRollStore();
+    const pianoRollStore = usePianoRollStore();
+    const { width, height, pixelsPerBeat, pitchesToShow } = storeToRefs(pianoRollStore);
+    const noteHeight = computed(() => height.value / pitchesToShow.value);
 
     function drawGrid() {
-        const ctx = canvasRef.value?.getContext('2d');
+        const ctx = canvasRef.value.getContext('2d');
         if (!ctx) return;
 
         ctx.clearRect(0, 0, width.value, height.value);
         drawHorizontalLines(ctx);
         drawVerticalLines(ctx);
-        drawNotes(ctx);
+        drawNotes();
     }
 
     function drawHorizontalLines(ctx: CanvasRenderingContext2D) {
-        for (let i = 0; i <= height.value; i += pixelsPerBeat.value) {
+        for (let yPos = 0; yPos <= height.value; yPos += noteHeight.value) {
             ctx.beginPath();
-            ctx.moveTo(0, i);
-            ctx.lineTo(width.value, i);
+            ctx.moveTo(0, yPos);
+            ctx.lineTo(width.value, yPos);
+            ctx.strokeStyle = yPos % (noteHeight.value * 12) === 0 ? '#888' : '#ddd';
             ctx.stroke();
         }
     }
 
     function drawVerticalLines(ctx: CanvasRenderingContext2D) {
-        const keyHeight = height.value / pitchesToShow.value;
-        for (let i = 0; i <= pitchesToShow.value; i++) {
+        for (let xPos = 0; xPos <= width.value; xPos += pixelsPerBeat.value) {
             ctx.beginPath();
-            ctx.moveTo(i * keyHeight, 0);
-            ctx.lineTo(i * keyHeight, height.value);
+            ctx.moveTo(xPos, 0);
+            ctx.lineTo(xPos, height.value);
+            ctx.strokeStyle = xPos % (pixelsPerBeat.value * 4) === 0 ? '#888' : '#ddd';
             ctx.stroke();
         }
     }
 
-    function drawNotes(ctx: CanvasRenderingContext2D) {
-        store.notes.forEach((value, key) => {
+    function drawNotes() {
+        const ctx = canvasRef.value.getContext('2d');
+        if (!ctx) return;
+
+        pianoRollStore.notes.forEach((note) => {
             ctx.fillStyle = 'rgba(0, 0, 255, 0.5)';
-            ctx.fillRect(value[0], value[1], value[2], height.value / pitchesToShow.value);
+            ctx.fillRect(note.x, note.y, note.length, noteHeight.value);
         });
     }
 
     return {
-        drawGrid
+        drawGrid,
+        drawNotes,
     };
 }
