@@ -11,17 +11,48 @@ export function usePianoRollEvents(
     drawGrid: () => void
 ) {
     const store = usePianoRollStore();
-    const { height } = storeToRefs(store);
+    const { height, selectedNote, notes } = storeToRefs(store);
     const noteHeight = computed(() => height.value / store.pitchesToShow);
+
+    function handleNoteDrag(event: MouseEvent) {
+        if (!selectedNote.value) return; // No note selected
+
+        const prevX = event.clientX - event.movementX; // Previous mouse X position
+        const prevY = event.clientY - event.movementY; // Previous mouse Y position
+        const deltaX = event.clientX - prevX;
+        const deltaY = event.clientY - prevY;
+
+        const note = notes.value.find(note => note.id === selectedNote.value?.id);
+        if (note) {
+            const newX = note.x + deltaX;
+            const newY = note.y + deltaY;
+            store.updateNote(selectedNote.value.id, {
+                x: newX,
+                y: newY,
+            });
+
+            drawGrid();
+        }
+
+        drawGrid();
+    }
+
+    /*
+    function handleNoteResize(event: MouseEvent) {
+        if (!store.isResizingNote.value) return; // No note being resized
+
+        const corner = store.selectedNoteResizeCorner.value; // Get clicked corner
+    }
+    */
 
     function handleMouseDown(event: MouseEvent) {
         const rect = canvasRef.value?.getBoundingClientRect();
         const x = event.clientX - (rect?.left ?? 0);
         const y = event.clientY - (rect?.top ?? 0);
 
-        store.selectNoteByPosition(x, y);
+        const clickedNote: boolean = store.selectNoteByPosition(x, y);
 
-        if (store.selectNoteByPosition(x, y)) {
+        if (clickedNote) {
             // Handle note selection or dragging logic
         } else {
             // Add a new note
@@ -37,7 +68,9 @@ export function usePianoRollEvents(
     }
 
     function handleMouseMove(event: MouseEvent) {
-        // todo
+        if (selectedNote.value) {
+            handleNoteDrag(event);
+        }
     }
 
     function handleMouseUp(event: MouseEvent) {

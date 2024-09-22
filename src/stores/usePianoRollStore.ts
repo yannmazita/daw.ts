@@ -13,7 +13,7 @@ export const usePianoRollStore = defineStore('pianoRoll', () => {
     const playbackPosition = ref(0);
     const width = ref(800);
     const height = ref(600);
-    const selectedNoteId = ref<string | null>(null);
+    const selectedNote = ref<PianoRollNote | null>(null);
 
     const totalBeats = computed(() => {
         if (notes.value.length === 0) return 0;
@@ -34,8 +34,8 @@ export const usePianoRollStore = defineStore('pianoRoll', () => {
 
     function removeNote(id: string) {
         notes.value = notes.value.filter(n => n.id !== id);
-        if (selectedNoteId.value === id) {
-            selectedNoteId.value = null;
+        if (selectedNote.value?.id === id) {
+            selectedNote.value = null;
         }
     }
 
@@ -48,7 +48,7 @@ export const usePianoRollStore = defineStore('pianoRoll', () => {
 
     function clearNotes() {
         notes.value = [];
-        selectedNoteId.value = null;
+        deselectNote();
     }
 
     function setPlaybackPosition(position: number) {
@@ -61,14 +61,14 @@ export const usePianoRollStore = defineStore('pianoRoll', () => {
             y >= note.y && y <= note.y + height.value / pitchesToShow.value
         );
         if (clickedNote) {
-            selectedNoteId.value = clickedNote.id;
+            selectedNote.value = clickedNote;
             return true;
         }
         return false;
     }
 
     function deselectNote() {
-        selectedNoteId.value = null;
+        selectedNote.value = null;
     }
 
     return {
@@ -85,7 +85,7 @@ export const usePianoRollStore = defineStore('pianoRoll', () => {
         width,
         height,
         totalBeats,
-        selectedNoteId,
+        selectedNote,
         selectNoteByPosition,
         deselectNote,
     };
