@@ -213,4 +213,25 @@ export class SequencerTrackManager {
     public getStepNote(trackIndex: number, stepIndex: number): Note {
         return this.sequencerStore.tracks[trackIndex].steps[stepIndex].note;
     }
+
+    public toggleTrackMute(trackIndex: number): void {
+        if (trackIndex >= 0 && trackIndex < this.sequencerStore.tracks.length) {
+            this.sequencerStore.tracks[trackIndex].muted = !this.sequencerStore.tracks[trackIndex].muted;
+        }
+    }
+
+    public toggleTrackSolo(trackIndex: number): void {
+        if (trackIndex >= 0 && trackIndex < this.sequencerStore.tracks.length) {
+            this.sequencerStore.tracks[trackIndex].solo = !this.sequencerStore.tracks[trackIndex].solo;
+            // Implement solo logic (e.g., mute all other non-soloed tracks)
+            this.updateSoloState();
+        }
+    }
+
+    private updateSoloState(): void {
+        const hasSoloTrack = this.sequencerStore.tracks.some(track => track.solo);
+        this.sequencerStore.tracks.forEach(track => {
+            track.effectiveMute = hasSoloTrack ? !track.solo : track.muted;
+        });
+    }
 }

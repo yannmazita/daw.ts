@@ -4,7 +4,6 @@
 import * as Tone from 'tone';
 import { SequencerInstrumentManager } from '@/services/SequencerInstrumentManager';
 import { useSequencerStore } from '@/stores/sequencerStore';
-import { SequencerStep } from '@/models/SequencerModels';
 import { InstrumentName } from '@/utils/types';
 
 /**
@@ -13,8 +12,15 @@ import { InstrumentName } from '@/utils/types';
 export class SequencerPlaybackManager {
     private sequencerStore = useSequencerStore();
     private stepDuration = '16n';
+    /*
+    private tracks = this.sequencerStore.tracks;
+    private numSteps = this.sequencerStore.numSteps;
+    private currentStep = this.sequencerStore.currentStep;
+    private visualStep = this.sequencerStore.visualStep;
+    */
     public loopEnabled = false;
     private sequenceID: number | null = null;
+    private playbackStartTime: number | null = null;
 
     /**
      * Constructs the SequencerPlaybackManager.
@@ -27,73 +33,99 @@ export class SequencerPlaybackManager {
             this.stopSequence();
         }
         this.sequencerStore.isPlaying = true;
-        //this.sequencerInstrumentManager.initializeTrackInstruments(this.sequencerStore.tracks);
+        this.playbackStartTime = Tone.now();
         this.scheduleSequence();
         Tone.getTransport().start();
     }
 
     public pauseSequence(): void {
-        if (!this.sequencerStore.isPlaying) {
-            return;
-        }
-        else if (this.sequenceID) {
-            Tone.getTransport().clear(this.sequenceID);
-        }
+        if (!this.sequencerStore.isPlaying) return;
+
         this.sequencerStore.isPlaying = false;
         Tone.getTransport().pause();
+        this.clearScheduledEvents();
     }
 
     public stopSequence(): void {
         this.sequencerStore.isPlaying = false;
         Tone.getTransport().stop();
-        Tone.getTransport().cancel();
-        if (this.sequenceID) {
-            Tone.getTransport().clear(this.sequenceID);
-        }
-        this.sequencerStore.currentStep = 0;
+        this.clearScheduledEvents();
+        this.resetPlaybackPosition();
     }
 
-    /**
-     * Schedules the sequence for playback using Tone.js' Transport.
-     */
-    private scheduleSequence(): void {
-        this.sequenceID = Tone.getTransport().scheduleRepeat(time => {
-            if (this.sequencerStore.currentStep < this.sequencerStore.numSteps) {
-                this.sequencerStore.tracks.forEach((track, trackIndex) => {
-                    const step: SequencerStep = track.steps[this.sequencerStore.currentStep] as SequencerStep;
-                    if (step.active) {
-                        if (this.sequencerInstrumentManager.trackInstruments[trackIndex] === this.sequencerInstrumentManager.instrumentPool[InstrumentName.NoiseSynth]) {
-                            this.sequencerInstrumentManager.trackInstruments[trackIndex].triggerAttackRelease(this.stepDuration, time, step.velocity);
-                        }
-                        else {
-                            this.sequencerInstrumentManager.trackInstruments[trackIndex].triggerAttackRelease(step.note, this.stepDuration, time, step.velocity);
-                        }
-                    }
-                });
+    private clearScheduledEvents(): void {
+        if (this.sequenceID !== null) {
+            Tone.getTransport().clear(this.sequenceID);
+            this.sequenceID = null;
+        }
+    }
 
-                // Barely works, manual playback using range is somewhat broken
-                // Advance the current step or handle the end of the sequence
-                if (this.loopEnabled || this.sequencerStore.currentStep + 1 < this.sequencerStore.numSteps) {
-                    this.sequencerStore.currentStep = (this.sequencerStore.currentStep + 1) % this.sequencerStore.numSteps;
-                } else {
-                    // Stop the sequence if looping is not enabled and we're at the last step
-                    this.sequencerStore.currentStep++;  // Increment to potentially go beyond numSteps to naturally stop
-                    if (this.sequencerStore.currentStep >= this.sequencerStore.numSteps) {
-                        this.stopSequence();
-                    }
-                }
-            } else {
-                this.stopSequence();
-            }
+    private resetPlaybackPosition(): void {
+        this.sequencerStore.currentStep = 0;
+        this.sequencerStore.visualStep = 0;
+    }
+
+    private scheduleSequence(): void {
+        this.sequenceID = Tone.getTransport().scheduleRepeat((time) => {
+            const currentStepIndex = this.calculateCurrentStep(time);
+            this.playCurrentStep(currentStepIndex, time);
+            this.updateVisualStep(currentStepIndex);
+            this.handleLooping(currentStepIndex);
         }, this.stepDuration);
     }
 
-    /**
-     * Sets the beats per minute (BPM) for the sequence playback.
-     * @param newBpm The new BPM value to set.
-     */
+    private calculateCurrentStep(time: number): number {
+        const elapsedTime = time - (this.playbackStartTime ?? 0);
+        const stepsElapsed = Math.floor(elapsedTime / Tone.Time(this.stepDuration).toSeconds());
+        return stepsElapsed % this.sequencerStore.numSteps;
+    }
+
+    private playCurrentStep(stepIndex: number, time: number): void {
+        this.sequencerStore.tracks.forEach((track, trackIndex) => {
+            if (track.steps[stepIndex].active) {
+                if (this.sequencerInstrumentManager.trackInstruments[trackIndex] === this.sequencerInstrumentManager.instrumentPool[InstrumentName.NoiseSynth]) {
+                    this.sequencerInstrumentManager.trackInstruments[trackIndex].triggerAttackRelease(this.stepDuration, time, track.steps[stepIndex].velocity);
+                } else {
+                    this.sequencerInstrumentManager.trackInstruments[trackIndex].triggerAttackRelease(track.steps[stepIndex].note, this.stepDuration, time, track.steps[stepIndex].velocity);
+                }
+            }
+        });
+    }
+
+    private updateVisualStep(stepIndex: number): void {
+        this.sequencerStore.currentStep = stepIndex;
+        this.sequencerStore.visualStep = stepIndex;
+    }
+
+    private handleLooping(currentStepIndex: number): void {
+        if (currentStepIndex >= this.sequencerStore.numSteps - 1) {
+            if (this.loopEnabled) {
+                this.resetPlaybackPosition();
+            } else {
+                this.stopSequence();
+            }
+        }
+    }
+
     public setBpm(newBpm: number): void {
         Tone.getTransport().bpm.value = newBpm;
         this.sequencerStore.bpm = newBpm;
+    }
+
+    public setStepDuration(duration: string): void {
+        this.stepDuration = duration;
+        if (this.sequencerStore.isPlaying) {
+            this.stopSequence();
+            this.playSequence();
+        }
+    }
+
+    public seekTo(stepIndex: number): void {
+        this.sequencerStore.currentStep = stepIndex;
+        this.sequencerStore.visualStep = stepIndex;
+        if (this.sequencerStore.isPlaying) {
+            this.stopSequence();
+            this.playSequence();
+        }
     }
 }

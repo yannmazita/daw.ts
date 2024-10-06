@@ -1,5 +1,6 @@
 <template>
-    <h3 class="font-bold mb-4">Change step settings for step {{ props.stepIndex }} of track {{ props.trackIndex }}</h3>
+    <h3 class="font-bold mb-4">Change step settings for step {{ props.stepPosition.stepIndex }} of track {{
+        props.stepPosition.trackIndex }}</h3>
     <div class="flex flex-col justify-center">
         <div id="sequencer-step-settings-velocity-container" class="grid grid-cols-3 items-end">
             <div>
@@ -39,18 +40,18 @@ import { SequencerTrackManager } from '@/services/SequencerTrackManager';
 import AppRangeBar from '@/components/AppRangeBar.vue';
 import AppSmallCheckbox from '@/components/AppSmallCheckbox.vue';
 import { Note } from '@/utils/types';
+import { StepPosition } from '@/utils/interfaces';
 
 const props = defineProps<{
-    trackIndex: number
-    stepIndex: number
+    stepPosition: StepPosition;
 }>()
 defineOptions({
     inheritAttrs: false // Component won't inherit attributes and trigger Vue warning about @add-classes in AppWindow
 })
 
 const trackManager = inject<SequencerTrackManager>(sequencerTrackManagerKey) as SequencerTrackManager;
-const noteValue = ref(trackManager.getStepNote(props.trackIndex, props.stepIndex));
-const velocityValue = ref(trackManager.getStepVelocity(props.trackIndex, props.stepIndex));
+const noteValue = ref(trackManager.getStepNote(props.stepPosition.trackIndex, props.stepPosition.stepIndex));
+const velocityValue = ref(trackManager.getStepVelocity(props.stepPosition.trackIndex, props.stepPosition.stepIndex));
 const checks = reactive({
     velocityApplyToTrack: false,
     velocityApplyToAllTracks: false,
@@ -60,18 +61,18 @@ const checks = reactive({
 
 watchEffect(() => {
     if (checks.velocityApplyToTrack) {
-        trackManager.setStepVelocityToTrack(props.trackIndex, velocityValue.value);
+        trackManager.setStepVelocityToTrack(props.stepPosition.trackIndex, velocityValue.value);
     } else if (checks.velocityApplyToAllTracks) {
         trackManager.setStepVelocityToAllTracks(velocityValue.value);
     } else {
-        trackManager.setStepVelocity(props.trackIndex, props.stepIndex, velocityValue.value);
+        trackManager.setStepVelocity(props.stepPosition.trackIndex, props.stepPosition.stepIndex, velocityValue.value);
     }
     if (checks.noteApplyToTrack) {
-        trackManager.setStepNoteToTrack(props.trackIndex, noteValue.value);
+        trackManager.setStepNoteToTrack(props.stepPosition.trackIndex, noteValue.value);
     } else if (checks.noteApplyToAllTracks) {
         trackManager.setStepNoteToAllTracks(noteValue.value);
     } else {
-        trackManager.setStepNote(props.trackIndex, props.stepIndex, noteValue.value);
+        trackManager.setStepNote(props.stepPosition.trackIndex, props.stepPosition.stepIndex, noteValue.value);
     }
 });
 

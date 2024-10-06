@@ -22,10 +22,10 @@ export interface Command {
  */
 export interface StepPosition {
     /** The index of the track within the sequencer, or null if not applicable. */
-    trackIndex: number | null;
+    trackIndex: number;
 
     /** The index of the step within the track, or null if not applicable. */
-    stepIndex: number | null;
+    stepIndex: number;
 }
 
 export interface Window {

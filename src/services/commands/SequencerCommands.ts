@@ -2,7 +2,7 @@
 // Description: Defines command classes to handle context menu actions related to the sequencer.
 import { useSequencerStore } from "@/stores/sequencerStore";
 import { useWindowsStore } from "@/stores/useWindowsStore";
-import { Command, WindowDualPaneContent } from "@/utils/interfaces";
+import { Command, StepPosition, WindowDualPaneContent } from "@/utils/interfaces";
 import { SequencerTrackManager } from "@/services/SequencerTrackManager";
 import SequencerTrackSettingsWelcomePane from "@/components/SequencerTrackSettingsWelcomePane.vue";
 import SequencerStepSettings from "@/components/SequencerStepSettings.vue";
@@ -89,13 +89,13 @@ export class OpenStepSettings implements Command {
     /**
      * Initializes a new instance of the OpenTrackSettings class.
      */
-    constructor(private trackIndex: number, private stepIndex: number) { }
+    constructor(private position: StepPosition) { }
 
     /**
      * Opens a window with the specified settings.
      */
     execute(): void {
-        this.windowsStore.createWindow({ windowComponent: markRaw(SequencerStepSettings), windowProps: { trackIndex: this.trackIndex, stepIndex: this.stepIndex } });
+        this.windowsStore.createWindow({ windowComponent: markRaw(SequencerStepSettings), windowProps: { stepPosition: this.position } });
     }
     undo(): void { /* Undo logic if required */ }
     redo(): void { /* Redo logic if required */ }

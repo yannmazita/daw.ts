@@ -43,6 +43,9 @@ export class SequencerStep {
 export class SequencerTrack {
     public id: number;
     public steps: SequencerStep[];
+    public muted = false;
+    public solo = false;
+    public effectiveMute = false;
 
     /**
      * Creates an instance of a sequencer track.

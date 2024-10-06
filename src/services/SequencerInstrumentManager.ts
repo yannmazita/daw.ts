@@ -88,4 +88,21 @@ export class SequencerInstrumentManager {
     public removeInstrumentForTrack(position: number): void {
         this.trackInstruments.splice(position, 1);
     }
+
+    public getInstrumentForTrack(trackIndex: number): Instrument | undefined {
+        return this.trackInstruments[trackIndex];
+    }
+
+    public updateInstrumentParameters(trackIndex: number, parameters: Partial<Tone.SynthOptions>): void {
+        if (this.trackInstruments[trackIndex] && 'set' in this.trackInstruments[trackIndex]) {
+            this.trackInstruments[trackIndex].set(parameters);
+        }
+    }
+
+    public disposeInstruments(): void {
+        this.trackInstruments.forEach(instrument => instrument.dispose());
+        this.trackInstruments = [];
+        Object.values(this.instrumentPool).forEach(instrument => instrument.dispose());
+        this.instrumentPool = {} as Record<InstrumentName, Instrument>;
+    }
 }
