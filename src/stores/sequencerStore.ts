@@ -21,6 +21,8 @@ export const useSequencerStore = defineStore('sequencer', () => {
     const numTracks = ref(4);
     const numSteps = ref(16);
     const tracks = ref<SequencerTrack[]>([]);
+    const stepDuration = ref('16n');
+    const timeSignature = ref<[number, number]>([4, 4]);
 
     // Loop and playback boundaries
     const loopEnabled = ref(false);
@@ -141,5 +143,7 @@ export const useSequencerStore = defineStore('sequencer', () => {
         setLoopPoints,
         setPlaybackBoundaries,
         visualStep,
+        stepDuration,
+        timeSignature,
     };
 });

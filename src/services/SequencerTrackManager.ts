@@ -81,19 +81,27 @@ export class SequencerTrackManager {
      * @param newCount The new total number of tracks.
      */
     public setNumTracks(newCount: number): void {
+        if (newCount < 1) return;
+
         this.playbackManager.stopSequence();
         if (newCount < this.sequencerStore.tracks.length) {
             this.sequencerStore.tracks = this.sequencerStore.tracks.slice(0, newCount);
+            for (let i = newCount; i < this.sequencerStore.numTracks; i++) {
+                this.instrumentManager.removeInstrumentForTrack(i);
+            }
         } else {
-            const newTracks = Array.from({ length: newCount - this.sequencerStore.tracks.length }, (_, i) =>
-                new SequencerTrack(this.sequencerStore.tracks.length + i, this.sequencerStore.numSteps)
+            const newTracks = Array.from(
+                { length: newCount - this.sequencerStore.tracks.length },
+                (_, i) => new SequencerTrack(this.sequencerStore.tracks.length + i, this.sequencerStore.numSteps)
             );
             this.sequencerStore.tracks = [...this.sequencerStore.tracks, ...newTracks];
+            for (let i = this.sequencerStore.numTracks; i < newCount; i++) {
+                this.instrumentManager.addInstrumentForTrack(i);
+            }
         }
+        this.updateTrackIds();
+        this.triggerReactivityUpdate();
         this.sequencerStore.numTracks = newCount;
-        this.sequencerStore.tracks.forEach((_, trackId) => {
-            this.instrumentManager.addInstrumentForTrack(trackId);
-        });
     }
 
     /**
@@ -101,6 +109,8 @@ export class SequencerTrackManager {
      * @param newCount The new total number of steps per track.
      */
     public setNumSteps(newCount: number): void {
+        if (newCount < 1) return;
+
         this.playbackManager.stopSequence();
         this.sequencerStore.tracks.forEach(track => {
             if (newCount < track.steps.length) {
@@ -122,6 +132,13 @@ export class SequencerTrackManager {
      */
     public toggleStepActiveState(trackIndex: number, stepIndex: number): void {
         this.sequencerStore.tracks[trackIndex].steps[stepIndex].toggleStepActiveState();
+    }
+
+    public updateTrackStepDuration(duration: string): void {
+        this.sequencerStore.tracks.forEach(track => {
+            track.stepDuration = duration;
+        });
+        this.triggerReactivityUpdate();
     }
 
     /**

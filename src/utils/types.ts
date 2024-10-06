@@ -48,3 +48,10 @@ export enum Note {
     C7 = "C7", Cs7 = "C#7", D7 = "D7", Ds7 = "D#7", E7 = "E7", F7 = "F7", Fs7 = "F#7", G7 = "G7", Gs7 = "G#7", A7 = "A7", As7 = "A#7", B7 = "B7",
     C8 = "C8", Cs8 = "C#8", D8 = "D8", Ds8 = "D#8", E8 = "E8", F8 = "F8", Fs8 = "F#8", G8 = "G8", Gs8 = "G#8", A8 = "A8", As8 = "A#8", B8 = "B8"
 }
+
+export enum PlaybackState {
+    Stopped,
+    Playing,
+    Paused,
+    Scheduled
+}

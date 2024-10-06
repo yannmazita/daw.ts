@@ -16,6 +16,12 @@ const windowsStore = useWindowsStore();
 const { windows } = storeToRefs(windowsStore);
 
 onMounted(() => {
-    windowsStore.createWindow({ windowComponent: markRaw(Sequencer) });
+    windowsStore.createWindow({
+        windowComponent: markRaw(Sequencer),
+        width: 1024,
+        height: 768,
+        maximumWidth: 3840,
+        maximumHeight: 2160
+    });
 })
 </script>

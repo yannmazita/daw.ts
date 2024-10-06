@@ -1,40 +1,30 @@
 <template>
-  <div id="sequencer-step-tracker-container" class="flex flex-col items-center p-4">
-    <!-- Current step display -->
-    <div class="text-2xl font-bold mb-2">
-      Step: {{ displayStep + 1 }} / {{ numSteps }}
+    <div id="sequencer-step-tracker-container" class="flex flex-col items-center p-4">
+        <!-- Current step display -->
+        <div class="text-2xl font-bold mb-2">
+            Step: {{ displayStep + 1 }} / {{ numSteps }}
+        </div>
+
+        <!-- Step visualization -->
+        <div class="flex justify-center w-full mb-4">
+            <div v-for="step in numSteps" :key="step" class="w-4 h-4 mx-1 rounded-full transition-all duration-150"
+                :class="{
+                    'bg-ts-blue': step - 1 === displayStep,
+                    'bg-gray-300': step - 1 !== displayStep,
+                    'border-2 border-ts-blue': isLoopPoint(step - 1)
+                }"></div>
+        </div>
+
+        <!-- Range bar for manual step selection -->
+        <AppRangeBar v-model="manualStep" :step="1" :min="0" :max="numSteps - 1" class="w-full"
+            @update:modelValue="handleManualStepChange"></AppRangeBar>
+
+        <!-- Playback boundaries and loop points -->
+        <div class="flex justify-between w-full mt-2 text-sm">
+            <span>Start: {{ playbackStart + 1 }}</span>
+            <span>End: {{ playbackEnd }}</span>
+        </div>
     </div>
-    
-    <!-- Step visualization -->
-    <div class="flex justify-center w-full mb-4">
-      <div 
-        v-for="step in numSteps" 
-        :key="step" 
-        class="w-4 h-4 mx-1 rounded-full transition-all duration-150"
-        :class="{
-          'bg-ts-blue': step - 1 === displayStep,
-          'bg-gray-300': step - 1 !== displayStep,
-          'border-2 border-ts-blue': isLoopPoint(step - 1)
-        }"
-      ></div>
-    </div>
-    
-    <!-- Range bar for manual step selection -->
-    <AppRangeBar 
-      v-model="manualStep" 
-      :step="1" 
-      :min="0"
-      :max="numSteps - 1"
-      class="w-full"
-      @update:modelValue="handleManualStepChange"
-    ></AppRangeBar>
-    
-    <!-- Playback boundaries and loop points -->
-    <div class="flex justify-between w-full mt-2 text-sm">
-      <span>Start: {{ playbackStart + 1 }}</span>
-      <span>End: {{ playbackEnd }}</span>
-    </div>
-  </div>
 </template>
 
 <script setup lang="ts">
@@ -59,34 +49,34 @@ const playbackEnd = computed(() => numSteps.value);
 
 // Watch for changes in the visual step and update the display step smoothly
 watch(visualStep, (newStep) => {
-  if (isPlaying.value) {
-    displayStep.value = newStep;
-    manualStep.value = newStep;
-  }
+    if (isPlaying.value) {
+        displayStep.value = newStep;
+        manualStep.value = newStep;
+    }
 }, { immediate: true });
 
 // Handle manual step change
 const handleManualStepChange = (newStep: number) => {
-  displayStep.value = newStep;
-  playbackManager.seekTo(newStep);
+    displayStep.value = newStep;
+    playbackManager.seekTo(newStep);
 };
 
 // Check if a step is a loop point
 const isLoopPoint = (step: number) => {
-  return step === playbackStart.value || step === playbackEnd.value - 1;
+    return step === playbackStart.value || step === playbackEnd.value - 1;
 };
 
 // Smooth step transition for display
 watch(displayStep, (newStep, oldStep) => {
-  if (Math.abs(newStep - oldStep) > 1 && !isPlaying.value) {
-    // If the change is not sequential and not playing, animate the transition
-    const animate = () => {
-      if (displayStep.value !== newStep) {
-        displayStep.value += displayStep.value < newStep ? 1 : -1;
+    if (Math.abs(newStep - oldStep) > 1 && !isPlaying.value) {
+        // If the change is not sequential and not playing, animate the transition
+        const animate = () => {
+            if (displayStep.value !== newStep) {
+                displayStep.value += displayStep.value < newStep ? 1 : -1;
+                requestAnimationFrame(animate);
+            }
+        };
         requestAnimationFrame(animate);
-      }
-    };
-    requestAnimationFrame(animate);
-  }
+    }
 });
 </script>
