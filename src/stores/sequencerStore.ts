@@ -3,7 +3,7 @@
 
 import { SequencerTrack } from '@/models/SequencerModels';
 import { defineStore } from 'pinia';
-import { computed, reactive, ref } from 'vue';
+import { reactive, ref } from 'vue';
 import { StepPosition } from '@/utils/interfaces';
 
 /**
@@ -12,7 +12,6 @@ import { StepPosition } from '@/utils/interfaces';
 export const useSequencerStore = defineStore('sequencer', () => {
     // Playback state
     const isPlaying = ref(false);
-    const isLooping = computed(() => loopEnabled.value && loopStart.value < loopEnd.value);
     const bpm = ref(120);
     const currentStep = ref(0);
     const visualStep = ref(0);
@@ -23,13 +22,6 @@ export const useSequencerStore = defineStore('sequencer', () => {
     const tracks = ref<SequencerTrack[]>([]);
     const stepDuration = ref('16n');
     const timeSignature = ref<[number, number]>([4, 4]);
-
-    // Loop and playback boundaries
-    const loopEnabled = ref(false);
-    const loopStart = ref(0);
-    const loopEnd = ref(numSteps.value);
-    const playbackStart = ref(0);
-    const playbackEnd = ref(numSteps.value);
 
     // Right-click selection
     const rightClickStepPos: StepPosition = reactive({ trackIndex: -1, stepIndex: -1 });
@@ -49,35 +41,6 @@ export const useSequencerStore = defineStore('sequencer', () => {
             const step = tracks.value[trackIndex].steps[stepIndex];
             step.active = !step.active;
         }
-    }
-
-    // Methods for playback control
-    function setPlaybackPosition(step: number) {
-        currentStep.value = step;
-        visualStep.value = step;
-    }
-
-    function advancePlaybackPosition() {
-        currentStep.value = (currentStep.value + 1) % numSteps.value;
-        visualStep.value = currentStep.value;
-
-        if (isLooping.value) {
-            if (currentStep.value >= loopEnd.value) {
-                setPlaybackPosition(loopStart.value);
-            }
-        } else if (currentStep.value >= playbackEnd.value) {
-            setPlaybackPosition(playbackStart.value);
-        }
-    }
-
-    function setLoopPoints(start: number, end: number) {
-        loopStart.value = Math.max(0, Math.min(start, numSteps.value - 1));
-        loopEnd.value = Math.max(loopStart.value + 1, Math.min(end, numSteps.value));
-    }
-
-    function setPlaybackBoundaries(start: number, end: number) {
-        playbackStart.value = Math.max(0, Math.min(start, numSteps.value - 1));
-        playbackEnd.value = Math.max(playbackStart.value + 1, Math.min(end, numSteps.value));
     }
 
     // Methods for right-click selection
@@ -138,10 +101,6 @@ export const useSequencerStore = defineStore('sequencer', () => {
         isRightClickTrackPosValid,
         setStepActive,
         toggleStepActive,
-        setPlaybackPosition,
-        advancePlaybackPosition,
-        setLoopPoints,
-        setPlaybackBoundaries,
         visualStep,
         stepDuration,
         timeSignature,
