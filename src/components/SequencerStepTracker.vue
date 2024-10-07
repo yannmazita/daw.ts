@@ -39,37 +39,30 @@ const sequencerStore = useSequencerStore();
 const { numSteps, visualStep, isPlaying } = storeToRefs(sequencerStore);
 const playbackManager = inject(sequencerPlaybackManagerKey) as SequencerPlaybackManager;
 
-// Reactive references for smooth transitions
 const displayStep = ref(0);
 const manualStep = ref(0);
 
-// Computed properties for playback boundaries and loop points
 const playbackStart = ref(0);
 const playbackEnd = computed(() => numSteps.value);
 
-// Watch for changes in the visual step and update the display step smoothly
 watch(visualStep, (newStep) => {
-    if (isPlaying.value) {
-        displayStep.value = newStep;
-        manualStep.value = newStep;
-    }
+    displayStep.value = newStep;
+    manualStep.value = newStep;
 }, { immediate: true });
 
-// Handle manual step change
 const handleManualStepChange = (newStep: number) => {
     displayStep.value = newStep;
+    manualStep.value = newStep;
     playbackManager.seekTo(newStep);
 };
 
-// Check if a step is a loop point
 const isLoopPoint = (step: number) => {
     return step === playbackStart.value || step === playbackEnd.value - 1;
 };
 
-// Smooth step transition for display
+// Smooth step transition for display (if needed)
 watch(displayStep, (newStep, oldStep) => {
     if (Math.abs(newStep - oldStep) > 1 && !isPlaying.value) {
-        // If the change is not sequential and not playing, animate the transition
         const animate = () => {
             if (displayStep.value !== newStep) {
                 displayStep.value += displayStep.value < newStep ? 1 : -1;
