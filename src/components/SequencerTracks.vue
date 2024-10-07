@@ -15,7 +15,8 @@
                 </button>
             </div>
             <div class="track-steps flex-grow flex">
-                <div :id="`sequencer-track-${track.id}-step-${stepIndex}`" v-for="(step, stepIndex) in track.steps" :key="stepIndex" @click="toggleStep(track.id, stepIndex)"
+                <div :id="`sequencer-track-${track.id}-step-${stepIndex}`" v-for="(step, stepIndex) in track.steps"
+                    :key="stepIndex" @click="toggleStep(track.id, stepIndex)"
                     class="w-8 h-8 m-0.5 rounded-md cursor-pointer transition-all duration-150" :class="{
                         'bg-ts-blue': step.active,
                         'bg-gray-200': !step.active,
@@ -83,9 +84,10 @@ function createContextMenuItems(position: StepPosition) {
 function handleContextMenu(event: MouseEvent, position: StepPosition) {
     sequencerStore.rightClickSelectStep(position);
     const items = createContextMenuItems(position);
-    // Opens the context menu at the click location
     if (items) {
-        menuStore.openContextMenu(items, event.clientX, event.clientY);
+        menuStore.clearContextualItems(); // Clear previous contextual items
+        menuStore.addContextualItems(items); // Add new contextual items
+        menuStore.openContextMenu(event.clientX, event.clientY);
     }
 }
 </script>

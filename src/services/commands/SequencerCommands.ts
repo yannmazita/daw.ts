@@ -24,7 +24,9 @@ export class AddTrackCommand implements Command {
      * Executes the command to add a track at the position stored in the sequencer store.
      */
     execute(): void {
+        console.log("Adding track");
         if (this.sequencerStore.isRightClickTrackPosValid()) {
+            console.log("Adding track at position", this.sequencerStore.rightClickTrackPos);
             this.trackManager.addTrack(this.sequencerStore.rightClickTrackPos);
         }
     }

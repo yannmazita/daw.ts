@@ -7,13 +7,17 @@
 </template>
 
 <script setup lang="ts">
-import { provide } from 'vue';
+import { onMounted, provide } from 'vue';
 import { SequencerInstrumentManager } from '@/services/SequencerInstrumentManager';
 import { SequencerPlaybackManager } from '@/services/SequencerPlaybackManager';
 import { SequencerTrackManager } from '@/services/SequencerTrackManager';
 import { sequencerInstrumentManagerKey, sequencerPlaybackManagerKey, sequencerTrackManagerKey } from '@/utils/injection-keys.ts';
 import AppContextMenu from '@/components/AppContextMenu.vue';
 import AppTabBar from '@/components/AppTabBar.vue';
+import { AppContextMenuItem } from './models/AppContextMenuItem';
+import { useContextMenuStore } from './stores/contextMenuStore';
+
+const contextMenuStore = useContextMenuStore();
 
 // Instantiating the managers responsible for handling specific parts of the sequencer logic
 const sequencerInstrumentManager = new SequencerInstrumentManager();
@@ -24,4 +28,12 @@ const sequencerTrackManager = new SequencerTrackManager(sequencerPlaybackManager
 provide(sequencerInstrumentManagerKey, sequencerInstrumentManager);
 provide(sequencerTrackManagerKey, sequencerTrackManager);
 provide(sequencerPlaybackManagerKey, sequencerPlaybackManager);
+
+onMounted(() => {
+    const appLevelItems = [
+        new AppContextMenuItem('App Settings', { execute: () => { /* ... */ }, undo: () => { }, redo: () => { } }),
+        new AppContextMenuItem('About', { execute: () => { /* ... */ }, undo: () => { }, redo: () => { } }),
+    ];
+    contextMenuStore.setAppLevelItems(appLevelItems);
+});
 </script>
