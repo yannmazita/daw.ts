@@ -5,11 +5,14 @@ import * as Tone from 'tone';
 import { SequencerInstrumentManager } from '@/services/SequencerInstrumentManager';
 import { useSequencerStore } from '@/stores/sequencerStore';
 import { InstrumentName } from '@/utils/types';
-import { PlaybackState } from '@/utils/types';
 
-/**
- * Manages playback operations for the sequencer, including play, pause, stop, and sequence scheduling.
- */
+export enum PlaybackState {
+    Stopped,
+    Playing,
+    Paused,
+    Scheduled
+}
+
 export class SequencerPlaybackManager {
     private sequencerStore = useSequencerStore();
     private stepDuration = '16n';
@@ -80,7 +83,7 @@ export class SequencerPlaybackManager {
     }
 
     private scheduleSequence(): void {
-        this.clearScheduledEvents(); // Ensure any existing loop is cleared
+        this.clearScheduledEvents();
 
         this.loop = new Tone.Loop((time) => {
             const currentStepIndex = this.calculateCurrentStep(time);
@@ -100,12 +103,11 @@ export class SequencerPlaybackManager {
 
     private playCurrentStep(stepIndex: number, time: number): void {
         this.sequencerStore.tracks.forEach((track, trackIndex) => {
-            if (track.steps[stepIndex].active && !track.muted) {
-                const instrument = this.sequencerInstrumentManager.trackInstruments[trackIndex];
+            if (track.steps[stepIndex].active && !track.effectiveMute) {
                 const step = track.steps[stepIndex];
 
                 if (this.sequencerInstrumentManager.trackInstruments[trackIndex] === this.sequencerInstrumentManager.instrumentPool[InstrumentName.NoiseSynth]) {
-                    instrument.triggerAttackRelease(this.stepDuration, time, step.velocity);
+                    this.sequencerInstrumentManager.trackInstruments[trackIndex].triggerAttackRelease(this.stepDuration, time, step.velocity);
                 } else {
                     this.sequencerInstrumentManager.trackInstruments[trackIndex].triggerAttackRelease(step.note, this.stepDuration, time, step.velocity);
                 }

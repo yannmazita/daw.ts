@@ -134,13 +134,6 @@ export class SequencerTrackManager {
         this.sequencerStore.tracks[trackIndex].steps[stepIndex].toggleStepActiveState();
     }
 
-    public updateTrackStepDuration(duration: string): void {
-        this.sequencerStore.tracks.forEach(track => {
-            track.stepDuration = duration;
-        });
-        this.triggerReactivityUpdate();
-    }
-
     /**
      * Gets the velocity of a step in a track.
      * @param trackIndex The index of the track containing the step.
@@ -235,20 +228,25 @@ export class SequencerTrackManager {
         if (trackIndex >= 0 && trackIndex < this.sequencerStore.tracks.length) {
             this.sequencerStore.tracks[trackIndex].muted = !this.sequencerStore.tracks[trackIndex].muted;
         }
+        this.updateSoloState(); // Update effective mute states after toggling mute
     }
 
     public toggleTrackSolo(trackIndex: number): void {
         if (trackIndex >= 0 && trackIndex < this.sequencerStore.tracks.length) {
             this.sequencerStore.tracks[trackIndex].solo = !this.sequencerStore.tracks[trackIndex].solo;
-            // Implement solo logic (e.g., mute all other non-soloed tracks)
             this.updateSoloState();
         }
     }
 
     private updateSoloState(): void {
         const hasSoloTrack = this.sequencerStore.tracks.some(track => track.solo);
+
         this.sequencerStore.tracks.forEach(track => {
-            track.effectiveMute = hasSoloTrack ? !track.solo : track.muted;
+            if (hasSoloTrack) {
+                track.effectiveMute = !track.solo;
+            } else {
+                track.effectiveMute = track.muted;
+            }
         });
     }
 }
