@@ -60,7 +60,7 @@ const isLoopPoint = (step: number) => {
     return step === playbackStart.value || step === playbackEnd.value - 1;
 };
 
-// Smooth step transition for display (if needed)
+// Smooth step transition for display
 watch(displayStep, (newStep, oldStep) => {
     if (Math.abs(newStep - oldStep) > 1 && !isPlaying.value) {
         const animate = () => {
