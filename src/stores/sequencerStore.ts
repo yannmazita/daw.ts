@@ -3,106 +3,270 @@
 
 import { SequencerTrack } from '@/models/SequencerModels';
 import { defineStore } from 'pinia';
-import { reactive, ref } from 'vue';
-import { StepPosition } from '@/utils/interfaces';
+import { reactive } from 'vue';
+import { PlaybackState, SequenceStructure, StepPosition } from '@/utils/interfaces';
+import { InstrumentName, Note } from '@/utils/types';
 
 /**
  * Defines the store for managing sequencer data.
  */
 export const useSequencerStore = defineStore('sequencer', () => {
-    // Playback state
-    const isPlaying = ref(false);
-    const bpm = ref(120);
-    const currentStep = ref(0);
-    const visualStep = ref(0);
+    const playback: PlaybackState = reactive({
+        isPlaying: false,
+        bpm: 0,
+        timeSignature: [0, 0],
+        currentStep: 0,
+        visualStep: 0,
+    });
 
-    // Sequence structure
-    const numTracks = ref(4);
-    const numSteps = ref(16);
-    const tracks = ref<SequencerTrack[]>([]);
-    const stepDuration = ref('16n');
-    const timeSignature = ref<[number, number]>([4, 4]);
+    const structure: SequenceStructure = reactive({
+        numTracks: 0,
+        numSteps: 0,
+        tracks: [],
+        stepDuration: '',
+        timeSignature: [0, 0],
+    });
 
-    // Right-click selection
-    const rightClickStepPos: StepPosition = reactive({ trackIndex: -1, stepIndex: -1 });
-    const rightClickTrackPos = ref(-1);
+    const rightClickSelectionPos: StepPosition = reactive({ trackIndex: -1, stepIndex: -1 });
+
+    // Methods for track management
+    function addTrack(insertPosition: number = structure.tracks.length) {
+        const newTrack = new SequencerTrack(insertPosition, structure.numSteps);
+        structure.tracks.splice(insertPosition, 0, newTrack);
+        updateTrackIds();
+        structure.numTracks++;
+    }
+
+    function removeTrack(deletePosition: number): SequencerTrack | null {
+        const removedTrack: SequencerTrack | null = null;
+        if (deletePosition >= 0 && deletePosition < structure.tracks.length) {
+            const removedTrack = structure.tracks.splice(deletePosition, 1)[0];
+            removedTrack.dispose();
+            updateTrackIds();
+            structure.numTracks--;
+        }
+        return removedTrack;
+    }
+
+    function restoreTrack(track: SequencerTrack, index: number) {
+        structure.tracks.splice(index, 0, track);
+        updateTrackIds();
+        structure.numTracks++;
+    }
+
+    function updateTrackIds() {
+        structure.tracks.forEach((track, index) => {
+            track.id = index;
+        });
+    }
+
+    function setTrackInstrument(trackIndex: number, instrumentName: InstrumentName) {
+        if (trackIndex >= 0 && trackIndex < structure.tracks.length) {
+            structure.tracks[trackIndex].setInstrument(instrumentName);
+        }
+    }
+
+    function getNumTracks(): number {
+        return structure.numTracks;
+    }
+
+    function setNumTracks(newCount: number) {
+        if (newCount < 1) return;
+        while (newCount > structure.tracks.length) {
+            addTrack();
+        }
+        while (newCount < structure.tracks.length) {
+            removeTrack(structure.tracks.length - 1);
+        }
+    }
+
+    function getTrackMuted(trackIndex: number): boolean | null {
+        if (trackIndex >= 0 && trackIndex < structure.tracks.length) {
+            return structure.tracks[trackIndex].muted;
+        }
+        return null;
+    }
+
+    function setTrackMuted(trackIndex: number, muted: boolean) {
+        if (trackIndex >= 0 && trackIndex < structure.tracks.length) {
+            structure.tracks[trackIndex].muted = muted;
+        }
+    }
+
+    function toggleTrackMuted(trackIndex: number) {
+        if (trackIndex >= 0 && trackIndex < structure.tracks.length) {
+            structure.tracks[trackIndex].muted = !structure.tracks[trackIndex].muted;
+        }
+    }
+
+    function getTrackSolo(trackIndex: number): boolean | null {
+        if (trackIndex >= 0 && trackIndex < structure.tracks.length) {
+            return structure.tracks[trackIndex].solo;
+        }
+        return null;
+    }
+
+    function setTrackSolo(trackIndex: number, solo: boolean) {
+        if (trackIndex >= 0 && trackIndex < structure.tracks.length) {
+            structure.tracks[trackIndex].solo = solo;
+        }
+    }
+
+    function toggleTrackSolo(trackIndex: number) {
+        if (trackIndex >= 0 && trackIndex < structure.tracks.length) {
+            structure.tracks[trackIndex].solo = !structure.tracks[trackIndex].solo;
+        }
+    }
+
+    function getTrack(trackIndex: number): SequencerTrack | null {
+        if (trackIndex >= 0 && trackIndex < structure.tracks.length) {
+            return structure.tracks[trackIndex];
+        }
+        return null;
+    }
+
+    function getTracks(): SequencerTrack[] {
+        return structure.tracks;
+    }
+
+    function getBpm(): number {
+        return playback.bpm;
+    }
+
+    function setBpm(newBpm: number) {
+        playback.bpm = newBpm;
+    }
+
+    function getTimeSignature(): [number, number] {
+        return structure.timeSignature;
+    }
+
+    function setTimeSignature(newTimeSignature: [number, number]) {
+        structure.timeSignature = newTimeSignature;
+    }
 
     // Methods for step management
+    function getStepActive(trackIndex: number, stepIndex: number): boolean | null {
+        if (trackIndex >= 0 && trackIndex < structure.tracks.length &&
+            stepIndex >= 0 && stepIndex < structure.numSteps) {
+            return structure.tracks[trackIndex].steps[stepIndex].active;
+        }
+        return null;
+    }
+
     function setStepActive(trackIndex: number, stepIndex: number, active: boolean) {
-        if (trackIndex >= 0 && trackIndex < tracks.value.length &&
-            stepIndex >= 0 && stepIndex < numSteps.value) {
-            tracks.value[trackIndex].steps[stepIndex].active = active;
+        if (trackIndex >= 0 && trackIndex < structure.tracks.length &&
+            stepIndex >= 0 && stepIndex < structure.numSteps) {
+            structure.tracks[trackIndex].steps[stepIndex].active = active;
+        }
+    }
+
+    function getStepVelocity(trackIndex: number, stepIndex: number): number | null {
+        if (trackIndex >= 0 && trackIndex < structure.tracks.length &&
+            stepIndex >= 0 && stepIndex < structure.numSteps) {
+            return structure.tracks[trackIndex].steps[stepIndex].velocity;
+        }
+        return null;
+    }
+
+    function setStepVelocity(trackIndex: number, stepIndex: number, velocity: number) {
+        if (trackIndex >= -1 && trackIndex < structure.tracks.length &&
+            stepIndex >= 0 && stepIndex < structure.numSteps) {
+            structure.tracks[trackIndex].steps[stepIndex].velocity = velocity;
+        }
+    }
+
+    function setStepVelocityToTrack(trackIndex: number, velocity: number) {
+        if (trackIndex >= 0 && trackIndex < structure.tracks.length) {
+            structure.tracks[trackIndex].steps.forEach((step) => {
+                step.velocity = velocity;
+            });
+        }
+    }
+
+    function setStepVelocityToAllTracks(velocity: number) {
+        structure.tracks.forEach((track) => {
+            track.steps.forEach((step) => {
+                step.velocity = velocity;
+            });
+        });
+    }
+
+    function getStepNote(trackIndex: number, stepIndex: number): Note | null {
+        if (trackIndex >= 0 && trackIndex < structure.tracks.length &&
+            stepIndex >= 0 && stepIndex < structure.numSteps) {
+            return structure.tracks[trackIndex].steps[stepIndex].note;
+        }
+        return null;
+    }
+
+    function setStepNote(trackIndex: number, stepIndex: number, note: Note) {
+        if (trackIndex >= 0 && trackIndex < structure.tracks.length &&
+            stepIndex >= 0 && stepIndex < structure.numSteps) {
+            const step = structure.tracks[trackIndex].steps[stepIndex];
+            step.note = note;
         }
     }
 
     function toggleStepActive(trackIndex: number, stepIndex: number) {
-        if (trackIndex >= 0 && trackIndex < tracks.value.length &&
-            stepIndex >= 0 && stepIndex < numSteps.value) {
-            const step = tracks.value[trackIndex].steps[stepIndex];
+        if (trackIndex >= 0 && trackIndex < structure.tracks.length &&
+            stepIndex >= 0 && stepIndex < structure.numSteps) {
+            const step = structure.tracks[trackIndex].steps[stepIndex];
             step.active = !step.active;
         }
     }
 
+    function getNumSteps(): number {
+        return structure.numSteps;
+    }
+
+    function setNumSteps(newCount: number) {
+        if (newCount < 1) return;
+        structure.numSteps = newCount;
+        structure.tracks.forEach((track) => {
+            track.setNumSteps(newCount);
+        });
+    }
+
     // Methods for right-click selection
     function rightClickSelectStep(position: StepPosition) {
-        rightClickStepPos.trackIndex = position.trackIndex;
-        rightClickStepPos.stepIndex = position.stepIndex;
-    }
-
-    function rightClickSelectTrack(trackIndex: number) {
-        rightClickTrackPos.value = trackIndex;
-    }
-
-    /**
-     * Clears the recorded position of a right-click on a step.
-     */
-    function clearRightClickSelectStepPos(): void {
-        rightClickStepPos.trackIndex = -1;
-        rightClickStepPos.stepIndex = -1;
-    }
-
-    /**
-     * Clears the recorded position of a right-click on a track.
-     */
-    function clearRightClickSelectTrackPos(): void {
-        rightClickTrackPos.value = -1;
-    }
-
-    /**
-     * Checks if the right-click track position is valid.
-     * @returns True if the right-click step position is valid, false otherwise.
-     */
-    function isRightClickTrackPosValid(): boolean {
-        return rightClickTrackPos.value !== -1;
-    }
-
-    /**
-     * Checks if the right-click step position is valid.
-     * @returns True if the right-click step position is valid, false otherwise.
-     */
-    function isRightClickStepPosValid(): boolean {
-        return rightClickStepPos.trackIndex !== -1 && rightClickStepPos.stepIndex !== -1;
+        rightClickSelectionPos.trackIndex = position.trackIndex;
+        rightClickSelectionPos.stepIndex = position.stepIndex;
     }
 
     return {
-        bpm,
-        numTracks,
-        numSteps,
-        currentStep,
-        tracks,
-        rightClickStepPos,
+        playback,
+        structure,
+        rightClickSelectionPos,
         rightClickSelectStep,
-        clearRightClickSelectStepPos,
-        rightClickTrackPos,
-        rightClickSelectTrack,
-        clearRightClickSelectTrackPos,
-        isPlaying,
-        isRightClickStepPosValid,
-        isRightClickTrackPosValid,
+        addTrack,
+        removeTrack,
+        restoreTrack,
+        getBpm,
+        getTimeSignature,
+        getTrackMuted,
+        getTrack,
+        getTracks,
+        getNumTracks,
+        getStepActive,
+        getStepVelocity,
+        getNumSteps,
+        getStepNote,
+        getTrackSolo,
+        setBpm,
+        setTimeSignature,
+        setTrackMuted,
+        setTrackInstrument,
+        setStepNote,
+        setNumTracks,
+        setNumSteps,
         setStepActive,
+        setStepVelocity,
+        setStepVelocityToTrack,
+        setStepVelocityToAllTracks,
+        setTrackSolo,
         toggleStepActive,
-        visualStep,
-        stepDuration,
-        timeSignature,
+        toggleTrackMuted,
+        toggleTrackSolo,
     };
 });

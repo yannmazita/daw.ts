@@ -1,6 +1,8 @@
 // File: interfaces.ts
 // Description: This file contains interfaces that define common structures used throughout the application.
 
+import { SequencerTrack } from "@/models/SequencerModels";
+
 /**
  * Defines the methods necessary for implementing command actions within the application,
  * supporting the execution, undo, and redo functionalities as part of the Command pattern.
@@ -59,3 +61,18 @@ export interface WindowDualPaneContent {
     component: unknown;
 }
 
+export interface PlaybackState {
+    isPlaying: boolean;
+    bpm: number;
+    timeSignature: [number, number];
+    currentStep: number;
+    visualStep: number;
+}
+
+export interface SequenceStructure {
+    numTracks: number;
+    numSteps: number;
+    tracks: SequencerTrack[];
+    stepDuration: string;
+    timeSignature: [number, number];
+}
