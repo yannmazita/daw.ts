@@ -64,7 +64,6 @@ export interface WindowDualPaneContent {
 export interface PlaybackState {
     isPlaying: boolean;
     bpm: number;
-    timeSignature: [number, number];
     currentStep: number;
     visualStep: number;
 }

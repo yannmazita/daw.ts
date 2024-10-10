@@ -8,24 +8,20 @@
 
 <script setup lang="ts">
 import { onMounted, provide } from 'vue';
-import { SequencerInstrumentManager } from '@/services/SequencerInstrumentManager';
 import { SequencerPlaybackManager } from '@/services/SequencerPlaybackManager';
 import { SequencerTrackManager } from '@/services/SequencerTrackManager';
-import { sequencerInstrumentManagerKey, sequencerPlaybackManagerKey, sequencerTrackManagerKey } from '@/utils/injection-keys.ts';
+import { sequencerPlaybackManagerKey, sequencerTrackManagerKey } from '@/utils/injection-keys.ts';
 import AppContextMenu from '@/components/AppContextMenu.vue';
 import AppTabBar from '@/components/AppTabBar.vue';
 import { AppContextMenuItem } from './models/AppContextMenuItem';
 import { useContextMenuStore } from './stores/contextMenuStore';
+import { CommandManager } from './services/CommandManager';
 
 const contextMenuStore = useContextMenuStore();
+const commandManager = new CommandManager();
+const sequencerPlaybackManager = new SequencerPlaybackManager(commandManager);
+const sequencerTrackManager = new SequencerTrackManager(sequencerPlaybackManager, commandManager);
 
-// Instantiating the managers responsible for handling specific parts of the sequencer logic
-const sequencerInstrumentManager = new SequencerInstrumentManager();
-const sequencerPlaybackManager = new SequencerPlaybackManager(sequencerInstrumentManager);
-const sequencerTrackManager = new SequencerTrackManager(sequencerPlaybackManager, sequencerInstrumentManager);
-
-// Providing instances of sequencer managers globally so they can be injected in any component
-provide(sequencerInstrumentManagerKey, sequencerInstrumentManager);
 provide(sequencerTrackManagerKey, sequencerTrackManager);
 provide(sequencerPlaybackManagerKey, sequencerPlaybackManager);
 

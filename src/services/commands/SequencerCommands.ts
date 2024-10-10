@@ -7,7 +7,7 @@ import SequencerTrackSettingsWelcomePane from "@/components/SequencerTrackSettin
 import SequencerStepSettings from "@/components/SequencerStepSettings.vue";
 import { markRaw } from "vue";
 import { SequencerTrack } from "@/models/SequencerModels";
-import { Note } from "@/utils/types";
+import { InstrumentName, Note } from "@/utils/types";
 import * as Tone from "tone";
 
 /**
@@ -67,6 +67,7 @@ export class RemoveTrackCommand implements Command {
 export class SetNumStepsCommand implements Command {
     private sequencerStore = useSequencerStore();
     private previousState: number;
+
     constructor(private newCount: number) {
         this.previousState = this.sequencerStore.getNumSteps();
     }
@@ -75,6 +76,24 @@ export class SetNumStepsCommand implements Command {
     }
     undo(): void {
         this.sequencerStore.setNumSteps(this.previousState);
+    }
+    redo(): void {
+        this.execute();
+    }
+}
+
+export class SetNumTracksCommand implements Command {
+    private sequencerStore = useSequencerStore();
+    private previousState: number;
+
+    constructor(private newCount: number) {
+        this.previousState = this.sequencerStore.getNumTracks();
+    }
+    execute(): void {
+        this.sequencerStore.setNumTracks(this.newCount);
+    }
+    undo(): void {
+        this.sequencerStore.setNumTracks(this.previousState);
     }
     redo(): void {
         this.execute();
@@ -209,6 +228,28 @@ export class SetTimeSignatureCommand implements Command {
         this.execute();
     }
 }
+
+export class ChangeInstrumentCommand implements Command {
+    private sequencerStore = useSequencerStore();
+    private previousState: InstrumentName | null = null;
+
+    constructor(private trackIndex: number, private newInstrumentName: InstrumentName) {
+        this.previousState = this.sequencerStore.getTrackInstrumentName(trackIndex);
+    }
+
+    execute(): void {
+        this.sequencerStore.setTrackInstrument(this.trackIndex, this.newInstrumentName);
+    }
+
+    undo(): void {
+        this.sequencerStore.setTrackInstrument(this.trackIndex, this.previousState ?? InstrumentName.Synth);
+    }
+
+    redo(): void {
+        this.execute();
+    }
+}
+
 
 /**
  * Command to open track settings in a window.

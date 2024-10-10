@@ -9,11 +9,14 @@ import {
     ToggleStepActiveCommand,
     SetStepVelocityCommand,
     SetStepNoteCommand,
+    SetNumTracksCommand,
     SetNumStepsCommand,
     ToggleTrackMutedCommand,
-    ToggleTrackSoloCommand
+    ToggleTrackSoloCommand,
+    ChangeInstrumentCommand
 } from './commands/SequencerCommands';
-import { Note } from '@/utils/types';
+import { InstrumentName, Note } from '@/utils/types';
+import { SequencerTrack } from '@/models/SequencerModels';
 
 export class SequencerTrackManager {
     private sequencerStore = useSequencerStore();
@@ -21,7 +24,20 @@ export class SequencerTrackManager {
     constructor(
         private playbackManager: SequencerPlaybackManager,
         private commandManager: CommandManager
-    ) { }
+    ) {
+        this.initialize();
+    }
+
+    private initialize(): void {
+        console.log('SequencerTrackManager initialized');
+        this.sequencerStore.structure.numTracks = 4;
+        this.sequencerStore.structure.numSteps = 16;
+        this.sequencerStore.structure.tracks = Array.from(
+            { length: this.sequencerStore.structure.numTracks },
+            (_, i) => new SequencerTrack(i, this.sequencerStore.structure.numSteps)
+        );
+        this.sequencerStore.structure.stepDuration = '16n';
+    }
 
     public addTrack(insertPosition: number = this.sequencerStore.getNumTracks()): void {
         this.playbackManager.stopSequence();
@@ -37,7 +53,12 @@ export class SequencerTrackManager {
 
     public setNumTracks(newCount: number): void {
         this.playbackManager.stopSequence();
-        const command = new SetNumStepsCommand(newCount);
+        const command = new SetNumTracksCommand(newCount);
+        this.commandManager.execute(command);
+    }
+
+    public setTrackInstrument(trackIndex: number, instrumentName: InstrumentName): void {
+        const command = new ChangeInstrumentCommand(trackIndex, instrumentName);
         this.commandManager.execute(command);
     }
 
@@ -58,12 +79,7 @@ export class SequencerTrackManager {
     }
 
     public setStepVelocityToTrack(trackIndex: number, velocity: number): void {
-        const track = this.sequencerStore.getTrack(trackIndex);
-        if (track) {
-            track.steps.forEach((_, stepIndex) => {
-                this.setStepVelocity(trackIndex, stepIndex, velocity);
-            });
-        }
+        // todo
     }
 
     public setStepVelocityToAllTracks(velocity: number): void {

@@ -23,9 +23,20 @@ export class SequencerPlaybackManager {
     private playbackStartTime: number | null = null;
     private playStatus: PlayStatus = PlayStatus.Stopped;
 
-    constructor(private commandManager: CommandManager) { }
+    constructor(private commandManager: CommandManager) {
+        this.initialize();
+    }
+
+    private initialize(): void {
+        console.log('SequencerPlaybackManager initialized');
+        this.sequencerStore.playback.isPlaying = false;
+        this.sequencerStore.playback.bpm = 120;
+        this.sequencerStore.playback.currentStep = 0;
+        this.sequencerStore.playback.visualStep = 0;
+    }
 
     public playSequence(): void {
+        console.log('Audio context state:', Tone.getContext().state);
         if (this.playStatus === PlayStatus.Playing) {
             return;
         }
@@ -104,6 +115,7 @@ export class SequencerPlaybackManager {
     private calculateCurrentStep(time: number): number {
         const elapsedTime = time - (this.playbackStartTime ?? 0);
         const stepsElapsed = Math.floor(elapsedTime / Tone.Time(this.stepDuration).toSeconds());
+        console.log(`Current step: ${this.sequencerStore.playback.currentStep}, Elapsed time: ${elapsedTime}`);
         return stepsElapsed % this.sequencerStore.structure.numSteps;
     }
 
@@ -111,10 +123,11 @@ export class SequencerPlaybackManager {
         this.sequencerStore.structure.tracks.forEach(track => {
             if (track.steps[stepIndex].active && !track.effectiveMute) {
                 const step = track.steps[stepIndex];
-
+                console.log(`Playing note: ${step.note}, Velocity: ${step.velocity}, Instrument: ${track.instrument.name}`);
                 if (track.instrument.name === InstrumentName.NoiseSynth.valueOf()) {
                     track.instrument.triggerAttackRelease(this.stepDuration, time, step.velocity);
                 } else {
+                    console.log('Triggering note:', step.note);
                     track.instrument.triggerAttackRelease(step.note, this.stepDuration, time, step.velocity);
                 }
             }

@@ -54,13 +54,13 @@ import { SequencerTrackManager } from '@/services/SequencerTrackManager';
 import AppInput from '@/components/AppInput.vue';
 
 const sequencerStore = useSequencerStore();
-const { numTracks, numSteps, bpm } = storeToRefs(sequencerStore);
+const { playback, structure } = storeToRefs(sequencerStore);
 const playbackManager = inject(sequencerPlaybackManagerKey) as SequencerPlaybackManager;
 const trackManager = inject(sequencerTrackManagerKey) as SequencerTrackManager;
 
-const inputTracks = ref(numTracks.value.toString());
-const inputSteps = ref(numSteps.value.toString());
-const inputBpm = ref(bpm.value.toString());
+const inputTracks = ref(structure.value.numTracks.toString());
+const inputSteps = ref(structure.value.numSteps.toString());
+const inputBpm = ref(playback.value.bpm.toString());
 const stepDuration = ref('16n');
 const timeSignature = ref('4/4');
 

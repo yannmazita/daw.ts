@@ -1,7 +1,8 @@
 <template>
     <div id="sequencer-tracks-container" class="flex flex-col space-y-2">
-        <div :id="`sequencer-track-${track.id}`" v-for="track in tracks" :key="track.id"
-            class="flex items-center space-x-2 hover:opacity-100">
+        <div :id="`sequencer-track-${track.id}`" v-for="track in structure.tracks" :key="track.id"
+            class="flex items-center space-x-2 hover:opacity-100"
+            @contextmenu.prevent="handleContextMenu($event, { trackIndex: track.id, stepIndex: -1 })">
             <div class="flex items-center space-x-2 hover:opacity-100 opacity-70 transition ease-in-out duration-150">
                 <button @click="toggleTrackMute(track.id)"
                     :class="{ 'bg-red-500': track.muted, 'bg-gray-300': !track.muted }"
@@ -45,11 +46,11 @@ import SequencerTrackSettingsEffectsPane from './SequencerTrackSettingsEffectsPa
 
 const sequencerStore = useSequencerStore();
 const menuStore = useContextMenuStore();
-const { tracks, visualStep } = storeToRefs(sequencerStore);
+const { playback, structure } = storeToRefs(sequencerStore);
 
 const trackManager = inject(sequencerTrackManagerKey) as SequencerTrackManager;
 
-const isCurrentStep = computed(() => (stepIndex: number) => stepIndex === visualStep.value);
+const isCurrentStep = computed(() => (stepIndex: number) => stepIndex === playback.value.visualStep);
 
 function toggleStep(trackIndex: number, stepIndex: number) {
     sequencerStore.toggleStepActive(trackIndex, stepIndex);
@@ -64,17 +65,19 @@ function toggleTrackSolo(trackIndex: number) {
 }
 
 function createContextMenuItems(position: StepPosition) {
-    if (sequencerStore.isRightClickStepPosValid()) {
+    if (sequencerStore.isTrackSelectionValid()) {
         const contents: WindowDualPaneContent[] = [
             { label: 'Instrument', component: markRaw(SequencerTrackSettingsInstrumentsPane) },
             { label: 'Effects', component: markRaw(SequencerTrackSettingsEffectsPane) },
         ]
         const contextMenuItems = [
-            new AppContextMenuItem('Add track', new AddTrackCommand(trackManager)),
-            new AppContextMenuItem('Remove track', new RemoveTrackCommand(trackManager)),
+            new AppContextMenuItem('Add track', new AddTrackCommand(position.trackIndex + 1)),
+            new AppContextMenuItem('Remove track', new RemoveTrackCommand(position.trackIndex)),
             new AppContextMenuItem('Track settings', new OpenTrackSettings(contents, position.trackIndex)),
-            new AppContextMenuItem('Step settings', new OpenStepSettings(position))
         ];
+        if (sequencerStore.isStepSelectionValid()) {
+            contextMenuItems.push(new AppContextMenuItem('Step settings', new OpenStepSettings(position)));
+        }
 
         return contextMenuItems;
     }
@@ -82,7 +85,6 @@ function createContextMenuItems(position: StepPosition) {
 
 // Handles right-click context menu for track operations
 function handleContextMenu(event: MouseEvent, position: StepPosition) {
-    sequencerStore.rightClickSelectStep(position);
     const items = createContextMenuItems(position);
     if (items) {
         menuStore.clearContextualItems(); // Clear previous contextual items

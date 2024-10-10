@@ -4,7 +4,7 @@
             <AppSmallButton @click="playbackManager.playSequence()">
                 Play
             </AppSmallButton>
-            <AppSmallButton @click="playbackManager.pauseSequence()" :disabled="!isPlaying">
+            <AppSmallButton @click="playbackManager.pauseSequence()" :disabled="!playback.isPlaying">
                 Pause
             </AppSmallButton>
             <AppSmallButton @click="playbackManager.stopSequence()">
@@ -28,7 +28,7 @@ import AppSmallCheckbox from '@/components/AppSmallCheckbox.vue';
 
 const playbackManager = inject(sequencerPlaybackManagerKey) as SequencerPlaybackManager;
 const sequencerStore = useSequencerStore();
-const { isPlaying } = storeToRefs(sequencerStore);
+const { playback } = storeToRefs(sequencerStore);
 
 const loopEnabled = ref(playbackManager.loopEnabled);
 

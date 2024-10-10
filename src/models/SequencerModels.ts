@@ -10,8 +10,6 @@ import { Instrument, InstrumentName, Note } from "@/utils/types";
 export class SequencerStep {
     /**
      * Creates an instance of a sequencer step.
-     * @param active - Indicates whether the step is active (note will play).
-     * @param note - The musical note associated with the step.
      */
     constructor(
         public active = false,
@@ -56,6 +54,7 @@ export class SequencerTrack {
     }
 
     private createInstrument(instrumentName: InstrumentName): Instrument {
+        console.log('Creating instrument:', instrumentName);
         switch (instrumentName) {
             case InstrumentName.AMSynth:
                 return new Tone.AMSynth().toDestination();

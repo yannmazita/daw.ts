@@ -14,7 +14,6 @@ export const useSequencerStore = defineStore('sequencer', () => {
     const playback: PlaybackState = reactive({
         isPlaying: false,
         bpm: 0,
-        timeSignature: [0, 0],
         currentStep: 0,
         visualStep: 0,
     });
@@ -58,6 +57,13 @@ export const useSequencerStore = defineStore('sequencer', () => {
         structure.tracks.forEach((track, index) => {
             track.id = index;
         });
+    }
+
+    function getTrackInstrumentName(trackIndex: number): InstrumentName | null {
+        if (trackIndex >= 0 && trackIndex < structure.tracks.length) {
+            return InstrumentName[structure.tracks[trackIndex].instrument.name as keyof typeof InstrumentName];
+        }
+        return null;
     }
 
     function setTrackInstrument(trackIndex: number, instrumentName: InstrumentName) {
@@ -229,16 +235,42 @@ export const useSequencerStore = defineStore('sequencer', () => {
     }
 
     // Methods for right-click selection
-    function rightClickSelectStep(position: StepPosition) {
-        rightClickSelectionPos.trackIndex = position.trackIndex;
-        rightClickSelectionPos.stepIndex = position.stepIndex;
+    function rightClickSelect(position: StepPosition) {
+        if (position.trackIndex >= 0 && position.trackIndex < structure.tracks.length) {
+            rightClickSelectionPos.trackIndex = position.trackIndex;
+        }
+        else {
+            rightClickSelectionPos.trackIndex = -1;
+        }
+        if (position.stepIndex >= 0 && position.stepIndex < structure.numSteps) {
+            rightClickSelectionPos.stepIndex = position.stepIndex;
+        }
+        else {
+            rightClickSelectionPos.stepIndex = -1;
+        }
+    }
+
+    function clearRightClickSelect() {
+        rightClickSelectionPos.trackIndex = -1;
+        rightClickSelectionPos.stepIndex = -1;
+    }
+
+    function isTrackSelectionValid(): boolean {
+        return rightClickSelectionPos.trackIndex >= 0 && rightClickSelectionPos.trackIndex < structure.tracks.length;
+    }
+
+    function isStepSelectionValid(): boolean {
+        return rightClickSelectionPos.stepIndex >= 0 && rightClickSelectionPos.stepIndex < structure.numSteps;
     }
 
     return {
         playback,
         structure,
         rightClickSelectionPos,
-        rightClickSelectStep,
+        rightClickSelect,
+        clearRightClickSelect,
+        isTrackSelectionValid,
+        isStepSelectionValid,
         addTrack,
         removeTrack,
         restoreTrack,
@@ -252,6 +284,7 @@ export const useSequencerStore = defineStore('sequencer', () => {
         getStepVelocity,
         getNumSteps,
         getStepNote,
+        getTrackInstrumentName,
         getTrackSolo,
         setBpm,
         setTimeSignature,

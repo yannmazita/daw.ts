@@ -2,13 +2,13 @@
     <div id="sequencer-step-tracker-container" class="flex flex-col items-center p-4">
         <!-- Current step display -->
         <div class="text-2xl font-bold mb-2">
-            Step: {{ displayStep + 1 }} / {{ numSteps }}
+            Step: {{ displayStep + 1 }} / {{ structure.numSteps }}
         </div>
 
         <!-- Step visualization -->
         <div class="flex justify-center w-full mb-4">
-            <div v-for="step in numSteps" :key="step" class="w-4 h-4 mx-1 rounded-full transition-all duration-150"
-                :class="{
+            <div v-for="step in structure.numSteps" :key="step"
+                class="w-4 h-4 mx-1 rounded-full transition-all duration-150" :class="{
                     'bg-ts-blue': step - 1 === displayStep,
                     'bg-gray-300': step - 1 !== displayStep,
                     'border-2 border-ts-blue': isLoopPoint(step - 1)
@@ -16,7 +16,7 @@
         </div>
 
         <!-- Range bar for manual step selection -->
-        <AppRangeBar v-model="manualStep" :step="1" :min="0" :max="numSteps - 1" class="w-full"
+        <AppRangeBar v-model="manualStep" :step="1" :min="0" :max="structure.numSteps - 1" class="w-full"
             @update:modelValue="handleManualStepChange"></AppRangeBar>
 
         <!-- Playback boundaries and loop points -->
@@ -28,7 +28,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, inject } from 'vue';
+import { ref, computed, watch, inject, watchEffect } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useSequencerStore } from '@/stores/sequencerStore';
 import AppRangeBar from '@/components/AppRangeBar.vue';
@@ -36,19 +36,19 @@ import { sequencerPlaybackManagerKey } from '@/utils/injection-keys';
 import { SequencerPlaybackManager } from '@/services/SequencerPlaybackManager';
 
 const sequencerStore = useSequencerStore();
-const { numSteps, visualStep, isPlaying } = storeToRefs(sequencerStore);
+const { playback, structure } = storeToRefs(sequencerStore);
 const playbackManager = inject(sequencerPlaybackManagerKey) as SequencerPlaybackManager;
 
 const displayStep = ref(0);
 const manualStep = ref(0);
 
 const playbackStart = ref(0);
-const playbackEnd = computed(() => numSteps.value);
+const playbackEnd = computed(() => structure.value.numSteps);
 
-watch(visualStep, (newStep) => {
-    displayStep.value = newStep;
-    manualStep.value = newStep;
-}, { immediate: true });
+watchEffect(() => {
+    displayStep.value = playback.value.visualStep;
+    manualStep.value = playback.value.visualStep;
+});
 
 const handleManualStepChange = (newStep: number) => {
     displayStep.value = newStep;
@@ -62,7 +62,7 @@ const isLoopPoint = (step: number) => {
 
 // Smooth step transition for display
 watch(displayStep, (newStep, oldStep) => {
-    if (Math.abs(newStep - oldStep) > 1 && !isPlaying.value) {
+    if (Math.abs(newStep - oldStep) > 1 && !playback.value.isPlaying) {
         const animate = () => {
             if (displayStep.value !== newStep) {
                 displayStep.value += displayStep.value < newStep ? 1 : -1;
