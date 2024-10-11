@@ -61,7 +61,7 @@ export class SequencerTrackManager {
     }
 
     public setTrackInstrument(trackIndex: number, instrumentName: InstrumentName): void {
-        const command = new ChangeInstrumentCommand(trackIndex, instrumentName);
+        const command = new ChangeInstrumentCommand(trackIndex, instrumentName, this.instrumentManager);
         this.commandManager.execute(command);
     }
 

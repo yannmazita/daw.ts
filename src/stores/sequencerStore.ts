@@ -37,12 +37,14 @@ export const useSequencerStore = defineStore('sequencer', () => {
     }
 
     function removeTrack(deletePosition: number): SequencerTrack | null {
-        const removedTrack: SequencerTrack | null = null;
+        let removedTrack: SequencerTrack | null = null;
         if (deletePosition >= 0 && deletePosition < structure.tracks.length) {
+            removedTrack = structure.tracks.splice(deletePosition, 1)[0];
             updateTrackIds();
             structure.numTracks--;
+            return removedTrack;
         }
-        return removedTrack;
+        return null;
     }
 
     function restoreTrack(track: SequencerTrack, index: number) {

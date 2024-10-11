@@ -45,8 +45,11 @@ export class RemoveTrackCommand implements Command {
     constructor(private removePosition: number, private instrumentManager: SequencerInstrumentManager) { }
 
     execute(): void {
+        console.log('RemoveTrackCommand execute');
         this.removedTrack = this.sequencerStore.removeTrack(this.removePosition);
+        console.log('removedTrack', this.removedTrack);
         this.removedInstrument = this.instrumentManager.removeInstrumentForTrack(this.removePosition);
+        console.log('removedInstrument', this.removedInstrument);
     }
 
     undo(): void {

@@ -92,7 +92,6 @@ export class SequencerInstrumentManager {
      * @param trackIndex - The index of the track from which to remove the instrument.
      */
     public removeInstrumentForTrack(trackIndex: number): Instrument | null {
-        this.trackInstruments[trackIndex].dispose();
         if (trackIndex >= 0 && trackIndex < this.trackInstruments.length) {
             return this.trackInstruments.splice(trackIndex, 1)[0];
         }
@@ -117,19 +116,5 @@ export class SequencerInstrumentManager {
         if (this.trackInstruments[trackIndex] && 'set' in this.trackInstruments[trackIndex]) {
             this.trackInstruments[trackIndex].set(parameters);
         }
-    }
-
-    private disposeInstrumentForTrack(trackIndex: number): void {
-        if (trackIndex >= 0 && trackIndex < this.trackInstruments.length) {
-            this.trackInstruments[trackIndex].dispose();
-            this.trackInstruments[trackIndex] = this.instrumentPool[InstrumentName.Synth];
-        }
-    }
-
-    private disposeInstruments(): void {
-        this.trackInstruments.forEach(instrument => instrument.dispose());
-        this.trackInstruments = [];
-        Object.values(this.instrumentPool).forEach(instrument => instrument.dispose());
-        this.instrumentPool = {} as Record<InstrumentName, Instrument>;
     }
 }
