@@ -1,8 +1,7 @@
 <template>
     <div id="sequencer-tracks-container" class="flex flex-col space-y-2">
         <div :id="`sequencer-track-${track.id}`" v-for="track in structure.tracks" :key="track.id"
-            class="flex items-center space-x-2 hover:opacity-100"
-            @contextmenu.prevent="handleContextMenu($event, { trackIndex: track.id, stepIndex: -1 })">
+            class="flex items-center space-x-2 hover:opacity-100">
             <div class="flex items-center space-x-2 hover:opacity-100 opacity-70 transition ease-in-out duration-150">
                 <button @click="toggleTrackMute(track.id)"
                     :class="{ 'bg-red-500': track.muted, 'bg-gray-300': !track.muted }"
@@ -38,17 +37,19 @@ import { useSequencerStore } from '@/stores/sequencerStore';
 import { useContextMenuStore } from '@/stores/contextMenuStore';
 import { AppContextMenuItem } from '@/models/AppContextMenuItem';
 import { AddTrackCommand, RemoveTrackCommand, OpenTrackSettings, OpenStepSettings } from '@/services/commands/SequencerCommands';
-import { sequencerTrackManagerKey } from '@/utils/injection-keys';
+import { sequencerTrackManagerKey, sequencerInstrumentManagerKey } from '@/utils/injection-keys';
 import { SequencerTrackManager } from '@/services/SequencerTrackManager';
 import { StepPosition, WindowDualPaneContent } from '@/utils/interfaces';
 import SequencerTrackSettingsInstrumentsPane from './SequencerTrackSettingsInstrumentsPane.vue';
 import SequencerTrackSettingsEffectsPane from './SequencerTrackSettingsEffectsPane.vue';
+import { SequencerInstrumentManager } from '@/services/SequencerInstrumentManager';
 
 const sequencerStore = useSequencerStore();
 const menuStore = useContextMenuStore();
 const { playback, structure } = storeToRefs(sequencerStore);
 
 const trackManager = inject(sequencerTrackManagerKey) as SequencerTrackManager;
+const instrumentManager = inject(sequencerInstrumentManagerKey) as SequencerInstrumentManager;
 
 const isCurrentStep = computed(() => (stepIndex: number) => stepIndex === playback.value.visualStep);
 
@@ -71,8 +72,8 @@ function createContextMenuItems(position: StepPosition) {
             { label: 'Effects', component: markRaw(SequencerTrackSettingsEffectsPane) },
         ]
         const contextMenuItems = [
-            new AppContextMenuItem('Add track', new AddTrackCommand(position.trackIndex + 1)),
-            new AppContextMenuItem('Remove track', new RemoveTrackCommand(position.trackIndex)),
+            new AppContextMenuItem('Add track', new AddTrackCommand(position.trackIndex + 1, instrumentManager)),
+            new AppContextMenuItem('Remove track', new RemoveTrackCommand(position.trackIndex, instrumentManager)),
             new AppContextMenuItem('Track settings', new OpenTrackSettings(contents, position.trackIndex)),
         ];
         if (sequencerStore.isStepSelectionValid()) {
@@ -85,6 +86,8 @@ function createContextMenuItems(position: StepPosition) {
 
 // Handles right-click context menu for track operations
 function handleContextMenu(event: MouseEvent, position: StepPosition) {
+    sequencerStore.rightClickSelect(position);
+
     const items = createContextMenuItems(position);
     if (items) {
         menuStore.clearContextualItems(); // Clear previous contextual items

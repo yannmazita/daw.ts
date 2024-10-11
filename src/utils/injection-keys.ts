@@ -5,6 +5,13 @@ import type { InjectionKey } from 'vue';
 import { SequencerPlaybackManager } from '@/services/SequencerPlaybackManager';
 import { SequencerTrackManager } from '@/services/SequencerTrackManager';
 import { CommandManager } from '@/services/CommandManager';
+import { SequencerInstrumentManager } from '@/services/SequencerInstrumentManager';
+
+/**
+ * Vue injection key for providing and injecting `SequencerInstrumentManager` instances.
+ * This key is used to ensure type-safe injection of the instrument manager across the application.
+ */
+export const sequencerInstrumentManagerKey: InjectionKey<SequencerInstrumentManager> = Symbol('sequencerInstrumentManager');
 
 /**
  * Vue injection key for providing and injecting `SequencerPlaybackManager` instances.

@@ -7,32 +7,26 @@ import SequencerTrackSettingsWelcomePane from "@/components/SequencerTrackSettin
 import SequencerStepSettings from "@/components/SequencerStepSettings.vue";
 import { markRaw } from "vue";
 import { SequencerTrack } from "@/models/SequencerModels";
-import { InstrumentName, Note } from "@/utils/types";
+import { Instrument, InstrumentName, Note } from "@/utils/types";
 import * as Tone from "tone";
+import { SequencerInstrumentManager } from "../SequencerInstrumentManager";
 
 /**
  * Command to add a track to the sequencer.
  */
 export class AddTrackCommand implements Command {
     private sequencerStore = useSequencerStore();
-    private previousState: number;
 
-    /**
-     * Initializes a new instance of the AddTrackCommand class.
-     */
-    constructor(private insertPosition: number) {
-        this.previousState = this.sequencerStore.getNumTracks();
-    }
+    constructor(private insertPosition: number, private instrumentManager: SequencerInstrumentManager) { }
 
-    /**
-     * Executes the command to add a track at the position stored in the sequencer store.
-     */
     execute(): void {
         this.sequencerStore.addTrack(this.insertPosition);
+        this.instrumentManager.addInstrumentForTrack(this.insertPosition);
     }
 
     undo(): void {
-        this.sequencerStore.setNumTracks(this.previousState);
+        this.sequencerStore.removeTrack(this.insertPosition);
+        this.instrumentManager.removeInstrumentForTrack(this.insertPosition);
     }
 
     redo(): void {
@@ -46,16 +40,24 @@ export class AddTrackCommand implements Command {
 export class RemoveTrackCommand implements Command {
     private sequencerStore = useSequencerStore();
     private removedTrack: SequencerTrack | null = null;
+    private removedInstrument: Instrument | null = null;
 
-    constructor(private removePosition: number) { }
+    constructor(private removePosition: number, private instrumentManager: SequencerInstrumentManager) { }
 
     execute(): void {
         this.removedTrack = this.sequencerStore.removeTrack(this.removePosition);
+        this.removedInstrument = this.instrumentManager.removeInstrumentForTrack(this.removePosition);
     }
 
     undo(): void {
         if (this.removedTrack) {
             this.sequencerStore.restoreTrack(this.removedTrack, this.removedTrack.id);
+            if (this.removedInstrument) {
+                this.instrumentManager.restoreInstrumentForTrack(
+                    this.removedInstrument,
+                    this.removedTrack.id
+                );
+            }
         }
     }
 
@@ -230,19 +232,24 @@ export class SetTimeSignatureCommand implements Command {
 }
 
 export class ChangeInstrumentCommand implements Command {
-    private sequencerStore = useSequencerStore();
     private previousState: InstrumentName | null = null;
 
-    constructor(private trackIndex: number, private newInstrumentName: InstrumentName) {
-        this.previousState = this.sequencerStore.getTrackInstrumentName(trackIndex);
+    constructor(
+        private trackIndex: number,
+        private newInstrumentName: InstrumentName,
+        private instrumentManager: SequencerInstrumentManager
+    ) {
+        this.previousState = this.instrumentManager.getInstrumentNameForTrack(trackIndex);
     }
 
     execute(): void {
-        this.sequencerStore.setTrackInstrument(this.trackIndex, this.newInstrumentName);
+        this.instrumentManager.setInstrumentForTrack(this.trackIndex, this.newInstrumentName);
     }
 
     undo(): void {
-        this.sequencerStore.setTrackInstrument(this.trackIndex, this.previousState ?? InstrumentName.Synth);
+        if (this.previousState) {
+            this.instrumentManager.setInstrumentForTrack(this.trackIndex, this.previousState);
+        }
     }
 
     redo(): void {

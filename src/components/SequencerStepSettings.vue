@@ -34,6 +34,7 @@
     </div>
 </template>
 <script setup lang="ts">
+import { useSequencerStore } from '@/stores/sequencerStore';
 import { ref, inject, reactive, watchEffect } from 'vue';
 import { sequencerTrackManagerKey } from '@/utils/injection-keys';
 import { SequencerTrackManager } from '@/services/SequencerTrackManager';
@@ -49,9 +50,10 @@ defineOptions({
     inheritAttrs: false // Component won't inherit attributes and trigger Vue warning about @add-classes in AppWindow
 })
 
+const sequencerStore = useSequencerStore();
 const trackManager = inject<SequencerTrackManager>(sequencerTrackManagerKey) as SequencerTrackManager;
-const noteValue = ref(trackManager.getStepNote(props.stepPosition.trackIndex, props.stepPosition.stepIndex));
-const velocityValue = ref(trackManager.getStepVelocity(props.stepPosition.trackIndex, props.stepPosition.stepIndex));
+const noteValue = ref(sequencerStore.getStepNote(props.stepPosition.trackIndex, props.stepPosition.stepIndex));
+const velocityValue = ref(sequencerStore.getStepVelocity(props.stepPosition.trackIndex, props.stepPosition.stepIndex));
 const checks = reactive({
     velocityApplyToTrack: false,
     velocityApplyToAllTracks: false,
@@ -61,18 +63,18 @@ const checks = reactive({
 
 watchEffect(() => {
     if (checks.velocityApplyToTrack) {
-        trackManager.setStepVelocityToTrack(props.stepPosition.trackIndex, velocityValue.value);
+        trackManager.setStepVelocityToTrack(props.stepPosition.trackIndex, velocityValue.value ?? 1);
     } else if (checks.velocityApplyToAllTracks) {
-        trackManager.setStepVelocityToAllTracks(velocityValue.value);
+        trackManager.setStepVelocityToAllTracks(velocityValue.value ?? 1);
     } else {
-        trackManager.setStepVelocity(props.stepPosition.trackIndex, props.stepPosition.stepIndex, velocityValue.value);
+        trackManager.setStepVelocity(props.stepPosition.trackIndex, props.stepPosition.stepIndex, velocityValue.value ?? 1);
     }
     if (checks.noteApplyToTrack) {
-        trackManager.setStepNoteToTrack(props.stepPosition.trackIndex, noteValue.value);
+        trackManager.setStepNoteToTrack(props.stepPosition.trackIndex, noteValue.value ?? Note.C4);
     } else if (checks.noteApplyToAllTracks) {
-        trackManager.setStepNoteToAllTracks(noteValue.value);
+        trackManager.setStepNoteToAllTracks(noteValue.value ?? Note.C4);
     } else {
-        trackManager.setStepNote(props.stepPosition.trackIndex, props.stepPosition.stepIndex, noteValue.value);
+        trackManager.setStepNote(props.stepPosition.trackIndex, props.stepPosition.stepIndex, noteValue.value ?? Note.C4);
     }
 });
 

@@ -5,7 +5,7 @@ import { SequencerTrack } from '@/models/SequencerModels';
 import { defineStore } from 'pinia';
 import { reactive } from 'vue';
 import { PlaybackState, SequenceStructure, StepPosition } from '@/utils/interfaces';
-import { InstrumentName, Note } from '@/utils/types';
+import { Note } from '@/utils/types';
 
 /**
  * Defines the store for managing sequencer data.
@@ -39,8 +39,6 @@ export const useSequencerStore = defineStore('sequencer', () => {
     function removeTrack(deletePosition: number): SequencerTrack | null {
         const removedTrack: SequencerTrack | null = null;
         if (deletePosition >= 0 && deletePosition < structure.tracks.length) {
-            const removedTrack = structure.tracks.splice(deletePosition, 1)[0];
-            removedTrack.dispose();
             updateTrackIds();
             structure.numTracks--;
         }
@@ -57,19 +55,6 @@ export const useSequencerStore = defineStore('sequencer', () => {
         structure.tracks.forEach((track, index) => {
             track.id = index;
         });
-    }
-
-    function getTrackInstrumentName(trackIndex: number): InstrumentName | null {
-        if (trackIndex >= 0 && trackIndex < structure.tracks.length) {
-            return InstrumentName[structure.tracks[trackIndex].instrument.name as keyof typeof InstrumentName];
-        }
-        return null;
-    }
-
-    function setTrackInstrument(trackIndex: number, instrumentName: InstrumentName) {
-        if (trackIndex >= 0 && trackIndex < structure.tracks.length) {
-            structure.tracks[trackIndex].setInstrument(instrumentName);
-        }
     }
 
     function getNumTracks(): number {
@@ -284,12 +269,10 @@ export const useSequencerStore = defineStore('sequencer', () => {
         getStepVelocity,
         getNumSteps,
         getStepNote,
-        getTrackInstrumentName,
         getTrackSolo,
         setBpm,
         setTimeSignature,
         setTrackMuted,
-        setTrackInstrument,
         setStepNote,
         setNumTracks,
         setNumSteps,

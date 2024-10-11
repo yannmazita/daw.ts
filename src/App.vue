@@ -10,18 +10,21 @@
 import { onMounted, provide } from 'vue';
 import { SequencerPlaybackManager } from '@/services/SequencerPlaybackManager';
 import { SequencerTrackManager } from '@/services/SequencerTrackManager';
-import { sequencerPlaybackManagerKey, sequencerTrackManagerKey } from '@/utils/injection-keys.ts';
+import { sequencerInstrumentManagerKey, sequencerPlaybackManagerKey, sequencerTrackManagerKey } from '@/utils/injection-keys.ts';
 import AppContextMenu from '@/components/AppContextMenu.vue';
 import AppTabBar from '@/components/AppTabBar.vue';
 import { AppContextMenuItem } from './models/AppContextMenuItem';
 import { useContextMenuStore } from './stores/contextMenuStore';
 import { CommandManager } from './services/CommandManager';
+import { SequencerInstrumentManager } from './services/SequencerInstrumentManager';
 
 const contextMenuStore = useContextMenuStore();
 const commandManager = new CommandManager();
-const sequencerPlaybackManager = new SequencerPlaybackManager(commandManager);
-const sequencerTrackManager = new SequencerTrackManager(sequencerPlaybackManager, commandManager);
+const sequencerInstrumentManager = new SequencerInstrumentManager();
+const sequencerPlaybackManager = new SequencerPlaybackManager(sequencerInstrumentManager);
+const sequencerTrackManager = new SequencerTrackManager(sequencerPlaybackManager, sequencerInstrumentManager, commandManager);
 
+provide(sequencerInstrumentManagerKey, sequencerInstrumentManager);
 provide(sequencerTrackManagerKey, sequencerTrackManager);
 provide(sequencerPlaybackManagerKey, sequencerPlaybackManager);
 

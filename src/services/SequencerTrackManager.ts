@@ -17,12 +17,14 @@ import {
 } from './commands/SequencerCommands';
 import { InstrumentName, Note } from '@/utils/types';
 import { SequencerTrack } from '@/models/SequencerModels';
+import { SequencerInstrumentManager } from './SequencerInstrumentManager';
 
 export class SequencerTrackManager {
     private sequencerStore = useSequencerStore();
 
     constructor(
         private playbackManager: SequencerPlaybackManager,
+        private instrumentManager: SequencerInstrumentManager,
         private commandManager: CommandManager
     ) {
         this.initialize();
@@ -37,17 +39,18 @@ export class SequencerTrackManager {
             (_, i) => new SequencerTrack(i, this.sequencerStore.structure.numSteps)
         );
         this.sequencerStore.structure.stepDuration = '16n';
+        this.instrumentManager.initializeTrackInstruments();
     }
 
     public addTrack(insertPosition: number = this.sequencerStore.getNumTracks()): void {
         this.playbackManager.stopSequence();
-        const command = new AddTrackCommand(insertPosition);
+        const command = new AddTrackCommand(insertPosition, this.instrumentManager);
         this.commandManager.execute(command);
     }
 
     public removeTrack(deletePosition: number): void {
         this.playbackManager.stopSequence();
-        const command = new RemoveTrackCommand(deletePosition);
+        const command = new RemoveTrackCommand(deletePosition, this.instrumentManager);
         this.commandManager.execute(command);
     }
 
