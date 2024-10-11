@@ -73,6 +73,18 @@ export const useSequencerStore = defineStore('sequencer', () => {
         }
     }
 
+    function updateEffectiveMuteStates() {
+        const soloTrackExists = structure.tracks.some(track => track.solo);
+
+        structure.tracks.forEach(track => {
+            if (soloTrackExists) {
+                track.effectiveMute = !track.solo;
+            } else {
+                track.effectiveMute = track.muted;
+            }
+        });
+    }
+
     function getTrackMuted(trackIndex: number): boolean | null {
         if (trackIndex >= 0 && trackIndex < structure.tracks.length) {
             return structure.tracks[trackIndex].muted;
@@ -83,12 +95,14 @@ export const useSequencerStore = defineStore('sequencer', () => {
     function setTrackMuted(trackIndex: number, muted: boolean) {
         if (trackIndex >= 0 && trackIndex < structure.tracks.length) {
             structure.tracks[trackIndex].muted = muted;
+            updateEffectiveMuteStates();
         }
     }
 
     function toggleTrackMuted(trackIndex: number) {
         if (trackIndex >= 0 && trackIndex < structure.tracks.length) {
             structure.tracks[trackIndex].muted = !structure.tracks[trackIndex].muted;
+            updateEffectiveMuteStates();
         }
     }
 
@@ -102,12 +116,14 @@ export const useSequencerStore = defineStore('sequencer', () => {
     function setTrackSolo(trackIndex: number, solo: boolean) {
         if (trackIndex >= 0 && trackIndex < structure.tracks.length) {
             structure.tracks[trackIndex].solo = solo;
+            updateEffectiveMuteStates();
         }
     }
 
     function toggleTrackSolo(trackIndex: number) {
         if (trackIndex >= 0 && trackIndex < structure.tracks.length) {
             structure.tracks[trackIndex].solo = !structure.tracks[trackIndex].solo;
+            updateEffectiveMuteStates();
         }
     }
 
@@ -258,6 +274,7 @@ export const useSequencerStore = defineStore('sequencer', () => {
         clearRightClickSelect,
         isTrackSelectionValid,
         isStepSelectionValid,
+        updateEffectiveMuteStates,
         addTrack,
         removeTrack,
         restoreTrack,
