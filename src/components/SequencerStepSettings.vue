@@ -7,9 +7,9 @@
                 velocity: {{ velocityValue }}
                 <AppRangeBar v-model="velocityValue" :step="1" :max="127" />
             </div>
-            <AppSmallCheckbox v-model="checks.velocityApplyToTrack">
-                <template #rightLabel>Apply to track</template>
-            </AppSmallCheckbox>
+            <AppSmallButton @click="setTrackVelocity()">
+                Apply to Track
+            </AppSmallButton>
         </div>
         <div id="sequencer-step-settings-note-container" class="grid grid-cols-3 items-end">
             <div>
@@ -21,21 +21,21 @@
                     </option>
                 </select>
             </div>
-            <AppSmallCheckbox v-model="checks.noteApplyToTrack">
-                <template #rightLabel>Apply to track</template>
-            </AppSmallCheckbox>
+            <AppSmallButton @click="setTrackNote()">
+                Apply to Track
+            </AppSmallButton>
         </div>
     </div>
 </template>
 <script setup lang="ts">
 import { useSequencerStore } from '@/stores/sequencerStore';
-import { ref, inject, reactive, watchEffect } from 'vue';
+import { ref, inject, watchEffect } from 'vue';
 import { sequencerTrackManagerKey } from '@/utils/injection-keys';
 import { SequencerTrackManager } from '@/services/SequencerTrackManager';
 import AppRangeBar from '@/components/AppRangeBar.vue';
-import AppSmallCheckbox from '@/components/AppSmallCheckbox.vue';
 import { Note } from '@/utils/types';
 import { StepPosition } from '@/utils/interfaces';
+import AppSmallButton from '@/components/AppSmallButton.vue';
 
 const props = defineProps<{
     stepPosition: StepPosition;
@@ -48,22 +48,17 @@ const sequencerStore = useSequencerStore();
 const trackManager = inject<SequencerTrackManager>(sequencerTrackManagerKey) as SequencerTrackManager;
 const noteValue = ref(sequencerStore.getStepNote(props.stepPosition.trackIndex, props.stepPosition.stepIndex));
 const velocityValue = ref(sequencerStore.getStepVelocity(props.stepPosition.trackIndex, props.stepPosition.stepIndex));
-const checks = reactive({
-    velocityApplyToTrack: false,
-    noteApplyToTrack: false,
-});
+
+function setTrackVelocity() {
+    trackManager.setTrackVelocity(props.stepPosition.trackIndex, velocityValue.value ?? 1);
+}
+function setTrackNote() {
+    trackManager.setTrackNote(props.stepPosition.trackIndex, noteValue.value ?? Note.C4);
+}
 
 watchEffect(() => {
-    if (checks.velocityApplyToTrack) {
-        trackManager.setTrackVelocity(props.stepPosition.trackIndex, velocityValue.value ?? 1);
-    } else {
-        trackManager.setStepVelocity(props.stepPosition.trackIndex, props.stepPosition.stepIndex, velocityValue.value ?? 1);
-    }
-    if (checks.noteApplyToTrack) {
-        trackManager.setTrackNote(props.stepPosition.trackIndex, noteValue.value ?? Note.C4);
-    } else {
-        trackManager.setStepNote(props.stepPosition.trackIndex, props.stepPosition.stepIndex, noteValue.value ?? Note.C4);
-    }
+    trackManager.setStepVelocity(props.stepPosition.trackIndex, props.stepPosition.stepIndex, velocityValue.value ?? 1);
+    trackManager.setStepNote(props.stepPosition.trackIndex, props.stepPosition.stepIndex, noteValue.value ?? Note.C4);
 });
 
 </script>

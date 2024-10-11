@@ -44,8 +44,8 @@ export class SequencerTrack {
     public muted = false;
     public solo = false;
     public effectiveMute = false;
-    public commonVelocity = 1;
-    public commonNote: Note = Note.C4;
+    public commonVelocity: number | null = null;
+    public commonNote: Note | null = null;
 
     constructor(id: number, numSteps: number) {
         this.id = id;

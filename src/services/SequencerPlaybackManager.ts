@@ -126,9 +126,18 @@ export class SequencerPlaybackManager {
                 const step = track.steps[stepIndex];
 
                 if (this.sequencerInstrumentManager.trackInstruments[trackIndex] === this.sequencerInstrumentManager.instrumentPool[InstrumentName.NoiseSynth]) {
-                    this.sequencerInstrumentManager.trackInstruments[trackIndex].triggerAttackRelease(this.stepDuration, time, step.velocity);
+                    this.sequencerInstrumentManager.trackInstruments[trackIndex].triggerAttackRelease(
+                        this.stepDuration,
+                        time,
+                        track.commonVelocity ?? step.velocity
+                    );
                 } else {
-                    this.sequencerInstrumentManager.trackInstruments[trackIndex].triggerAttackRelease(step.note, this.stepDuration, time, step.velocity);
+                    this.sequencerInstrumentManager.trackInstruments[trackIndex].triggerAttackRelease(
+                        track.commonNote ?? step.note,
+                        this.stepDuration,
+                        time,
+                        track.commonVelocity ?? step.velocity
+                    );
                 }
             }
         });

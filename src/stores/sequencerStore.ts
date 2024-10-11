@@ -181,6 +181,7 @@ export const useSequencerStore = defineStore('sequencer', () => {
     function setStepVelocity(trackIndex: number, stepIndex: number, velocity: number) {
         if (trackIndex >= -1 && trackIndex < structure.tracks.length &&
             stepIndex >= 0 && stepIndex < structure.numSteps) {
+            clearTrackVelocity(trackIndex);
             structure.tracks[trackIndex].steps[stepIndex].velocity = velocity;
         }
     }
@@ -198,6 +199,13 @@ export const useSequencerStore = defineStore('sequencer', () => {
         }
     }
 
+    function clearTrackVelocity(trackIndex: number) {
+        if (trackIndex >= 0 && trackIndex < structure.tracks.length) {
+            structure.tracks[trackIndex].commonVelocity = null;
+        }
+    }
+
+
     function getStepNote(trackIndex: number, stepIndex: number): Note | null {
         if (trackIndex >= 0 && trackIndex < structure.tracks.length &&
             stepIndex >= 0 && stepIndex < structure.numSteps) {
@@ -209,8 +217,15 @@ export const useSequencerStore = defineStore('sequencer', () => {
     function setStepNote(trackIndex: number, stepIndex: number, note: Note) {
         if (trackIndex >= 0 && trackIndex < structure.tracks.length &&
             stepIndex >= 0 && stepIndex < structure.numSteps) {
+            clearTrackNote(trackIndex);
             const step = structure.tracks[trackIndex].steps[stepIndex];
             step.note = note;
+        }
+    }
+
+    function clearTrackNote(trackIndex: number) {
+        if (trackIndex >= 0 && trackIndex < structure.tracks.length) {
+            structure.tracks[trackIndex].commonNote = null;
         }
     }
 
