@@ -9,8 +9,6 @@ import { Note } from "@/utils/types";
 export class SequencerStep {
     /**
      * Creates an instance of a sequencer step.
-     * @param active - Indicates whether the step is active (note will play).
-     * @param note - The musical note associated with the step.
      */
     constructor(
         public active = false,
@@ -43,14 +41,23 @@ export class SequencerStep {
 export class SequencerTrack {
     public id: number;
     public steps: SequencerStep[];
+    public muted = false;
+    public solo = false;
+    public effectiveMute = false;
+    public commonVelocity: number | null = null;
+    public commonNote: Note | null = null;
 
-    /**
-     * Creates an instance of a sequencer track.
-     * @param id - The unique identifier for the track.
-     * @param numSteps - The number of steps to initialize in the track.
-     */
     constructor(id: number, numSteps: number) {
         this.id = id;
         this.steps = Array.from({ length: numSteps }, () => new SequencerStep());
+    }
+
+    public setNumSteps(newCount: number): void {
+        if (newCount < 1) return;
+        if (newCount > this.steps.length) {
+            this.steps = this.steps.concat(Array.from({ length: newCount - this.steps.length }, () => new SequencerStep()));
+        } else {
+            this.steps = this.steps.slice(0, newCount);
+        }
     }
 }

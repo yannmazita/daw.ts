@@ -1,6 +1,9 @@
 // File: interfaces.ts
 // Description: This file contains interfaces that define common structures used throughout the application.
 
+import { SequencerTrack } from "@/models/SequencerModels";
+import { SequenceStatus } from "./types";
+
 /**
  * Defines the methods necessary for implementing command actions within the application,
  * supporting the execution, undo, and redo functionalities as part of the Command pattern.
@@ -22,10 +25,10 @@ export interface Command {
  */
 export interface StepPosition {
     /** The index of the track within the sequencer, or null if not applicable. */
-    trackIndex: number | null;
+    trackIndex: number;
 
     /** The index of the step within the track, or null if not applicable. */
-    stepIndex: number | null;
+    stepIndex: number;
 }
 
 export interface Window {
@@ -59,3 +62,17 @@ export interface WindowDualPaneContent {
     component: unknown;
 }
 
+export interface PlaybackState {
+    status: SequenceStatus;
+    bpm: number;
+    currentStep: number;
+    visualStep: number;
+}
+
+export interface SequenceStructure {
+    numTracks: number;
+    numSteps: number;
+    tracks: SequencerTrack[];
+    stepDuration: string;
+    timeSignature: [number, number];
+}

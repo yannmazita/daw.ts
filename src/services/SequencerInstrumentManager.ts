@@ -58,7 +58,7 @@ export class SequencerInstrumentManager {
      * Initializes track instruments using a default instrument for each track.
      */
     public initializeTrackInstruments(): void {
-        this.trackInstruments = this.sequencerStore.tracks.map(() => this.instrumentPool[InstrumentName.Synth]);
+        this.trackInstruments = this.sequencerStore.structure.tracks.map(() => this.instrumentPool[InstrumentName.Synth]);
     }
 
     /**
@@ -81,11 +81,40 @@ export class SequencerInstrumentManager {
         this.trackInstruments.splice(position, 0, this.instrumentPool[instrumentName]);
     }
 
+    public restoreInstrumentForTrack(instrument: Instrument, trackIndex: number): void {
+        if (trackIndex >= 0 && trackIndex < this.trackInstruments.length) {
+            this.trackInstruments[trackIndex] = instrument;
+        }
+    }
+
     /**
      * Removes an instrument from a specific track.
-     * @param position - The index of the track from which to remove the instrument.
+     * @param trackIndex - The index of the track from which to remove the instrument.
      */
-    public removeInstrumentForTrack(position: number): void {
-        this.trackInstruments.splice(position, 1);
+    public removeInstrumentForTrack(trackIndex: number): Instrument | null {
+        if (trackIndex >= 0 && trackIndex < this.trackInstruments.length) {
+            return this.trackInstruments.splice(trackIndex, 1)[0];
+        }
+        return null;
+    }
+
+    public getInstrumentForTrack(trackIndex: number): Instrument | null {
+        if (trackIndex >= 0 && trackIndex < this.trackInstruments.length) {
+            return this.trackInstruments[trackIndex];
+        }
+        return null;
+    }
+
+    public getInstrumentNameForTrack(trackIndex: number): InstrumentName | null {
+        if (trackIndex >= 0 && trackIndex < this.trackInstruments.length) {
+            return InstrumentName[this.trackInstruments[trackIndex].name as keyof typeof InstrumentName];
+        }
+        return null;
+    }
+
+    public updateInstrumentParameters(trackIndex: number, parameters: Partial<Tone.SynthOptions>): void {
+        if (this.trackInstruments[trackIndex] && 'set' in this.trackInstruments[trackIndex]) {
+            this.trackInstruments[trackIndex].set(parameters);
+        }
     }
 }
