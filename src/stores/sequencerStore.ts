@@ -5,6 +5,7 @@ import { SequencerTrack } from '@/models/SequencerModels';
 import { defineStore } from 'pinia';
 import { reactive } from 'vue';
 import { PlaybackState, SequenceStructure, StepPosition } from '@/utils/interfaces';
+import { SequenceStatus } from '@/utils/types';
 import { Note } from '@/utils/types';
 
 /**
@@ -12,7 +13,7 @@ import { Note } from '@/utils/types';
  */
 export const useSequencerStore = defineStore('sequencer', () => {
     const playback: PlaybackState = reactive({
-        isPlaying: false,
+        status: SequenceStatus.Stopped,
         bpm: 0,
         currentStep: 0,
         visualStep: 0,

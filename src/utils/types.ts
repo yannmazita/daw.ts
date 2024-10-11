@@ -49,7 +49,7 @@ export enum Note {
     C8 = "C8", Cs8 = "C#8", D8 = "D8", Ds8 = "D#8", E8 = "E8", F8 = "F8", Fs8 = "F#8", G8 = "G8", Gs8 = "G#8", A8 = "A8", As8 = "A#8", B8 = "B8"
 }
 
-export enum PlaybackState {
+export enum SequenceStatus {
     Stopped,
     Playing,
     Paused,

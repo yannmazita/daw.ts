@@ -2,6 +2,7 @@
 // Description: This file contains interfaces that define common structures used throughout the application.
 
 import { SequencerTrack } from "@/models/SequencerModels";
+import { SequenceStatus } from "./types";
 
 /**
  * Defines the methods necessary for implementing command actions within the application,
@@ -62,7 +63,7 @@ export interface WindowDualPaneContent {
 }
 
 export interface PlaybackState {
-    isPlaying: boolean;
+    status: SequenceStatus;
     bpm: number;
     currentStep: number;
     visualStep: number;

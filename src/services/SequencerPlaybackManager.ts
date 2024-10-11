@@ -3,16 +3,8 @@
 
 import * as Tone from 'tone';
 import { useSequencerStore } from '@/stores/sequencerStore';
-import { InstrumentName } from '@/utils/types';
-import { CommandManager } from './CommandManager';
+import { InstrumentName, SequenceStatus } from '@/utils/types';
 import { SequencerInstrumentManager } from './SequencerInstrumentManager';
-
-export enum PlaybackState {
-    Stopped,
-    Playing,
-    Paused,
-    Scheduled
-}
 
 export class SequencerPlaybackManager {
     private sequencerStore = useSequencerStore();
@@ -21,7 +13,6 @@ export class SequencerPlaybackManager {
     public loopEnabled = false;
     private loop: Tone.Loop | null = null;
     private playbackStartTime: number | null = null;
-    private playbackState: PlaybackState = PlaybackState.Stopped;
     private timeSignature: [number, number] = [4, 4];
 
     constructor(private sequencerInstrumentManager: SequencerInstrumentManager) {
@@ -30,7 +21,7 @@ export class SequencerPlaybackManager {
 
     private initialize(): void {
         console.log('SequencerPlaybackManager initialized');
-        this.sequencerStore.playback.isPlaying = false;
+        this.sequencerStore.playback.status = SequenceStatus.Stopped;
         this.sequencerStore.playback.bpm = 120;
         Tone.getTransport().bpm.value = this.sequencerStore.playback.bpm;
         this.sequencerStore.playback.currentStep = 0;
@@ -39,24 +30,23 @@ export class SequencerPlaybackManager {
 
 
     public playSequence(): void {
-        if (this.playbackState === PlaybackState.Playing) {
+        if (this.sequencerStore.playback.status === SequenceStatus.Playing) {
             return;
         }
 
-        if (this.playbackState === PlaybackState.Paused) {
+        if (this.sequencerStore.playback.status === SequenceStatus.Paused) {
             this.resumeSequence();
             return;
         }
 
-        this.playbackState = PlaybackState.Scheduled;
-        this.sequencerStore.playback.isPlaying = true;
+        this.sequencerStore.playback.status = SequenceStatus.Scheduled;
 
         const startStep = this.lastManuallySelectedStep ?? this.sequencerStore.playback.currentStep;
 
         Tone.getTransport().scheduleOnce(() => {
             this.playbackStartTime = Tone.now() - (Tone.Time(this.stepDuration).toSeconds() * startStep);
             this.scheduleSequence();
-            this.playbackState = PlaybackState.Playing;
+            this.sequencerStore.playback.status = SequenceStatus.Playing;
         }, this.stepDuration);
 
         Tone.getTransport().start();
@@ -64,16 +54,14 @@ export class SequencerPlaybackManager {
     }
 
     public pauseSequence(): void {
-        if (this.playbackState !== PlaybackState.Playing) return;
+        if (this.sequencerStore.playback.status !== SequenceStatus.Playing) return;
 
-        this.playbackState = PlaybackState.Paused;
-        this.sequencerStore.playback.isPlaying = false;
+        this.sequencerStore.playback.status = SequenceStatus.Paused;
         Tone.getTransport().pause();
     }
 
     public stopSequence(): void {
-        this.playbackState = PlaybackState.Stopped;
-        this.sequencerStore.playback.isPlaying = false;
+        this.sequencerStore.playback.status = SequenceStatus.Stopped;
         Tone.getTransport().stop();
         this.clearScheduledEvents();
         this.resetPlaybackPosition();
@@ -81,10 +69,9 @@ export class SequencerPlaybackManager {
     }
 
     public resumeSequence(): void {
-        if (this.playbackState !== PlaybackState.Paused) return;
+        if (this.sequencerStore.playback.status !== SequenceStatus.Paused) return;
 
-        this.playbackState = PlaybackState.Playing;
-        this.sequencerStore.playback.isPlaying = true;
+        this.sequencerStore.playback.status = SequenceStatus.Playing;
         this.playbackStartTime = Tone.now() - (Tone.Time(this.stepDuration).toSeconds() * this.sequencerStore.playback.currentStep);
         Tone.getTransport().start();
     }
@@ -165,7 +152,7 @@ export class SequencerPlaybackManager {
 
     public setStepDuration(duration: string): void {
         this.stepDuration = duration;
-        if (this.playbackState === PlaybackState.Playing) {
+        if (this.sequencerStore.playback.status === SequenceStatus.Playing) {
             this.stopSequence();
             this.playSequence();
         }
@@ -174,9 +161,9 @@ export class SequencerPlaybackManager {
     public seekTo(stepIndex: number): void {
         this.sequencerStore.playback.currentStep = stepIndex;
         this.sequencerStore.playback.visualStep = stepIndex;
-        if (this.playbackState === PlaybackState.Playing) {
+        if (this.sequencerStore.playback.status === SequenceStatus.Playing) {
             this.playbackStartTime = Tone.now() - (Tone.Time(this.stepDuration).toSeconds() * stepIndex);
-        } else if (this.playbackState === PlaybackState.Stopped) {
+        } else if (this.sequencerStore.playback.status === SequenceStatus.Stopped) {
             this.lastManuallySelectedStep = stepIndex;
         }
     }
@@ -184,9 +171,5 @@ export class SequencerPlaybackManager {
     public setTimeSignature(numerator: number, denominator: number): void {
         this.timeSignature = [numerator, denominator];
         Tone.getTransport().timeSignature = this.timeSignature;
-    }
-
-    public getPlaybackState(): PlaybackState {
-        return this.playbackState;
     }
 }
