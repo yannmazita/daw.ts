@@ -9,11 +9,13 @@ import {
     ToggleStepActiveCommand,
     SetStepVelocityCommand,
     SetStepNoteCommand,
+    SetTrackVelocityCommand,
+    SetTrackNoteCommand,
     SetNumTracksCommand,
     SetNumStepsCommand,
     ToggleTrackMutedCommand,
     ToggleTrackSoloCommand,
-    ChangeInstrumentCommand
+    SetTrackInstrumentCommand
 } from './commands/SequencerCommands';
 import { InstrumentName, Note } from '@/utils/types';
 import { SequencerTrack } from '@/models/SequencerModels';
@@ -61,7 +63,7 @@ export class SequencerTrackManager {
     }
 
     public setTrackInstrument(trackIndex: number, instrumentName: InstrumentName): void {
-        const command = new ChangeInstrumentCommand(trackIndex, instrumentName, this.instrumentManager);
+        const command = new SetTrackInstrumentCommand(trackIndex, instrumentName, this.instrumentManager);
         this.commandManager.execute(command);
     }
 
@@ -81,12 +83,9 @@ export class SequencerTrackManager {
         this.commandManager.execute(command);
     }
 
-    public setStepVelocityToTrack(trackIndex: number, velocity: number): void {
-        // todo
-    }
-
-    public setStepVelocityToAllTracks(velocity: number): void {
-        // todo
+    public setTrackVelocity(trackIndex: number, velocity: number): void {
+        const command = new SetTrackVelocityCommand(trackIndex, velocity);
+        this.commandManager.execute(command);
     }
 
     public setStepNote(trackIndex: number, stepIndex: number, note: Note): void {
@@ -94,12 +93,9 @@ export class SequencerTrackManager {
         this.commandManager.execute(command);
     }
 
-    public setStepNoteToTrack(trackIndex: number, note: Note): void {
-        // todo
-    }
-
-    public setStepNoteToAllTracks(note: Note): void {
-        // todo
+    public setTrackNote(trackIndex: number, note: Note): void {
+        const command = new SetTrackNoteCommand(trackIndex, note);
+        this.commandManager.execute(command);
     }
 
     public toggleTrackMute(trackIndex: number): void {

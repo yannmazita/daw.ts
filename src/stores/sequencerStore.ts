@@ -185,20 +185,17 @@ export const useSequencerStore = defineStore('sequencer', () => {
         }
     }
 
-    function setStepVelocityToTrack(trackIndex: number, velocity: number) {
+    function getTrackVelocity(trackIndex: number): number | null {
         if (trackIndex >= 0 && trackIndex < structure.tracks.length) {
-            structure.tracks[trackIndex].steps.forEach((step) => {
-                step.velocity = velocity;
-            });
+            return structure.tracks[trackIndex].commonVelocity;
         }
+        return null;
     }
 
-    function setStepVelocityToAllTracks(velocity: number) {
-        structure.tracks.forEach((track) => {
-            track.steps.forEach((step) => {
-                step.velocity = velocity;
-            });
-        });
+    function setTrackVelocity(trackIndex: number, velocity: number) {
+        if (trackIndex >= 0 && trackIndex < structure.tracks.length) {
+            structure.tracks[trackIndex].commonVelocity = velocity;
+        }
     }
 
     function getStepNote(trackIndex: number, stepIndex: number): Note | null {
@@ -216,6 +213,20 @@ export const useSequencerStore = defineStore('sequencer', () => {
             step.note = note;
         }
     }
+
+    function getTrackNote(trackIndex: number): Note | null {
+        if (trackIndex >= 0 && trackIndex < structure.tracks.length) {
+            return structure.tracks[trackIndex].commonNote;
+        }
+        return null;
+    }
+
+    function setTrackNote(trackIndex: number, note: Note) {
+        if (trackIndex >= 0 && trackIndex < structure.tracks.length) {
+            structure.tracks[trackIndex].commonNote = note;
+        }
+    }
+
 
     function toggleStepActive(trackIndex: number, stepIndex: number) {
         if (trackIndex >= 0 && trackIndex < structure.tracks.length &&
@@ -289,6 +300,8 @@ export const useSequencerStore = defineStore('sequencer', () => {
         getNumSteps,
         getStepNote,
         getTrackSolo,
+        getTrackNote,
+        getTrackVelocity,
         setBpm,
         setTimeSignature,
         setTrackMuted,
@@ -297,8 +310,8 @@ export const useSequencerStore = defineStore('sequencer', () => {
         setNumSteps,
         setStepActive,
         setStepVelocity,
-        setStepVelocityToTrack,
-        setStepVelocityToAllTracks,
+        setTrackVelocity,
+        setTrackNote,
         setTrackSolo,
         toggleStepActive,
         toggleTrackMuted,

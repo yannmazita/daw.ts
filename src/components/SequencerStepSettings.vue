@@ -10,9 +10,6 @@
             <AppSmallCheckbox v-model="checks.velocityApplyToTrack">
                 <template #rightLabel>Apply to track</template>
             </AppSmallCheckbox>
-            <AppSmallCheckbox v-model="checks.velocityApplyToAllTracks">
-                <template #rightLabel>Apply to all tracks</template>
-            </AppSmallCheckbox>
         </div>
         <div id="sequencer-step-settings-note-container" class="grid grid-cols-3 items-end">
             <div>
@@ -26,9 +23,6 @@
             </div>
             <AppSmallCheckbox v-model="checks.noteApplyToTrack">
                 <template #rightLabel>Apply to track</template>
-            </AppSmallCheckbox>
-            <AppSmallCheckbox v-model="checks.noteApplyToAllTracks">
-                <template #rightLabel>Apply to all tracks</template>
             </AppSmallCheckbox>
         </div>
     </div>
@@ -56,23 +50,17 @@ const noteValue = ref(sequencerStore.getStepNote(props.stepPosition.trackIndex, 
 const velocityValue = ref(sequencerStore.getStepVelocity(props.stepPosition.trackIndex, props.stepPosition.stepIndex));
 const checks = reactive({
     velocityApplyToTrack: false,
-    velocityApplyToAllTracks: false,
     noteApplyToTrack: false,
-    noteApplyToAllTracks: false,
 });
 
 watchEffect(() => {
     if (checks.velocityApplyToTrack) {
-        trackManager.setStepVelocityToTrack(props.stepPosition.trackIndex, velocityValue.value ?? 1);
-    } else if (checks.velocityApplyToAllTracks) {
-        trackManager.setStepVelocityToAllTracks(velocityValue.value ?? 1);
+        trackManager.setTrackVelocity(props.stepPosition.trackIndex, velocityValue.value ?? 1);
     } else {
         trackManager.setStepVelocity(props.stepPosition.trackIndex, props.stepPosition.stepIndex, velocityValue.value ?? 1);
     }
     if (checks.noteApplyToTrack) {
-        trackManager.setStepNoteToTrack(props.stepPosition.trackIndex, noteValue.value ?? Note.C4);
-    } else if (checks.noteApplyToAllTracks) {
-        trackManager.setStepNoteToAllTracks(noteValue.value ?? Note.C4);
+        trackManager.setTrackNote(props.stepPosition.trackIndex, noteValue.value ?? Note.C4);
     } else {
         trackManager.setStepNote(props.stepPosition.trackIndex, props.stepPosition.stepIndex, noteValue.value ?? Note.C4);
     }

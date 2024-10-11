@@ -142,6 +142,24 @@ export class SetStepVelocityCommand implements Command {
     }
 }
 
+export class SetTrackVelocityCommand implements Command {
+    private sequencerStore = useSequencerStore();
+    private previousState: number | null;
+
+    constructor(private trackIndex: number, private velocity: number) {
+        this.previousState = this.sequencerStore.getTrackVelocity(trackIndex);
+    }
+    execute(): void {
+        this.sequencerStore.setTrackVelocity(this.trackIndex, this.velocity);
+    }
+    undo(): void {
+        this.sequencerStore.setTrackVelocity(this.trackIndex, this.previousState ?? 0);
+    }
+    redo(): void {
+        this.execute();
+    }
+}
+
 export class SetStepNoteCommand implements Command {
     private sequencerStore = useSequencerStore();
     private previousState: Note | null;
@@ -160,9 +178,28 @@ export class SetStepNoteCommand implements Command {
     }
 }
 
+export class SetTrackNoteCommand implements Command {
+    private sequencerStore = useSequencerStore();
+    private previousState: Note | null;
+
+    constructor(private trackIndex: number, private note: Note) {
+        this.previousState = this.sequencerStore.getTrackNote(trackIndex);
+    }
+    execute(): void {
+        this.sequencerStore.setTrackNote(this.trackIndex, this.note);
+    }
+    undo(): void {
+        this.sequencerStore.setTrackNote(this.trackIndex, this.previousState ?? Note.C4);
+    }
+    redo(): void {
+        this.execute();
+    }
+}
+
 export class ToggleTrackMutedCommand implements Command {
     private sequencerStore = useSequencerStore();
     private previousState: boolean | null;
+
     constructor(private trackIndex: number) {
         this.previousState = this.sequencerStore.getTrackMuted(trackIndex);
     }
@@ -231,7 +268,7 @@ export class SetTimeSignatureCommand implements Command {
     }
 }
 
-export class ChangeInstrumentCommand implements Command {
+export class SetTrackInstrumentCommand implements Command {
     private previousState: InstrumentName | null = null;
 
     constructor(
