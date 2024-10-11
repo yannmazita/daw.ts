@@ -46,8 +46,8 @@ const playbackStart = ref(0);
 const playbackEnd = computed(() => structure.value.numSteps);
 
 watchEffect(() => {
-    displayStep.value = playback.value.visualStep;
-    manualStep.value = playback.value.visualStep;
+    displayStep.value = Number(playback.value.visualStep);
+    manualStep.value = Number(playback.value.visualStep);
 });
 
 const handleManualStepChange = (newStep: number) => {
