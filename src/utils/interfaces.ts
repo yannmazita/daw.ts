@@ -1,7 +1,6 @@
 // File: interfaces.ts
 // Description: This file contains interfaces that define common structures used throughout the application.
 
-import { SequencerTrack } from "@/models/SequencerModels";
 import { SequenceStatus } from "./types";
 
 /**
@@ -72,7 +71,6 @@ export interface PlaybackState {
 export interface SequenceStructure {
     numTracks: number;
     numSteps: number;
-    tracks: SequencerTrack[];
     stepDuration: string;
     timeSignature: [number, number];
 }
