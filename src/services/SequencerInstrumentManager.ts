@@ -3,20 +3,22 @@
 
 import * as Tone from 'tone';
 import { Instrument, InstrumentName } from '@/utils/types.ts';
-import { useSequencerStore } from '@/stores/sequencerStore';
+import { useTrackStore } from '@/stores/trackStore';
+import { useInstrumentStore } from '@/stores/instrumentStore';
+import { SetTrackInstrumentCommand } from './commands/SequencerCommands';
+import { CommandManager } from './CommandManager';
 
 /**
  * Manages instruments for the sequencer, handling creation, assignment, and management of instruments for each track.
  */
 export class SequencerInstrumentManager {
-    private sequencerStore = useSequencerStore();
-    public instrumentPool: Record<InstrumentName, Instrument> = {} as Record<InstrumentName, Instrument>;
-    public trackInstruments: Instrument[] = [];
+    private trackStore = useTrackStore();
+    private instrumentStore = useInstrumentStore();
 
     /**
      * Initializes the instrument manager and sets up the initial instrument pool.
      */
-    constructor() {
+    constructor(private commandManager: CommandManager) {
         this.initializeInstrumentPool();
     }
 
@@ -50,7 +52,7 @@ export class SequencerInstrumentManager {
      */
     private initializeInstrumentPool(): void {
         Object.values(InstrumentName).forEach(name => {
-            this.instrumentPool[name] = this.createInstrument(name);
+            this.instrumentStore.instrumentPool[name] = this.createInstrument(name);
         });
     }
 
@@ -58,7 +60,17 @@ export class SequencerInstrumentManager {
      * Initializes track instruments using a default instrument for each track.
      */
     public initializeTrackInstruments(): void {
-        this.trackInstruments = this.sequencerStore.structure.tracks.map(() => this.instrumentPool[InstrumentName.Synth]);
+        this.instrumentStore.trackInstruments = this.trackStore.tracks.map(() => this.instrumentStore.instrumentPool[InstrumentName.Synth]);
+    }
+
+    public getTrackInstrumentName(trackIndex: number): InstrumentName | null {
+        try {
+            return this.instrumentStore.getTrackInstrumentName(trackIndex);
+        }
+        catch (error) {
+            console.error('Error getting instrument name:', error);
+            throw error;
+        }
     }
 
     /**
@@ -66,55 +78,23 @@ export class SequencerInstrumentManager {
      * @param trackIndex - The index of the track to assign the instrument to.
      * @param instrumentName - The name of the instrument to assign.
      */
-    public setInstrumentForTrack(trackIndex: number, instrumentName: InstrumentName) {
-        if (trackIndex >= 0 && trackIndex < this.trackInstruments.length && this.instrumentPool[instrumentName]) {
-            this.trackInstruments[trackIndex] = this.instrumentPool[instrumentName];
+    public setTrackInstrument(trackIndex: number, instrumentName: InstrumentName) {
+        try {
+            const command = new SetTrackInstrumentCommand(trackIndex, instrumentName);
+            this.commandManager.execute(command);
+        } catch (error) {
+            console.error('Error setting track instrument:', error);
+            throw error;
         }
     }
+
 
     /**
      * Adds an instrument to a specific position in the track list.
      * @param position - The index at which to add the instrument.
      * @param instrumentName - The name of the instrument to add. Defaults to 'Synth' if not specified.
      */
-    public addInstrumentForTrack(position: number, instrumentName: InstrumentName = InstrumentName.Synth): void {
-        this.trackInstruments.splice(position, 0, this.instrumentPool[instrumentName]);
-    }
-
-    public restoreInstrumentForTrack(instrument: Instrument, trackIndex: number): void {
-        if (trackIndex >= 0 && trackIndex < this.trackInstruments.length) {
-            this.trackInstruments[trackIndex] = instrument;
-        }
-    }
-
-    /**
-     * Removes an instrument from a specific track.
-     * @param trackIndex - The index of the track from which to remove the instrument.
-     */
-    public removeInstrumentForTrack(trackIndex: number): Instrument | null {
-        if (trackIndex >= 0 && trackIndex < this.trackInstruments.length) {
-            return this.trackInstruments.splice(trackIndex, 1)[0];
-        }
-        return null;
-    }
-
-    public getInstrumentForTrack(trackIndex: number): Instrument | null {
-        if (trackIndex >= 0 && trackIndex < this.trackInstruments.length) {
-            return this.trackInstruments[trackIndex];
-        }
-        return null;
-    }
-
-    public getInstrumentNameForTrack(trackIndex: number): InstrumentName | null {
-        if (trackIndex >= 0 && trackIndex < this.trackInstruments.length) {
-            return InstrumentName[this.trackInstruments[trackIndex].name as keyof typeof InstrumentName];
-        }
-        return null;
-    }
-
-    public updateInstrumentParameters(trackIndex: number, parameters: Partial<Tone.SynthOptions>): void {
-        if (this.trackInstruments[trackIndex] && 'set' in this.trackInstruments[trackIndex]) {
-            this.trackInstruments[trackIndex].set(parameters);
-        }
+    public addTrackInstrument(position: number, instrumentName: InstrumentName = InstrumentName.Synth): void {
+        this.instrumentStore.trackInstruments.splice(position, 0, this.instrumentStore.instrumentPool[instrumentName]);
     }
 }
