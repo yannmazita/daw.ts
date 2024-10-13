@@ -28,7 +28,6 @@
     </div>
 </template>
 <script setup lang="ts">
-import { useSequencerStore } from '@/stores/sequencerStore';
 import { ref, inject, watchEffect } from 'vue';
 import { sequencerTrackManagerKey } from '@/utils/injection-keys';
 import { SequencerTrackManager } from '@/services/SequencerTrackManager';
@@ -36,6 +35,7 @@ import AppRangeBar from '@/components/AppRangeBar.vue';
 import { Note } from '@/utils/types';
 import { StepPosition } from '@/utils/interfaces';
 import AppSmallButton from '@/components/AppSmallButton.vue';
+import { useTrackStore } from '@/stores/trackStore';
 
 const props = defineProps<{
     stepPosition: StepPosition;
@@ -44,10 +44,10 @@ defineOptions({
     inheritAttrs: false // Component won't inherit attributes and trigger Vue warning about @add-classes in AppWindow
 })
 
-const sequencerStore = useSequencerStore();
+const trackStore = useTrackStore();
 const trackManager = inject<SequencerTrackManager>(sequencerTrackManagerKey) as SequencerTrackManager;
-const noteValue = ref(sequencerStore.getStepNote(props.stepPosition.trackIndex, props.stepPosition.stepIndex));
-const velocityValue = ref(sequencerStore.getStepVelocity(props.stepPosition.trackIndex, props.stepPosition.stepIndex));
+const noteValue = ref(trackStore.getStepNote(props.stepPosition.trackIndex, props.stepPosition.stepIndex));
+const velocityValue = ref(trackStore.getStepVelocity(props.stepPosition.trackIndex, props.stepPosition.stepIndex));
 
 function setTrackVelocity() {
     trackManager.setTrackVelocity(props.stepPosition.trackIndex, velocityValue.value ?? 1);
