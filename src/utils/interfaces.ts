@@ -66,11 +66,11 @@ export interface PlaybackState {
     bpm: number;
     currentStep: number;
     visualStep: number;
+    stepDuration: string;
+    timeSignature: [number, number];
 }
 
 export interface SequenceStructure {
     numTracks: number;
     numSteps: number;
-    stepDuration: string;
-    timeSignature: [number, number];
 }
