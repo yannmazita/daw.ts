@@ -2,12 +2,12 @@
     <div id="sequencer-step-tracker-container" class="flex flex-col items-center p-4">
         <!-- Current step display -->
         <div class="text-2xl font-bold mb-2">
-            Step: {{ currentDisplayStep }} / {{ structure.numSteps }}
+            Step: {{ currentDisplayStep }} / {{ structureStore.state.numSteps }}
         </div>
 
         <!-- Step visualization -->
         <div class="flex justify-center w-full mb-4">
-            <div v-for="step in structure.numSteps" :key="step"
+            <div v-for="step in structureStore.state.numSteps" :key="step"
                 class="w-4 h-4 mx-1 rounded-full transition-all duration-150" :class="{
                     'bg-ts-blue': step === currentDisplayStep,
                     'bg-gray-300': step !== currentDisplayStep,
@@ -16,7 +16,7 @@
         </div>
 
         <!-- Range bar for manual step selection -->
-        <AppRangeBar v-model="manualStep" :step="1" :min="1" :max="structure.numSteps" class="w-full"
+        <AppRangeBar v-model="manualStep" :step="1" :min="1" :max="structureStore.state.numSteps" class="w-full"
             @update:modelValue="handleManualStepChange"></AppRangeBar>
 
         <!-- Playback boundaries and loop points -->
@@ -29,25 +29,25 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, inject } from 'vue';
-import { storeToRefs } from 'pinia';
-import { useSequencerStore } from '@/stores/sequencerStore';
 import AppRangeBar from '@/components/AppRangeBar.vue';
 import { sequencerPlaybackManagerKey } from '@/utils/injection-keys';
 import { SequencerPlaybackManager } from '@/services/SequencerPlaybackManager';
 import { SequenceStatus } from '@/utils/types';
+import { useStructureStore } from '@/stores/structureStore';
+import { usePlaybackStore } from '@/stores/playbackStore';
 
-const sequencerStore = useSequencerStore();
-const { playback, structure } = storeToRefs(sequencerStore);
+const structureStore = useStructureStore();
+const playbackStore = usePlaybackStore();
 const playbackManager = inject(sequencerPlaybackManagerKey) as SequencerPlaybackManager;
 
 const manualStep = ref(1);
 const playbackStart = ref(0);
-const playbackEnd = computed(() => structure.value.numSteps);
+const playbackEnd = computed(() => structureStore.state.numSteps);
 
 const currentDisplayStep = computed(() => {
-    switch (playback.value.status) {
+    switch (playbackStore.state.status) {
         case SequenceStatus.Playing:
-            return playback.value.visualStep + 1;
+            return playbackStore.state.visualStep + 1;
         case SequenceStatus.Paused:
         case SequenceStatus.Stopped:
             return manualStep.value;
@@ -66,20 +66,20 @@ const isLoopPoint = (step: number) => {
 };
 
 // Watch for changes in playback state
-watch(() => playback.value.status, (status) => {
+watch(() => playbackStore.state.status, (status) => {
     if (status === SequenceStatus.Stopped) {
         // Reset to initial position when playback stops
         manualStep.value = 1;
         playbackManager.seekTo(0);
     } else if (status === SequenceStatus.Paused) {
         // Update manualStep to current position when paused
-        manualStep.value = playback.value.visualStep + 1;
+        manualStep.value = playbackStore.state.visualStep + 1;
     }
 });
 
 // Keep manual step in sync with visual step during playback
-watch(() => playback.value.visualStep, (newStep) => {
-    if (playback.value.status !== SequenceStatus.Stopped) {
+watch(() => playbackStore.state.visualStep, (newStep) => {
+    if (playbackStore.state.status !== SequenceStatus.Stopped) {
         manualStep.value = newStep + 1;
     }
 });
