@@ -5,8 +5,6 @@ import { SequenceStructure, StepPosition } from '@/utils/interfaces';
 import {
     InvalidTrackNumberException,
     InvalidStepNumberException,
-    InvalidStepDurationException,
-    InvalidTimeSignatureException,
     InvalidStepPositionException,
 } from '@/utils/exceptions';
 
@@ -14,8 +12,6 @@ export const useStructureStore = defineStore('structure', () => {
     const state: SequenceStructure = reactive({
         numTracks: 4,
         numSteps: 16,
-        stepDuration: '16n',
-        timeSignature: [4, 4],
     });
 
     const rightClickSelectionPos: StepPosition = reactive({ trackIndex: -1, stepIndex: -1 });
@@ -34,19 +30,6 @@ export const useStructureStore = defineStore('structure', () => {
         state.numSteps = num;
     }
 
-    function setStepDuration(duration: string) {
-        if (!/^\d+n$/.test(duration)) {
-            throw new InvalidStepDurationException(duration);
-        }
-        state.stepDuration = duration;
-    }
-
-    function setTimeSignature(numerator: number, denominator: number) {
-        if (numerator < 1 || denominator < 1) {
-            throw new InvalidTimeSignatureException(numerator, denominator);
-        }
-        state.timeSignature = [numerator, denominator];
-    }
 
     function rightClickSelect(position: StepPosition) {
         if (position.trackIndex < -1 || position.trackIndex >= state.numTracks || position.stepIndex < -1 || position.stepIndex >= state.numSteps) {
@@ -74,8 +57,6 @@ export const useStructureStore = defineStore('structure', () => {
         rightClickSelectionPos,
         setNumTracks,
         setNumSteps,
-        setStepDuration,
-        setTimeSignature,
         rightClickSelect,
         clearRightClickSelect,
         isTrackSelectionValid,
