@@ -4,7 +4,7 @@ import { reactive } from 'vue';
 import { PlaybackState } from '@/utils/interfaces';
 import { SequenceStatus } from '@/utils/types';
 import { useTrackStore } from '@/stores/trackStore';
-import { InvalidBpmException, InvalidStepIndexException } from '@/utils/exceptions';
+import { InvalidBpmException, InvalidStepDurationException, InvalidStepIndexException, InvalidTimeSignatureException } from '@/utils/exceptions';
 
 export const usePlaybackStore = defineStore('playback', () => {
     const trackStore = useTrackStore();
@@ -13,6 +13,8 @@ export const usePlaybackStore = defineStore('playback', () => {
         bpm: 120,
         currentStep: 0,
         visualStep: 0,
+        stepDuration: '16n',
+        timeSignature: [4, 4],
     });
 
     function validateStepIndex(stepIndex: number): void {
@@ -42,11 +44,27 @@ export const usePlaybackStore = defineStore('playback', () => {
         state.visualStep = step;
     }
 
+    function setStepDuration(duration: string) {
+        if (!/^\d+n$/.test(duration)) {
+            throw new InvalidStepDurationException(duration);
+        }
+        state.stepDuration = duration;
+    }
+
+    function setTimeSignature(numerator: number, denominator: number) {
+        if (numerator < 1 || denominator < 1) {
+            throw new InvalidTimeSignatureException(numerator, denominator);
+        }
+        state.timeSignature = [numerator, denominator];
+    }
+
     return {
         state,
         setStatus,
         setBpm,
         setCurrentStep,
         setVisualStep,
+        setStepDuration,
+        setTimeSignature,
     };
 });
