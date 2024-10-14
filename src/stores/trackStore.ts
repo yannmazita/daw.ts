@@ -8,10 +8,14 @@ import { useStructureStore } from '@/stores/structureStore';
 
 export const useTrackStore = defineStore('track', () => {
     const structureStore = useStructureStore();
-    const tracks = reactive<SequencerTrack[]>([]);
+    const tracks = reactive<SequencerTrack[]>(Array.from(
+        { length: structureStore.state.numTracks },
+        (_, i) => new SequencerTrack(i, structureStore.state.numSteps)
+    )
+    );
 
     function validateTrackIndex(index: number): void {
-        if (index < 0 || index >= tracks.length) {
+        if (index < 0 || (index >= tracks.length) && index !== 0) {
             throw new InvalidTrackIndexException(index);
         }
     }

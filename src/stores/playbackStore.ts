@@ -18,7 +18,7 @@ export const usePlaybackStore = defineStore('playback', () => {
     });
 
     function validateStepIndex(stepIndex: number): void {
-        if (stepIndex < 0 || stepIndex >= trackStore.tracks[0].steps.length) {
+        if (stepIndex < 0 || stepIndex >= trackStore.tracks[0].steps.length && stepIndex !== 0) {
             throw new InvalidStepIndexException(stepIndex);
         }
     }
