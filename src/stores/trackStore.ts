@@ -27,17 +27,27 @@ export const useTrackStore = defineStore('track', () => {
         }
     }
 
+    function updateTrackIds(): void {
+        tracks.forEach((track, index) => {
+            track.id = index;
+        });
+    }
+
     function addTrack(newTrack: SequencerTrack, insertPosition: number = tracks.length): void {
         if (insertPosition < 0 || insertPosition > tracks.length) {
             throw new InvalidTrackIndexException(insertPosition);
         }
+        console.log(tracks);
         tracks.splice(insertPosition, 0, newTrack);
+        updateTrackIds();
+        console.log(tracks);
         structureStore.setNumTracks(tracks.length);
     }
 
     function removeTrack(index: number): SequencerTrack {
         validateTrackIndex(index);
         const removedTrack: SequencerTrack = tracks.splice(index, 1)[0];
+        updateTrackIds();
         return removedTrack;
     }
 
