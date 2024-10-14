@@ -27,7 +27,6 @@ export class SequencerInstrumentManager {
      * @returns The created instrument.
      */
     private createInstrument(instrumentName: InstrumentName): Instrument {
-        console.log('Creating instrument:', instrumentName);
         switch (instrumentName) {
             case InstrumentName.AMSynth:
                 return new Tone.AMSynth().toDestination();
@@ -51,7 +50,6 @@ export class SequencerInstrumentManager {
      * Initializes the instrument pool with one of each type of available instruments.
      */
     private initializeInstrumentPool(): void {
-        console.log('Initializing instrument pool');
         Object.values(InstrumentName).forEach(name => {
             this.instrumentPool[name] = this.createInstrument(name);
         });
@@ -61,7 +59,6 @@ export class SequencerInstrumentManager {
      * Initializes track instruments using a default instrument for each track.
      */
     public initializeTrackInstruments(): void {
-        console.log('Initializing track instruments');
         this.trackInstruments = this.trackStore.tracks.map(() => this.instrumentPool[InstrumentName.Synth]);
     }
 

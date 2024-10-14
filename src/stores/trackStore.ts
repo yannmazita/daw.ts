@@ -37,10 +37,8 @@ export const useTrackStore = defineStore('track', () => {
         if (insertPosition < 0 || insertPosition > tracks.length) {
             throw new InvalidTrackIndexException(insertPosition);
         }
-        console.log(tracks);
         tracks.splice(insertPosition, 0, newTrack);
         updateTrackIds();
-        console.log(tracks);
         structureStore.setNumTracks(tracks.length);
     }
 

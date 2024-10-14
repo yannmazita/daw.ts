@@ -37,7 +37,6 @@ export class SequencerTrackManager {
     }
 
     private initialize(): void {
-        console.log('SequencerTrackManager initialized');
         this.instrumentManager.initializeTrackInstruments();
     }
 

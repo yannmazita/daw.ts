@@ -24,7 +24,6 @@ export class SequencerPlaybackManager {
     }
 
     private initialize(): void {
-        console.log('SequencerPlaybackManager initialized');
         this.playbackStore.state.status = SequenceStatus.Stopped;
         this.playbackStore.state.bpm = 120;
         Tone.getTransport().bpm.value = this.playbackStore.state.bpm;
