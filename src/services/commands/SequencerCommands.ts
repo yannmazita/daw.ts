@@ -92,6 +92,7 @@ export class RemoveTrackCommand implements Command {
 
 export class SetNumStepsCommand implements Command {
     private structureStore = useStructureStore();
+    private trackStore = useTrackStore();
     private previousState: number;
 
     constructor(private newCount: number) {
@@ -100,6 +101,9 @@ export class SetNumStepsCommand implements Command {
     execute(): void {
         try {
             this.structureStore.setNumSteps(this.newCount);
+            this.trackStore.tracks.forEach(track => {
+                track.setNumSteps(this.newCount);
+            });
         } catch (error) {
             console.error('Error executing SetNumStepsCommand', error);
             throw error;
@@ -108,6 +112,9 @@ export class SetNumStepsCommand implements Command {
     undo(): void {
         try {
             this.structureStore.setNumSteps(this.previousState);
+            this.trackStore.tracks.forEach(track => {
+                track.setNumSteps(this.previousState);
+            });
         } catch (error) {
             console.error('Error undoing SetNumStepsCommand', error);
             throw error;
@@ -120,6 +127,7 @@ export class SetNumStepsCommand implements Command {
 
 export class SetNumTracksCommand implements Command {
     private structureStore = useStructureStore();
+    private trackStore = useTrackStore();
     private previousState: number;
 
     constructor(private newCount: number) {
@@ -128,6 +136,12 @@ export class SetNumTracksCommand implements Command {
     execute(): void {
         try {
             this.structureStore.setNumTracks(this.newCount);
+            while (this.newCount > this.trackStore.tracks.length) {
+                this.trackStore.addTrack(new SequencerTrack(this.trackStore.tracks.length, this.structureStore.state.numSteps));
+            }
+            while (this.newCount < this.trackStore.tracks.length) {
+                this.trackStore.removeTrack(this.trackStore.tracks.length - 1);
+            }
         } catch (error) {
             console.error('Error executing SetNumTracksCommand', error);
             throw error;
@@ -136,6 +150,12 @@ export class SetNumTracksCommand implements Command {
     undo(): void {
         try {
             this.structureStore.setNumTracks(this.previousState);
+            while (this.previousState > this.trackStore.tracks.length) {
+                this.trackStore.addTrack(new SequencerTrack(this.trackStore.tracks.length, this.structureStore.state.numSteps));
+            }
+            while (this.previousState < this.trackStore.tracks.length) {
+                this.trackStore.removeTrack(this.trackStore.tracks.length - 1);
+            }
         } catch (error) {
             console.error('Error undoing SetNumTracksCommand', error);
             throw error;
@@ -502,7 +522,7 @@ export class SetTrackInstrumentCommand implements Command {
     }
 
     undo(): void {
-            this.instrumentManager.setTrackInstrument(this.trackIndex, this.previousState);
+        this.instrumentManager.setTrackInstrument(this.trackIndex, this.previousState);
     }
 
     redo(): void {
