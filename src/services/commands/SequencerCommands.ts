@@ -1,6 +1,5 @@
 // File: SequencerCommands.ts
 // Description: Defines command classes to handle sequencer commands.
-import { useSequencerStore } from "@/stores/sequencerStore";
 import { useWindowsStore } from "@/stores/useWindowsStore";
 import { Command, StepPosition, WindowDualPaneContent } from "@/utils/interfaces";
 import SequencerTrackSettingsWelcomePane from "@/components/SequencerTrackSettingsWelcomePane.vue";
@@ -9,24 +8,39 @@ import { markRaw } from "vue";
 import { SequencerTrack } from "@/models/SequencerModels";
 import { Instrument, InstrumentName, Note } from "@/utils/types";
 import * as Tone from "tone";
+import { useStructureStore } from "@/stores/structureStore";
+import { useTrackStore } from "@/stores/trackStore";
+import { usePlaybackStore } from "@/stores/playbackStore";
 import { SequencerInstrumentManager } from "../SequencerInstrumentManager";
 
 /**
  * Command to add a track to the sequencer.
  */
 export class AddTrackCommand implements Command {
-    private sequencerStore = useSequencerStore();
+    private structureStore = useStructureStore();
+    private trackStore = useTrackStore();
 
     constructor(private insertPosition: number, private instrumentManager: SequencerInstrumentManager) { }
 
     execute(): void {
-        this.sequencerStore.addTrack(this.insertPosition);
-        this.instrumentManager.addInstrumentForTrack(this.insertPosition);
+        try {
+            const newTrack = new SequencerTrack(this.insertPosition, this.structureStore.state.numSteps);
+            this.trackStore.addTrack(newTrack, this.insertPosition);
+            this.instrumentManager.addTrackInstrumentDefault(this.insertPosition);
+        } catch (error) {
+            console.error('Error executing AddTrackCommand', error);
+            throw error;
+        }
     }
 
     undo(): void {
-        this.sequencerStore.removeTrack(this.insertPosition);
-        this.instrumentManager.removeInstrumentForTrack(this.insertPosition);
+        try {
+            this.trackStore.removeTrack(this.insertPosition);
+            this.instrumentManager.removeTrackInstrument(this.insertPosition);
+        } catch (error) {
+            console.error('Error undoing AddTrackCommand', error);
+            throw error;
+        }
     }
 
     redo(): void {
@@ -38,26 +52,36 @@ export class AddTrackCommand implements Command {
  * Command to remove a track from the sequencer.
  */
 export class RemoveTrackCommand implements Command {
-    private sequencerStore = useSequencerStore();
+    private trackStore = useTrackStore();
     private removedTrack: SequencerTrack | null = null;
     private removedInstrument: Instrument | null = null;
 
     constructor(private removePosition: number, private instrumentManager: SequencerInstrumentManager) { }
 
     execute(): void {
-        this.removedTrack = this.sequencerStore.removeTrack(this.removePosition);
-        this.removedInstrument = this.instrumentManager.removeInstrumentForTrack(this.removePosition);
+        try {
+            this.removedTrack = this.trackStore.removeTrack(this.removePosition);
+            this.removedInstrument = this.instrumentManager.removeTrackInstrument(this.removePosition);
+        } catch (error) {
+            console.error('Error executing RemoveTrackCommand', error);
+            throw error;
+        }
     }
 
     undo(): void {
-        if (this.removedTrack) {
-            this.sequencerStore.restoreTrack(this.removedTrack, this.removedTrack.id);
-            if (this.removedInstrument) {
-                this.instrumentManager.restoreInstrumentForTrack(
-                    this.removedInstrument,
-                    this.removedTrack.id
-                );
+        try {
+            if (this.removedTrack) {
+                this.trackStore.addTrack(this.removedTrack, this.removedTrack.id);
+                if (this.removedInstrument) {
+                    this.instrumentManager.addTrackInstrument(
+                        this.removedTrack.id,
+                        this.removedInstrument,
+                    );
+                }
             }
+        } catch (error) {
+            console.error('Error undoing RemoveTrackCommand', error);
+            throw error;
         }
     }
 
@@ -67,17 +91,27 @@ export class RemoveTrackCommand implements Command {
 }
 
 export class SetNumStepsCommand implements Command {
-    private sequencerStore = useSequencerStore();
+    private structureStore = useStructureStore();
     private previousState: number;
 
     constructor(private newCount: number) {
-        this.previousState = this.sequencerStore.getNumSteps();
+        this.previousState = this.structureStore.state.numSteps;
     }
     execute(): void {
-        this.sequencerStore.setNumSteps(this.newCount);
+        try {
+            this.structureStore.setNumSteps(this.newCount);
+        } catch (error) {
+            console.error('Error executing SetNumStepsCommand', error);
+            throw error;
+        }
     }
     undo(): void {
-        this.sequencerStore.setNumSteps(this.previousState);
+        try {
+            this.structureStore.setNumSteps(this.previousState);
+        } catch (error) {
+            console.error('Error undoing SetNumStepsCommand', error);
+            throw error;
+        }
     }
     redo(): void {
         this.execute();
@@ -85,17 +119,54 @@ export class SetNumStepsCommand implements Command {
 }
 
 export class SetNumTracksCommand implements Command {
-    private sequencerStore = useSequencerStore();
+    private structureStore = useStructureStore();
     private previousState: number;
 
     constructor(private newCount: number) {
-        this.previousState = this.sequencerStore.getNumTracks();
+        this.previousState = this.structureStore.state.numTracks;
     }
     execute(): void {
-        this.sequencerStore.setNumTracks(this.newCount);
+        try {
+            this.structureStore.setNumTracks(this.newCount);
+        } catch (error) {
+            console.error('Error executing SetNumTracksCommand', error);
+            throw error;
+        }
     }
     undo(): void {
-        this.sequencerStore.setNumTracks(this.previousState);
+        try {
+            this.structureStore.setNumTracks(this.previousState);
+        } catch (error) {
+            console.error('Error undoing SetNumTracksCommand', error);
+            throw error;
+        }
+    }
+    redo(): void {
+        this.execute();
+    }
+}
+
+export class SetStepActiveCommand implements Command {
+    private trackStore = useTrackStore();
+    private previousState: boolean | null;
+    constructor(private trackIndex: number, private stepIndex: number, private active: boolean) {
+        this.previousState = this.trackStore.getStepActive(trackIndex, stepIndex);
+    }
+    execute(): void {
+        try {
+            this.trackStore.setStepActive(this.trackIndex, this.stepIndex, this.active);
+        } catch (error) {
+            console.error('Error executing SetStepActiveCommand', error);
+            throw error;
+        }
+    }
+    undo(): void {
+        try {
+            this.trackStore.setStepActive(this.trackIndex, this.stepIndex, this.previousState ?? false);
+        } catch (error) {
+            console.error('Error undoing SetStepActiveCommand', error);
+            throw error;
+        }
     }
     redo(): void {
         this.execute();
@@ -103,17 +174,27 @@ export class SetNumTracksCommand implements Command {
 }
 
 export class ToggleStepActiveCommand implements Command {
-    private sequencerStore = useSequencerStore();
+    private trackStore = useTrackStore();
     private previousState: boolean | null;
 
     constructor(private trackIndex: number, private stepIndex: number) {
-        this.previousState = this.sequencerStore.getStepActive(trackIndex, stepIndex);
+        this.previousState = this.trackStore.getStepActive(trackIndex, stepIndex);
     }
     execute(): void {
-        this.sequencerStore.toggleStepActive(this.trackIndex, this.stepIndex);
+        try {
+            this.trackStore.toggleStepActive(this.trackIndex, this.stepIndex);
+        } catch (error) {
+            console.error('Error executing ToggleStepActiveCommand', error);
+            throw error;
+        }
     }
     undo(): void {
-        this.sequencerStore.setStepActive(this.trackIndex, this.stepIndex, this.previousState ?? false);
+        try {
+            this.trackStore.setStepActive(this.trackIndex, this.stepIndex, this.previousState ?? false);
+        } catch (error) {
+            console.error('Error undoing ToggleStepActiveCommand', error);
+            throw error;
+        }
     }
     redo(): void {
         this.execute();
@@ -121,7 +202,7 @@ export class ToggleStepActiveCommand implements Command {
 }
 
 export class SetStepVelocityCommand implements Command {
-    private sequencerStore = useSequencerStore();
+    private trackStore = useTrackStore();
     private previousState: number | null;
 
     constructor(
@@ -129,13 +210,23 @@ export class SetStepVelocityCommand implements Command {
         private stepIndex: number,
         private velocity: number,
     ) {
-        this.previousState = this.sequencerStore.getStepVelocity(trackIndex, stepIndex);
+        this.previousState = this.trackStore.getStepVelocity(trackIndex, stepIndex);
     }
     execute(): void {
-        this.sequencerStore.setStepVelocity(this.trackIndex, this.stepIndex, this.velocity);
+        try {
+            this.trackStore.setStepVelocity(this.trackIndex, this.stepIndex, this.velocity);
+        } catch (error) {
+            console.error('Error executing SetStepVelocityCommand', error);
+            throw error;
+        }
     }
     undo(): void {
-        this.sequencerStore.setStepVelocity(this.trackIndex, this.stepIndex, this.previousState ?? 0);
+        try {
+            this.trackStore.setStepVelocity(this.trackIndex, this.stepIndex, this.previousState ?? 0);
+        } catch (error) {
+            console.error('Error undoing SetStepVelocityCommand', error);
+            throw error;
+        }
     }
     redo(): void {
         this.execute();
@@ -143,17 +234,28 @@ export class SetStepVelocityCommand implements Command {
 }
 
 export class SetTrackVelocityCommand implements Command {
-    private sequencerStore = useSequencerStore();
+    private trackStore = useTrackStore();
     private previousState: number | null;
 
     constructor(private trackIndex: number, private velocity: number) {
-        this.previousState = this.sequencerStore.getTrackVelocity(trackIndex);
+        this.previousState = this.trackStore.getTrackVelocity(trackIndex);
     }
     execute(): void {
-        this.sequencerStore.setTrackVelocity(this.trackIndex, this.velocity);
+        try {
+            this.trackStore.setTrackVelocity(this.trackIndex, this.velocity);
+        }
+        catch (error) {
+            console.error('Error executing SetTrackVelocityCommand', error);
+            throw error;
+        }
     }
     undo(): void {
-        this.sequencerStore.setTrackVelocity(this.trackIndex, this.previousState ?? 0);
+        try {
+            this.trackStore.setTrackVelocity(this.trackIndex, this.previousState ?? 0);
+        } catch (error) {
+            console.error('Error undoing SetTrackVelocityCommand', error);
+            throw error;
+        }
     }
     redo(): void {
         this.execute();
@@ -161,17 +263,27 @@ export class SetTrackVelocityCommand implements Command {
 }
 
 export class SetStepNoteCommand implements Command {
-    private sequencerStore = useSequencerStore();
+    private trackStore = useTrackStore();
     private previousState: Note | null;
 
     constructor(private trackIndex: number, private stepIndex: number, private note: Note) {
-        this.previousState = this.sequencerStore.getStepNote(trackIndex, stepIndex);
+        this.previousState = this.trackStore.getStepNote(trackIndex, stepIndex);
     }
     execute(): void {
-        this.sequencerStore.setStepNote(this.trackIndex, this.stepIndex, this.note);
+        try {
+            this.trackStore.setStepNote(this.trackIndex, this.stepIndex, this.note);
+        } catch (error) {
+            console.error('Error executing SetStepNoteCommand', error);
+            throw error;
+        }
     }
     undo(): void {
-        this.sequencerStore.setStepNote(this.trackIndex, this.stepIndex, this.previousState ?? Note.C4);
+        try {
+            this.trackStore.setStepNote(this.trackIndex, this.stepIndex, this.previousState ?? Note.C4);
+        } catch (error) {
+            console.error('Error undoing SetStepNoteCommand', error);
+            throw error;
+        }
     }
     redo(): void {
         this.execute();
@@ -179,17 +291,54 @@ export class SetStepNoteCommand implements Command {
 }
 
 export class SetTrackNoteCommand implements Command {
-    private sequencerStore = useSequencerStore();
+    private trackStore = useTrackStore();
     private previousState: Note | null;
 
     constructor(private trackIndex: number, private note: Note) {
-        this.previousState = this.sequencerStore.getTrackNote(trackIndex);
+        this.previousState = this.trackStore.getTrackNote(trackIndex);
     }
     execute(): void {
-        this.sequencerStore.setTrackNote(this.trackIndex, this.note);
+        try {
+            this.trackStore.setTrackNote(this.trackIndex, this.note);
+        } catch (error) {
+            console.error('Error executing SetTrackNoteCommand', error);
+            throw error;
+        }
     }
     undo(): void {
-        this.sequencerStore.setTrackNote(this.trackIndex, this.previousState ?? Note.C4);
+        try {
+            this.trackStore.setTrackNote(this.trackIndex, this.previousState ?? Note.C4);
+        } catch (error) {
+            console.error('Error undoing SetTrackNoteCommand', error);
+            throw error;
+        }
+    }
+    redo(): void {
+        this.execute();
+    }
+}
+
+export class SetTrackMutedCommand implements Command {
+    private trackStore = useTrackStore();
+    private previousState: boolean | null;
+    constructor(private trackIndex: number, private muted: boolean) {
+        this.previousState = this.trackStore.getTrackMuted(trackIndex);
+    }
+    execute(): void {
+        try {
+            this.trackStore.setTrackMuted(this.trackIndex, this.muted);
+        } catch (error) {
+            console.error('Error executing SetTrackMutedCommand', error);
+            throw error;
+        }
+    }
+    undo(): void {
+        try {
+            this.trackStore.setTrackMuted(this.trackIndex, this.previousState ?? false);
+        } catch (error) {
+            console.error('Error undoing SetTrackMutedCommand', error);
+            throw error;
+        }
     }
     redo(): void {
         this.execute();
@@ -197,17 +346,54 @@ export class SetTrackNoteCommand implements Command {
 }
 
 export class ToggleTrackMutedCommand implements Command {
-    private sequencerStore = useSequencerStore();
+    private trackStore = useTrackStore();
     private previousState: boolean | null;
 
     constructor(private trackIndex: number) {
-        this.previousState = this.sequencerStore.getTrackMuted(trackIndex);
+        this.previousState = this.trackStore.getTrackMuted(trackIndex);
     }
     execute(): void {
-        this.sequencerStore.toggleTrackMuted(this.trackIndex);
+        try {
+            this.trackStore.toggleTrackMuted(this.trackIndex);
+        } catch (error) {
+            console.error('Error executing ToggleTrackMutedCommand', error);
+            throw error;
+        }
     }
     undo(): void {
-        this.sequencerStore.setTrackMuted(this.trackIndex, this.previousState ?? false);
+        try {
+            this.trackStore.setTrackMuted(this.trackIndex, this.previousState ?? false);
+        } catch (error) {
+            console.error('Error undoing ToggleTrackMutedCommand', error);
+            throw error;
+        }
+    }
+    redo(): void {
+        this.execute();
+    }
+}
+
+export class SetTrackSoloCommand implements Command {
+    private trackStore = useTrackStore();
+    private previousState: boolean | null;
+    constructor(private trackIndex: number, private solo: boolean) {
+        this.previousState = this.trackStore.getTrackSolo(trackIndex);
+    }
+    execute(): void {
+        try {
+            this.trackStore.setTrackSolo(this.trackIndex, this.solo);
+        } catch (error) {
+            console.error('Error executing SetTrackSoloCommand', error);
+            throw error;
+        }
+    }
+    undo(): void {
+        try {
+            this.trackStore.setTrackSolo(this.trackIndex, this.previousState ?? false);
+        } catch (error) {
+            console.error('Error undoing SetTrackSoloCommand', error);
+            throw error;
+        }
     }
     redo(): void {
         this.execute();
@@ -215,16 +401,26 @@ export class ToggleTrackMutedCommand implements Command {
 }
 
 export class ToggleTrackSoloCommand implements Command {
-    private sequencerStore = useSequencerStore();
+    private trackStore = useTrackStore();
     private previousState: boolean | null;
     constructor(private trackIndex: number) {
-        this.previousState = this.sequencerStore.getTrackSolo(trackIndex);
+        this.previousState = this.trackStore.getTrackSolo(trackIndex);
     }
     execute(): void {
-        this.sequencerStore.toggleTrackSolo(this.trackIndex);
+        try {
+            this.trackStore.toggleTrackSolo(this.trackIndex);
+        } catch (error) {
+            console.error('Error executing ToggleTrackSoloCommand', error);
+            throw error;
+        }
     }
     undo(): void {
-        this.sequencerStore.setTrackSolo(this.trackIndex, this.previousState ?? false);
+        try {
+            this.trackStore.setTrackSolo(this.trackIndex, this.previousState ?? false);
+        } catch (error) {
+            console.error('Error undoing ToggleTrackSoloCommand', error);
+            throw error;
+        }
     }
     redo(): void {
         this.execute();
@@ -232,18 +428,29 @@ export class ToggleTrackSoloCommand implements Command {
 }
 
 export class SetBpmCommand implements Command {
-    private sequencerStore = useSequencerStore();
+    private playbackStore = usePlaybackStore();
     private previousState: number | null;
 
     constructor(private bpm: number) {
-        this.previousState = this.sequencerStore.getBpm();
+        this.previousState = this.playbackStore.state.bpm;
     }
     execute(): void {
-        Tone.getTransport().bpm.value = this.bpm;
-        this.sequencerStore.setBpm(this.bpm);
+        try {
+            this.playbackStore.setBpm(this.bpm);
+            Tone.getTransport().bpm.value = this.bpm;
+        } catch (error) {
+            console.error('Error executing SetBpmCommand', error);
+            throw error;
+        }
     }
     undo(): void {
-        this.sequencerStore.setBpm(this.previousState ?? 120);
+        try {
+            this.playbackStore.setBpm(this.previousState ?? 120);
+            Tone.getTransport().bpm.value = this.previousState ?? 120;
+        } catch (error) {
+            console.error('Error undoing SetBpmCommand', error);
+            throw error;
+        }
     }
     redo(): void {
         this.execute();
@@ -251,17 +458,28 @@ export class SetBpmCommand implements Command {
 }
 
 export class SetTimeSignatureCommand implements Command {
-    private sequencerStore = useSequencerStore();
+    private playbackStore = usePlaybackStore();
     private previousState: [number, number];
 
-    constructor(private timeSignature: [number, number]) {
-        this.previousState = this.sequencerStore.getTimeSignature();
+    constructor(private timeSignature: [numerator: number, denominator: number]) {
+        this.previousState = this.playbackStore.state.timeSignature;
     }
     execute(): void {
-        this.sequencerStore.setTimeSignature(this.timeSignature);
+        try {
+            this.playbackStore.setTimeSignature(this.timeSignature[0], this.timeSignature[1]);
+            Tone.getTransport().timeSignature = this.timeSignature;
+        } catch (error) {
+            console.error('Error executing SetTimeSignatureCommand', error);
+        }
     }
     undo(): void {
-        this.sequencerStore.setTimeSignature(this.previousState);
+        try {
+            this.playbackStore.setTimeSignature(this.previousState[0], this.previousState[1]);
+            Tone.getTransport().timeSignature = this.previousState;
+        } catch (error) {
+            console.error('Error undoing SetTimeSignatureCommand', error);
+        }
+
     }
     redo(): void {
         this.execute();
@@ -269,24 +487,22 @@ export class SetTimeSignatureCommand implements Command {
 }
 
 export class SetTrackInstrumentCommand implements Command {
-    private previousState: InstrumentName | null = null;
+    private previousState: InstrumentName;
 
     constructor(
         private trackIndex: number,
         private newInstrumentName: InstrumentName,
-        private instrumentManager: SequencerInstrumentManager
+        private instrumentManager: SequencerInstrumentManager,
     ) {
-        this.previousState = this.instrumentManager.getInstrumentNameForTrack(trackIndex);
+        this.previousState = this.instrumentManager.getTrackInstrumentName(trackIndex);
     }
 
     execute(): void {
-        this.instrumentManager.setInstrumentForTrack(this.trackIndex, this.newInstrumentName);
+        this.instrumentManager.setTrackInstrument(this.trackIndex, this.newInstrumentName);
     }
 
     undo(): void {
-        if (this.previousState) {
-            this.instrumentManager.setInstrumentForTrack(this.trackIndex, this.previousState);
-        }
+            this.instrumentManager.setTrackInstrument(this.trackIndex, this.previousState);
     }
 
     redo(): void {

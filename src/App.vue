@@ -21,7 +21,7 @@ import { SequencerInstrumentManager } from './services/SequencerInstrumentManage
 const contextMenuStore = useContextMenuStore();
 const commandManager = new CommandManager();
 const sequencerInstrumentManager = new SequencerInstrumentManager();
-const sequencerPlaybackManager = new SequencerPlaybackManager(sequencerInstrumentManager);
+const sequencerPlaybackManager = new SequencerPlaybackManager(sequencerInstrumentManager, commandManager);
 const sequencerTrackManager = new SequencerTrackManager(sequencerPlaybackManager, sequencerInstrumentManager, commandManager);
 
 provide(sequencerInstrumentManagerKey, sequencerInstrumentManager);
