@@ -14,6 +14,8 @@ import { CommandManager } from './CommandManager';
 export class SequencerInstrumentManager {
     private trackStore = useTrackStore();
     private instrumentStore = useInstrumentStore();
+    public instrumentPool: Record<InstrumentName, Instrument> = {} as Record<InstrumentName, Instrument>;
+    public trackInstruments: Instrument[] = [];
 
     /**
      * Initializes the instrument manager and sets up the initial instrument pool.
@@ -28,6 +30,7 @@ export class SequencerInstrumentManager {
      * @returns The created instrument.
      */
     private createInstrument(instrumentName: InstrumentName): Instrument {
+        console.log('Creating instrument:', instrumentName);
         switch (instrumentName) {
             case InstrumentName.AMSynth:
                 return new Tone.AMSynth().toDestination();
@@ -51,6 +54,7 @@ export class SequencerInstrumentManager {
      * Initializes the instrument pool with one of each type of available instruments.
      */
     private initializeInstrumentPool(): void {
+        console.log('Initializing instrument pool');
         Object.values(InstrumentName).forEach(name => {
             this.instrumentStore.instrumentPool[name] = this.createInstrument(name);
         });
@@ -60,6 +64,7 @@ export class SequencerInstrumentManager {
      * Initializes track instruments using a default instrument for each track.
      */
     public initializeTrackInstruments(): void {
+        console.log('Initializing track instruments');
         this.instrumentStore.trackInstruments = this.trackStore.tracks.map(() => this.instrumentStore.instrumentPool[InstrumentName.Synth]);
     }
 
