@@ -1,10 +1,7 @@
 <template>
     <div id="sequencer-container" class="flex flex-col p-4">
-        <h2 class="text-2xl font-bold mb-4">Sequencer</h2>
-        <SequencerStepTracker class="mb-4" />
-        <SequencerPlaybackControls class="mb-4" />
         <SequencerSettings class="mb-4" />
-        <div class="sequencer-tracks-wrapper overflow-x-auto">
+        <div class="sequencer-tracks-wrapper overflow-x-auto overflow-y-auto max-h-[60vh]">
             <SequencerTracks />
         </div>
     </div>
@@ -12,8 +9,6 @@
 
 <script setup lang="ts">
 import { onMounted, ref, watch } from 'vue';
-import SequencerStepTracker from '@/components/SequencerStepTracker.vue';
-import SequencerPlaybackControls from '@/components/SequencerPlaybackControls.vue';
 import SequencerSettings from '@/components/SequencerSettings.vue';
 import SequencerTracks from '@/components/SequencerTracks.vue';
 import { useTrackStore } from '@/stores/trackStore';
@@ -39,13 +34,6 @@ watch(() => trackStore.tracks.length, (newCount) => {
 </script>
 
 <style scoped>
-.sequencer-tracks-wrapper {
-    max-height: 60vh;
-    overflow-y: auto;
-    scroll-behavior: smooth;
-    /* Enable smooth scrolling */
-}
-
 /* Add a subtle scrollbar style */
 .sequencer-tracks-wrapper::-webkit-scrollbar {
     width: 8px;

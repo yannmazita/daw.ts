@@ -1,26 +1,29 @@
 <template>
-    <div id="sequencer-step-tracker-container" class="flex flex-col items-center p-4">
-        <!-- Current step display -->
-        <div class="text-2xl font-bold mb-2">
-            Step: {{ currentDisplayStep }} / {{ structureStore.state.numSteps }}
-        </div>
-
+    <div id="sequencer-step-tracker-container" class="flex flex-col items-start w-full">
         <!-- Step visualization -->
-        <div class="flex justify-center w-full mb-4">
+        <div class="flex w-full">
             <div v-for="step in structureStore.state.numSteps" :key="step"
-                class="w-4 h-4 mx-1 rounded-full transition-all duration-150" :class="{
-                    'bg-ts-blue': step === currentDisplayStep,
+                class="flex-shrink-0 min-w-8 w-8 h-8 m-0.5 flex items-center justify-center text-xs" :class="{
+                    'bg-ts-blue text-white': step === currentDisplayStep,
                     'bg-gray-300': step !== currentDisplayStep,
                     'border-2 border-ts-blue': isLoopPoint(step - 1)
-                }"></div>
+                }">
+                {{ step }}
+            </div>
         </div>
 
         <!-- Range bar for manual step selection -->
-        <AppRangeBar v-model="manualStep" :step="1" :min="1" :max="structureStore.state.numSteps" class="w-full"
-            @update:modelValue="handleManualStepChange"></AppRangeBar>
+        <div class="w-full">
+            <div :style="{ width: `${structureStore.state.numSteps * 36}px` }">
+                <!-- 36px = 32px (step width) + 4px (margin) -->
+                <AppRangeBar v-model="manualStep" :step="1" :min="1" :max="structureStore.state.numSteps"
+                    class="w-full mt-2" @update:modelValue="handleManualStepChange"></AppRangeBar>
+            </div>
+        </div>
 
         <!-- Playback boundaries and loop points -->
-        <div class="flex justify-between w-full mt-2 text-sm">
+        <div class="flex justify-between w-full mt-2 text-sm"
+            :style="{ width: `${structureStore.state.numSteps * 36}px` }">
             <span>Start: {{ playbackStart + 1 }}</span>
             <span>End: {{ playbackEnd }}</span>
         </div>

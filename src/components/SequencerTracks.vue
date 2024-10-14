@@ -1,35 +1,50 @@
 <template>
-    <div id="sequencer-tracks-container" class="flex flex-col space-y-2">
-        <TransitionGroup name="sequencer-track" tag="div">
-            <div :id="`sequencer-track-${track.id}`" v-for="track in trackStore.tracks" :key="track.id"
-                class="sequencer-track flex items-center space-x-2 hover:opacity-100">
-                <div
-                    class="flex items-center space-x-2 hover:opacity-100 opacity-70 transition ease-in-out duration-150">
-                    <button @click="trackManager.toggleTrackMuted(track.id)"
-                        :class="{ 'bg-red-500': trackManager.getTrackMuted(track.id), 'bg-gray-300': !trackManager.getTrackMuted(track.id) }"
-                        class="w-8 h-8 rounded-full focus:outline-none transition-colors duration-150">
-                        M
-                    </button>
-                    <button @click="trackManager.toggleTrackSolo(track.id)"
-                        :class="{ 'bg-green-500': trackManager.getTrackSolo(track.id), 'bg-gray-300': !trackManager.getTrackSolo(track.id) }"
-                        class="w-8 h-8 rounded-full focus:outline-none transition-colors duration-150">
-                        S
-                    </button>
-                </div>
-                <div class="track-steps flex-grow flex">
-                    <div :id="`sequencer-track-${track.id}-step-${stepIndex}`" v-for="(_, stepIndex) in track.steps"
-                        :key="stepIndex" @click="trackManager.toggleStepActive(track.id, stepIndex)"
-                        class="w-8 h-8 m-0.5 cursor-pointer transition-all duration-150" :class="{
-                            'bg-ts-blue': trackManager.getStepActive(track.id, stepIndex),
-                            'bg-gray-200': !trackManager.getStepActive(track.id, stepIndex),
-                            'ring-2 ring-yellow-400': isCurrentStep(stepIndex),
-                            'opacity-50': trackManager.getTrackMuted(track.id) && !trackManager.getTrackSolo(track.id),
-                        }"
-                        @contextmenu.prevent="handleContextMenu($event, { trackIndex: track.id, stepIndex: stepIndex })">
+    <div id="sequencer-tracks-container" class="flex flex-col">
+        <div class="flex">
+            <!-- Spacer for mute/solo buttons -->
+            <div class="track-controls-spacer flex-shrink-0"></div>
+            <SequencerStepTracker class="flex-grow" />
+        </div>
+        <div class="sequencer-scrollable-container">
+            <div class="sequencer-content" :style="{ width: `${contentWidth}px` }">
+                <TransitionGroup name="sequencer-track" tag="div" class="flex flex-col w-full">
+                    <div :id="`sequencer-track-${track.id}`" v-for="track in trackStore.tracks" :key="track.id"
+                        class="sequencer-track flex items-center hover:opacity-100">
+                        <div
+                            class="track-controls flex-shrink-0 flex items-center space-x-2 hover:opacity-100 opacity-70 transition ease-in-out duration-150">
+                            <button @click="trackManager.toggleTrackMuted(track.id)"
+                                :class="{ 'bg-red-500': trackManager.getTrackMuted(track.id), 'bg-gray-300': !trackManager.getTrackMuted(track.id) }"
+                                class="w-8 h-8 rounded-full focus:outline-none transition-colors duration-150">
+                                M
+                            </button>
+                            <button @click="trackManager.toggleTrackSolo(track.id)"
+                                :class="{ 'bg-green-500': trackManager.getTrackSolo(track.id), 'bg-gray-300': !trackManager.getTrackSolo(track.id) }"
+                                class="w-8 h-8 rounded-full focus:outline-none transition-colors duration-150">
+                                S
+                            </button>
+                        </div>
+                        <div class="track-steps flex-grow flex">
+                            <div :id="`sequencer-track-${track.id}-step-${stepIndex}`"
+                                v-for="(_, stepIndex) in track.steps" :key="stepIndex"
+                                @click="trackManager.toggleStepActive(track.id, stepIndex)"
+                                class="min-w-8 w-8 h-8 m-0.5 cursor-pointer transition-all duration-150" :class="{
+                                    'bg-ts-blue': trackManager.getStepActive(track.id, stepIndex),
+                                    'bg-gray-200': !trackManager.getStepActive(track.id, stepIndex),
+                                    'ring-2 ring-yellow-400': isCurrentStep(stepIndex),
+                                    'opacity-50': trackManager.getTrackMuted(track.id) && !trackManager.getTrackSolo(track.id),
+                                }"
+                                @contextmenu.prevent="handleContextMenu($event, { trackIndex: track.id, stepIndex: stepIndex })">
+                            </div>
+                        </div>
                     </div>
-                </div>
+                </TransitionGroup>
             </div>
-        </TransitionGroup>
+        </div>
+        <div class="flex">
+            <!-- Spacer for mute/solo buttons -->
+            <div class="track-controls-spacer flex-shrink-0"></div>
+            <SequencerPlaybackControls class="flex-grow" />
+        </div>
     </div>
 </template>
 
@@ -44,6 +59,8 @@ import { SequencerTrackManager } from '@/services/SequencerTrackManager';
 import { StepPosition, WindowDualPaneContent } from '@/utils/interfaces';
 import SequencerTrackSettingsInstrumentsPane from './SequencerTrackSettingsInstrumentsPane.vue';
 import SequencerTrackSettingsEffectsPane from './SequencerTrackSettingsEffectsPane.vue';
+import SequencerPlaybackControls from './SequencerPlaybackControls.vue';
+import SequencerStepTracker from './SequencerStepTracker.vue';
 import { useStructureStore } from '@/stores/structureStore';
 import { useTrackStore } from '@/stores/trackStore';
 import { usePlaybackStore } from '@/stores/playbackStore';
@@ -89,8 +106,26 @@ function handleContextMenu(event: MouseEvent, position: StepPosition) {
         menuStore.openContextMenu(event.clientX, event.clientY);
     }
 }
+
+const contentWidth = computed(() => {
+    return 80 + (structureStore.state.numSteps * 36); // 80px for controls, 36px per step
+});
 </script>
 <style scoped>
+.track-controls {
+    min-width: 72px;
+    width: 72px;
+    /* 2 buttons (32px each) + 8px space between */
+    margin-right: 8px;
+    /* Match the margin of the first step */
+}
+
+.track-controls-spacer {
+    min-width: 80px;
+    width: 80px;
+    /* Same as .track-controls width + margin-right */
+}
+
 .sequencer-track-move {
     transition: transform 0.5s;
 }
