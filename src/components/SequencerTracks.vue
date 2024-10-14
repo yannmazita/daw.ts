@@ -1,32 +1,35 @@
 <template>
     <div id="sequencer-tracks-container" class="flex flex-col space-y-2">
-        <div :id="`sequencer-track-${track.id}`" v-for="track in trackStore.tracks" :key="track.id"
-            class="flex items-center space-x-2 hover:opacity-100">
-            <div class="flex items-center space-x-2 hover:opacity-100 opacity-70 transition ease-in-out duration-150">
-                <button @click="trackManager.toggleTrackMuted(track.id)"
-                    :class="{ 'bg-red-500': trackManager.getTrackMuted(track.id), 'bg-gray-300': !trackManager.getTrackMuted(track.id) }"
-                    class="w-8 h-8 rounded-full focus:outline-none transition-colors duration-150">
-                    M
-                </button>
-                <button @click="trackManager.toggleTrackSolo(track.id)"
-                    :class="{ 'bg-green-500': trackManager.getTrackSolo(track.id), 'bg-gray-300': !trackManager.getTrackSolo(track.id) }"
-                    class="w-8 h-8 rounded-full focus:outline-none transition-colors duration-150">
-                    S
-                </button>
-            </div>
-            <div class="track-steps flex-grow flex">
-                <div :id="`sequencer-track-${track.id}-step-${stepIndex}`" v-for="(_, stepIndex) in track.steps"
-                    :key="stepIndex" @click="trackManager.toggleStepActive(track.id, stepIndex)"
-                    class="w-8 h-8 m-0.5 rounded-md cursor-pointer transition-all duration-150" :class="{
-                        'bg-ts-blue': trackManager.getStepActive(track.id, stepIndex),
-                        'bg-gray-200': !trackManager.getStepActive(track.id, stepIndex),
-                        'ring-2 ring-yellow-400': isCurrentStep(stepIndex),
-                        'opacity-50': trackManager.getTrackMuted(track.id) && !trackManager.getTrackSolo(track.id),
-                    }"
-                    @contextmenu.prevent="handleContextMenu($event, { trackIndex: track.id, stepIndex: stepIndex })">
+        <TransitionGroup name="sequencer-track" tag="div">
+            <div :id="`sequencer-track-${track.id}`" v-for="track in trackStore.tracks" :key="track.id"
+                class="sequencer-track flex items-center space-x-2 hover:opacity-100">
+                <div
+                    class="flex items-center space-x-2 hover:opacity-100 opacity-70 transition ease-in-out duration-150">
+                    <button @click="trackManager.toggleTrackMuted(track.id)"
+                        :class="{ 'bg-red-500': trackManager.getTrackMuted(track.id), 'bg-gray-300': !trackManager.getTrackMuted(track.id) }"
+                        class="w-8 h-8 rounded-full focus:outline-none transition-colors duration-150">
+                        M
+                    </button>
+                    <button @click="trackManager.toggleTrackSolo(track.id)"
+                        :class="{ 'bg-green-500': trackManager.getTrackSolo(track.id), 'bg-gray-300': !trackManager.getTrackSolo(track.id) }"
+                        class="w-8 h-8 rounded-full focus:outline-none transition-colors duration-150">
+                        S
+                    </button>
+                </div>
+                <div class="track-steps flex-grow flex">
+                    <div :id="`sequencer-track-${track.id}-step-${stepIndex}`" v-for="(_, stepIndex) in track.steps"
+                        :key="stepIndex" @click="trackManager.toggleStepActive(track.id, stepIndex)"
+                        class="w-8 h-8 m-0.5 cursor-pointer transition-all duration-150" :class="{
+                            'bg-ts-blue': trackManager.getStepActive(track.id, stepIndex),
+                            'bg-gray-200': !trackManager.getStepActive(track.id, stepIndex),
+                            'ring-2 ring-yellow-400': isCurrentStep(stepIndex),
+                            'opacity-50': trackManager.getTrackMuted(track.id) && !trackManager.getTrackSolo(track.id),
+                        }"
+                        @contextmenu.prevent="handleContextMenu($event, { trackIndex: track.id, stepIndex: stepIndex })">
+                    </div>
                 </div>
             </div>
-        </div>
+        </TransitionGroup>
     </div>
 </template>
 
@@ -87,3 +90,23 @@ function handleContextMenu(event: MouseEvent, position: StepPosition) {
     }
 }
 </script>
+<style scoped>
+.sequencer-track-move {
+    transition: transform 0.5s;
+}
+
+.sequencer-track-enter-active,
+.sequencer-track-leave-active {
+    transition: all 0.5s ease;
+}
+
+.sequencer-track-enter-from,
+.sequencer-track-leave-to {
+    opacity: 0;
+    transform: translateX(-30px);
+}
+
+.sequencer-track-leave-active {
+    position: absolute;
+}
+</style>
