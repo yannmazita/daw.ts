@@ -16,18 +16,16 @@ import {
     ToggleTrackSoloCommand,
     SetTrackMutedCommand,
     SetTrackSoloCommand,
-    SetStepActiveCommand
+    SetStepActiveCommand,
+    SetTrackInstrumentCommand
 } from './commands/SequencerCommands';
-import { Note } from '@/utils/types';
-import { SequencerTrack } from '@/models/SequencerModels';
+import { InstrumentName, Note } from '@/utils/types';
 import { SequencerInstrumentManager } from './SequencerInstrumentManager';
 import { useStructureStore } from '@/stores/structureStore';
 import { useTrackStore } from '@/stores/trackStore';
-import { usePlaybackStore } from '@/stores/playbackStore';
 
 export class SequencerTrackManager {
     private structureStore = useStructureStore();
-    private playbackStore = usePlaybackStore();
     private trackStore = useTrackStore();
 
     constructor(
@@ -40,20 +38,13 @@ export class SequencerTrackManager {
 
     private initialize(): void {
         console.log('SequencerTrackManager initialized');
-        this.structureStore.setNumTracks(4);
-        this.structureStore.setNumSteps(16);
-        this.trackStore.tracks = Array.from(
-            { length: this.structureStore.state.numTracks },
-            (_, i) => new SequencerTrack(i, this.structureStore.state.numSteps)
-        );
-        this.playbackStore.setStepDuration('16n');
         this.instrumentManager.initializeTrackInstruments();
     }
 
     public addTrack(insertPosition: number = this.structureStore.state.numTracks): void {
         try {
             this.playbackManager.stopSequence();
-            const command = new AddTrackCommand(insertPosition);
+            const command = new AddTrackCommand(insertPosition, this.instrumentManager);
             this.commandManager.execute(command);
         } catch (error) {
             console.error('Error adding track:', error);
@@ -64,7 +55,7 @@ export class SequencerTrackManager {
     public removeTrack(deletePosition: number): void {
         try {
             this.playbackManager.stopSequence();
-            const command = new RemoveTrackCommand(deletePosition);
+            const command = new RemoveTrackCommand(deletePosition, this.instrumentManager);
             this.commandManager.execute(command);
         } catch (error) {
             console.error('Error removing track:', error);
@@ -253,6 +244,16 @@ export class SequencerTrackManager {
             this.commandManager.execute(command);
         } catch (error) {
             console.error('Error setting number of steps:', error);
+            throw error;
+        }
+    }
+
+    public setTrackInstrument(trackIndex: number, instrumentName: InstrumentName): void {
+        try {
+            const command = new SetTrackInstrumentCommand(trackIndex, instrumentName, this.instrumentManager);
+            this.commandManager.execute(command);
+        } catch (error) {
+            console.error('Error setting track instrument:', error);
             throw error;
         }
     }

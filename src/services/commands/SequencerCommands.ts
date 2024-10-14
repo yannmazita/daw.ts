@@ -11,7 +11,7 @@ import * as Tone from "tone";
 import { useStructureStore } from "@/stores/structureStore";
 import { useTrackStore } from "@/stores/trackStore";
 import { usePlaybackStore } from "@/stores/playbackStore";
-import { useInstrumentStore } from "@/stores/instrumentStore";
+import { SequencerInstrumentManager } from "../SequencerInstrumentManager";
 
 /**
  * Command to add a track to the sequencer.
@@ -19,15 +19,14 @@ import { useInstrumentStore } from "@/stores/instrumentStore";
 export class AddTrackCommand implements Command {
     private structureStore = useStructureStore();
     private trackStore = useTrackStore();
-    private instrumentStore = useInstrumentStore();
 
-    constructor(private insertPosition: number) { }
+    constructor(private insertPosition: number, private instrumentManager: SequencerInstrumentManager) { }
 
     execute(): void {
         try {
             const newTrack = new SequencerTrack(this.insertPosition, this.structureStore.state.numSteps);
             this.trackStore.addTrack(newTrack, this.insertPosition);
-            this.instrumentStore.addTrackInstrumentDefault(this.insertPosition);
+            this.instrumentManager.addTrackInstrumentDefault(this.insertPosition);
         } catch (error) {
             console.error('Error executing AddTrackCommand', error);
             throw error;
@@ -37,7 +36,7 @@ export class AddTrackCommand implements Command {
     undo(): void {
         try {
             this.trackStore.removeTrack(this.insertPosition);
-            this.instrumentStore.removeTrackInstrument(this.insertPosition);
+            this.instrumentManager.removeTrackInstrument(this.insertPosition);
         } catch (error) {
             console.error('Error undoing AddTrackCommand', error);
             throw error;
@@ -54,16 +53,15 @@ export class AddTrackCommand implements Command {
  */
 export class RemoveTrackCommand implements Command {
     private trackStore = useTrackStore();
-    private instrumentStore = useInstrumentStore();
     private removedTrack: SequencerTrack | null = null;
     private removedInstrument: Instrument | null = null;
 
-    constructor(private removePosition: number) { }
+    constructor(private removePosition: number, private instrumentManager: SequencerInstrumentManager) { }
 
     execute(): void {
         try {
             this.removedTrack = this.trackStore.removeTrack(this.removePosition);
-            this.removedInstrument = this.instrumentStore.removeTrackInstrument(this.removePosition);
+            this.removedInstrument = this.instrumentManager.removeTrackInstrument(this.removePosition);
         } catch (error) {
             console.error('Error executing RemoveTrackCommand', error);
             throw error;
@@ -75,7 +73,7 @@ export class RemoveTrackCommand implements Command {
             if (this.removedTrack) {
                 this.trackStore.addTrack(this.removedTrack, this.removedTrack.id);
                 if (this.removedInstrument) {
-                    this.instrumentStore.addTrackInstrument(
+                    this.instrumentManager.addTrackInstrument(
                         this.removedTrack.id,
                         this.removedInstrument,
                     );
@@ -489,24 +487,22 @@ export class SetTimeSignatureCommand implements Command {
 }
 
 export class SetTrackInstrumentCommand implements Command {
-    private instrumentStore = useInstrumentStore();
-    private previousState: InstrumentName | null = null;
+    private previousState: InstrumentName;
 
     constructor(
         private trackIndex: number,
         private newInstrumentName: InstrumentName,
+        private instrumentManager: SequencerInstrumentManager,
     ) {
-        this.previousState = this.instrumentStore.getTrackInstrumentName(trackIndex);
+        this.previousState = this.instrumentManager.getTrackInstrumentName(trackIndex);
     }
 
     execute(): void {
-        this.instrumentStore.setTrackInstrument(this.trackIndex, this.newInstrumentName);
+        this.instrumentManager.setTrackInstrument(this.trackIndex, this.newInstrumentName);
     }
 
     undo(): void {
-        if (this.previousState) {
-            this.instrumentStore.setTrackInstrument(this.trackIndex, this.previousState);
-        }
+            this.instrumentManager.setTrackInstrument(this.trackIndex, this.previousState);
     }
 
     redo(): void {

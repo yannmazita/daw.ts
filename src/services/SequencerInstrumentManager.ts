@@ -4,23 +4,20 @@
 import * as Tone from 'tone';
 import { Instrument, InstrumentName } from '@/utils/types.ts';
 import { useTrackStore } from '@/stores/trackStore';
-import { useInstrumentStore } from '@/stores/instrumentStore';
-import { SetTrackInstrumentCommand } from './commands/SequencerCommands';
-import { CommandManager } from './CommandManager';
+import { InvalidTrackIndexException } from '@/utils/exceptions';
 
 /**
  * Manages instruments for the sequencer, handling creation, assignment, and management of instruments for each track.
  */
 export class SequencerInstrumentManager {
     private trackStore = useTrackStore();
-    private instrumentStore = useInstrumentStore();
     public instrumentPool: Record<InstrumentName, Instrument> = {} as Record<InstrumentName, Instrument>;
     public trackInstruments: Instrument[] = [];
 
     /**
      * Initializes the instrument manager and sets up the initial instrument pool.
      */
-    constructor(private commandManager: CommandManager) {
+    constructor() {
         this.initializeInstrumentPool();
     }
 
@@ -56,7 +53,7 @@ export class SequencerInstrumentManager {
     private initializeInstrumentPool(): void {
         console.log('Initializing instrument pool');
         Object.values(InstrumentName).forEach(name => {
-            this.instrumentStore.instrumentPool[name] = this.createInstrument(name);
+            this.instrumentPool[name] = this.createInstrument(name);
         });
     }
 
@@ -65,41 +62,42 @@ export class SequencerInstrumentManager {
      */
     public initializeTrackInstruments(): void {
         console.log('Initializing track instruments');
-        this.instrumentStore.trackInstruments = this.trackStore.tracks.map(() => this.instrumentStore.instrumentPool[InstrumentName.Synth]);
+        this.trackInstruments = this.trackStore.tracks.map(() => this.instrumentPool[InstrumentName.Synth]);
     }
 
-    public getTrackInstrumentName(trackIndex: number): InstrumentName | null {
-        try {
-            return this.instrumentStore.getTrackInstrumentName(trackIndex);
-        }
-        catch (error) {
-            console.error('Error getting instrument name:', error);
-            throw error;
+    public validateTrackIndex(index: number): void {
+        if (index < 0 || index >= this.trackInstruments.length) {
+            throw new InvalidTrackIndexException(index);
         }
     }
 
-    /**
-     * Sets the instrument for a specific track.
-     * @param trackIndex - The index of the track to assign the instrument to.
-     * @param instrumentName - The name of the instrument to assign.
-     */
+    public addTrackInstrument(insertPosition: number, instrument: Instrument): void {
+        if (insertPosition < 0 || insertPosition > this.trackInstruments.length) {
+            throw new InvalidTrackIndexException(insertPosition);
+        }
+        this.trackInstruments.splice(insertPosition, 0, instrument);
+    }
+
+    public addTrackInstrumentDefault(insertPosition: number, instrumentName: InstrumentName = InstrumentName.Synth): void {
+        if (insertPosition < 0 || insertPosition > this.trackInstruments.length) {
+            throw new InvalidTrackIndexException(insertPosition);
+        }
+        this.trackInstruments.splice(insertPosition, 0, this.instrumentPool[instrumentName]);
+    }
+
+    public removeTrackInstrument(trackIndex: number): Instrument {
+        this.validateTrackIndex(trackIndex);
+        const removedInstrument: Instrument = this.trackInstruments.splice(trackIndex, 1)[0];
+        return removedInstrument;
+    }
+
+    public getTrackInstrumentName(trackIndex: number): InstrumentName {
+        this.validateTrackIndex(trackIndex);
+        return this.trackInstruments[trackIndex].name as InstrumentName;
+    }
+
     public setTrackInstrument(trackIndex: number, instrumentName: InstrumentName) {
-        try {
-            const command = new SetTrackInstrumentCommand(trackIndex, instrumentName);
-            this.commandManager.execute(command);
-        } catch (error) {
-            console.error('Error setting track instrument:', error);
-            throw error;
-        }
-    }
-
-
-    /**
-     * Adds an instrument to a specific position in the track list.
-     * @param position - The index at which to add the instrument.
-     * @param instrumentName - The name of the instrument to add. Defaults to 'Synth' if not specified.
-     */
-    public addTrackInstrument(position: number, instrumentName: InstrumentName = InstrumentName.Synth): void {
-        this.instrumentStore.trackInstruments.splice(position, 0, this.instrumentStore.instrumentPool[instrumentName]);
+        this.validateTrackIndex(trackIndex);
+        this.trackInstruments[trackIndex] = this.instrumentPool[instrumentName];
     }
 }

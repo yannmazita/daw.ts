@@ -8,19 +8,18 @@ import { useStructureStore } from '@/stores/structureStore';
 import { useTrackStore } from '@/stores/trackStore';
 import { SetBpmCommand, SetTimeSignatureCommand } from './commands/SequencerCommands';
 import { CommandManager } from './CommandManager';
-import { useInstrumentStore } from '@/stores/instrumentStore';
+import { SequencerInstrumentManager } from './SequencerInstrumentManager';
 
 export class SequencerPlaybackManager {
     private playbackStore = usePlaybackStore();
     private structureStore = useStructureStore();
-    private instrumentStore = useInstrumentStore();
     private trackStore = useTrackStore();
     private lastManuallySelectedStep: number | null = null;
     public loopEnabled = false;
     private loop: Tone.Loop | null = null;
     private playbackStartTime: number | null = null;
 
-    constructor(private commandManager: CommandManager) {
+    constructor(private instrumentManager: SequencerInstrumentManager, private commandManager: CommandManager) {
         this.initialize();
     }
 
@@ -116,14 +115,14 @@ export class SequencerPlaybackManager {
         this.trackStore.tracks.forEach((_, trackIndex) => {
             if (this.trackStore.getStepActive(trackIndex, stepIndex)) {
 
-                if (this.instrumentStore.trackInstruments[trackIndex] === this.instrumentStore.instrumentPool[InstrumentName.NoiseSynth]) {
-                    this.instrumentStore.trackInstruments[trackIndex].triggerAttackRelease(
+                if (this.instrumentManager.trackInstruments[trackIndex] === this.instrumentManager.instrumentPool[InstrumentName.NoiseSynth]) {
+                    this.instrumentManager.trackInstruments[trackIndex].triggerAttackRelease(
                         this.playbackStore.state.stepDuration,
                         time,
                         this.trackStore.getTrackVelocity(trackIndex) ?? this.trackStore.getStepVelocity(trackIndex, stepIndex)
                     );
                 } else {
-                    this.instrumentStore.trackInstruments[trackIndex].triggerAttackRelease(
+                    this.instrumentManager.trackInstruments[trackIndex].triggerAttackRelease(
                         this.trackStore.getTrackNote(trackIndex) ?? this.trackStore.getStepNote(trackIndex, stepIndex),
                         this.playbackStore.state.stepDuration,
                         time,
