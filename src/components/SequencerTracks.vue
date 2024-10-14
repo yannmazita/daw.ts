@@ -35,7 +35,8 @@ import { computed, inject, markRaw } from 'vue';
 import { useContextMenuStore } from '@/stores/contextMenuStore';
 import { AppContextMenuItem } from '@/models/AppContextMenuItem';
 import { AddTrackCommand, RemoveTrackCommand, OpenTrackSettings, OpenStepSettings } from '@/services/commands/SequencerCommands';
-import { sequencerTrackManagerKey } from '@/utils/injection-keys';
+import { sequencerInstrumentManagerKey, sequencerTrackManagerKey } from '@/utils/injection-keys';
+import { SequencerInstrumentManager } from '@/services/SequencerInstrumentManager';
 import { SequencerTrackManager } from '@/services/SequencerTrackManager';
 import { StepPosition, WindowDualPaneContent } from '@/utils/interfaces';
 import SequencerTrackSettingsInstrumentsPane from './SequencerTrackSettingsInstrumentsPane.vue';
@@ -44,12 +45,14 @@ import { useStructureStore } from '@/stores/structureStore';
 import { useTrackStore } from '@/stores/trackStore';
 import { usePlaybackStore } from '@/stores/playbackStore';
 
+const instrumentManager = inject(sequencerInstrumentManagerKey) as SequencerInstrumentManager;
+const trackManager = inject(sequencerTrackManagerKey) as SequencerTrackManager;
+
 const menuStore = useContextMenuStore();
 const playbackStore = usePlaybackStore();
 const structureStore = useStructureStore();
 const trackStore = useTrackStore();
 
-const trackManager = inject(sequencerTrackManagerKey) as SequencerTrackManager;
 
 const isCurrentStep = computed(() => (stepIndex: number) => stepIndex === playbackStore.state.visualStep);
 
@@ -60,8 +63,8 @@ function createContextMenuItems(position: StepPosition) {
             { label: 'Effects', component: markRaw(SequencerTrackSettingsEffectsPane) },
         ]
         const contextMenuItems = [
-            new AppContextMenuItem('Add track', new AddTrackCommand(position.trackIndex + 1)),
-            new AppContextMenuItem('Remove track', new RemoveTrackCommand(position.trackIndex)),
+            new AppContextMenuItem('Add track', new AddTrackCommand(position.trackIndex + 1, instrumentManager)),
+            new AppContextMenuItem('Remove track', new RemoveTrackCommand(position.trackIndex, instrumentManager)),
             new AppContextMenuItem('Track settings', new OpenTrackSettings(contents, position.trackIndex)),
         ];
         if (structureStore.isStepSelectionValid()) {

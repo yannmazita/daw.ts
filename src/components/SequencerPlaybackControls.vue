@@ -5,7 +5,7 @@
                 Play
             </AppSmallButton>
             <AppSmallButton @click="playbackManager.pauseSequence()"
-                :disabled="playback.status === SequenceStatus.Paused">
+                :disabled="playbackManager.getStatus() === SequenceStatus.Paused">
                 Pause
             </AppSmallButton>
             <AppSmallButton @click="playbackManager.stopSequence()">
@@ -20,8 +20,6 @@
 
 <script setup lang="ts">
 import { ref, inject, watch } from 'vue';
-import { storeToRefs } from 'pinia';
-import { useSequencerStore } from '@/stores/sequencerStore';
 import { sequencerPlaybackManagerKey } from '@/utils/injection-keys';
 import { SequencerPlaybackManager } from '@/services/SequencerPlaybackManager';
 import AppSmallButton from '@/components/AppSmallButton.vue';
@@ -29,8 +27,6 @@ import AppSmallCheckbox from '@/components/AppSmallCheckbox.vue';
 import { SequenceStatus } from '@/utils/types';
 
 const playbackManager = inject(sequencerPlaybackManagerKey) as SequencerPlaybackManager;
-const sequencerStore = useSequencerStore();
-const { playback } = storeToRefs(sequencerStore);
 
 const loopEnabled = ref(playbackManager.loopEnabled);
 

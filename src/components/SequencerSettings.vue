@@ -46,21 +46,21 @@
 
 <script setup lang="ts">
 import { ref, inject } from 'vue';
-import { storeToRefs } from 'pinia';
-import { useSequencerStore } from '@/stores/sequencerStore';
 import { sequencerPlaybackManagerKey, sequencerTrackManagerKey } from '@/utils/injection-keys';
 import { SequencerPlaybackManager } from '@/services/SequencerPlaybackManager';
 import { SequencerTrackManager } from '@/services/SequencerTrackManager';
 import AppInput from '@/components/AppInput.vue';
+import { useStructureStore } from '@/stores/structureStore';
+import { usePlaybackStore } from '@/stores/playbackStore';
 
-const sequencerStore = useSequencerStore();
-const { playback, structure } = storeToRefs(sequencerStore);
+const structureStore = useStructureStore();
+const playbackStore = usePlaybackStore();
 const playbackManager = inject(sequencerPlaybackManagerKey) as SequencerPlaybackManager;
 const trackManager = inject(sequencerTrackManagerKey) as SequencerTrackManager;
 
-const inputTracks = ref(structure.value.numTracks.toString());
-const inputSteps = ref(structure.value.numSteps.toString());
-const inputBpm = ref(playback.value.bpm.toString());
+const inputTracks = ref(structureStore.state.numTracks.toString());
+const inputSteps = ref(structureStore.state.numSteps.toString());
+const inputBpm = ref(playbackStore.state.bpm.toString());
 const stepDuration = ref('16n');
 const timeSignature = ref('4/4');
 
