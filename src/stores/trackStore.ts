@@ -41,9 +41,30 @@ export const useTrackStore = defineStore('track', () => {
         return removedTrack;
     }
 
-    function updateTrack(index: number, updatedTrack: SequencerTrack) {
-        validateTrackIndex(index);
-        tracks[index] = updatedTrack;
+    function updateEffectiveMute(): void {
+        const soloTrackExists = tracks.some(track => track.solo);
+        tracks.forEach(track => {
+            if (soloTrackExists) {
+                track.effectiveMute = !track.solo;
+            } else {
+                track.effectiveMute = track.muted;
+            }
+        });
+    }
+
+    function setTrackEffectiveMute(trackIndex: number, effectiveMute: boolean): void {
+        validateTrackIndex(trackIndex);
+        tracks[trackIndex].effectiveMute = effectiveMute;
+    }
+
+    function getTrackEffectiveMute(trackIndex: number): boolean {
+        validateTrackIndex(trackIndex);
+        return tracks[trackIndex].effectiveMute;
+    }
+
+    function toggleTrackEffectiveMute(trackIndex: number): void {
+        validateTrackIndex(trackIndex);
+        tracks[trackIndex].effectiveMute = !tracks[trackIndex].effectiveMute;
     }
 
     function getTrackMuted(index: number) {
@@ -54,11 +75,13 @@ export const useTrackStore = defineStore('track', () => {
     function setTrackMuted(index: number, muted: boolean) {
         validateTrackIndex(index);
         tracks[index].muted = muted;
+        updateEffectiveMute();
     }
 
     function toggleTrackMuted(index: number) {
         validateTrackIndex(index);
         tracks[index].muted = !tracks[index].muted;
+        updateEffectiveMute();
     }
 
     function getTrackSolo(index: number) {
@@ -69,11 +92,13 @@ export const useTrackStore = defineStore('track', () => {
     function setTrackSolo(index: number, solo: boolean) {
         validateTrackIndex(index);
         tracks[index].solo = solo;
+        updateEffectiveMute();
     }
 
     function toggleTrackSolo(index: number) {
         validateTrackIndex(index);
         tracks[index].solo = !tracks[index].solo;
+        updateEffectiveMute();
     }
 
     function getStepActive(trackIndex: number, stepIndex: number) {
@@ -135,7 +160,9 @@ export const useTrackStore = defineStore('track', () => {
         tracks,
         addTrack,
         removeTrack,
-        updateTrack,
+        getTrackEffectiveMute,
+        setTrackEffectiveMute,
+        toggleTrackEffectiveMute,
         getTrackMuted,
         setTrackMuted,
         toggleTrackMuted,

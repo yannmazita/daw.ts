@@ -113,7 +113,7 @@ export class SequencerPlaybackManager {
 
     private playCurrentStep(stepIndex: number, time: number): void {
         this.trackStore.tracks.forEach((_, trackIndex) => {
-            if (this.trackStore.getStepActive(trackIndex, stepIndex)) {
+            if (this.trackStore.getStepActive(trackIndex, stepIndex) && !this.trackStore.getTrackEffectiveMute(trackIndex)) {
 
                 if (this.instrumentManager.trackInstruments[trackIndex] === this.instrumentManager.instrumentPool[InstrumentName.NoiseSynth]) {
                     this.instrumentManager.trackInstruments[trackIndex].triggerAttackRelease(
