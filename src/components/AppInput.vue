@@ -7,19 +7,19 @@
 </template>
 
 <script setup lang="ts">
-import { defineModel, defineProps, withDefaults, ref } from 'vue';
+import { ref } from 'vue';
+
+const model = defineModel();
 
 interface Props {
     label?: string;
     class?: string;
 }
-
 const props = withDefaults(defineProps<Props>(), {
     label: () => "",
     class: () => "input-bordered input-xs",
 });
 
-const model = defineModel();
 const isFocused = ref(false);
 </script>
 
@@ -30,6 +30,9 @@ const isFocused = ref(false);
 
 .setting-input {
     transition: all 0.3s ease;
+    /*
+    cursor: pointer;
+    */
 }
 
 .setting-input:focus {
