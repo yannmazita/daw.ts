@@ -1,7 +1,7 @@
 <template>
     <main class="h-screen w-full overflow-hidden">
         <AppContextMenu></AppContextMenu>
-        <AppTabBar></AppTabBar>
+        <!--<AppTabBar></AppTabBar>-->
         <router-view></router-view>
     </main>
 </template>
