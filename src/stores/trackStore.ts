@@ -46,6 +46,7 @@ export const useTrackStore = defineStore('track', () => {
         validateTrackIndex(index);
         const removedTrack: SequencerTrack = tracks.splice(index, 1)[0];
         updateTrackIds();
+        structureStore.setNumTracks(tracks.length);
         return removedTrack;
     }
 
