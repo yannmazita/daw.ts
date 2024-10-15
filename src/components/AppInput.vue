@@ -1,14 +1,12 @@
 <template>
-    <div class="app-input-wrapper">
-        <label v-if="label" class="label-text">{{ label }}</label>
-        <input v-model="model" v-bind="{ ...$attrs }" :class="['input', 'setting-input', props.class]"
-            @focus="isFocused = true" @blur="isFocused = false" />
+    <div class="relative inline-block">
+        <label v-if="label" class="text-[0.8em] mb-[0.2em] block">{{ props.label }}</label>
+        <input v-model="model" v-bind="{ ...$attrs }"
+            :class="['appearance-none bg-gray-800 border border-gray-600 rounded text-white text-sm p-2 transition-all duration-300 ease-in-out hover:shadow-[0_0_0_2px_rgba(66,153,225,0.5)] focus:shadow-[0_0_0_2px_rgba(66,153,225,0.5)] outline-none', 'setting-input', props.class]" />
     </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-
 const model = defineModel();
 
 interface Props {
@@ -17,44 +15,8 @@ interface Props {
 }
 const props = withDefaults(defineProps<Props>(), {
     label: () => "",
-    class: () => "input-bordered input-xs",
+    class: () => "border border-gray-300 p-2 rounded text-xs",
 });
-
-const isFocused = ref(false);
-</script>
-
-<style scoped>
-.app-input-wrapper {
-    position: relative;
-}
-
-.setting-input {
-    transition: all 0.3s ease;
-    /*
-    cursor: pointer;
-    */
-}
-
-.setting-input:focus {
-    transform: scale(1.05);
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
-}
-
-.label-text {
-    transition: all 0.3s ease;
-    position: absolute;
-    top: -1.5em;
-    left: 0;
-    font-size: 0.8em;
-    opacity: 0.7;
-}
-
-.setting-input:focus+.label-text,
-.setting-input:not(:placeholder-shown)+.label-text {
-    transform: translateY(-0.5em);
-    font-size: 0.7em;
-    opacity: 1;
-}
 
 /*
     This component accepts a 'label' and 'class' prop.
@@ -62,4 +24,4 @@ const isFocused = ref(false);
     - 'class': Optional CSS class to add additional styling to the input.
     The component binds all other attributes ($attrs) passed to it, allowing for flexible reuse with different HTML input attributes.
 */
-</style>
+</script>
