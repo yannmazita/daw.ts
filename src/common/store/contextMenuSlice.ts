@@ -54,3 +54,6 @@ export const {
 } = contextMenuSlice.actions;
 
 export default contextMenuSlice.reducer;
+
+export const selectAppLevelItems = (state: { contextMenu: ContextMenuState }) => state.contextMenu.appLevelItems;
+export const selectContextualItems = (state: { contextMenu: ContextMenuState }) => state.contextMenu.contextualItems;
