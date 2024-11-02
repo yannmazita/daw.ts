@@ -2,7 +2,7 @@
 
 import type { Action, ThunkAction } from '@reduxjs/toolkit';
 import { configureStore } from '@reduxjs/toolkit';
-import contextMenuReducer from '../common/store/contextMenuSlice';
+import contextMenuReducer from '../common/slices/contextMenuSlice';
 
 export const store = configureStore({
   reducer: {
