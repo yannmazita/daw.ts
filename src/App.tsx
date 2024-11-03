@@ -5,6 +5,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { openContextMenu, setAppLevelItems, selectContextMenuVisibility } from './common/slices/contextMenuSlice';
 import { SerializableMenuItem } from '@/core/interfaces/contextMenu';
 import ContextMenu from './common/components/ContextMenu';
+import MainView from './views/MainView';
 
 /**
  * The main application component.
@@ -44,9 +45,12 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="h-screen w-full" onContextMenu={handleContextMenu}>
-      {menuVisible && <ContextMenu />}
-    </div>
+    <>
+      <div className="h-screen w-full" onContextMenu={handleContextMenu}>
+        {menuVisible && <ContextMenu />}
+        <MainView />
+      </div>
+    </>
   );
 };
 
