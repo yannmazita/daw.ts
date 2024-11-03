@@ -1,13 +1,21 @@
 // src/common/components/ContextMenuItem.tsx
 
 import React from 'react';
-import { ContextMenuItem as MenuItem } from '../models/ContextMenuItem';
+import { SerializableMenuItem } from '@/core/interfaces/contextMenu';
 
 interface ContextMenuItemProps {
-  item: MenuItem;
-  onClick: (item: MenuItem) => void;
+  item: SerializableMenuItem;
+  onClick: (item: SerializableMenuItem) => void;
 }
 
+/**
+ * A functional component that renders a single context menu item.
+ * 
+ * @param props The properties for the component.
+ * @param props.item The menu item to display.
+ * @param props.onClick The callback function to handle item clicks.
+ * @returns The rendered component.
+ */
 const ContextMenuItem: React.FC<ContextMenuItemProps> = React.memo(({ item, onClick }) => {
   const handleClick = () => onClick(item);
 

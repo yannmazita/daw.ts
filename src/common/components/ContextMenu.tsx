@@ -4,12 +4,17 @@ import React, { useRef, useMemo, useCallback, useLayoutEffect } from 'react';
 import { useDispatch, useSelector, shallowEqual } from 'react-redux';
 import { closeContextMenu } from '../slices/contextMenuSlice';
 import { RootState } from '@/store';
-import { ContextMenuItem as MenuItem } from '../models/ContextMenuItem';
+import { SerializableMenuItem } from '@/core/interfaces/contextMenu';
 import { useClickOutside } from '../hooks/useClickOutside';
 import ContextMenuItem from './ContextMenuItem';
 import ContextualItemGroup from './ContextualItemGroup';
 
-const AppContextMenu: React.FC = React.memo(() => {
+/**
+ * A functional component that renders a context menu.
+ * 
+ * @returns {JSX.Element | null} - The rendered component or null if the menu is not visible.
+ */
+const ContextMenu: React.FC = React.memo(() => {
   const dispatch = useDispatch();
   const menu = useSelector((state: RootState) => state.contextMenu, shallowEqual);
   const contextMenuRef = useRef<HTMLDivElement>(null);
@@ -23,8 +28,8 @@ const AppContextMenu: React.FC = React.memo(() => {
     left: `${menu.xPos}px`,
   }), [menu.yPos, menu.xPos]);
 
-  const handleItemClick = useCallback((item: MenuItem) => {
-    item.performAction();
+  const handleItemClick = useCallback((item: SerializableMenuItem) => {
+    dispatch({ type: 'EXECUTE_CONTEXT_MENU_ITEM', payload: item });
     dispatch(closeContextMenu());
   }, [dispatch]);
 
@@ -74,4 +79,4 @@ const AppContextMenu: React.FC = React.memo(() => {
   );
 });
 
-export default AppContextMenu;
+export default ContextMenu;
