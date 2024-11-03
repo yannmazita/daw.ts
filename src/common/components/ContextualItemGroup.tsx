@@ -5,7 +5,6 @@ import ContextMenuItem from './ContextMenuItem';
 import { SerializableMenuItem } from '@/core/interfaces/contextMenu';
 
 interface ContextualItemGroupProps {
-  groupId: string;
   items: SerializableMenuItem[];
   onItemClick: (item: SerializableMenuItem) => void;
   showSeparator: boolean;
