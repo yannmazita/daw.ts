@@ -1,9 +1,13 @@
-import React, { useRef, useCallback, useMemo, useLayoutEffect } from 'react';
+// src/common/components/ContextMenu.tsx
+
+import React, { useRef, useMemo, useCallback, useLayoutEffect } from 'react';
 import { useDispatch, useSelector, shallowEqual } from 'react-redux';
 import { closeContextMenu } from '../slices/contextMenuSlice';
 import { RootState } from '@/store';
-import { AppContextMenuItem } from '../models/AppContextMenuItem';
+import { ContextMenuItem as MenuItem } from '../models/ContextMenuItem';
 import { useClickOutside } from '../hooks/useClickOutside';
+import ContextMenuItem from './ContextMenuItem';
+import ContextualItemGroup from './ContextualItemGroup';
 
 const AppContextMenu: React.FC = React.memo(() => {
   const dispatch = useDispatch();
@@ -13,27 +17,24 @@ const AppContextMenu: React.FC = React.memo(() => {
   // Close the context menu when clicking outside of it
   useClickOutside(contextMenuRef, useCallback(() => dispatch(closeContextMenu()), [dispatch]));
 
-  // Memoize the style object to avoid recalculating on every render
+  // Memoize style object for position
   const styleObject = useMemo(() => ({
     top: `${menu.yPos}px`,
     left: `${menu.xPos}px`,
   }), [menu.yPos, menu.xPos]);
 
-  // Memoize the item click handler
-  const handleItemClick = useCallback((item: AppContextMenuItem) => {
+  const handleItemClick = useCallback((item: MenuItem) => {
     item.performAction();
     dispatch(closeContextMenu());
   }, [dispatch]);
 
-  // Memoize app-level and contextual items
   const appLevelItems = useMemo(() => Object.values(menu.appLevelItems), [menu.appLevelItems]);
   const contextualItemGroups = useMemo(() => Object.entries(menu.contextualItems), [menu.contextualItems]);
 
-  // Layout effect to update position instantly upon mount
+  // Layout effect to adjust menu position
   useLayoutEffect(() => {
     if (contextMenuRef.current) {
       const menuBounds = contextMenuRef.current.getBoundingClientRect();
-      // Adjust position if menu overflows
       if (menuBounds.right > window.innerWidth) {
         contextMenuRef.current.style.left = `${window.innerWidth - menuBounds.width}px`;
       }
@@ -55,31 +56,18 @@ const AppContextMenu: React.FC = React.memo(() => {
       <ul>
         {/* Render app-level items */}
         {appLevelItems.map((item, index) => (
-          <li
-            key={`app-${index}`}
-            onClick={() => handleItemClick(item)}
-            className="flex items-center space-x-2 p-2 cursor-pointer hover:bg-gray-100"
-          >
-            {item.icon && <img src={item.icon} alt="" className="h-5 w-5" />}
-            <span>{item.label}</span>
-          </li>
+          <ContextMenuItem key={`app-${index}`} item={item} onClick={handleItemClick} />
         ))}
 
-        {/* Render grouped contextual items */}
+        {/* Render contextual item groups */}
         {contextualItemGroups.map(([groupId, items], groupIndex) => (
-          <React.Fragment key={`group-${groupId}`}>
-            {(groupIndex > 0 || appLevelItems.length > 0) && <hr className="my-2" />}
-            {items.map((item, itemIndex) => (
-              <li
-                key={`context-${groupId}-${itemIndex}`}
-                onClick={() => handleItemClick(item)}
-                className="flex items-center space-x-2 p-2 cursor-pointer hover:bg-gray-100"
-              >
-                {item.icon && <img src={item.icon} alt="" className="h-5 w-5" />}
-                <span>{item.label}</span>
-              </li>
-            ))}
-          </React.Fragment>
+          <ContextualItemGroup
+            key={`group-${groupId}`}
+            groupId={groupId}
+            items={items}
+            onItemClick={handleItemClick}
+            showSeparator={groupIndex > 0 || appLevelItems.length > 0}
+          />
         ))}
       </ul>
     </div>

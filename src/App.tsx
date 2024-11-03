@@ -1,9 +1,10 @@
 import React from 'react';
+import ContextMenu from './common/components/ContextMenu';
 
 const App: React.FC = () => {
   return (
     <div className="h-screen w-full overflow-hidden">
-      Hello world!
+      <ContextMenu/>
     </div>
   );
 };
