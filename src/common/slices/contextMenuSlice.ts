@@ -1,12 +1,13 @@
 // src/common/store/contextMenuSlice.ts
 
 import { createSlice } from "@reduxjs/toolkit";
-import type { PayloadAction } from "@reduxjs/toolkit";
-import { AppContextMenuItem } from "../models/AppContextMenuItem";
+import { PayloadAction } from "@reduxjs/toolkit";
+import { RootState } from '@/store';
+import { SerializableMenuItem } from "@/core/interfaces/contextMenu";
 
 export interface ContextMenuState {
-  appLevelItems: Record<string, AppContextMenuItem>;
-  contextualItems: Record<string, AppContextMenuItem[]>;
+  appLevelItems: Record<string, SerializableMenuItem>;
+  contextualItems: Record<string, SerializableMenuItem[]>;
   visible: boolean;
   xPos: number;
   yPos: number;
@@ -24,10 +25,10 @@ const contextMenuSlice = createSlice({
   name: 'contextMenu',
   initialState,
   reducers: {
-    setAppLevelItems: (state, action: PayloadAction<Record<string, AppContextMenuItem>>) => {
+    setAppLevelItems: (state, action: PayloadAction<Record<string, SerializableMenuItem>>) => {
       state.appLevelItems = action.payload;
     },
-    addContextualItems: (state, action: PayloadAction<{ groupId: string; items: AppContextMenuItem[] }>) => {
+    addContextualItems: (state, action: PayloadAction<{ groupId: string; items: SerializableMenuItem[] }>) => {
       state.contextualItems[action.payload.groupId] = action.payload.items;
     },
     clearContextualItems: (state) => {
@@ -55,5 +56,12 @@ export const {
 
 export default contextMenuSlice.reducer;
 
-export const selectAppLevelItems = (state: { contextMenu: ContextMenuState }) => state.contextMenu.appLevelItems;
-export const selectContextualItems = (state: { contextMenu: ContextMenuState }) => state.contextMenu.contextualItems;
+export const createSelector = <T>(selector: (state: RootState) => T) => selector;
+
+export const selectAppLevelItems = createSelector((state: RootState) => state.contextMenu.appLevelItems);
+export const selectContextualItems = createSelector((state: RootState) => state.contextMenu.contextualItems);
+export const selectContextMenuVisibility = createSelector((state: RootState) => state.contextMenu.visible);
+export const selectContextMenuPosition = createSelector((state: RootState) => ({
+  xPos: state.contextMenu.xPos,
+  yPos: state.contextMenu.yPos,
+}));
