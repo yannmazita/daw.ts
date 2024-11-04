@@ -3,11 +3,15 @@
 import type { Action, ThunkAction } from '@reduxjs/toolkit';
 import { configureStore } from '@reduxjs/toolkit';
 import contextMenuReducer from '../common/slices/contextMenuSlice';
+import sequencerReducer from '../features/sequencer/slices/sequencerSlice';
+import trackReducer from '../features/sequencer/slices/trackSlice';
 import { commandMiddleware } from '../common/middleware/commandMiddleware';
 
 export const store = configureStore({
   reducer: {
     contextMenu: contextMenuReducer,
+    track: trackReducer,
+    sequencer: sequencerReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(commandMiddleware),
