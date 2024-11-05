@@ -1,6 +1,7 @@
 // src/features/sequencer/slices/sequencerSlice.ts
 
-import { createSlice, PayloadAction, createSelector } from '@reduxjs/toolkit';
+import { createSlice, PayloadAction, createSelector, createAsyncThunk } from '@reduxjs/toolkit';
+import { initializeTracks } from './trackSlice';
 import { SequenceStatus } from '@/core/enums/sequenceStatus';
 import { StepPosition } from '@/core/interfaces/sequencer';
 import { SequencerState } from '@/core/interfaces/sequencer';
@@ -133,4 +134,27 @@ export const selectNumSteps = createSelector(
 export const selectRightClickSelectionPosition = createSelector(
   selectSequencerState,
   (sequencer) => sequencer.structure.rightClickSelectionPosition
+);
+
+//Thunk
+export const setNumTracksAndUpdateSteps = createAsyncThunk(
+  'sequencer/setNumTracksAndUpdateSteps',
+  async (numTracks: number, { dispatch, getState }) => {
+    const state = getState() as RootState;
+    const currentNumSteps = state.sequencer.structure.numSteps;
+
+    dispatch(setNumTracks(numTracks));
+    dispatch(initializeTracks({ numTracks, numSteps: currentNumSteps }));
+  }
+);
+
+export const setNumStepsAndUpdateTracks = createAsyncThunk(
+  'sequencer/setNumStepsAndUpdateTracks',
+  async (numSteps: number, { dispatch, getState }) => {
+    const state = getState() as RootState;
+    const currentNumTracks = state.sequencer.structure.numTracks;
+
+    dispatch(setNumSteps(numSteps));
+    dispatch(initializeTracks({ numTracks: currentNumTracks, numSteps }));
+  }
 );

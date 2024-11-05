@@ -19,19 +19,16 @@ export const {
 
 export const {
   selectAllTracks,
-  selectTrackById,
-  selectTrackIds,
+  selectAllSteps,
+  selectStepsByTrackId,
   selectActiveTrack,
   selectEffectiveMutedTracks,
 } = fromTrack;
 
 // Create combined selectors
 export const selectCurrentStepData = createSelector(
-  [selectCurrentStep, selectAllTracks],
-  (currentStep, tracks) => tracks.map(track => ({
-    trackId: track.id,
-    stepData: track.steps[currentStep],
-  }))
+  [selectCurrentStep, selectAllSteps],
+  (currentStep, steps) => steps.filter(step => step.stepIndex === currentStep)
 );
 
 export const selectPlaybackWithTrackData = createSelector(
@@ -45,10 +42,15 @@ export const selectPlaybackWithTrackData = createSelector(
 );
 
 export const selectStructureWithActiveTrack = createSelector(
-  [selectNumTracks, selectNumSteps, selectActiveTrack],
-  (numTracks, numSteps, activeTrack) => ({
+  [selectNumTracks, selectNumSteps, fromTrack.selectActiveTrackId],
+  (numTracks, numSteps, activeTrackId) => ({
     numTracks,
     numSteps,
-    activeTrackId: activeTrack?.id,
+    activeTrackId,
   })
+);
+
+export const selectActiveStepsForCurrentStep = createSelector(
+  [selectCurrentStep, selectAllSteps],
+  (currentStep, steps) => steps.filter(step => step.stepIndex === currentStep && step.active)
 );
