@@ -1,6 +1,6 @@
 // src/features/sequencer/SequencerStepTracker.tsx
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import AppRangeBar from '@/common/components/AppRangeBar';
 import { SequenceStatus } from '@/core/enums/sequenceStatus';
 
@@ -24,7 +24,7 @@ const SequencerStepTracker: React.FC<SequencerStepTrackerProps> = ({ className }
   const [playbackStart] = useState(0);
   const playbackEnd = structureStore.state.numSteps;
 
-  const currentDisplayStep = (() => {
+  const currentDisplayStep = useMemo(() => {
     switch (playbackStore.state.status) {
       case SequenceStatus.Playing:
         return playbackStore.state.visualStep + 1;
@@ -34,16 +34,16 @@ const SequencerStepTracker: React.FC<SequencerStepTrackerProps> = ({ className }
       default:
         return 1;
     }
-  })();
+  }, [manualStep, playbackStore.state.status, playbackStore.state.visualStep]);
 
   const handleManualStepChange = useCallback((value: number) => {
     setManualStep(value);
     playbackManager.seekTo(value - 1);
   }, []);
 
-  const isLoopPoint = (step: number) => {
+  const isLoopPoint = useCallback((step: number) => {
     return step === playbackStart || step === playbackEnd - 1;
-  };
+  }, [playbackStart, playbackEnd]);
 
   useEffect(() => {
     if (playbackStore.state.status === SequenceStatus.Stopped) {
@@ -52,13 +52,25 @@ const SequencerStepTracker: React.FC<SequencerStepTrackerProps> = ({ className }
     } else if (playbackStore.state.status === SequenceStatus.Paused) {
       setManualStep(playbackStore.state.visualStep + 1);
     }
-  }, [playbackStore.state.status]);
+  }, [playbackStore.state.status, playbackStore.state.visualStep]);
 
   useEffect(() => {
     if (playbackStore.state.status !== SequenceStatus.Stopped) {
       setManualStep(playbackStore.state.visualStep + 1);
     }
-  }, [playbackStore.state.visualStep]);
+  }, [playbackStore.state.status, playbackStore.state.visualStep]);
+
+  const stepVisualization = useMemo(() => (
+    <div className="flex justify-center w-full mb-4">
+      {Array.from({ length: structureStore.state.numSteps }, (_, i) => i + 1).map((step) => (
+        <div
+          key={step}
+          className={`w-4 h-4 mx-1 rounded-full transition-all duration-150 ${step === currentDisplayStep ? 'bg-ts-blue' : 'bg-gray-300'
+            } ${isLoopPoint(step - 1) ? 'border-2 border-ts-blue' : ''}`}
+        />
+      ))}
+    </div>
+  ), [currentDisplayStep, isLoopPoint]);
 
   return (
     <div id="sequencer-step-tracker-container" className={`flex flex-col items-center p-4 ${className}`}>
@@ -66,17 +78,7 @@ const SequencerStepTracker: React.FC<SequencerStepTrackerProps> = ({ className }
         Step: {currentDisplayStep} / {structureStore.state.numSteps}
       </div>
 
-      <div className="flex justify-center w-full mb-4">
-        {Array.from({ length: structureStore.state.numSteps }, (_, i) => i + 1).map((step) => (
-          <div
-            key={step}
-            className={`w-4 h-4 mx-1 rounded-full transition-all duration-150 ${step === currentDisplayStep
-              ? 'bg-ts-blue'
-              : 'bg-gray-300'
-              } ${isLoopPoint(step - 1) ? 'border-2 border-ts-blue' : ''}`}
-          ></div>
-        ))}
-      </div>
+      {stepVisualization}
 
       <div className='w-full'>
         <AppRangeBar

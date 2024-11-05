@@ -1,6 +1,6 @@
-// SequencerSettings.tsx
+// src/features/sequencer/SequencerSettings.tsx
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import AppInput from '@/common/components/AppInput';
 
 // Mock store and manager
@@ -32,37 +32,37 @@ const SequencerSettings: React.FC<SequencerSettingsProps> = ({ className }) => {
   const [stepDuration, setStepDuration] = useState('16n');
   const [timeSignature, setTimeSignature] = useState('4/4');
 
-  const updateTracks = () => {
+  const updateTracks = useCallback(() => {
     const newTracks = parseInt(inputTracks);
     if (!isNaN(newTracks) && newTracks > 0) {
       trackManager.setNumTracks(newTracks);
     }
-  };
+  }, [inputTracks]);
 
-  const updateSteps = () => {
+  const updateSteps = useCallback(() => {
     const newSteps = parseInt(inputSteps);
     if (!isNaN(newSteps) && newSteps > 0) {
       trackManager.setNumSteps(newSteps);
     }
-  };
+  }, [inputSteps]);
 
-  const updateBpm = () => {
+  const updateBpm = useCallback(() => {
     const newBpm = parseInt(inputBpm);
     if (!isNaN(newBpm) && newBpm > 0) {
       playbackManager.setBpm(newBpm);
     }
-  };
+  }, [inputBpm]);
 
-  const updateStepDuration = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const updateStepDuration = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
     setStepDuration(e.target.value);
     playbackManager.setStepDuration(e.target.value);
-  };
+  }, []);
 
-  const updateTimeSignature = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const updateTimeSignature = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
     setTimeSignature(e.target.value);
     const [numerator, denominator] = e.target.value.split('/').map(Number);
     playbackManager.setTimeSignature(numerator, denominator);
-  };
+  }, []);
 
   return (
     <div id="sequencer-settings-container" className={`flex flex-col space-y-4 ${className}`}>
@@ -72,7 +72,7 @@ const SequencerSettings: React.FC<SequencerSettingsProps> = ({ className }) => {
             <span>Tracks:</span>
             <AppInput
               value={inputTracks}
-              onChange={(e) => setInputTracks(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInputTracks(e.target.value)}
               onBlur={updateTracks}
               className="input input-bordered input-sm w-12 text-center"
             />
@@ -81,7 +81,7 @@ const SequencerSettings: React.FC<SequencerSettingsProps> = ({ className }) => {
             <span>Steps:</span>
             <AppInput
               value={inputSteps}
-              onChange={(e) => setInputSteps(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInputSteps(e.target.value)}
               onBlur={updateSteps}
               className="input input-bordered input-sm w-12 text-center"
             />
@@ -90,7 +90,7 @@ const SequencerSettings: React.FC<SequencerSettingsProps> = ({ className }) => {
             <span>BPM:</span>
             <AppInput
               value={inputBpm}
-              onChange={(e) => setInputBpm(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInputBpm(e.target.value)}
               onBlur={updateBpm}
               className="input input-bordered input-sm w-12 text-center"
             />
