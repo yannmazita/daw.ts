@@ -1,7 +1,6 @@
 // src/core/interfaces/sequencer.ts
 
-import { SequencerTrack } from "@/features/sequencer/models/SequencerModels";
-import { SequenceStatus } from "../enums";
+import { InstrumentName, Note, SequenceStatus } from "../enums";
 
 /**
  * Represents a specific position within a sequencer, which could correspond to a particular
@@ -43,4 +42,24 @@ export interface SequencerState {
 export interface TrackState {
   activeTrackId: number | null;
   tracks: SequencerTrack[];
+  steps: SequencerStep[];
+}
+
+export interface SequencerStep {
+  id: string;
+  trackId: number;
+  stepIndex: number;
+  active: boolean;
+  note: Note;
+  velocity: number;
+}
+
+export interface SequencerTrack {
+  id: number;
+  muted: boolean;
+  solo: boolean;
+  effectiveMute: boolean;
+  commonVelocity: number | null;
+  commonNote: Note | null;
+  instrumentName: InstrumentName;
 }
