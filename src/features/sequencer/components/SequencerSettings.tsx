@@ -1,6 +1,6 @@
 // src/features/sequencer/SequencerSettings.tsx
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import AppInput from '@/common/components/AppInput';
 
 // Mock store and manager
@@ -27,10 +27,28 @@ interface SequencerSettingsProps {
 
 const SequencerSettings: React.FC<SequencerSettingsProps> = ({ className }) => {
   const [inputTracks, setInputTracks] = useState(structureStore.state.numTracks.toString());
-  const [inputSteps, setInputSteps] = useState(structureStore.state.numSteps.toString());
   const [inputBpm, setInputBpm] = useState(playbackStore.state.bpm.toString());
   const [stepDuration, setStepDuration] = useState('16n');
   const [timeSignature, setTimeSignature] = useState('4/4');
+  const [numSteps, setNumSteps] = useState(structureStore.state.numSteps);
+
+  const calculateNumSteps = useCallback(() => {
+    const [numerator, denominator] = timeSignature.split('/').map(Number);
+    const stepDurationMap: Record<string, number> = {
+      '4n': 1,
+      '8n': 2,
+      '16n': 4,
+      '32n': 8,
+    };
+    const stepsPerBar = numerator * stepDurationMap[stepDuration];
+    return stepsPerBar;
+  }, [timeSignature, stepDuration]);
+
+  useEffect(() => {
+    const newNumSteps = calculateNumSteps();
+    setNumSteps(newNumSteps);
+    trackManager.setNumSteps(newNumSteps);
+  }, [timeSignature, stepDuration, calculateNumSteps]);
 
   const updateTracks = useCallback(() => {
     const newTracks = parseInt(inputTracks);
@@ -38,13 +56,6 @@ const SequencerSettings: React.FC<SequencerSettingsProps> = ({ className }) => {
       trackManager.setNumTracks(newTracks);
     }
   }, [inputTracks]);
-
-  const updateSteps = useCallback(() => {
-    const newSteps = parseInt(inputSteps);
-    if (!isNaN(newSteps) && newSteps > 0) {
-      trackManager.setNumSteps(newSteps);
-    }
-  }, [inputSteps]);
 
   const updateBpm = useCallback(() => {
     const newBpm = parseInt(inputBpm);
@@ -78,13 +89,7 @@ const SequencerSettings: React.FC<SequencerSettingsProps> = ({ className }) => {
             />
           </div>
           <div>
-            <span>Steps:</span>
-            <AppInput
-              value={inputSteps}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInputSteps(e.target.value)}
-              onBlur={updateSteps}
-              className="input input-bordered input-sm w-12 text-center"
-            />
+            <span>Steps: {numSteps}</span>
           </div>
           <div>
             <span>BPM:</span>

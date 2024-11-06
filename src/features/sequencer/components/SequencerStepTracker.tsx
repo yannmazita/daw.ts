@@ -17,9 +17,10 @@ const playbackManager = {
 
 interface SequencerStepTrackerProps {
   className?: string;
+  numSteps: number;
 }
 
-const SequencerStepTracker: React.FC<SequencerStepTrackerProps> = ({ className }) => {
+const SequencerStepTracker: React.FC<SequencerStepTrackerProps> = ({ className, numSteps }) => {
   const [manualStep, setManualStep] = useState(1);
   const [playbackStart] = useState(0);
   const playbackEnd = structureStore.state.numSteps;
@@ -75,7 +76,7 @@ const SequencerStepTracker: React.FC<SequencerStepTrackerProps> = ({ className }
   return (
     <div id="sequencer-step-tracker-container" className={`flex flex-col items-center p-4 ${className}`}>
       <div className="text-2xl font-bold mb-2">
-        Step: {currentDisplayStep} / {structureStore.state.numSteps}
+        Step: {currentDisplayStep} / {numSteps}
       </div>
 
       {stepVisualization}
@@ -86,14 +87,14 @@ const SequencerStepTracker: React.FC<SequencerStepTrackerProps> = ({ className }
           onChange={handleManualStepChange}
           step={1}
           min={1}
-          max={structureStore.state.numSteps}
+          max={numSteps}
           className="w-full"
         />
       </div>
 
       <div className="flex justify-between w-full mt-2 text-sm">
         <span>Start: {playbackStart + 1}</span>
-        <span>End: {playbackEnd}</span>
+        <span>End: {numSteps}</span>
       </div>
     </div>
   );
