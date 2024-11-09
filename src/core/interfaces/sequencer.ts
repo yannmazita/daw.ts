@@ -1,6 +1,6 @@
 // src/core/interfaces/sequencer.ts
 
-import { InstrumentName, Note, SequenceStatus } from "../enums";
+import { InstrumentName, Note, SequenceStatus } from '../enums';
 
 /**
  * Represents a specific position within a sequencer, which could correspond to a particular
@@ -14,52 +14,37 @@ export interface StepPosition {
   stepIndex: number;
 }
 
-export interface PlaybackState {
-  status: SequenceStatus;
-  bpm: number;
-  currentStep: number;
-  visualStep: number;
-  stepDuration: string;
-  timeSignature: [number, number];
-}
-
-export interface SequencerState {
-  playback: {
-    status: SequenceStatus;
-    bpm: number;
-    currentStep: number;
-    visualStep: number;
-    stepDuration: string;
-    timeSignature: [number, number];
-  };
-  structure: {
-    numTracks: number;
-    numSteps: number;
-    rightClickSelectionPosition: StepPosition;
-  };
-}
-
-export interface TrackState {
-  activeTrackId: number | null;
-  tracks: SequencerTrack[];
-  steps: SequencerStep[];
-}
-
 export interface SequencerStep {
-  id: string;
-  trackId: number;
+  trackIndex: number;
   stepIndex: number;
   active: boolean;
   note: Note;
   velocity: number;
 }
 
-export interface SequencerTrack {
-  id: number;
+export interface SequencerTrackInfo {
+  trackIndex: number;
+  instrumentId: string;
+  //InstrumentName: InstrumentName;
   muted: boolean;
   solo: boolean;
-  effectiveMute: boolean;
+  timeSignature: [number, number];
+  stepDuration: string;
+  bpm: number;
   commonVelocity: number | null;
   commonNote: Note | null;
-  instrumentName: InstrumentName;
+}
+
+export interface SequencerPlayback {
+  status: SequenceStatus;
+  currentStep: number;
+  visualStep: number;
+}
+
+export interface SequencerState {
+  status: SequenceStatus;
+  steps: SequencerStep[];
+  trackInfo: SequencerTrackInfo[];
+  globalBpm: number;
+  currentStep: number;
 }

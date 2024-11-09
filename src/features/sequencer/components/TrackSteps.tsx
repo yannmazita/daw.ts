@@ -4,25 +4,13 @@ import React from 'react';
 
 interface TrackStepsProps {
   trackId: number;
-  steps: any[];
-  currentStep: number;
-  isMuted: boolean;
-  isSolo: boolean;
-  onToggleStep: (trackId: number, stepIndex: number) => void;
-  getStepActive: (trackId: number, stepIndex: number) => boolean;
 }
 
 const TrackSteps: React.FC<TrackStepsProps> = ({
   trackId,
-  steps,
-  currentStep,
-  isMuted,
-  isSolo,
-  onToggleStep,
-  getStepActive,
 }) => {
   return (
-    <div className="track-steps flex-grow flex">
+    <div className='flex'>
       {steps.map((_, stepIndex) => (
         <div
           key={stepIndex}

@@ -1,10 +1,12 @@
 // src/features/sequencer/SequencerTracks.tsx
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import SequencerStepTracker from './SequencerStepTracker';
-import SequencerPlaybackControls from './SequencerPlaybackControls';
 import '../styles/style.css';
 import Track from './Track';
+
+interface SequencerTracksProps {
+  className?: string;
+}
 
 // Mock managers and stores
 const trackManager = {
@@ -37,7 +39,7 @@ const structureStore = {
   state: { numSteps: 16 },
 };
 
-const SequencerTracks: React.FC = () => {
+const SequencerTracks: React.FC<SequencerTracksProps> = ({ className }) => {
   const [numSteps, setNumSteps] = useState(structureStore.state.numSteps);  // Mockup, may use redux reducer later
 
   useEffect(() => {
@@ -66,32 +68,17 @@ const SequencerTracks: React.FC = () => {
       <Track
         key={track.id}
         track={track}
-        currentStep={playbackStore.state.visualStep}
-        onToggleMute={handleToggleMute}
-        onToggleSolo={handleToggleSolo}
-        onToggleStep={handleToggleStep}
-        getTrackMuted={trackManager.getTrackMuted}
-        getTrackSolo={trackManager.getTrackSolo}
-        getStepActive={trackManager.getStepActive}
       />
     )), [handleToggleMute, handleToggleSolo, handleToggleStep]);
 
- return (
-    <div id="sequencer-tracks-container" className="flex flex-col">
-      <div className="flex">
-        <div className="min-w-20 w-20 flex-shrink-0"></div>
-        <SequencerStepTracker className="flex-grow" numSteps={numSteps} />
-      </div>
-      <div className="sequencer-scrollable-container">
-        <div className="sequencer-content" style={{ width: `${contentWidth}px` }}>
-          <div className="flex flex-col w-full">
+  return (
+    <div id='sequencer-tracks-wrapper' className={`${className} flex flex-col bg-cyan-800`}>
+      <div className='sequencer-scrollable-container'>
+        <div className='sequencer-content' style={{ width: `${contentWidth}px` }}>
+          <div className='flex flex-col w-full'>
             {trackElements}
           </div>
         </div>
-      </div>
-      <div className="flex">
-        <div className="min-w-20 w-20 flex-shrink-0"></div>
-        <SequencerPlaybackControls className="flex-grow" />
       </div>
     </div>
   );

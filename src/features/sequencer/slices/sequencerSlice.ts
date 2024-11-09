@@ -1,89 +1,80 @@
 // src/features/sequencer/slices/sequencerSlice.ts
 
 import { createSlice, PayloadAction, createSelector, createAsyncThunk } from '@reduxjs/toolkit';
-import { initializeTracks } from './trackSlice';
-import { SequenceStatus } from '@/core/enums/sequenceStatus';
-import { StepPosition } from '@/core/interfaces/sequencer';
-import { SequencerState } from '@/core/interfaces/sequencer';
-import { RootState } from '@/store';
+import { SequencerState, SequencerTrackInfo, SequencerStep } from '@/core/interfaces/sequencer';
+import { RootState, AppDispatch } from '@/store';
+import { InstrumentName, Note, SequenceStatus } from '@/core/enums';
+import { Instrument } from '@/core/types';
+import { instrumentManager } from '@/common/services/instrumentManagerInstance';
+
+interface UpdateTrackResult {
+  updatedTrackInfo: SequencerTrackInfo;
+  updatedSteps: SequencerStep[];
+}
 
 const initialState: SequencerState = {
-  playback: {
-    status: SequenceStatus.Stopped,
-    bpm: 120,
-    currentStep: 0,
-    visualStep: 0,
-    stepDuration: '16n',
-    timeSignature: [4, 4],
-  },
-  structure: {
-    numTracks: 4,
-    numSteps: 16,
-    rightClickSelectionPosition: { trackIndex: -1, stepIndex: -1 },
-  },
+  status: SequenceStatus.Stopped,
+  steps: [],
+  trackInfo: [],
+  globalBpm: 120,
+  currentStep: 0,
 };
 
 const sequencerSlice = createSlice({
   name: 'sequencer',
   initialState,
   reducers: {
-    setPlaybackStatus: (state, action: PayloadAction<SequenceStatus>) => {
-      state.playback.status = action.payload;
+    setStatus: (state, action: PayloadAction<SequenceStatus>) => {
+      state.status = action.payload;
     },
-    setBpm: (state, action: PayloadAction<number>) => {
-      if (action.payload > 0) {
-        state.playback.bpm = action.payload;
+    setGlobalBpm: (state, action: PayloadAction<number>) => {
+      state.globalBpm = action.payload;
+    },
+    addTrack: (state, action: PayloadAction<SequencerTrackInfo>) => {
+      state.trackInfo.push(action.payload);
+    },
+    updateTrackInfo: (state, action: PayloadAction<Partial<SequencerTrackInfo> & { trackIndex: number }>) => {
+      const trackIndex = state.trackInfo.findIndex(track => track.trackIndex === action.payload.trackIndex);
+      if (trackIndex !== -1) {
+        state.trackInfo[trackIndex] = { ...state.trackInfo[trackIndex], ...action.payload };
       }
+    },
+    setStep: (state, action: PayloadAction<SequencerStep>) => {
+      const { trackIndex, stepIndex } = action.payload;
+      const index = state.steps.findIndex(
+        step => step.trackIndex === trackIndex && step.stepIndex === stepIndex
+      );
+      if (index !== -1) {
+        state.steps[index] = action.payload;
+      } else {
+        state.steps.push(action.payload);
+      }
+    },
+    setSteps: (state, action: PayloadAction<SequencerStep[]>) => {
+      state.steps = action.payload;
     },
     setCurrentStep: (state, action: PayloadAction<number>) => {
-      state.playback.currentStep = action.payload;
+      state.currentStep = action.payload;
     },
-    setVisualStep: (state, action: PayloadAction<number>) => {
-      state.playback.visualStep = action.payload;
-    },
-    setStepDuration: (state, action: PayloadAction<string>) => {
-      if (/^\d+n$/.test(action.payload)) {
-        state.playback.stepDuration = action.payload;
-      }
-    },
-    setTimeSignature: (state, action: PayloadAction<[number, number]>) => {
-      const [numerator, denominator] = action.payload;
-      if (numerator > 0 && denominator > 0) {
-        state.playback.timeSignature = [numerator, denominator];
-      }
-    },
-    setNumTracks: (state, action: PayloadAction<number>) => {
-      if (action.payload > 0) {
-        state.structure.numTracks = action.payload;
-      }
-    },
-    setNumSteps: (state, action: PayloadAction<number>) => {
-      if (action.payload >= 3) {
-        state.structure.numSteps = action.payload;
-      }
-    },
-    setRightClickSelectionPosition: (state, action: PayloadAction<StepPosition>) => {
-      const { trackIndex, stepIndex } = action.payload;
-      if (
-        trackIndex >= -1 && trackIndex < state.structure.numTracks &&
-        stepIndex >= -1 && stepIndex < state.structure.numSteps
-      ) {
-        state.structure.rightClickSelectionPosition = action.payload;
+    setTrackInstrument: (state, action: PayloadAction<{ trackIndex: number; instrumentId: string; instrumentName: InstrumentName }>) => {
+      const track = state.trackInfo.find(t => t.trackIndex === action.payload.trackIndex);
+      if (track) {
+        track.instrumentId = action.payload.instrumentId;
+        //track.instrumentName = action.payload.instrumentName;
       }
     },
   },
 });
 
 export const {
-  setPlaybackStatus,
-  setBpm,
+  setStatus,
+  setGlobalBpm,
+  addTrack,
+  updateTrackInfo,
+  setStep,
+  setSteps,
   setCurrentStep,
-  setVisualStep,
-  setStepDuration,
-  setTimeSignature,
-  setNumTracks,
-  setNumSteps,
-  setRightClickSelectionPosition,
+  setTrackInstrument,
 } = sequencerSlice.actions;
 
 export default sequencerSlice.reducer;
@@ -91,70 +82,108 @@ export default sequencerSlice.reducer;
 // Selectors
 const selectSequencerState = (state: RootState) => state.sequencer;
 
-export const selectPlaybackStatus = createSelector(
+export const selectStatus = createSelector(
   selectSequencerState,
-  (sequencer) => sequencer.playback.status
+  (sequencer) => sequencer.status
 );
 
-export const selectBpm = createSelector(
+export const selectGlobalBpm = createSelector(
   selectSequencerState,
-  (sequencer) => sequencer.playback.bpm
+  (sequencer) => sequencer.globalBpm
+);
+
+export const selectTrackInfo = createSelector(
+  selectSequencerState,
+  (sequencer) => sequencer.trackInfo
+);
+
+export const selectSteps = createSelector(
+  selectSequencerState,
+  (sequencer) => sequencer.steps
 );
 
 export const selectCurrentStep = createSelector(
   selectSequencerState,
-  (sequencer) => sequencer.playback.currentStep
+  (sequencer) => sequencer.currentStep
 );
 
-export const selectVisualStep = createSelector(
-  selectSequencerState,
-  (sequencer) => sequencer.playback.visualStep
-);
+// Utility function to calculate number of steps based on time signature and step duration
+export const calculateSteps = (timeSignature: [number, number], stepDuration: string): number => {
+  const [numerator, denominator] = timeSignature;
+  const stepDurationMap: Record<string, number> = {
+    '4n': 1,
+    '8n': 2,
+    '16n': 4,
+    '32n': 8,
+  };
+  return numerator * stepDurationMap[stepDuration];
+};
 
-export const selectStepDuration = createSelector(
-  selectSequencerState,
-  (sequencer) => sequencer.playback.stepDuration
-);
+// Thunk to update track info and recalculate steps
+export const updateTrackInfoAndSteps = createAsyncThunk<
+  UpdateTrackResult,
+  Partial<SequencerTrackInfo> & { trackIndex: number },
+  { state: RootState; dispatch: AppDispatch }
+>(
+  'sequencer/updateTrackInfoAndSteps',
+  async (trackInfo, { getState, dispatch }) => {
+    dispatch(updateTrackInfo(trackInfo));
 
-export const selectTimeSignature = createSelector(
-  selectSequencerState,
-  (sequencer) => sequencer.playback.timeSignature
-);
+    const state = getState();
+    const updatedTrackInfo = selectTrackInfo(state).find(t => t.trackIndex === trackInfo.trackIndex);
 
-export const selectNumTracks = createSelector(
-  selectSequencerState,
-  (sequencer) => sequencer.structure.numTracks
-);
+    if (!updatedTrackInfo) {
+      throw new Error(`Track with index ${trackInfo.trackIndex} not found`);
+    }
 
-export const selectNumSteps = createSelector(
-  selectSequencerState,
-  (sequencer) => sequencer.structure.numSteps
-);
+    let updatedSteps: SequencerStep[] = [];
 
-export const selectRightClickSelectionPosition = createSelector(
-  selectSequencerState,
-  (sequencer) => sequencer.structure.rightClickSelectionPosition
-);
+    if (trackInfo.timeSignature || trackInfo.stepDuration) {
+      const newStepCount = calculateSteps(
+        trackInfo.timeSignature ?? updatedTrackInfo.timeSignature,
+        trackInfo.stepDuration ?? updatedTrackInfo.stepDuration
+      );
 
-//Thunk
-export const setNumTracksAndUpdateSteps = createAsyncThunk(
-  'sequencer/setNumTracksAndUpdateSteps',
-  async (numTracks: number, { dispatch, getState }) => {
-    const state = getState() as RootState;
-    const currentNumSteps = state.sequencer.structure.numSteps;
+      // Update steps for this track
+      const currentSteps = selectSteps(state).filter(s => s.trackIndex === trackInfo.trackIndex);
+      if (currentSteps.length > newStepCount) {
+        // Remove excess steps
+        updatedSteps = currentSteps.slice(0, newStepCount);
+      } else if (currentSteps.length < newStepCount) {
+        // Add new steps
+        const newSteps = Array.from({ length: newStepCount - currentSteps.length }, (_, i) => ({
+          trackIndex: trackInfo.trackIndex,
+          stepIndex: currentSteps.length + i,
+          active: false,
+          note: updatedTrackInfo.commonNote ?? Note.C4,
+          velocity: updatedTrackInfo.commonVelocity ?? 100,
+        }));
+        updatedSteps = [...currentSteps, ...newSteps];
+      } else {
+        updatedSteps = currentSteps;
+      }
 
-    dispatch(setNumTracks(numTracks));
-    dispatch(initializeTracks({ numTracks, numSteps: currentNumSteps }));
+      dispatch(setSteps(updatedSteps));
+    } else {
+      updatedSteps = selectSteps(state).filter(s => s.trackIndex === trackInfo.trackIndex);
+    }
+
+    return {
+      updatedTrackInfo,
+      updatedSteps,
+    };
   }
 );
 
-export const setNumStepsAndUpdateTracks = createAsyncThunk(
-  'sequencer/setNumStepsAndUpdateTracks',
-  async (numSteps: number, { dispatch, getState }) => {
-    const state = getState() as RootState;
-    const currentNumTracks = state.sequencer.structure.numTracks;
-
-    dispatch(setNumSteps(numSteps));
-    dispatch(initializeTracks({ numTracks: currentNumTracks, numSteps }));
+export const setTrackInstrumentThunk = createAsyncThunk<
+  void,
+  { trackIndex: number; instrument: Instrument },
+  { state: RootState; dispatch: AppDispatch }
+>(
+  'sequencer/setTrackInstrumentThunk',
+  async ({ trackIndex, instrument }, { dispatch }) => {
+    const instrumentId = `instrument_${trackIndex}_${Date.now()}`;
+    instrumentManager.addInstrument(instrumentId, instrument);
+    dispatch(setTrackInstrument({ trackIndex, instrumentId, instrumentName: InstrumentName[instrument.name as keyof typeof InstrumentName] }));
   }
 );

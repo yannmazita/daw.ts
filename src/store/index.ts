@@ -6,6 +6,7 @@ import contextMenuReducer from '../common/slices/contextMenuSlice';
 import sequencerReducer from '../features/sequencer/slices/sequencerSlice';
 import trackReducer from '../features/sequencer/slices/trackSlice';
 import { commandMiddleware } from '../common/middleware/commandMiddleware';
+import { instrumentMiddleware } from '@/common/middleware/instrumentMiddleware';
 
 export const store = configureStore({
   reducer: {
@@ -14,7 +15,7 @@ export const store = configureStore({
     sequencer: sequencerReducer,
   },
   middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware().concat(commandMiddleware),
+    getDefaultMiddleware().concat(commandMiddleware).concat(instrumentMiddleware),
 });
 
 export type AppStore = typeof store;

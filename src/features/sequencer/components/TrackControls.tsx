@@ -10,6 +10,7 @@ interface TrackControlsProps {
   onToggleSolo: (trackId: number) => void;
 }
 
+// 72px width + 8px right margin
 const TrackControls: React.FC<TrackControlsProps> = ({
   trackId,
   isMuted,
@@ -18,7 +19,7 @@ const TrackControls: React.FC<TrackControlsProps> = ({
   onToggleSolo,
 }) => {
   return (
-    <div className="min-w-[72px] w-[72px] mr-2 flex-shrink-0 flex items-center space-x-2 hover:opacity-100 opacity-70 transition ease-in-out duration-150">
+    <div className='min-w-[72px] w-[72px] mr-2 flex-shrink-0 flex items-center space-x-2 hover:opacity-100 opacity-70 transition ease-in-out duration-150'>
       <button
         onClick={() => onToggleMute(trackId)}
         className={`w-8 h-8 rounded-full focus:outline-none transition-colors duration-150 ${isMuted ? 'bg-red-500' : 'bg-gray-300'

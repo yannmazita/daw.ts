@@ -1,17 +1,14 @@
 // src/features/components/Sequencer.tsx
 
 import React from 'react';
-import SequencerSettings from './SequencerSettings';
 import SequencerTracks from './SequencerTracks';
+import SequencerTrackSettings from './SequencerTrackSettings';
 
 const Sequencer: React.FC = () => {
   return (
-    <div id="sequencer-container" className="flex flex-col p-4">
-      <h2 className="text-2xl font-bold mb-4">Sequencer</h2>
-      <SequencerSettings className="mb-4" />
-      <div className="sequencer-tracks-wrapper overflow-x-auto overscroll-y-auto max-h-[60vh]">
-        <SequencerTracks />
-      </div>
+    <div id='sequencer-wrapper' className='grid grid-cols-3'>
+        <SequencerTrackSettings className='col-span-1'/>
+        <SequencerTracks className='col-span-2'/>
     </div>
   );
 };
