@@ -63,6 +63,15 @@ const sequencerSlice = createSlice({
         //track.instrumentName = action.payload.instrumentName;
       }
     },
+    toggleStep: (state, action: PayloadAction<{ trackIndex: number; stepIndex: number }>) => {
+      const { trackIndex, stepIndex } = action.payload;
+      const stepToToggle = state.steps.find(
+        step => step.trackIndex === trackIndex && step.stepIndex === stepIndex
+      );
+      if (stepToToggle) {
+        stepToToggle.active = !stepToToggle.active;
+      }
+    },
   },
 });
 
@@ -75,6 +84,7 @@ export const {
   setSteps,
   setCurrentStep,
   setTrackInstrument,
+  toggleStep,
 } = sequencerSlice.actions;
 
 export default sequencerSlice.reducer;
@@ -105,6 +115,22 @@ export const selectSteps = createSelector(
 export const selectCurrentStep = createSelector(
   selectSequencerState,
   (sequencer) => sequencer.currentStep
+);
+
+export const selectMaxTrackLength = createSelector(
+  selectSequencerState,
+  (sequencer) => {
+    const trackLengths = sequencer.trackInfo.map(track => {
+      const steps = sequencer.steps.filter(step => step.trackIndex === track.trackIndex);
+      return steps.length;
+    });
+    return Math.max(...trackLengths);
+  }
+);
+
+export const selectStepsByTrack = (trackIndex: number) => createSelector(
+  selectSequencerState,
+  (sequencer) => sequencer.steps.filter(step => step.trackIndex === trackIndex)
 );
 
 // Utility function to calculate number of steps based on time signature and step duration
