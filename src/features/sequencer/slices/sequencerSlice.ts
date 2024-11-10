@@ -1,5 +1,6 @@
 // src/features/sequencer/slices/sequencerSlice.ts
 
+import * as Tone from 'tone';
 import { createSlice, PayloadAction, createSelector, createAsyncThunk } from '@reduxjs/toolkit';
 import { SequencerState, SequencerTrackInfo, SequencerStep } from '@/core/interfaces/sequencer';
 import { RootState, AppDispatch } from '@/store';
@@ -72,6 +73,31 @@ const sequencerSlice = createSlice({
         stepToToggle.active = !stepToToggle.active;
       }
     },
+    initializeTracks: (state, action: PayloadAction<number>) => {
+      const numTracks = action.payload;
+      state.trackInfo = Array.from({ length: numTracks }, (_, index) => ({
+        trackIndex: index,
+        instrumentId: '',
+        muted: false,
+        solo: false,
+        timeSignature: [4, 4],
+        stepDuration: '16n',
+        bpm: state.globalBpm,
+        commonVelocity: 100,
+        commonNote: Note.C4,
+      }));
+
+      // Initialize steps for each track
+      state.steps = state.trackInfo.flatMap(track =>
+        Array.from({ length: 16 }, (_, stepIndex) => ({
+          trackIndex: track.trackIndex,
+          stepIndex,
+          active: false,
+          note: track.commonNote ?? Note.C4,
+          velocity: track.commonVelocity ?? 100,
+        }))
+      );
+    },
   },
 });
 
@@ -85,6 +111,7 @@ export const {
   setCurrentStep,
   setTrackInstrument,
   toggleStep,
+  initializeTracks,
 } = sequencerSlice.actions;
 
 export default sequencerSlice.reducer;
@@ -211,5 +238,28 @@ export const setTrackInstrumentThunk = createAsyncThunk<
     const instrumentId = `instrument_${trackIndex}_${Date.now()}`;
     instrumentManager.addInstrument(instrumentId, instrument);
     dispatch(setTrackInstrument({ trackIndex, instrumentId, instrumentName: InstrumentName[instrument.name as keyof typeof InstrumentName] }));
+  }
+);
+
+export const initializeSequencer = createAsyncThunk<
+  void,
+  number,
+  { state: RootState; dispatch: AppDispatch }
+>(
+  'sequencer/initializeSequencer',
+  async (numTracks, { dispatch }) => {
+    dispatch(initializeTracks(numTracks));
+
+    // Assign default instruments to tracks
+    for (let i = 0; i < numTracks; i++) {
+      const instrumentId = `instrument_${i}_${Date.now()}`;
+      const defaultInstrument = new Tone.Synth().toDestination();
+      instrumentManager.addInstrument(instrumentId, defaultInstrument);
+      dispatch(setTrackInstrument({
+        trackIndex: i,
+        instrumentId,
+        instrumentName: InstrumentName.Synth
+      }));
+    }
   }
 );
