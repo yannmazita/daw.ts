@@ -3,7 +3,6 @@
 import React, { useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { selectStepsByTrack, selectCurrentStep, selectTrackInfo, toggleStep } from '../slices/sequencerSlice';
-import { RootState } from '@/store';
 
 interface TrackStepsProps {
   trackIndex: number;
@@ -12,19 +11,19 @@ interface TrackStepsProps {
 const TrackSteps: React.FC<TrackStepsProps> = ({ trackIndex }) => {
   const dispatch = useDispatch();
   const trackInfo = useSelector(selectTrackInfo);
-  const selectStepsForTrack = useCallback(
-    (state: RootState) => selectStepsByTrack(trackIndex)(state),
-    [trackIndex]
-  );
-  const steps = useSelector(selectStepsForTrack);
+  const steps = useSelector(selectStepsByTrack(trackIndex));
   const currentStep = useSelector(selectCurrentStep);
+
+  const handleStepClick = useCallback((stepIndex: number) => {
+    dispatch(toggleStep({ trackIndex, stepIndex }));
+  }, [dispatch, trackIndex]);
 
   return (
     <div className='flex'>
       {steps.map((step, stepIndex) => (
         <div
           key={stepIndex}
-          onClick={() => dispatch(toggleStep({ trackIndex, stepIndex }))}
+          onClick={() => handleStepClick(stepIndex)}
           className={`min-w-8 w-8 h-8 m-0.5 cursor-pointer transition-all duration-150 ${step.active ? 'bg-ts-blue' : 'bg-gray-200'
             } ${stepIndex === currentStep ? 'ring-2 ring-yellow-400' : ''} ${trackInfo[trackIndex].muted && !trackInfo[trackIndex].solo ? 'opacity-50' : ''
             }`}
@@ -35,4 +34,4 @@ const TrackSteps: React.FC<TrackStepsProps> = ({ trackIndex }) => {
   );
 };
 
-export default TrackSteps;
+export default React.memo(TrackSteps);
