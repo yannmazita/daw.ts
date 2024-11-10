@@ -2,21 +2,19 @@
 
 import React from 'react';
 import TrackSteps from './TrackSteps';
+import { SequencerTrackInfo } from '@/core/interfaces';
 
 interface TrackProps {
-  track: {
-    id: number;
-    steps: any[];
-  };
+  trackInfo: SequencerTrackInfo;
 }
 
 const Track: React.FC<TrackProps> = ({
-  track,
+  trackInfo,
 }) => {
   return (
-    <div id={`sequencer-track-${track.id}`} className='flex items-center hover:opacity-100'>
+    <div id={`sequencer-track-${trackInfo.trackIndex}`} className='flex items-center hover:opacity-100'>
       <TrackSteps
-        trackId={track.id}
+        trackIndex={trackInfo.trackIndex}
       />
     </div>
   );
