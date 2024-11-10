@@ -35,9 +35,16 @@ const sequencerSlice = createSlice({
       state.trackInfo.push(action.payload);
     },
     updateTrackInfo: (state, action: PayloadAction<Partial<SequencerTrackInfo> & { trackIndex: number }>) => {
-      const trackIndex = state.trackInfo.findIndex(track => track.trackIndex === action.payload.trackIndex);
-      if (trackIndex !== -1) {
-        state.trackInfo[trackIndex] = { ...state.trackInfo[trackIndex], ...action.payload };
+      const { trackIndex, ...updates } = action.payload;
+      const trackToUpdate = state.trackInfo.find(track => track.trackIndex === trackIndex);
+      if (trackToUpdate) {
+        Object.assign(trackToUpdate, updates);
+        if (updates.timeSignature || updates.stepDuration) {
+          trackToUpdate.stepsPerMeasure = calculateStepsPerMeasure(
+            updates.timeSignature ?? trackToUpdate.timeSignature,
+            updates.stepDuration ?? trackToUpdate.stepDuration
+          );
+        }
       }
     },
     setStep: (state, action: PayloadAction<SequencerStep>) => {
@@ -82,6 +89,7 @@ const sequencerSlice = createSlice({
         solo: false,
         timeSignature: [4, 4],
         stepDuration: '16n',
+        stepsPerMeasure: 16,
         bpm: state.globalBpm,
         commonVelocity: 100,
         commonNote: Note.C4,
@@ -161,6 +169,20 @@ export const selectStepsByTrack = (trackIndex: number) => createSelector(
   selectSequencerState,
   (sequencer) => sequencer.steps.filter(step => step.trackIndex === trackIndex)
 );
+
+// Utility function to calculate number of steps per measure based on time signature
+const calculateStepsPerMeasure = (timeSignature: [number, number], stepDuration: string): number => {
+  const [numerator, denominator] = timeSignature;
+  const stepDurationMap: Record<string, number> = {
+    '1n': 1,
+    '2n': 2,
+    '4n': 4,
+    '8n': 8,
+    '16n': 16,
+    '32n': 32
+  };
+  return (numerator * stepDurationMap[stepDuration]) / (denominator / 4);
+};
 
 // Utility function to calculate number of steps based on time signature and step duration
 export const calculateSteps = (timeSignature: [number, number], stepDuration: string): number => {

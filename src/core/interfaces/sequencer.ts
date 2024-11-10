@@ -32,6 +32,7 @@ export interface SequencerTrackInfo {
   solo: boolean;
   timeSignature: [number, number];
   stepDuration: string;
+  stepsPerMeasure: number;
   bpm: number;
   commonVelocity: number | null;
   commonNote: Note | null;
