@@ -20,6 +20,8 @@ export interface SequencerStep {
   active: boolean;
   note: Note;
   velocity: number;
+  modulation: number;
+  pitchBend: number;
 }
 
 export interface SequencerTrackInfo {

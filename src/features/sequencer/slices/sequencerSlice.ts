@@ -95,6 +95,8 @@ const sequencerSlice = createSlice({
           active: false,
           note: track.commonNote ?? Note.C4,
           velocity: track.commonVelocity ?? 100,
+          modulation: 0,
+          pitchBend: 0,
         }))
       );
     },
