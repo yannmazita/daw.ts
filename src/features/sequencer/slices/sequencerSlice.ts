@@ -44,22 +44,23 @@ const sequencerSlice = createSlice({
             updates.timeSignature ?? trackToUpdate.timeSignature,
             updates.stepDuration ?? trackToUpdate.stepDuration
           );
+          if (updates.loopStart !== undefined && updates.loopStart >= trackToUpdate.loopEnd) {
+            trackToUpdate.loopEnd = updates.loopStart + 1;
+          }
+          if (updates.loopEnd !== undefined && updates.loopEnd <= trackToUpdate.loopStart) {
+            trackToUpdate.loopStart = updates.loopEnd - 1;
+          }
         }
       }
     },
-    setStep: (state, action: PayloadAction<SequencerStep>) => {
-      const { trackIndex, stepIndex } = action.payload;
-      const index = state.steps.findIndex(
-        step => step.trackIndex === trackIndex && step.stepIndex === stepIndex
-      );
-      if (index !== -1) {
-        state.steps[index] = action.payload;
-      } else {
-        state.steps.push(action.payload);
-      }
-    },
-    setSteps: (state, action: PayloadAction<SequencerStep[]>) => {
-      state.steps = action.payload;
+    updateStepsForTrack: (state, action: PayloadAction<{ trackIndex: number, updatedSteps: SequencerStep[] }>) => {
+      const { trackIndex, updatedSteps } = action.payload;
+
+      // Remove existing steps for the track
+      state.steps = state.steps.filter(step => step.trackIndex !== trackIndex);
+
+      // Add the updated steps
+      state.steps = [...state.steps, ...updatedSteps];
     },
     setCurrentStep: (state, action: PayloadAction<number>) => {
       state.currentStep = action.payload;
@@ -88,11 +89,13 @@ const sequencerSlice = createSlice({
         muted: false,
         solo: false,
         timeSignature: [4, 4],
-        stepDuration: '16n',
+        stepDuration: '4n',
         stepsPerMeasure: 16,
         bpm: state.globalBpm,
         commonVelocity: 100,
         commonNote: Note.C4,
+        loopStart: 0,
+        loopEnd: 15,
       }));
 
       // Initialize steps for each track
@@ -116,8 +119,7 @@ export const {
   setGlobalBpm,
   addTrack,
   updateTrackInfo,
-  setStep,
-  setSteps,
+  updateStepsForTrack,
   setCurrentStep,
   setTrackInstrument,
   toggleStep,
