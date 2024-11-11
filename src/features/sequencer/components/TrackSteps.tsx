@@ -24,7 +24,7 @@ const TrackSteps: React.FC<TrackStepsProps> = ({ trackIndex }) => {
         return (
           <div
             key={index}
-            className={`min-w-8 w-8 h-8 m-0.5 transition-all duration-150 
+            className={`min-w-8 w-8 h-8 m-0.5
               ${step.active ? 'bg-ts-blue' : 'bg-gray-200'}
               ${index === currentStep ? 'ring-2 ring-yellow-400' : ''}
               ${index % 4 === 0 ? 'border-l-2 border-gray-400' : ''}
