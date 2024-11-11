@@ -1,44 +1,41 @@
 // src/features/sequencer/components/LoopStepEditor.tsx
 
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import {
-  selectStepsByTrack,
   selectTrackInfo,
+  selectAllSteps,
   updateStepsForTrack,
   updateTrackInfo
 } from '../slices/sequencerSlice';
 import AppInput from '@/common/components/AppInput';
 
-interface LoopStepEditorProps {
-  trackIndex: number;
-}
-
-const LoopStepEditor: React.FC<LoopStepEditorProps> = ({ trackIndex }) => {
+const LoopStepEditor: React.FC = () => {
   const dispatch = useDispatch();
-  const steps = useSelector(selectStepsByTrack(trackIndex));
-  const trackInfo = useSelector(selectTrackInfo)[trackIndex];
+  const allSteps = useSelector(selectAllSteps);
+  const allTrackInfo = useSelector(selectTrackInfo);
 
   const [displayedSteps, setDisplayedSteps] = useState(16);
 
-  useEffect(() => {
-    setDisplayedSteps(16);
-  }, [trackIndex]);
-
   const visibleSteps = useMemo(() => {
-    return Array.from({ length: displayedSteps }, (_, index) => {
-      return steps.find(s => s.stepIndex === index) ?? { active: false, trackIndex, stepIndex: index };
+    return allTrackInfo.map(track => {
+      const trackSteps = allSteps.filter(step => step.trackIndex === track.trackIndex);
+      return Array.from({ length: displayedSteps }, (_, index) => {
+        return trackSteps.find(s => s.stepIndex === index) ?? { active: false, trackIndex: track.trackIndex, stepIndex: index };
+      });
     });
-  }, [steps, displayedSteps, trackIndex]);
+  }, [allSteps, allTrackInfo, displayedSteps]);
 
-  const handleStepToggle = useCallback((stepIndex: number) => {
+  const handleStepToggle = useCallback((trackIndex: number, stepIndex: number) => {
+    const trackInfo = allTrackInfo[trackIndex];
     if (stepIndex > trackInfo.loopEnd) return;
 
     const { loopStart, loopEnd } = trackInfo;
     const loopLength = loopEnd - loopStart + 1;
-    const newActive = !visibleSteps[stepIndex].active;
+    const trackSteps = allSteps.filter(step => step.trackIndex === trackIndex);
+    const newActive = !visibleSteps[trackIndex][stepIndex].active;
 
-    const updatedSteps = steps.map(step => {
+    const updatedSteps = trackSteps.map(step => {
       if (step.trackIndex === trackIndex) {
         const relativeIndex = (step.stepIndex - loopStart + loopLength) % loopLength;
         if (relativeIndex === (stepIndex - loopStart + loopLength) % loopLength) {
@@ -49,42 +46,22 @@ const LoopStepEditor: React.FC<LoopStepEditorProps> = ({ trackIndex }) => {
     });
 
     dispatch(updateStepsForTrack({ trackIndex, updatedSteps }));
-  }, [dispatch, trackIndex, steps, trackInfo, visibleSteps]);
+  }, [dispatch, allTrackInfo, allSteps, visibleSteps]);
 
 
-  const handleLoopStartChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.trim();
-    if (value === '') {
-      return;
-    }
-    const newStart = parseInt(value);
-    if (!isNaN(newStart)) {
-      const validNewStart = Math.max(0, Math.min(newStart, trackInfo.loopEnd - 1));
-      dispatch(updateTrackInfo({ trackIndex, loopStart: validNewStart }));
-    }
-  }, [dispatch, trackIndex, trackInfo.loopEnd]);
+  const handleLoopStartChange = useCallback((trackIndex: number, value: string) => {
+    const newStart = Math.max(0, Math.min(parseInt(value), allTrackInfo[trackIndex].loopEnd - 1));
+    dispatch(updateTrackInfo({ trackIndex, loopStart: newStart }));
+  }, [dispatch, allTrackInfo]);
 
-  const handleLoopEndChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.trim();
-    if (value === '') {
-      return;
-    }
-    const newEnd = parseInt(value);
-    if (!isNaN(newEnd)) {
-      const validNewEnd = Math.max(trackInfo.loopStart + 1, Math.min(newEnd, displayedSteps - 1));
-      dispatch(updateTrackInfo({ trackIndex, loopEnd: validNewEnd }));
-    }
-  }, [dispatch, trackIndex, trackInfo.loopStart, displayedSteps]);
+  const handleLoopEndChange = useCallback((trackIndex: number, value: string) => {
+    const newEnd = Math.max(allTrackInfo[trackIndex].loopStart + 1, Math.min(parseInt(value), displayedSteps - 1));
+    dispatch(updateTrackInfo({ trackIndex, loopEnd: newEnd }));
+  }, [dispatch, allTrackInfo, displayedSteps]);
 
   const handleDisplayedStepsChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newDisplayedSteps = parseInt(e.target.value);
-    setDisplayedSteps(newDisplayedSteps);
-
-    // Adjust loop end if it's beyond the new displayed steps
-    if (trackInfo.loopEnd >= newDisplayedSteps) {
-      dispatch(updateTrackInfo({ trackIndex, loopEnd: newDisplayedSteps - 1 }));
-    }
-  }, [dispatch, trackIndex, trackInfo.loopEnd]);
+    setDisplayedSteps(Number(e.target.value));
+  }, []);
 
   return (
     <div className="p-4 bg-gray-100 rounded-lg">
@@ -104,52 +81,59 @@ const LoopStepEditor: React.FC<LoopStepEditorProps> = ({ trackIndex }) => {
         </select>
       </div>
 
-      <div className="mb-4 flex space-x-4">
-        <div>
-          <label className="block mb-2">Loop Start:</label>
-          <AppInput
-            type="number"
-            value={trackInfo.loopStart.toString()}
-            onChange={handleLoopStartChange}
-            min={0}
-            max={trackInfo.loopEnd - 1}
-            className="w-20 p-2 border rounded"
-          />
-        </div>
-        <div>
-          <label className="block mb-2">Loop End:</label>
-          <AppInput
-            type="number"
-            value={trackInfo.loopEnd.toString()}
-            onChange={handleLoopEndChange}
-            min={trackInfo.loopStart + 1}
-            max={steps.length - 1}
-            className="w-20 p-2 border rounded"
-          />
-        </div>
-      </div>
+      {visibleSteps.map((trackSteps, trackIndex) => (
+        <div key={trackIndex} className="mb-8">
+          <div className="flex justify-between items-center mb-2">
+            <h4 className="font-semibold">Track {trackIndex + 1}</h4>
+            <div className="flex space-x-4">
+              <div>
+                <label className="block text-sm">Loop Start:</label>
+                <AppInput
+                  type="number"
+                  value={allTrackInfo[trackIndex].loopStart.toString()}
+                  onChange={(e) => handleLoopStartChange(trackIndex, e.target.value)}
+                  min={0}
+                  max={allTrackInfo[trackIndex].loopEnd - 1}
+                  className="w-16 p-1 border rounded"
+                />
+              </div>
+              <div>
+                <label className="block text-sm">Loop End:</label>
+                <AppInput
+                  type="number"
+                  value={allTrackInfo[trackIndex].loopEnd.toString()}
+                  onChange={(e) => handleLoopEndChange(trackIndex, e.target.value)}
+                  min={allTrackInfo[trackIndex].loopStart + 1}
+                  max={displayedSteps - 1}
+                  className="w-16 p-1 border rounded"
+                />
+              </div>
+            </div>
+          </div>
+          <div className="flex flex-wrap">
+            {trackSteps.map((step, stepIndex) => {
+              const trackInfo = allTrackInfo[trackIndex];
+              const isWithinLoop = stepIndex >= trackInfo.loopStart && stepIndex <= trackInfo.loopEnd;
+              const isPlaceholder = stepIndex > trackInfo.loopEnd;
 
-      <div className="flex flex-wrap">
-        {visibleSteps.map((step, index) => {
-          const isWithinLoop = index >= trackInfo.loopStart && index <= trackInfo.loopEnd;
-          const isPlaceholder = index > trackInfo.loopEnd;
-
-          return (
-            <div
-              key={index}
-              onClick={() => !isPlaceholder && handleStepToggle(index)}
-              className={`
-                w-8 h-8 m-1
-                ${isPlaceholder ? 'bg-gray-400 cursor-not-allowed' : (step.active ? 'bg-blue-500' : 'bg-gray-300')}
-                ${isPlaceholder ? '' : 'cursor-pointer'}
-                ${isWithinLoop ? 'ring-2 ring-green-500' : ''}
-                ${index === trackInfo.loopStart ? 'border-l-4 border-green-700' : ''}
-                ${index === trackInfo.loopEnd ? 'border-r-4 border-green-700' : ''}
-              `}
-            />
-          );
-        })}
-      </div>
+              return (
+                <div
+                  key={stepIndex}
+                  onClick={() => !isPlaceholder && handleStepToggle(trackIndex, stepIndex)}
+                  className={`
+                    w-8 h-8 m-1
+                    ${isPlaceholder ? 'bg-gray-400 cursor-not-allowed' : (step.active ? 'bg-blue-500' : 'bg-gray-300')}
+                    ${isPlaceholder ? '' : 'cursor-pointer'}
+                    ${isWithinLoop ? 'ring-2 ring-green-500' : ''}
+                    ${stepIndex === trackInfo.loopStart ? 'border-l-4 border-green-700' : ''}
+                    ${stepIndex === trackInfo.loopEnd ? 'border-r-4 border-green-700' : ''}
+                  `}
+                />
+              );
+            })}
+          </div>
+        </div>
+      ))}
     </div>
   );
 };
