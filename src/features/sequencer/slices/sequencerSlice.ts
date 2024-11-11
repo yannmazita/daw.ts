@@ -39,12 +39,6 @@ const sequencerSlice = createSlice({
             updates.timeSignature ?? trackToUpdate.timeSignature,
             updates.stepDuration ?? trackToUpdate.stepDuration
           );
-          if (updates.loopStart !== undefined && updates.loopStart >= trackToUpdate.loopEnd) {
-            trackToUpdate.loopEnd = updates.loopStart + 1;
-          }
-          if (updates.loopEnd !== undefined && updates.loopEnd <= trackToUpdate.loopStart) {
-            trackToUpdate.loopStart = updates.loopEnd - 1;
-          }
         }
       }
     },
@@ -106,8 +100,7 @@ const sequencerSlice = createSlice({
         bpm: state.globalBpm,
         commonVelocity: 100,
         commonNote: Note.C4,
-        loopStart: 0,
-        loopEnd: 15,
+        loopLength: 16,
       }));
 
       // Initialize steps for each track

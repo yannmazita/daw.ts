@@ -36,8 +36,7 @@ export interface SequencerTrackInfo {
   bpm: number;
   commonVelocity: number | null;
   commonNote: Note | null;
-  loopStart: number;
-  loopEnd: number;
+  loopLength: number;
 }
 
 export interface SequencerPlayback {
