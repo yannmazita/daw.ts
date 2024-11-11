@@ -38,18 +38,15 @@ const LoopStepEditor: React.FC<LoopStepEditorProps> = ({ trackIndex }) => {
     const loopLength = loopEnd - loopStart + 1;
     const newActive = !visibleSteps[stepIndex].active;
 
-    const updatedSteps = [...steps];  // Create a copy of the current steps
-
-    // Update existing steps
-    for (let i = loopStart; i <= loopEnd; i++) {
-      const relativeIndex = (i - loopStart + loopLength) % loopLength;
-      if (relativeIndex === (stepIndex - loopStart + loopLength) % loopLength) {
-        const existingStepIndex = updatedSteps.findIndex(s => s.stepIndex === i && s.trackIndex === trackIndex);
-        if (existingStepIndex !== -1) {
-          updatedSteps[existingStepIndex] = { ...updatedSteps[existingStepIndex], active: newActive };
-        } 
+    const updatedSteps = steps.map(step => {
+      if (step.trackIndex === trackIndex) {
+        const relativeIndex = (step.stepIndex - loopStart + loopLength) % loopLength;
+        if (relativeIndex === (stepIndex - loopStart + loopLength) % loopLength) {
+          return { ...step, active: newActive };
+        }
       }
-    }
+      return step;
+    });
 
     dispatch(updateStepsForTrack({ trackIndex, updatedSteps }));
   }, [dispatch, trackIndex, steps, trackInfo, visibleSteps]);
