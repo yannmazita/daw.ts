@@ -8,11 +8,6 @@ import { InstrumentName, Note, SequenceStatus } from '@/core/enums';
 import { Instrument } from '@/core/types';
 import { instrumentManager } from '@/common/services/instrumentManagerInstance';
 
-interface UpdateTrackResult {
-  updatedTrackInfo: SequencerTrackInfo;
-  updatedSteps: SequencerStep[];
-}
-
 const initialState: SequencerState = {
   status: SequenceStatus.Stopped,
   steps: [],
@@ -61,6 +56,23 @@ const sequencerSlice = createSlice({
 
       // Add the updated steps
       state.steps = [...state.steps, ...updatedSteps];
+
+      console.log('Updated all steps:', state.steps);
+    },
+    setStep: (state, action: PayloadAction<SequencerStep>) => {
+      const { trackIndex, stepIndex } = action.payload;
+      const index = state.steps.findIndex(
+        step => step.trackIndex === trackIndex && step.stepIndex === stepIndex
+      );
+      if (index !== -1) {
+        state.steps[index] = action.payload;
+      } else {
+        state.steps.push(action.payload);
+      }
+    },
+    setSteps: (state, action: PayloadAction<SequencerStep[]>) => {
+      //state.steps = action.payload;
+      state.steps = action.payload.map(step => ({ ...step }));
     },
     setCurrentStep: (state, action: PayloadAction<number>) => {
       state.currentStep = action.payload;
@@ -120,6 +132,8 @@ export const {
   addTrack,
   updateTrackInfo,
   updateStepsForTrack,
+  setStep,
+  setSteps,
   setCurrentStep,
   setTrackInstrument,
   toggleStep,
@@ -200,57 +214,50 @@ export const calculateSteps = (timeSignature: [number, number], stepDuration: st
 
 // Thunk to update track info and recalculate steps
 export const updateTrackInfoAndSteps = createAsyncThunk<
-  UpdateTrackResult,
+  void,
   Partial<SequencerTrackInfo> & { trackIndex: number },
   { state: RootState; dispatch: AppDispatch }
 >(
   'sequencer/updateTrackInfoAndSteps',
-  async (trackInfo, { getState, dispatch }) => {
-    dispatch(updateTrackInfo(trackInfo));
+  async (trackInfoUpdate, { getState, dispatch }) => {
+    dispatch(updateTrackInfo(trackInfoUpdate));
 
     const state = getState();
-    const updatedTrackInfo = selectTrackInfo(state).find(t => t.trackIndex === trackInfo.trackIndex);
+    const updatedTrackInfo = selectTrackInfo(state).find(t => t.trackIndex === trackInfoUpdate.trackIndex);
 
     if (!updatedTrackInfo) {
-      throw new Error(`Track with index ${trackInfo.trackIndex} not found`);
+      throw new Error(`Track with index ${trackInfoUpdate.trackIndex} not found`);
     }
 
-    let updatedSteps: SequencerStep[] = [];
+    if (trackInfoUpdate.timeSignature || trackInfoUpdate.stepDuration) {
+      const newStepsPerMeasure = updatedTrackInfo.stepsPerMeasure;
+      const currentSteps = selectStepsByTrack(trackInfoUpdate.trackIndex)(state);
 
-    if (trackInfo.timeSignature || trackInfo.stepDuration) {
-      const newStepCount = calculateSteps(
-        trackInfo.timeSignature ?? updatedTrackInfo.timeSignature,
-        trackInfo.stepDuration ?? updatedTrackInfo.stepDuration
-      );
+      let updatedSteps: SequencerStep[] = [];
 
-      // Update steps for this track
-      const currentSteps = selectSteps(state).filter(s => s.trackIndex === trackInfo.trackIndex);
-      if (currentSteps.length > newStepCount) {
+      if (currentSteps.length > newStepsPerMeasure) {
         // Remove excess steps
-        updatedSteps = currentSteps.slice(0, newStepCount);
-      } else if (currentSteps.length < newStepCount) {
+        updatedSteps = currentSteps.slice(0, newStepsPerMeasure);
+      } else if (currentSteps.length < newStepsPerMeasure) {
         // Add new steps
-        const newSteps = Array.from({ length: newStepCount - currentSteps.length }, (_, i) => ({
-          trackIndex: trackInfo.trackIndex,
-          stepIndex: currentSteps.length + i,
-          active: false,
-          note: updatedTrackInfo.commonNote ?? Note.C4,
-          velocity: updatedTrackInfo.commonVelocity ?? 100,
-        }));
-        updatedSteps = [...currentSteps, ...newSteps];
+        updatedSteps = [
+          ...currentSteps,
+          ...Array.from({ length: newStepsPerMeasure - currentSteps.length }, (_, index) => ({
+            trackIndex: trackInfoUpdate.trackIndex,
+            stepIndex: currentSteps.length + index,
+            active: false,
+            note: updatedTrackInfo.commonNote ?? Note.C4,
+            velocity: updatedTrackInfo.commonVelocity ?? 100,
+            modulation: 0,
+            pitchBend: 0,
+          })),
+        ];
       } else {
         updatedSteps = currentSteps;
       }
 
-      dispatch(setSteps(updatedSteps));
-    } else {
-      updatedSteps = selectSteps(state).filter(s => s.trackIndex === trackInfo.trackIndex);
+      dispatch(updateStepsForTrack({ trackIndex: trackInfoUpdate.trackIndex, updatedSteps }));
     }
-
-    return {
-      updatedTrackInfo,
-      updatedSteps,
-    };
   }
 );
 
