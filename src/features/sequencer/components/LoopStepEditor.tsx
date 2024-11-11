@@ -142,7 +142,7 @@ const LoopStepEditor: React.FC<LoopStepEditorProps> = ({ trackIndex }) => {
               key={index}
               onClick={() => !isPlaceholder && handleStepToggle(index)}
               className={`
-                w-8 h-8 m-1 transition-all duration-150
+                w-8 h-8 m-1
                 ${isPlaceholder ? 'bg-gray-400 cursor-not-allowed' : (step.active ? 'bg-blue-500' : 'bg-gray-300')}
                 ${isPlaceholder ? '' : 'cursor-pointer'}
                 ${isWithinLoop ? 'ring-2 ring-green-500' : ''}

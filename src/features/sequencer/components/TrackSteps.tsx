@@ -28,9 +28,6 @@ const TrackSteps: React.FC<TrackStepsProps> = ({ trackIndex }) => {
               ${step.active ? 'bg-ts-blue' : 'bg-gray-200'}
               ${index === currentStep ? 'ring-2 ring-yellow-400' : ''}
               ${index % 4 === 0 ? 'border-l-2 border-gray-400' : ''}
-              ${index >= loopStart && index <= loopEnd ? 'ring-1 ring-green-500' : ''}
-              ${index === loopStart ? 'border-l-4 border-green-700' : ''}
-              ${index === loopEnd ? 'border-r-4 border-green-700' : ''}
             `}
             aria-label={`Step ${index + 1} of track ${trackIndex}`}
           />
