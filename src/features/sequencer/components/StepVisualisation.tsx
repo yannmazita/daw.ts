@@ -12,13 +12,12 @@ const StepVisualisation: React.FC<StepVisualisationProps> = ({ trackIndex }) => 
   const trackInfo = useSelector(selectTrackInfo)[trackIndex];
   const steps = useSelector(selectStepsByTrack(trackIndex));
   const currentStep = useSelector(selectCurrentStep);
-  const { stepsPerMeasure, loopStart, loopEnd } = trackInfo;
+  const { stepsPerMeasure, loopLength } = trackInfo;
 
   return (
     <div className='flex'>
       {Array.from({ length: stepsPerMeasure }, (_, index) => {
-        const loopLength = loopEnd - loopStart + 1;
-        const actualStepIndex = ((index - loopStart) % loopLength + loopLength) % loopLength + loopStart;
+        const actualStepIndex = (index % loopLength + loopLength) % loopLength;
         const step = steps.find(s => s.stepIndex === actualStepIndex) ?? { active: false };
 
         return (

@@ -28,19 +28,14 @@ const LoopEditor: React.FC = () => {
 
   const handleStepToggle = useCallback((trackIndex: number, stepIndex: number) => {
     const trackInfo = allTrackInfo[trackIndex];
-    if (stepIndex > trackInfo.loopEnd) return;
+    if (stepIndex > trackInfo.loopLength) return;
 
-    const { loopStart, loopEnd } = trackInfo;
-    const loopLength = loopEnd - loopStart + 1;
     const trackSteps = allSteps.filter(step => step.trackIndex === trackIndex);
     const newActive = !visibleSteps[trackIndex][stepIndex].active;
 
     const updatedSteps = trackSteps.map(step => {
-      if (step.trackIndex === trackIndex) {
-        const relativeIndex = (step.stepIndex - loopStart + loopLength) % loopLength;
-        if (relativeIndex === (stepIndex - loopStart + loopLength) % loopLength) {
-          return { ...step, active: newActive };
-        }
+      if (step.trackIndex === trackIndex && step.stepIndex % trackInfo.loopLength === stepIndex) {
+        return { ...step, active: newActive };
       }
       return step;
     });
@@ -49,9 +44,9 @@ const LoopEditor: React.FC = () => {
   }, [dispatch, allTrackInfo, allSteps, visibleSteps]);
 
   const handleLoopLengthChange = useCallback((trackIndex: number, value: string) => {
-    const newEnd = Math.max(allTrackInfo[trackIndex].loopStart + 1, Math.min(parseInt(value), displayedSteps - 1));
-    dispatch(updateTrackInfo({ trackIndex, loopEnd: newEnd }));
-  }, [dispatch, allTrackInfo, displayedSteps]);
+    const newLength = Math.max(1, Math.min(parseInt(value), displayedSteps));
+    dispatch(updateTrackInfo({ trackIndex, loopLength: newLength }));
+  }, [dispatch, displayedSteps]);
 
   const handleDisplayedStepsChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
     setDisplayedSteps(Number(e.target.value));
@@ -84,31 +79,31 @@ const LoopEditor: React.FC = () => {
                 <label className="block text-sm">Loop Length:</label>
                 <AppInput
                   type="number"
-                  value={allTrackInfo[trackIndex].loopEnd.toString()}
+                  value={allTrackInfo[trackIndex].loopLength.toString()}
                   onChange={(e) => handleLoopLengthChange(trackIndex, e.target.value)}
-                  min={allTrackInfo[trackIndex].loopStart + 1}
-                  max={displayedSteps - 1}
+                  min={1}
+                  max={displayedSteps}
                   className="w-16 p-1 border rounded"
                 />
               </div>
             </div>
           </div>
-          <div className="flex flex-row">
+          <div className="flex flex-wrap">
             {trackSteps.map((step, stepIndex) => {
               const trackInfo = allTrackInfo[trackIndex];
-              const isPlaceholder = stepIndex > trackInfo.loopEnd;
+              const isWithinLoop = stepIndex < trackInfo.loopLength;
 
               return (
                 <div
                   key={stepIndex}
-                  onClick={() => !isPlaceholder && handleStepToggle(trackIndex, stepIndex)}
+                  onClick={() => handleStepToggle(trackIndex, stepIndex)}
                   className={`
-                    w-8 h-8 ring-2 ring-black
-                    ${isPlaceholder ? 'bg-gray-600 cursor-not-allowed' : (step.active ? 'bg-blue-500' : 'bg-gray-300')}
-                    ${isPlaceholder ? '' : 'cursor-pointer'}
-                    ${stepIndex === trackInfo.loopStart ? 'border-l-4 border-green-700' : ''}
-                    ${stepIndex === trackInfo.loopEnd ? 'border-r-4 border-green-700' : ''}
-                    ${(stepIndex + 1) % 4 === 0 ? 'mr-1.5' : ''}
+                    w-8 h-8 m-0.5 ring-1 ring-gray-600
+                    ${isWithinLoop ? (step.active ? 'bg-blue-500' : 'bg-gray-400') : 'bg-gray-800'}
+                    ${isWithinLoop ? 'cursor-pointer' : 'cursor-not-allowed'}
+                    ${stepIndex === 0 ? 'border-l-4 border-green-500' : ''}
+                    ${stepIndex === trackInfo.loopLength - 1 ? 'border-r-4 border-green-500' : ''}
+                    ${(stepIndex + 1) % 4 === 0 ? 'mr-2' : ''}
                   `}
                 />
               );
