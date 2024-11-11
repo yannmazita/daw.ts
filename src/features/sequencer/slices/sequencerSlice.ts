@@ -160,7 +160,7 @@ export const selectTrackInfo = createSelector(
   (sequencer) => sequencer.trackInfo
 );
 
-export const selectSteps = createSelector(
+export const selectAllSteps = createSelector(
   selectSequencerState,
   (sequencer) => sequencer.steps
 );
