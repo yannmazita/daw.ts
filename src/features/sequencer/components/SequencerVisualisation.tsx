@@ -1,18 +1,18 @@
-// src/features/sequencer/SequencerTracks.tsx
+// src/features/sequencer/SequencerVisualisation.tsx
 
 import React, { useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import { selectTrackInfo, selectMaxTrackLength } from '@/features/sequencer/slices/sequencerSlice';
 import '../styles/style.css';
-import Track from './Track';
+import TrackVisualisation from './TrackVisualisation';
 
-interface SequencerTracksProps {
+interface SequencerVisualisationProps {
   className?: string;
 }
 
 
 
-const SequencerTracks: React.FC<SequencerTracksProps> = ({ className }) => {
+const SequencerVisualisation: React.FC<SequencerVisualisationProps> = ({ className }) => {
   const trackInfo = useSelector(selectTrackInfo);
   const maxTrackLength = useSelector(selectMaxTrackLength);
 
@@ -23,7 +23,7 @@ const SequencerTracks: React.FC<SequencerTracksProps> = ({ className }) => {
 
   const trackElements = useMemo(() => {
     return trackInfo.map(info => {
-      return <Track key={info.trackIndex} trackInfo={info} />;
+      return <TrackVisualisation key={info.trackIndex} trackInfo={info} />;
     });
   }, [trackInfo]);
 
@@ -40,4 +40,4 @@ const SequencerTracks: React.FC<SequencerTracksProps> = ({ className }) => {
   );
 };
 
-export default SequencerTracks;
+export default SequencerVisualisation;

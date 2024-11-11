@@ -1,14 +1,14 @@
-// src/features/sequencer/components/TrackSteps.tsx
+// src/features/sequencer/components/StepVisualisation.tsx
 
 import React from 'react';
 import { useSelector } from 'react-redux';
 import { selectStepsByTrack, selectTrackInfo, selectCurrentStep } from '../slices/sequencerSlice';
 
-interface TrackStepsProps {
+interface StepVisualisationProps {
   trackIndex: number;
 }
 
-const TrackSteps: React.FC<TrackStepsProps> = ({ trackIndex }) => {
+const StepVisualisation: React.FC<StepVisualisationProps> = ({ trackIndex }) => {
   const trackInfo = useSelector(selectTrackInfo)[trackIndex];
   const steps = useSelector(selectStepsByTrack(trackIndex));
   const currentStep = useSelector(selectCurrentStep);
@@ -24,7 +24,7 @@ const TrackSteps: React.FC<TrackStepsProps> = ({ trackIndex }) => {
         return (
           <div
             key={index}
-            className={`min-w-8 w-8 h-8 m-0.5
+            className={`size-2 m-0.5
               ${step.active ? 'bg-ts-blue' : 'bg-gray-200'}
               ${index === currentStep ? 'ring-2 ring-yellow-400' : ''}
               ${index % 4 === 0 ? 'border-l-2 border-gray-400' : ''}
@@ -37,4 +37,4 @@ const TrackSteps: React.FC<TrackStepsProps> = ({ trackIndex }) => {
   );
 };
 
-export default React.memo(TrackSteps);
+export default React.memo(StepVisualisation);

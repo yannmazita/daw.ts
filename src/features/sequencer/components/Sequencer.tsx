@@ -2,7 +2,7 @@
 
 import React, { useEffect } from 'react';
 import { useDispatch } from 'react-redux';
-import SequencerTracks from './SequencerTracks';
+import SequencerVisualisation from './SequencerVisualisation';
 import SequencerTrackSettings from './SequencerTrackSettings';
 import { initializeSequencer } from '../slices/sequencerSlice';
 
@@ -14,9 +14,9 @@ const Sequencer: React.FC = () => {
   }, [dispatch]);
 
   return (
-    <div id='sequencer-wrapper' className='grid grid-cols-3'>
-      <SequencerTrackSettings className='col-span-1' />
-      <SequencerTracks className='col-span-2' />
+    <div id='sequencer-wrapper' className='flex flex-col'>
+      <SequencerVisualisation className='row-span-1' />
+      <SequencerTrackSettings className='row-span-1' />
     </div>
   );
 };

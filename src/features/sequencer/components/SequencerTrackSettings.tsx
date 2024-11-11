@@ -5,11 +5,11 @@ import { useSelector, useDispatch } from 'react-redux';
 import {
   selectTrackInfo,
   selectGlobalBpm,
-  updateTrackInfo,
+  updateTrackInfoAndSteps,
   setGlobalBpm
 } from '../slices/sequencerSlice';
 import AppInput from '@/common/components/AppInput';
-import LoopStepEditor from './LoopStepEditor';
+import LoopEditor from './LoopEditor';
 
 interface SequencerTrackSettingsProps {
   className?: string;
@@ -36,14 +36,14 @@ const SequencerTrackSettings: React.FC<SequencerTrackSettingsProps> = ({ classNa
 
   const handleTimeSignatureChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
     const [numerator, denominator] = e.target.value.split('/').map(Number);
-    dispatch(updateTrackInfo({
+    dispatch(updateTrackInfoAndSteps({
       trackIndex: selectedTrackIndex,
       timeSignature: [numerator, denominator]
     }));
   }, [dispatch, selectedTrackIndex]);
 
   const handleStepDurationChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
-    dispatch(updateTrackInfo({
+    dispatch(updateTrackInfoAndSteps({
       trackIndex: selectedTrackIndex,
       stepDuration: e.target.value
     }));
@@ -67,9 +67,9 @@ const SequencerTrackSettings: React.FC<SequencerTrackSettingsProps> = ({ classNa
           onChange={handleTrackChange}
           className="w-full p-2 border rounded"
         >
-          {trackInfo.map((track, index) => (
-            <option key={track.trackIndex} value={index}>
-              Track {track.trackIndex + 1}
+          {trackInfo.map((info, index) => (
+            <option key={info.trackIndex} value={index}>
+              Track {info.trackIndex + 1}
             </option>
           ))}
         </select>
@@ -121,7 +121,7 @@ const SequencerTrackSettings: React.FC<SequencerTrackSettingsProps> = ({ classNa
             <label className="block mb-2">Steps per Measure:</label>
             <span className="font-bold">{stepsPerMeasure}</span>
           </div>
-          <LoopStepEditor trackIndex={selectedTrackIndex} />
+          <LoopEditor />
         </>
       )}
     </div>

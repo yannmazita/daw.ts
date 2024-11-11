@@ -1,4 +1,4 @@
-// src/features/sequencer/components/LoopStepEditor.tsx
+// src/features/sequencer/components/LoopEditor.tsx
 
 import React, { useState, useCallback, useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
@@ -10,7 +10,7 @@ import {
 } from '../slices/sequencerSlice';
 import AppInput from '@/common/components/AppInput';
 
-const LoopStepEditor: React.FC = () => {
+const LoopEditor: React.FC = () => {
   const dispatch = useDispatch();
   const allSteps = useSelector(selectAllSteps);
   const allTrackInfo = useSelector(selectTrackInfo);
@@ -65,7 +65,7 @@ const LoopStepEditor: React.FC = () => {
 
   return (
     <div className="p-4 bg-gray-100 rounded-lg">
-      <h3 className="text-lg font-semibold mb-4">Loop Step Editor</h3>
+      <h3 className="text-lg font-semibold mb-4">Loop Editor</h3>
 
       <div className="mb-4">
         <label className="block mb-2">Displayed Steps:</label>
@@ -138,4 +138,4 @@ const LoopStepEditor: React.FC = () => {
   );
 };
 
-export default LoopStepEditor;
+export default LoopEditor;

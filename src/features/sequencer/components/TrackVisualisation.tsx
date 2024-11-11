@@ -1,23 +1,23 @@
-// src/features/sequencer/components/Track.tsx
+// src/features/sequencer/components/TrackVisualisation.tsx
 
 import React from 'react';
-import TrackSteps from './TrackSteps';
+import StepVisualisation from './StepVisualisation';
 import { SequencerTrackInfo } from '@/core/interfaces';
 
-interface TrackProps {
+interface TrackVisualisationProps {
   trackInfo: SequencerTrackInfo;
 }
 
-const Track: React.FC<TrackProps> = ({
+const TrackVisualisation: React.FC<TrackVisualisationProps> = ({
   trackInfo,
 }) => {
   return (
     <div id={`sequencer-track-${trackInfo.trackIndex}`} className='flex items-center hover:opacity-100'>
-      <TrackSteps
+      <StepVisualisation
         trackIndex={trackInfo.trackIndex}
       />
     </div>
   );
 };
 
-export default Track;
+export default TrackVisualisation;
