@@ -9,6 +9,7 @@ import {
   setGlobalBpm
 } from '../slices/sequencerSlice';
 import AppInput from '@/common/components/AppInput';
+import LoopStepEditor from './LoopStepEditor';
 
 interface SequencerTrackSettingsProps {
   className?: string;
@@ -120,6 +121,7 @@ const SequencerTrackSettings: React.FC<SequencerTrackSettingsProps> = ({ classNa
             <label className="block mb-2">Steps per Measure:</label>
             <span className="font-bold">{stepsPerMeasure}</span>
           </div>
+          <LoopStepEditor trackIndex={selectedTrackIndex} />
         </>
       )}
     </div>

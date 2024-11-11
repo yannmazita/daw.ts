@@ -1,38 +1,41 @@
 // src/features/sequencer/components/TrackSteps.tsx
 
-import React, { useCallback } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
-import { selectStepsByTrack, selectCurrentStep, selectTrackInfo, toggleStep } from '../slices/sequencerSlice';
+import React from 'react';
+import { useSelector } from 'react-redux';
+import { selectStepsByTrack, selectTrackInfo, selectCurrentStep } from '../slices/sequencerSlice';
 
 interface TrackStepsProps {
   trackIndex: number;
 }
 
 const TrackSteps: React.FC<TrackStepsProps> = ({ trackIndex }) => {
-  const dispatch = useDispatch();
-  const trackInfo = useSelector(selectTrackInfo);
+  const trackInfo = useSelector(selectTrackInfo)[trackIndex];
   const steps = useSelector(selectStepsByTrack(trackIndex));
   const currentStep = useSelector(selectCurrentStep);
-  const { stepsPerMeasure } = trackInfo[trackIndex];
-
-  const handleStepClick = useCallback((stepIndex: number) => {
-    dispatch(toggleStep({ trackIndex, stepIndex }));
-  }, [dispatch, trackIndex]);
+  const { stepsPerMeasure, loopStart, loopEnd } = trackInfo;
 
   return (
     <div className='flex'>
-      {Array.from({ length: stepsPerMeasure }, (_, stepIndex) => (
-        <div
-          key={stepIndex}
-          onClick={() => handleStepClick(stepIndex)}
-          className={`min-w-8 w-8 h-8 m-0.5 cursor-pointer transition-all duration-150 
-            ${steps[stepIndex]?.active ? 'bg-ts-blue' : 'bg-gray-200'}
-            ${stepIndex === currentStep ? 'ring-2 ring-yellow-400' : ''}
-            ${stepIndex % 4 === 0 ? 'border-l-2 border-red-400' : ''}
-          `}
-          aria-label={`Step ${stepIndex + 1} of track ${trackIndex}`}
-        />
-      ))}
+      {Array.from({ length: stepsPerMeasure }, (_, index) => {
+        const loopLength = loopEnd - loopStart + 1;
+        const actualStepIndex = ((index - loopStart) % loopLength + loopLength) % loopLength + loopStart;
+        const step = steps.find(s => s.stepIndex === actualStepIndex) ?? { active: false };
+
+        return (
+          <div
+            key={index}
+            className={`min-w-8 w-8 h-8 m-0.5 transition-all duration-150 
+              ${step.active ? 'bg-ts-blue' : 'bg-gray-200'}
+              ${index === currentStep ? 'ring-2 ring-yellow-400' : ''}
+              ${index % 4 === 0 ? 'border-l-2 border-gray-400' : ''}
+              ${index >= loopStart && index <= loopEnd ? 'ring-1 ring-green-500' : ''}
+              ${index === loopStart ? 'border-l-4 border-green-700' : ''}
+              ${index === loopEnd ? 'border-r-4 border-green-700' : ''}
+            `}
+            aria-label={`Step ${index + 1} of track ${trackIndex}`}
+          />
+        );
+      })}
     </div>
   );
 };
