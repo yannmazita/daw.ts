@@ -48,13 +48,7 @@ const LoopEditor: React.FC = () => {
     dispatch(updateStepsForTrack({ trackIndex, updatedSteps }));
   }, [dispatch, allTrackInfo, allSteps, visibleSteps]);
 
-
-  const handleLoopStartChange = useCallback((trackIndex: number, value: string) => {
-    const newStart = Math.max(0, Math.min(parseInt(value), allTrackInfo[trackIndex].loopEnd - 1));
-    dispatch(updateTrackInfo({ trackIndex, loopStart: newStart }));
-  }, [dispatch, allTrackInfo]);
-
-  const handleLoopEndChange = useCallback((trackIndex: number, value: string) => {
+  const handleLoopLengthChange = useCallback((trackIndex: number, value: string) => {
     const newEnd = Math.max(allTrackInfo[trackIndex].loopStart + 1, Math.min(parseInt(value), displayedSteps - 1));
     dispatch(updateTrackInfo({ trackIndex, loopEnd: newEnd }));
   }, [dispatch, allTrackInfo, displayedSteps]);
@@ -64,7 +58,7 @@ const LoopEditor: React.FC = () => {
   }, []);
 
   return (
-    <div className="p-4 bg-gray-100 rounded-lg">
+    <div className="p-4">
       <h3 className="text-lg font-semibold mb-4">Loop Editor</h3>
 
       <div className="mb-4">
@@ -87,22 +81,11 @@ const LoopEditor: React.FC = () => {
             <h4 className="font-semibold">Track {trackIndex + 1}</h4>
             <div className="flex space-x-4">
               <div>
-                <label className="block text-sm">Loop Start:</label>
-                <AppInput
-                  type="number"
-                  value={allTrackInfo[trackIndex].loopStart.toString()}
-                  onChange={(e) => handleLoopStartChange(trackIndex, e.target.value)}
-                  min={0}
-                  max={allTrackInfo[trackIndex].loopEnd - 1}
-                  className="w-16 p-1 border rounded"
-                />
-              </div>
-              <div>
-                <label className="block text-sm">Loop End:</label>
+                <label className="block text-sm">Loop Length:</label>
                 <AppInput
                   type="number"
                   value={allTrackInfo[trackIndex].loopEnd.toString()}
-                  onChange={(e) => handleLoopEndChange(trackIndex, e.target.value)}
+                  onChange={(e) => handleLoopLengthChange(trackIndex, e.target.value)}
                   min={allTrackInfo[trackIndex].loopStart + 1}
                   max={displayedSteps - 1}
                   className="w-16 p-1 border rounded"
@@ -110,10 +93,9 @@ const LoopEditor: React.FC = () => {
               </div>
             </div>
           </div>
-          <div className="flex flex-wrap">
+          <div className="flex flex-row">
             {trackSteps.map((step, stepIndex) => {
               const trackInfo = allTrackInfo[trackIndex];
-              const isWithinLoop = stepIndex >= trackInfo.loopStart && stepIndex <= trackInfo.loopEnd;
               const isPlaceholder = stepIndex > trackInfo.loopEnd;
 
               return (
@@ -121,12 +103,12 @@ const LoopEditor: React.FC = () => {
                   key={stepIndex}
                   onClick={() => !isPlaceholder && handleStepToggle(trackIndex, stepIndex)}
                   className={`
-                    w-8 h-8 m-1
-                    ${isPlaceholder ? 'bg-gray-400 cursor-not-allowed' : (step.active ? 'bg-blue-500' : 'bg-gray-300')}
+                    w-8 h-8 ring-2 ring-black
+                    ${isPlaceholder ? 'bg-gray-600 cursor-not-allowed' : (step.active ? 'bg-blue-500' : 'bg-gray-300')}
                     ${isPlaceholder ? '' : 'cursor-pointer'}
-                    ${isWithinLoop ? 'ring-2 ring-green-500' : ''}
                     ${stepIndex === trackInfo.loopStart ? 'border-l-4 border-green-700' : ''}
                     ${stepIndex === trackInfo.loopEnd ? 'border-r-4 border-green-700' : ''}
+                    ${(stepIndex + 1) % 4 === 0 ? 'mr-1.5' : ''}
                   `}
                 />
               );

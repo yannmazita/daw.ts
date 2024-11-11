@@ -27,7 +27,6 @@ const StepVisualisation: React.FC<StepVisualisationProps> = ({ trackIndex }) => 
             className={`size-2 m-0.5
               ${step.active ? 'bg-ts-blue' : 'bg-gray-200'}
               ${index === currentStep ? 'ring-2 ring-yellow-400' : ''}
-              ${index % 4 === 0 ? 'border-l-2 border-gray-400' : ''}
             `}
             aria-label={`Step ${index + 1} of track ${trackIndex}`}
           />
