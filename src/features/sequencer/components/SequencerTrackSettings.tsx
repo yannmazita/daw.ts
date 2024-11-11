@@ -9,7 +9,7 @@ import {
   setGlobalBpm
 } from '../slices/sequencerSlice';
 import AppInput from '@/common/components/AppInput';
-import LoopEditor from './LoopEditor';
+import LoopEditor from './LoopEditor/LoopEditor';
 
 interface SequencerTrackSettingsProps {
   className?: string;
