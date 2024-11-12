@@ -5,6 +5,9 @@ Work in progress! Very early stage.
 Digital Audio Workstation built with [React](https://react.dev/), [tonejs](https://tonejs.github.io/) and [electron](https://www.electronjs.org/)
 
 
+![image](https://github.com/user-attachments/assets/fc0ddb5c-d06d-4dfa-abae-53e7017566bd)
+
+
 ## Running
 - Start the UI with :
 ```commandline
