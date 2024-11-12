@@ -50,8 +50,6 @@ const sequencerSlice = createSlice({
 
       // Add the updated steps
       state.steps = [...state.steps, ...updatedSteps];
-
-      console.log('Updated all steps:', state.steps);
     },
     setStep: (state, action: PayloadAction<SequencerStep>) => {
       const { trackIndex, stepIndex } = action.payload;
