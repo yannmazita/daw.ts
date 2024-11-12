@@ -12,11 +12,11 @@ interface TrackEditorProps {
 
 const TrackEditor: React.FC<TrackEditorProps> = ({ trackInfo, displayedSteps }) => {
   return (
-    <div className="mb-8">
+    <>
       <h4 className="font-semibold mb-2">Track {trackInfo.trackIndex + 1}</h4>
       <LoopControls trackInfo={trackInfo} displayedSteps={displayedSteps} />
       <StepGrid trackInfo={trackInfo} displayedSteps={displayedSteps} />
-    </div>
+    </>
   );
 };
 

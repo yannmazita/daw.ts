@@ -8,10 +8,11 @@ import { SequencerTrackInfo, SequencerStep } from '@/core/interfaces/sequencer';
 interface StepButtonProps {
   trackInfo: SequencerTrackInfo;
   stepIndex: number;
+  displayedSteps: number;
   step: SequencerStep;
 }
 
-const StepButton: React.FC<StepButtonProps> = ({ trackInfo, stepIndex, step }) => {
+const StepButton: React.FC<StepButtonProps> = ({ trackInfo, stepIndex, displayedSteps, step }) => {
   const dispatch = useDispatch();
 
   const handleClick = () => {
@@ -28,7 +29,7 @@ const StepButton: React.FC<StepButtonProps> = ({ trackInfo, stepIndex, step }) =
         ${isWithinLoop ? (step.active ? 'bg-ts-blue' : 'bg-gray-200') : 'bg-slate-600'}
         ${isWithinLoop ? 'cursor-pointer' : 'cursor-not-allowed'}
         ${stepIndex === trackInfo.loopLength - 1 ? 'border-r-4 border-slate-800' : ''}
-        ${(stepIndex + 1) % 4 === 0 ? 'mr-2' : ''}
+        ${((stepIndex + 1) % 4 === 0) && (stepIndex !== displayedSteps - 1) ? 'mr-2' : ''}
       `}
     />
   );

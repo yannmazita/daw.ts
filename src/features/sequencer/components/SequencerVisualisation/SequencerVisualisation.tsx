@@ -16,7 +16,7 @@ const SequencerVisualisation: React.FC = () => {
   }, [trackInfo]);
 
   return (
-    <div className='bg-slate-50 overflow-x-auto'>
+    <div className='bg-slate-50 p-2 overflow-x-auto'>
       <div className='inline-block'>
         {trackElements}
       </div>

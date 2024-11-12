@@ -32,6 +32,7 @@ const StepGrid: React.FC<StepGridProps> = ({ trackInfo, displayedSteps }) => {
           key={stepIndex}
           trackInfo={trackInfo}
           stepIndex={stepIndex}
+          displayedSteps={displayedSteps}
           step={steps.find(s => s.stepIndex === stepIndex) ?? createDefaultStep(stepIndex)}
         />
       ))}

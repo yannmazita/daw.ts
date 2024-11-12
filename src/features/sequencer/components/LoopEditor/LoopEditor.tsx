@@ -32,7 +32,7 @@ const LoopEditor: React.FC = () => {
   }, [allTrackInfo, displayedSteps]);
 
   return (
-    <div className="px-3 bg-slate-50">
+    <div className="bg-slate-50 p-2">
       <h3 className="text-lg font-semibold mb-4">Loop Editor</h3>
 
       <div className="mb-4">
