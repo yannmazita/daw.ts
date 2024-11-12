@@ -12,7 +12,7 @@ const TrackVisualisation: React.FC<TrackVisualisationProps> = ({
   trackInfo,
 }) => {
   return (
-    <div id={`sequencer-track-${trackInfo.trackIndex}`} className='flex items-center hover:opacity-100'>
+    <div id={`sequencer-track-visualisation-${trackInfo.trackIndex}`}>
       <StepVisualisation
         trackIndex={trackInfo.trackIndex}
       />

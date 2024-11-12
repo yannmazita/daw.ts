@@ -16,7 +16,7 @@ const Sequencer: React.FC = () => {
   }, [dispatch]);
 
   return (
-    <div id='sequencer-wrapper' className='flex flex-col'>
+    <div id='sequencer-wrapper' className='flex flex-col max-w-xl'>
       <SequencerVisualisation />
       <div>
         <SequencerTrackSettings />
