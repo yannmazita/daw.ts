@@ -1,8 +1,8 @@
-// src/features/sequencer/components/StepVisualisation.tsx
+// src/features/sequencer/components/SequencerVisualisation/StepVisualisation.tsx
 
 import React from 'react';
 import { useSelector } from 'react-redux';
-import { selectStepsByTrack, selectTrackInfo, selectCurrentStep } from '../slices/sequencerSlice';
+import { selectStepsByTrack, selectTrackInfo, selectCurrentStep } from '../../slices/sequencerSlice';
 
 interface StepVisualisationProps {
   trackIndex: number;

@@ -1,9 +1,9 @@
-// src/features/sequencer/SequencerVisualisation.tsx
+// src/features/sequencer/SequencerVisualisation/SequencerVisualisation.tsx
 
 import React, { useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import { selectTrackInfo, selectMaxTrackLength } from '@/features/sequencer/slices/sequencerSlice';
-import '../styles/style.css';
+import '../../styles/style.css';
 import TrackVisualisation from './TrackVisualisation';
 
 interface SequencerVisualisationProps {

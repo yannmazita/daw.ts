@@ -30,12 +30,9 @@ const SequencerTrackSettings: React.FC<SequencerTrackSettingsProps> = ({ classNa
   const [selectedTrackIndex, setSelectedTrackIndex] = useState(0);
   const selectedTrack = trackInfo[selectedTrackIndex];
 
-  const handleBpmChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const newBpm = parseInt(e.target.value);
-    if (!isNaN(newBpm) && newBpm > 0) {
-      dispatch(setGlobalBpm(newBpm));
-    }
-  }, [dispatch]);
+  const handleBpmChange = useCallback((value: string) => {
+    dispatch(setGlobalBpm(parseInt(value)));
+  }, []);
 
   const handleTrackChange = useCallback((value: string) => {
     setSelectedTrackIndex(parseInt(value));
@@ -85,7 +82,7 @@ const SequencerTrackSettings: React.FC<SequencerTrackSettingsProps> = ({ classNa
 
       <div className="mb-4">
         <Label htmlFor="globalBpm">Global BPM</Label>
-        <Input type="number" id="globalBpm" value={globalBpm.toString()} onChange={handleBpmChange} min={1} />
+        <Input type="number" id="globalBpm" value={globalBpm.toString()} onChange={(e) => handleBpmChange(e.target.value)} min={1} />
       </div>
 
       {selectedTrack && (
@@ -124,7 +121,7 @@ const SequencerTrackSettings: React.FC<SequencerTrackSettingsProps> = ({ classNa
           </div>
           <div>
             <Label htmlFor="steps-per-measure">Steps per Measure: </Label>
-            <span id="steps-per-measure"className="font-bold">{stepsPerMeasure}</span>
+            <span id="steps-per-measure" className="font-bold">{stepsPerMeasure}</span>
           </div>
         </>
       )}

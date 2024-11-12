@@ -2,7 +2,7 @@
 
 import React, { useEffect } from 'react';
 import { useDispatch } from 'react-redux';
-import SequencerVisualisation from './SequencerVisualisation';
+import SequencerVisualisation from './SequencerVisualisation/SequencerVisualisation';
 import SequencerTrackSettings from './SequencerTrackSettings';
 import LoopEditor from './LoopEditor/LoopEditor';
 import { initializeSequencer } from '../slices/sequencerSlice';
