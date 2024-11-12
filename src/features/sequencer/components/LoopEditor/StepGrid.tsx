@@ -3,8 +3,9 @@
 import React from 'react';
 import { useSelector } from 'react-redux';
 import { selectStepsByTrack } from '../../slices/sequencerSlice';
-import { SequencerTrackInfo } from '@/core/interfaces/sequencer';
+import { SequencerStep, SequencerTrackInfo } from '@/core/interfaces/sequencer';
 import StepButton from './StepButton';
+import { Note } from '@/core/enums';
 
 interface StepGridProps {
   trackInfo: SequencerTrackInfo;
@@ -14,6 +15,16 @@ interface StepGridProps {
 const StepGrid: React.FC<StepGridProps> = ({ trackInfo, displayedSteps }) => {
   const steps = useSelector(selectStepsByTrack(trackInfo.trackIndex));
 
+  const createDefaultStep = (stepIndex: number): SequencerStep => ({
+    trackIndex: trackInfo.trackIndex,
+    stepIndex,
+    active: false,
+    note: trackInfo.commonNote ?? Note.C4,
+    velocity: trackInfo.commonVelocity ?? 100,
+    modulation: 0,
+    pitchBend: 0
+  });
+
   return (
     <div className="flex flex-row">
       {Array.from({ length: displayedSteps }, (_, stepIndex) => (
@@ -21,7 +32,7 @@ const StepGrid: React.FC<StepGridProps> = ({ trackInfo, displayedSteps }) => {
           key={stepIndex}
           trackInfo={trackInfo}
           stepIndex={stepIndex}
-          step={steps.find(s => s.stepIndex === stepIndex) ?? { active: false, stepIndex, trackIndex: trackInfo.trackIndex }}
+          step={steps.find(s => s.stepIndex === stepIndex) ?? createDefaultStep(stepIndex)}
         />
       ))}
     </div>
