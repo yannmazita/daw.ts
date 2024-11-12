@@ -2,10 +2,7 @@
 
 Work in progress! Very early stage.
 
-Digital Audio Workstation built with [vue](https://vuejs.org/), [tonejs](https://tonejs.github.io/) and [electron](https://www.electronjs.org/)
-
-
-[daw-demo](https://github.com/user-attachments/assets/31827e6f-7a8c-4091-b246-4b75d47f0de0)
+Digital Audio Workstation built with [React](https://react.dev/), [tonejs](https://tonejs.github.io/) and [electron](https://www.electronjs.org/)
 
 
 ## Running
