@@ -4,7 +4,9 @@ import React, { useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import SequencerVisualisation from './SequencerVisualisation';
 import SequencerTrackSettings from './SequencerTrackSettings';
+import LoopEditor from './LoopEditor/LoopEditor';
 import { initializeSequencer } from '../slices/sequencerSlice';
+
 
 const Sequencer: React.FC = () => {
   const dispatch = useDispatch();
@@ -15,8 +17,11 @@ const Sequencer: React.FC = () => {
 
   return (
     <div id='sequencer-wrapper' className='flex flex-col'>
-      <SequencerVisualisation className='row-span-1' />
-      <SequencerTrackSettings className='row-span-1' />
+      <SequencerVisualisation />
+      <div>
+        <SequencerTrackSettings />
+        <LoopEditor />
+      </div>
     </div>
   );
 };

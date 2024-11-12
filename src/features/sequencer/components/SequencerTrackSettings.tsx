@@ -8,7 +8,6 @@ import {
   updateTrackInfoAndSteps,
   setGlobalBpm
 } from '../slices/sequencerSlice';
-import LoopEditor from './LoopEditor/LoopEditor';
 import { Input } from '@/common/shadcn/ui/input';
 import { Label } from '@/common/shadcn/ui/label';
 import {
@@ -123,11 +122,10 @@ const SequencerTrackSettings: React.FC<SequencerTrackSettingsProps> = ({ classNa
               </SelectContent>
             </Select>
           </div>
-          <div className="mb-4">
-            <Label htmlFor="stepsPerMeasure">Steps per Measure: </Label>
-            <span className="font-bold">{stepsPerMeasure}</span>
+          <div>
+            <Label htmlFor="steps-per-measure">Steps per Measure: </Label>
+            <span id="steps-per-measure"className="font-bold">{stepsPerMeasure}</span>
           </div>
-          <LoopEditor />
         </>
       )}
     </div>

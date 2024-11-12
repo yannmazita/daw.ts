@@ -1,6 +1,6 @@
 // src/features/sequencer/components/LoopEditor/LoopEditor.tsx
 
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
 import { selectTrackInfo } from '../../slices/sequencerSlice';
 import TrackEditor from './TrackEditor';
@@ -22,7 +22,7 @@ const LoopEditor: React.FC = () => {
   };
 
   return (
-    <div className="px-3">
+    <div className="px-3 bg-slate-50">
       <h3 className="text-lg font-semibold mb-4">Loop Editor</h3>
 
       <div className="mb-4">
