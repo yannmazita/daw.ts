@@ -11,6 +11,13 @@ import {
 import LoopEditor from './LoopEditor/LoopEditor';
 import { Input } from '@/common/shadcn/ui/input';
 import { Label } from '@/common/shadcn/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/common/shadcn/ui/select"
 
 interface SequencerTrackSettingsProps {
   className?: string;
@@ -31,22 +38,22 @@ const SequencerTrackSettings: React.FC<SequencerTrackSettingsProps> = ({ classNa
     }
   }, [dispatch]);
 
-  const handleTrackChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedTrackIndex(parseInt(e.target.value));
+  const handleTrackChange = useCallback((value: string) => {
+    setSelectedTrackIndex(parseInt(value));
   }, []);
 
-  const handleTimeSignatureChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
-    const [numerator, denominator] = e.target.value.split('/').map(Number);
+  const handleTimeSignatureChange = useCallback((value: string) => {
+    const [numerator, denominator] = value.split('/').map(Number);
     dispatch(updateTrackInfoAndSteps({
       trackIndex: selectedTrackIndex,
       timeSignature: [numerator, denominator]
     }));
   }, [dispatch, selectedTrackIndex]);
 
-  const handleStepDurationChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleStepDurationChange = useCallback((value: string) => {
     dispatch(updateTrackInfoAndSteps({
       trackIndex: selectedTrackIndex,
-      stepDuration: e.target.value
+      stepDuration: value
     }));
   }, [dispatch, selectedTrackIndex]);
 
@@ -58,22 +65,23 @@ const SequencerTrackSettings: React.FC<SequencerTrackSettingsProps> = ({ classNa
   }, [selectedTrack]);
 
   return (
-    <div className={`${className} p-4 bg-slate-50`}>
-      <h2 className="text-xl font-bold mb-4">Track Settings</h2>
+    <div className={`${className} px-3 bg-slate-50`}>
+      <h3 className="text-lg font-bold mb-4">Track Settings</h3>
 
       <div className="mb-4">
-        <label className="block mb-2">Select Track:</label>
-        <select
-          value={selectedTrackIndex}
-          onChange={handleTrackChange}
-          className="w-full p-2 border rounded"
-        >
-          {trackInfo.map((info, index) => (
-            <option key={info.trackIndex} value={index}>
-              Track {info.trackIndex + 1}
-            </option>
-          ))}
-        </select>
+        <Label htmlFor="trackSelect">Select Track</Label>
+        <Select onValueChange={handleTrackChange} value={selectedTrackIndex.toString()}>
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="Select a track" />
+          </SelectTrigger>
+          <SelectContent>
+            {trackInfo.map((info, index) => (
+              <SelectItem key={info.trackIndex} value={index.toString()}>
+                Track {info.trackIndex + 1}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="mb-4">
@@ -84,34 +92,36 @@ const SequencerTrackSettings: React.FC<SequencerTrackSettingsProps> = ({ classNa
       {selectedTrack && (
         <>
           <div className="mb-4">
-            <Label htmlFor="timeSignature">Time Signature</Label>
-            <select
-              value={`${selectedTrack.timeSignature[0]}/${selectedTrack.timeSignature[1]}`}
-              onChange={handleTimeSignatureChange}
-              className="w-full p-2 border rounded"
-            >
-              <option value="4/4">4/4</option>
-              <option value="3/4">3/4</option>
-              <option value="6/8">6/8</option>
-              <option value="5/4">5/4</option>
-              <option value="7/8">7/8</option>
-            </select>
+            <Label htmlFor={`timeSignature-track-${selectedTrackIndex}`}>Time Signature</Label>
+            <Select onValueChange={handleTimeSignatureChange} value={`${selectedTrack.timeSignature[0]}/${selectedTrack.timeSignature[1]}`}>
+              <SelectTrigger className="w-full">
+                <SelectValue id={`timeSignature-track-${selectedTrackIndex}`} placeholder="Select time signature" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="4/4">4/4</SelectItem>
+                <SelectItem value="3/4">3/4</SelectItem>
+                <SelectItem value="6/8">6/8</SelectItem>
+                <SelectItem value="5/4">5/4</SelectItem>
+                <SelectItem value="7/8">7/8</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="mb-4">
-            <Label htmlFor="stepDuration">Step Duration</Label>
-            <select
-              value={selectedTrack.stepDuration}
-              onChange={handleStepDurationChange}
-              className="w-full p-2 border rounded"
-            >
-              <option value="1n">Whole Note</option>
-              <option value="2n">Half Note</option>
-              <option value="4n">Quarter Note</option>
-              <option value="8n">Eighth Note</option>
-              <option value="16n">Sixteenth Note</option>
-              <option value="32n">Thirty-Second Note</option>
-            </select>
+            <Label htmlFor={`stepDuration-track-${selectedTrackIndex}`}>Step Duration</Label>
+            <Select onValueChange={handleStepDurationChange} value={selectedTrack.stepDuration}>
+              <SelectTrigger className="w-full">
+                <SelectValue id={`stepDuration-track-${selectedTrackIndex}`} placeholder="Select step duration" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1n">Whole Note</SelectItem>
+                <SelectItem value="2n">Half Note</SelectItem>
+                <SelectItem value="4n">Quarter Note</SelectItem>
+                <SelectItem value="8n">Eighth Note</SelectItem>
+                <SelectItem value="16n">Sixteenth Note</SelectItem>
+                <SelectItem value="32n">Thirty-Second Note</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div className="mb-4">
             <Label htmlFor="stepsPerMeasure">Steps per Measure: </Label>

@@ -22,11 +22,11 @@ const LoopControls: React.FC<LoopControlsProps> = ({ trackInfo, displayedSteps }
 
 return (
     <div className="flex space-x-4 mb-2">
-      <div className="grid w-full max-w-sm items-center gap-1.5">
-        <Label htmlFor="loopLength">Loop Length</Label>
+      <div className="grid items-center gap-1.5">
+        <Label htmlFor={`loopLength-${trackInfo.trackIndex}`}>Loop Length</Label>
         <Input
           type="number"
-          id="loopLength"
+          id={`loopLength-${trackInfo.trackIndex}`}
           value={trackInfo.loopLength.toString()}
           onChange={(e) => handleLoopLengthChange(e.target.value)}
           min={1}
