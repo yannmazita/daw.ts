@@ -24,11 +24,10 @@ const StepButton: React.FC<StepButtonProps> = ({ trackInfo, stepIndex, step }) =
     <div
       onClick={handleClick}
       className={`
-        w-8 h-8 m-0.5 ring-1 ring-gray-600
-        ${isWithinLoop ? (step.active ? 'bg-blue-500' : 'bg-gray-400') : 'bg-gray-800'}
+        w-8 h-8 m-0.5 ring-1 ring-slate-400 rounded-xs
+        ${isWithinLoop ? (step.active ? 'bg-ts-blue' : 'bg-gray-200') : 'bg-slate-600'}
         ${isWithinLoop ? 'cursor-pointer' : 'cursor-not-allowed'}
-        ${stepIndex === 0 ? 'border-l-4 border-green-500' : ''}
-        ${stepIndex === trackInfo.loopLength - 1 ? 'border-r-4 border-green-500' : ''}
+        ${stepIndex === trackInfo.loopLength - 1 ? 'border-r-4 border-slate-800' : ''}
         ${(stepIndex + 1) % 4 === 0 ? 'mr-2' : ''}
       `}
     />
