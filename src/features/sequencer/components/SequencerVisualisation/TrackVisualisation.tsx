@@ -1,4 +1,4 @@
-// src/features/sequencer/components/TrackVisualisation.tsx
+// src/features/sequencer/components/SequencerVisualisation/TrackVisualisation.tsx
 
 import React from 'react';
 import StepVisualisation from './StepVisualisation';
