@@ -1,6 +1,6 @@
 // src/features/sequencer/components/LoopEditor/LoopEditor.tsx
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { selectTrackInfo } from '../../slices/sequencerSlice';
 import TrackEditor from './TrackEditor';
@@ -21,6 +21,16 @@ const LoopEditor: React.FC = () => {
     setDisplayedSteps(parseInt(value));
   };
 
+  const trackEditors = useMemo(() => {
+    return allTrackInfo.map((trackInfo) => (
+      <TrackEditor
+        key={trackInfo.trackIndex}
+        trackInfo={trackInfo}
+        displayedSteps={displayedSteps}
+      />
+    ));
+  }, [allTrackInfo, displayedSteps]);
+
   return (
     <div className="px-3 bg-slate-50">
       <h3 className="text-lg font-semibold mb-4">Loop Editor</h3>
@@ -40,13 +50,11 @@ const LoopEditor: React.FC = () => {
         </Select>
       </div>
 
-      {allTrackInfo.map((trackInfo) => (
-        <TrackEditor
-          key={trackInfo.trackIndex}
-          trackInfo={trackInfo}
-          displayedSteps={displayedSteps}
-        />
-      ))}
+      <div className="overflow-x-auto">
+        <div className="inline-block">
+          {trackEditors}
+        </div>
+      </div>
     </div>
   );
 };

@@ -24,7 +24,7 @@ const StepButton: React.FC<StepButtonProps> = ({ trackInfo, stepIndex, step }) =
     <div
       onClick={handleClick}
       className={`
-        w-8 h-8 m-0.5 border border-slate-400 rounded-xs
+        size-7 m-0.5 border border-slate-400 rounded-xs
         ${isWithinLoop ? (step.active ? 'bg-ts-blue' : 'bg-gray-200') : 'bg-slate-600'}
         ${isWithinLoop ? 'cursor-pointer' : 'cursor-not-allowed'}
         ${stepIndex === trackInfo.loopLength - 1 ? 'border-r-4 border-slate-800' : ''}

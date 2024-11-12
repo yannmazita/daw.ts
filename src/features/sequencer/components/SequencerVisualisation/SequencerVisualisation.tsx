@@ -10,14 +10,16 @@ const SequencerVisualisation: React.FC = () => {
   const trackInfo = useSelector(selectTrackInfo);
 
   const trackElements = useMemo(() => {
-    return trackInfo.map(info => {
-      return <TrackVisualisation key={info.trackIndex} trackInfo={info} />;
-    });
+    return trackInfo.map(info => (
+      <TrackVisualisation key={info.trackIndex} trackInfo={info} />
+    ));
   }, [trackInfo]);
 
   return (
-    <div className='flex flex-col w-full bg-slate-50'>
-      {trackElements}
+    <div className='bg-slate-50 overflow-x-auto'>
+      <div className='inline-block'>
+        {trackElements}
+      </div>
     </div>
   );
 };
