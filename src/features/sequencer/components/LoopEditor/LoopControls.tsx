@@ -4,7 +4,8 @@ import React from 'react';
 import { useDispatch } from 'react-redux';
 import { updateTrackInfo } from '../../slices/sequencerSlice';
 import { SequencerTrackInfo } from '@/core/interfaces/sequencer';
-import AppInput from '@/common/components/AppInput';
+import { Input } from '@/common/shadcn/ui/input';
+import { Label } from '@/common/shadcn/ui/label';
 
 interface LoopControlsProps {
   trackInfo: SequencerTrackInfo;
@@ -19,17 +20,18 @@ const LoopControls: React.FC<LoopControlsProps> = ({ trackInfo, displayedSteps }
     dispatch(updateTrackInfo({ trackIndex: trackInfo.trackIndex, loopLength: newLength }));
   };
 
-  return (
+return (
     <div className="flex space-x-4 mb-2">
-      <div>
-        <label className="block text-sm">Loop Length:</label>
-        <AppInput
+      <div className="grid w-full max-w-sm items-center gap-1.5">
+        <Label htmlFor="loopLength">Loop Length</Label>
+        <Input
           type="number"
+          id="loopLength"
           value={trackInfo.loopLength.toString()}
           onChange={(e) => handleLoopLengthChange(e.target.value)}
           min={1}
           max={displayedSteps}
-          className="w-16 p-1 border rounded"
+          className="w-16"
         />
       </div>
     </div>

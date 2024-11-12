@@ -8,8 +8,9 @@ import {
   updateTrackInfoAndSteps,
   setGlobalBpm
 } from '../slices/sequencerSlice';
-import AppInput from '@/common/components/AppInput';
 import LoopEditor from './LoopEditor/LoopEditor';
+import { Input } from '@/common/shadcn/ui/input';
+import { Label } from '@/common/shadcn/ui/label';
 
 interface SequencerTrackSettingsProps {
   className?: string;
@@ -57,7 +58,7 @@ const SequencerTrackSettings: React.FC<SequencerTrackSettingsProps> = ({ classNa
   }, [selectedTrack]);
 
   return (
-    <div className={`${className} p-4 bg-gray-100`}>
+    <div className={`${className} p-4 bg-slate-50`}>
       <h2 className="text-xl font-bold mb-4">Track Settings</h2>
 
       <div className="mb-4">
@@ -76,19 +77,14 @@ const SequencerTrackSettings: React.FC<SequencerTrackSettingsProps> = ({ classNa
       </div>
 
       <div className="mb-4">
-        <label className="block mb-2">Global BPM:</label>
-        <AppInput
-          type="number"
-          value={globalBpm.toString()}
-          onChange={handleBpmChange}
-          className="w-full p-2 border rounded"
-        />
+        <Label htmlFor="globalBpm">Global BPM</Label>
+        <Input type="number" id="globalBpm" value={globalBpm.toString()} onChange={handleBpmChange} min={1} />
       </div>
 
       {selectedTrack && (
         <>
           <div className="mb-4">
-            <label className="block mb-2">Time Signature:</label>
+            <Label htmlFor="timeSignature">Time Signature</Label>
             <select
               value={`${selectedTrack.timeSignature[0]}/${selectedTrack.timeSignature[1]}`}
               onChange={handleTimeSignatureChange}
@@ -103,7 +99,7 @@ const SequencerTrackSettings: React.FC<SequencerTrackSettingsProps> = ({ classNa
           </div>
 
           <div className="mb-4">
-            <label className="block mb-2">Step Duration:</label>
+            <Label htmlFor="stepDuration">Step Duration</Label>
             <select
               value={selectedTrack.stepDuration}
               onChange={handleStepDurationChange}
@@ -118,7 +114,7 @@ const SequencerTrackSettings: React.FC<SequencerTrackSettingsProps> = ({ classNa
             </select>
           </div>
           <div className="mb-4">
-            <label className="block mb-2">Steps per Measure:</label>
+            <Label htmlFor="stepsPerMeasure">Steps per Measure: </Label>
             <span className="font-bold">{stepsPerMeasure}</span>
           </div>
           <LoopEditor />
