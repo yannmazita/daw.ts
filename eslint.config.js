@@ -5,22 +5,22 @@ import tseslint from 'typescript-eslint';
 import tsPlugin from '@typescript-eslint/eslint-plugin';
 
 export default tseslint.config(
-    eslint.configs.recommended,
-    ...tseslint.configs.strict,
-    ...tseslint.configs.recommendedTypeChecked,
-    ...tseslint.configs.stylisticTypeChecked,
-    {
-        languageOptions: {
-            parserOptions: {
-                project: ['./tsconfig.app.json', './tsconfig.node.json', './tsconfig.electron.json', './tsconfig.configs.json', './vitest.config.ts'],
-                sourceType: 'module',
-            },
-        },
-        plugins: {
-            '@typescript-eslint': tsPlugin,
-        },
+  eslint.configs.recommended,
+  ...tseslint.configs.strict,
+  ...tseslint.configs.recommendedTypeChecked,
+  ...tseslint.configs.stylisticTypeChecked,
+  {
+    languageOptions: {
+      parserOptions: {
+          project: ['./tsconfig.app.json', './tsconfig.node.json', './tsconfig.electron.json', './tsconfig.configs.json', './vitest.config.ts'],
+          sourceType: 'module',
+      },
     },
-    {
-        ignores: ['dist/', 'build/'],
-    }
+    plugins: {
+      '@typescript-eslint': tsPlugin,
+    },
+  },
+  {
+    ignores: ['dist/', 'build/'],
+  }
 );

@@ -1,10 +1,10 @@
 /// <reference types="vitest/config" />
+import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
-import vue from '@vitejs/plugin-vue'
 import path from 'path'
 
 export default defineConfig({
-    plugins: [vue()],
+    plugins: [react()],
     envDir: './',
     resolve: {
         alias: {

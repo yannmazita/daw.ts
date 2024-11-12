@@ -1,0 +1,26 @@
+/* src/features/sequencer/styles/style.css */
+
+.sequencer-track {
+  transition: transform 0.5s;
+}
+
+.sequencer-track-enter {
+  opacity: 0;
+  transform: translateX(-30px);
+}
+
+.sequencer-track-enter-active {
+  opacity: 1;
+  transform: translateX(0);
+  transition: opacity 0.5s, transform 0.5s;
+}
+
+.sequencer-track-exit {
+  opacity: 1;
+}
+
+.sequencer-track-exit-active {
+  opacity: 0;
+  transform: translateX(-30px);
+  transition: opacity 0.5s, transform 0.5s;
+}
