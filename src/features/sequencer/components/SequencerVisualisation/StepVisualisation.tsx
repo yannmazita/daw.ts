@@ -1,6 +1,7 @@
 // src/features/sequencer/components/SequencerVisualisation/StepVisualisation.tsx
 
 import React from 'react';
+import { useShallow } from 'zustand/shallow';
 import { useSequencerStore } from '../../slices/useSequencerStore';
 
 interface StepVisualisationProps {
@@ -9,7 +10,7 @@ interface StepVisualisationProps {
 
 const StepVisualisation: React.FC<StepVisualisationProps> = ({ trackIndex }) => {
   const trackInfo = useSequencerStore(state => state.trackInfo[trackIndex]);
-  const steps = useSequencerStore(state => state.steps.filter(s => s.trackIndex === trackIndex));
+  const steps = useSequencerStore(useShallow(state => state.steps.filter(s => s.trackIndex === trackIndex)));
   const currentStep = useSequencerStore(state => state.currentStep);
   const { stepsPerMeasure, loopLength } = trackInfo;
 

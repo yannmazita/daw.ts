@@ -2,22 +2,19 @@
 
 import React from 'react';
 import StepVisualisation from './StepVisualisation';
-import { SequencerTrackInfo } from '@/core/interfaces';
 
 interface TrackVisualisationProps {
-  trackInfo: SequencerTrackInfo;
+  trackIndex: number;
 }
 
-const TrackVisualisation: React.FC<TrackVisualisationProps> = ({
-  trackInfo,
+const TrackVisualisation: React.FC<TrackVisualisationProps> = React.memo(({
+  trackIndex,
 }) => {
   return (
-    <div id={`sequencer-track-visualisation-${trackInfo.trackIndex}`}>
-      <StepVisualisation
-        trackIndex={trackInfo.trackIndex}
-      />
+    <div id={`sequencer-track-visualisation-${trackIndex}`}>
+      <StepVisualisation trackIndex={trackIndex} />
     </div>
   );
-};
+});
 
 export default TrackVisualisation;

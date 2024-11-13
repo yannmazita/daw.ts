@@ -10,7 +10,7 @@ const SequencerVisualisation: React.FC = () => {
 
   const trackElements = useMemo(() => {
     return trackInfo.map(info => (
-      <TrackVisualisation key={info.trackIndex} trackInfo={info} />
+      <TrackVisualisation key={info.trackIndex} trackIndex={info.trackIndex} />
     ));
   }, [trackInfo]);
 
@@ -23,4 +23,4 @@ const SequencerVisualisation: React.FC = () => {
   );
 };
 
-export default SequencerVisualisation;
+export default React.memo(SequencerVisualisation);
