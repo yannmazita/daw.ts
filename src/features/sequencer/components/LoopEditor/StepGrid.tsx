@@ -1,43 +1,29 @@
 // src/features/sequencer/components/LoopEditor/StepGrid.tsx
 
-import React from 'react';
-import { useSelector } from 'react-redux';
-import { selectStepsByTrack } from '../../slices/sequencerSlice';
-import { SequencerStep, SequencerTrackInfo } from '@/core/interfaces/sequencer';
+import React, { useMemo } from 'react';
 import StepButton from './StepButton';
-import { Note } from '@/core/enums';
 
 interface StepGridProps {
-  trackInfo: SequencerTrackInfo;
+  trackIndex: number;
   displayedSteps: number;
 }
 
-const StepGrid: React.FC<StepGridProps> = ({ trackInfo, displayedSteps }) => {
-  const steps = useSelector(selectStepsByTrack(trackInfo.trackIndex));
-
-  const createDefaultStep = (stepIndex: number): SequencerStep => ({
-    trackIndex: trackInfo.trackIndex,
-    stepIndex,
-    active: false,
-    note: trackInfo.commonNote ?? Note.C4,
-    velocity: trackInfo.commonVelocity ?? 100,
-    modulation: 0,
-    pitchBend: 0
-  });
+const StepGrid: React.FC<StepGridProps> = React.memo(({ trackIndex, displayedSteps }) => {
+  const stepButtons = useMemo(() => {
+    return Array.from({ length: displayedSteps }, (_, stepIndex) => (
+      <StepButton
+        key={`${trackIndex}-${stepIndex}`}
+        trackIndex={trackIndex}
+        stepIndex={stepIndex}
+      />
+    ));
+  }, [trackIndex, displayedSteps]);
 
   return (
     <div className="flex flex-row">
-      {Array.from({ length: displayedSteps }, (_, stepIndex) => (
-        <StepButton
-          key={stepIndex}
-          trackInfo={trackInfo}
-          stepIndex={stepIndex}
-          displayedSteps={displayedSteps}
-          step={steps.find(s => s.stepIndex === stepIndex) ?? createDefaultStep(stepIndex)}
-        />
-      ))}
+      {stepButtons}
     </div>
   );
-};
+});
 
 export default StepGrid;

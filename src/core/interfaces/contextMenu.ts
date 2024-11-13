@@ -30,8 +30,8 @@ export interface MenuItemWithCommand extends MenuItem {
 /**
  * Converts a MenuItemWithCommand to a SerializableMenuItem.
  * 
- * @param {MenuItemWithCommand} item - The menu item with a command to serialize.
- * @returns {SerializableMenuItem} - The serialized menu item.
+ * @param item The menu item with a command to serialize.
+ * @returns The serialized menu item.
  */
 export function createSerializableMenuItem(item: MenuItemWithCommand): SerializableMenuItem {
   return {
@@ -43,9 +43,9 @@ export function createSerializableMenuItem(item: MenuItemWithCommand): Serializa
 /**
  * Converts a SerializableMenuItem back to a MenuItemWithCommand using a command factory.
  * 
- * @param {SerializableMenuItem} item - The serializable menu item to convert.
- * @param {(type: string, payload: any) => Command} commandFactory - The factory function to create commands.
- * @returns {MenuItemWithCommand} - The menu item with an associated command.
+ * @param item The serializable menu item to convert.
+ * @param commandFactory The factory function to create commands.
+ * @returns The menu item with an associated command.
  */
 export function createMenuItemWithCommand(
   item: SerializableMenuItem,
@@ -56,4 +56,17 @@ export function createMenuItemWithCommand(
     ...rest,
     command: commandFactory(commandType, item.payload),
   };
+}
+
+export interface ContextMenuState {
+  appLevelItems: Record<string, SerializableMenuItem>;
+  contextualItems: Record<string, SerializableMenuItem[]>;
+  visible: boolean;
+  xPos: number;
+  yPos: number;
+  setAppLevelItems: (items: Record<string, SerializableMenuItem>) => void;
+  addContextualItems: (groupId: string, items: SerializableMenuItem[]) => void;
+  clearContextualItems: () => void;
+  openContextMenu: (x: number, y: number) => void;
+  closeContextMenu: () => void;
 }

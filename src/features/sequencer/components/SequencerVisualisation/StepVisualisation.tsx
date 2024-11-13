@@ -1,17 +1,17 @@
 // src/features/sequencer/components/SequencerVisualisation/StepVisualisation.tsx
 
 import React from 'react';
-import { useSelector } from 'react-redux';
-import { selectStepsByTrack, selectTrackInfo, selectCurrentStep } from '../../slices/sequencerSlice';
+import { useShallow } from 'zustand/shallow';
+import { useSequencerStore } from '../../slices/useSequencerStore';
 
 interface StepVisualisationProps {
   trackIndex: number;
 }
 
 const StepVisualisation: React.FC<StepVisualisationProps> = ({ trackIndex }) => {
-  const trackInfo = useSelector(selectTrackInfo)[trackIndex];
-  const steps = useSelector(selectStepsByTrack(trackIndex));
-  const currentStep = useSelector(selectCurrentStep);
+  const trackInfo = useSequencerStore(state => state.trackInfo[trackIndex]);
+  const steps = useSequencerStore(useShallow(state => state.steps.filter(s => s.trackIndex === trackIndex)));
+  const currentStep = useSequencerStore(state => state.currentStep);
   const { stepsPerMeasure, loopLength } = trackInfo;
 
   return (
