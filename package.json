@@ -44,6 +44,7 @@
   "dependencies": {
     "@radix-ui/react-label": "^2.1.0",
     "@radix-ui/react-select": "^2.1.2",
+    "@redux-devtools/extension": "^3.3.0",
     "@reduxjs/toolkit": "^2.3.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
@@ -54,6 +55,7 @@
     "tailwind-merge": "^2.5.4",
     "tailwindcss-animate": "^1.0.7",
     "tone": "^15.0.4",
-    "uuid": "^11.0.2"
+    "uuid": "^11.0.2",
+    "zustand": "^5.0.1"
   }
 }
