@@ -11,7 +11,6 @@ import { instrumentManager } from '@/common/services/instrumentManagerInstance';
 
 export const useSequencerStore = create<SequencerState>()(
   devtools(
-    persist(
       (set, get) => ({
         status: SequenceStatus.Stopped,
         steps: [],
@@ -167,7 +166,6 @@ export const useSequencerStore = create<SequencerState>()(
       }),
       { name: 'sequencer-storage' }
     ),
-  ),
 );
 
 // Utility functions
