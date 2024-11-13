@@ -12,11 +12,7 @@ import {
   SelectValue,
 } from "@/common/shadcn/ui/select"
 
-interface SequencerTrackSettingsProps {
-  className?: string;
-}
-
-const SequencerTrackSettings: React.FC<SequencerTrackSettingsProps> = ({ className }) => {
+const SequencerTrackSettings: React.FC = () => {
   const allTrackInfo = useSequencerStore(state => state.trackInfo);
   const globalBpm = useSequencerStore(state => state.globalBpm);
   const setGlobalBpm = useSequencerStore(state => state.setGlobalBpm);
@@ -56,7 +52,7 @@ const SequencerTrackSettings: React.FC<SequencerTrackSettingsProps> = ({ classNa
   }, [selectedTrack]);
 
   return (
-    <div className={`${className} bg-slate-50 p-2`}>
+    <div className="bg-slate-50 p-2 col-span-1">
       <h3 className="text-lg font-bold mb-4">Track Settings</h3>
 
       <div className="mb-4">

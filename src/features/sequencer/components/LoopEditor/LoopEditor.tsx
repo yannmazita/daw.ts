@@ -31,10 +31,10 @@ const LoopEditor: React.FC = () => {
   }, [allTrackInfo, displayedSteps]);
 
   return (
-    <div className="bg-slate-50 p-2">
+    <div className="bg-slate-50 p-2 col-span-2">
       <h3 className="text-lg font-semibold mb-4">Loop Editor</h3>
 
-      <div className="mb-4">
+      <div className="">
         <Label htmlFor="displayed-steps">Displayed Steps</Label>
         <Select onValueChange={handleDisplayedStepsChange} value={`${displayedSteps}`}>
           <SelectTrigger className="w-full">
@@ -50,7 +50,9 @@ const LoopEditor: React.FC = () => {
       </div>
 
       <div className="overflow-x-auto">
-      <div className="inline-block">{trackEditors}</div>
+        <div className="inline-block">
+          {trackEditors}
+        </div>
       </div>
     </div>
   );

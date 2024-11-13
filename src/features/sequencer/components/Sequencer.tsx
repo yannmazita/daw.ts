@@ -14,9 +14,9 @@ const Sequencer: React.FC = () => {
   }, []);
 
   return (
-    <div id='sequencer-wrapper' className='flex flex-col max-w-xl'>
+    <div id='sequencer-wrapper' className='flex flex-col'>
       <SequencerVisualisation />
-      <div>
+      <div className='grid grid-cols-3'>
         <SequencerTrackSettings />
         <LoopEditor />
       </div>
