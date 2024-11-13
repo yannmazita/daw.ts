@@ -1,8 +1,7 @@
 // src/features/sequencer/components/LoopEditor/StepButton.tsx
 
 import React from 'react';
-import { useDispatch } from 'react-redux';
-import { toggleStep } from '../../slices/sequencerSlice';
+import { useSequencerStore } from '../../slices/useSequencerStore';
 import { SequencerTrackInfo, SequencerStep } from '@/core/interfaces/sequencer';
 
 interface StepButtonProps {
@@ -13,10 +12,9 @@ interface StepButtonProps {
 }
 
 const StepButton: React.FC<StepButtonProps> = ({ trackInfo, stepIndex, displayedSteps, step }) => {
-  const dispatch = useDispatch();
-
+  const toggleStep = useSequencerStore((state) => state.toggleStep);
   const handleClick = () => {
-    dispatch(toggleStep({ trackIndex: trackInfo.trackIndex, stepIndex }));
+    toggleStep(trackInfo.trackIndex, stepIndex);
   };
 
   const isWithinLoop = stepIndex < trackInfo.loopLength;

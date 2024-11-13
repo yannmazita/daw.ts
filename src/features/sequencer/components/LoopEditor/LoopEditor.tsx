@@ -1,8 +1,7 @@
 // src/features/sequencer/components/LoopEditor/LoopEditor.tsx
 
 import React, { useMemo, useState } from 'react';
-import { useSelector } from 'react-redux';
-import { selectTrackInfo } from '../../slices/sequencerSlice';
+import { useSequencerStore } from '../../slices/useSequencerStore';
 import TrackEditor from './TrackEditor';
 import { Label } from '@/common/shadcn/ui/label';
 import {
@@ -14,7 +13,7 @@ import {
 } from "@/common/shadcn/ui/select"
 
 const LoopEditor: React.FC = () => {
-  const allTrackInfo = useSelector(selectTrackInfo);
+  const allTrackInfo = useSequencerStore((state) => state.trackInfo);
   const [displayedSteps, setDisplayedSteps] = useState(16);
 
   const handleDisplayedStepsChange = (value: string) => {

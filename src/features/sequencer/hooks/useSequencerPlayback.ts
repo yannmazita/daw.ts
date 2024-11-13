@@ -1,23 +1,21 @@
 // src/features/sequencer/hooks/useSequencerPlayback.ts
 
-import { useSelector, useDispatch } from 'react-redux';
 import * as Tone from 'tone';
-import { setStatus, setSteps, selectStatus, selectSteps, selectTrackInfo } from '../slices/sequencerSlice';
+import { useSequencerStore } from '../slices/useSequencerStore';
 import { instrumentManager } from '@/common/services/instrumentManagerInstance';
 
 export const useSequencerPlayback = () => {
-  const dispatch = useDispatch();
-  const status = useSelector(selectStatus);
-  const steps = useSelector(selectSteps);
-  const trackInfo = useSelector(selectTrackInfo);
+  const status = useSequencerStore(state => state.status);
+  const steps = useSequencerStore(state => state.steps);
+  const allTrackInfo = useSequencerStore(state => state.trackInfo);
 
   const playStep = (stepIndex: number, time: number): void => {
-    const soloTrackExists = trackInfo.some(track => track.solo);
-    const activeTracks = trackInfo.filter(track => !track.muted && (soloTrackExists ? track.solo : true));
+    const soloTrackExists = allTrackInfo.some(track => track.solo);
+    const activeTracks = allTrackInfo.filter(track => !track.muted && (soloTrackExists ? track.solo : true));
     const activeSteps = steps.filter(step => step.stepIndex === stepIndex && activeTracks.some(track => track.trackIndex === step.trackIndex));
 
     activeSteps.forEach(step => {
-      const track = trackInfo.find(t => t.trackIndex === step.trackIndex);
+      const track = allTrackInfo.find(t => t.trackIndex === step.trackIndex);
       if (track) {
         const instrument = instrumentManager.getInstrument(track.instrumentId);
         if (instrument) {

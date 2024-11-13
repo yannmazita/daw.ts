@@ -1,13 +1,7 @@
 // src/features/sequencer/components/SequencerTrackSettings.tsx
 
 import React, { useState, useCallback, useMemo } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
-import {
-  selectTrackInfo,
-  selectGlobalBpm,
-  updateTrackInfoAndSteps,
-  setGlobalBpm
-} from '../slices/sequencerSlice';
+import { useSequencerStore } from '../slices/useSequencerStore';
 import { Input } from '@/common/shadcn/ui/input';
 import { Label } from '@/common/shadcn/ui/label';
 import {
@@ -23,15 +17,16 @@ interface SequencerTrackSettingsProps {
 }
 
 const SequencerTrackSettings: React.FC<SequencerTrackSettingsProps> = ({ className }) => {
-  const dispatch = useDispatch();
-  const trackInfo = useSelector(selectTrackInfo);
-  const globalBpm = useSelector(selectGlobalBpm);
+  const allTrackInfo = useSequencerStore(state => state.trackInfo);
+  const globalBpm = useSequencerStore(state => state.globalBpm);
+  const setGlobalBpm = useSequencerStore(state => state.setGlobalBpm);
+  const updateTrackInfoAndSteps = useSequencerStore(state => state.updateTrackInfoAndSteps);
 
   const [selectedTrackIndex, setSelectedTrackIndex] = useState(0);
-  const selectedTrack = trackInfo[selectedTrackIndex];
+  const selectedTrack = allTrackInfo[selectedTrackIndex];
 
   const handleBpmChange = useCallback((value: string) => {
-    dispatch(setGlobalBpm(parseInt(value)));
+    setGlobalBpm(parseInt(value));
   }, []);
 
   const handleTrackChange = useCallback((value: string) => {
@@ -40,18 +35,18 @@ const SequencerTrackSettings: React.FC<SequencerTrackSettingsProps> = ({ classNa
 
   const handleTimeSignatureChange = useCallback((value: string) => {
     const [numerator, denominator] = value.split('/').map(Number);
-    dispatch(updateTrackInfoAndSteps({
+    updateTrackInfoAndSteps({
       trackIndex: selectedTrackIndex,
       timeSignature: [numerator, denominator]
-    }));
-  }, [dispatch, selectedTrackIndex]);
+    });
+  }, [selectedTrackIndex]);
 
   const handleStepDurationChange = useCallback((value: string) => {
-    dispatch(updateTrackInfoAndSteps({
+    updateTrackInfoAndSteps({
       trackIndex: selectedTrackIndex,
       stepDuration: value
-    }));
-  }, [dispatch, selectedTrackIndex]);
+    });
+  }, [selectedTrackIndex]);
 
   const stepsPerMeasure = useMemo(() => {
     if (selectedTrack) {
@@ -71,7 +66,7 @@ const SequencerTrackSettings: React.FC<SequencerTrackSettingsProps> = ({ classNa
             <SelectValue placeholder="Select a track" />
           </SelectTrigger>
           <SelectContent>
-            {trackInfo.map((info, index) => (
+            {allTrackInfo.map((info, index) => (
               <SelectItem key={info.trackIndex} value={index.toString()}>
                 Track {info.trackIndex + 1}
               </SelectItem>

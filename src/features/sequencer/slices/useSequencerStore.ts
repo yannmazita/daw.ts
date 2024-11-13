@@ -1,4 +1,4 @@
-// src/features/sequencer/stores/useSequencerStore.ts
+// src/features/sequencer/slices/useSequencerStore.ts
 
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';

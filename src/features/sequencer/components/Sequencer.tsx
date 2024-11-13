@@ -1,19 +1,17 @@
 // src/features/components/Sequencer.tsx
 
 import React, { useEffect } from 'react';
-import { useDispatch } from 'react-redux';
+import { useSequencerStore } from '../slices/useSequencerStore';
 import SequencerVisualisation from './SequencerVisualisation/SequencerVisualisation';
 import SequencerTrackSettings from './SequencerTrackSettings';
 import LoopEditor from './LoopEditor/LoopEditor';
-import { initializeSequencer } from '../slices/sequencerSlice';
 
 
 const Sequencer: React.FC = () => {
-  const dispatch = useDispatch();
-
+  const initializeSequencer = useSequencerStore((state) => state.initializeSequencer);
   useEffect(() => {
-    dispatch(initializeSequencer(4)); // Initialize with 4 tracks
-  }, [dispatch]);
+    initializeSequencer(4); // Initialize with 4 tracks
+  }, []);
 
   return (
     <div id='sequencer-wrapper' className='flex flex-col max-w-xl'>

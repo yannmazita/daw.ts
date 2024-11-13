@@ -1,13 +1,12 @@
 // src/features/sequencer/SequencerVisualisation/SequencerVisualisation.tsx
 
 import React, { useMemo } from 'react';
-import { useSelector } from 'react-redux';
-import { selectTrackInfo } from '@/features/sequencer/slices/sequencerSlice';
+import { useSequencerStore } from '../../slices/useSequencerStore';
 import '../../styles/style.css';
 import TrackVisualisation from './TrackVisualisation';
 
 const SequencerVisualisation: React.FC = () => {
-  const trackInfo = useSelector(selectTrackInfo);
+  const trackInfo = useSequencerStore((state) => state.trackInfo);
 
   const trackElements = useMemo(() => {
     return trackInfo.map(info => (

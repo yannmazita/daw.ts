@@ -1,8 +1,7 @@
 // src/features/sequencer/components/LoopEditor/StepGrid.tsx
 
 import React from 'react';
-import { useSelector } from 'react-redux';
-import { selectStepsByTrack } from '../../slices/sequencerSlice';
+import { useSequencerStore } from '../../slices/useSequencerStore';
 import { SequencerStep, SequencerTrackInfo } from '@/core/interfaces/sequencer';
 import StepButton from './StepButton';
 import { Note } from '@/core/enums';
@@ -13,7 +12,7 @@ interface StepGridProps {
 }
 
 const StepGrid: React.FC<StepGridProps> = ({ trackInfo, displayedSteps }) => {
-  const steps = useSelector(selectStepsByTrack(trackInfo.trackIndex));
+  const steps = useSequencerStore((state) => state.steps);
 
   const createDefaultStep = (stepIndex: number): SequencerStep => ({
     trackIndex: trackInfo.trackIndex,

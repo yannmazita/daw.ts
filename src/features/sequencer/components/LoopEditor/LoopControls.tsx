@@ -1,8 +1,7 @@
 // src/features/sequencer/components/LoopEditor/LoopControls.tsx
 
 import React from 'react';
-import { useDispatch } from 'react-redux';
-import { updateTrackInfo } from '../../slices/sequencerSlice';
+import { useSequencerStore } from '../../slices/useSequencerStore';
 import { SequencerTrackInfo } from '@/core/interfaces/sequencer';
 import { Input } from '@/common/shadcn/ui/input';
 import { Label } from '@/common/shadcn/ui/label';
@@ -13,11 +12,11 @@ interface LoopControlsProps {
 }
 
 const LoopControls: React.FC<LoopControlsProps> = ({ trackInfo, displayedSteps }) => {
-  const dispatch = useDispatch();
+  const updateTrackInfo = useSequencerStore((state) => state.updateTrackInfo);
 
   const handleLoopLengthChange = (value: string) => {
     const newLength = Math.max(1, Math.min(parseInt(value), displayedSteps));
-    dispatch(updateTrackInfo({ trackIndex: trackInfo.trackIndex, loopLength: newLength }));
+    updateTrackInfo({ trackIndex: trackInfo.trackIndex, loopLength: newLength });
   };
 
 return (
