@@ -50,9 +50,7 @@ const LoopEditor: React.FC = () => {
       </div>
 
       <div className="overflow-x-auto">
-        <div className="inline-block">
-          {trackEditors}
-        </div>
+      <div className="inline-block">{trackEditors}</div>
       </div>
     </div>
   );
