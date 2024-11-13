@@ -1,8 +1,7 @@
 // src/App.tsx
 
 import React, { useEffect } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
-import { openContextMenu, setAppLevelItems, selectContextMenuVisibility } from './common/slices/contextMenuSlice';
+import { useContextMenuStore } from './common/slices/useContextMenuStore';
 import { SerializableMenuItem } from '@/core/interfaces/contextMenu';
 import ContextMenu from './common/components/ContextMenu';
 import MainView from './views/MainView';
@@ -13,8 +12,9 @@ import MainView from './views/MainView';
  * @returns The rendered component.
  */
 const App: React.FC = () => {
-  const dispatch = useDispatch();
-  const menuVisible = useSelector(selectContextMenuVisibility);
+  const menuVisible = useContextMenuStore(state => state.visible);
+  const setAppLevelItems = useContextMenuStore(state => state.setAppLevelItems);
+  const openContextMenu = useContextMenuStore(state => state.openContextMenu);
 
   useEffect(() => {
     const appItems: Record<string, SerializableMenuItem> = {
@@ -36,12 +36,12 @@ const App: React.FC = () => {
       },
     };
 
-    dispatch(setAppLevelItems(appItems));
-  }, [dispatch]);
+    setAppLevelItems(appItems);
+  }, []);
 
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
-    dispatch(openContextMenu({ x: e.clientX, y: e.clientY }));
+    openContextMenu(e.clientX, e.clientY);
   };
 
   return (
