@@ -74,22 +74,54 @@ export const useSequencerPlayback = () => {
     setCurrentStep(0);
   }, [setStatus, clearScheduledEvents, setCurrentStep]);
 
-  const scheduleSequence = useCallback(() => {
+const scheduleSequence = useCallback(() => {
     clearScheduledEvents();
 
-    // Use the shortest step duration among all tracks for the loop interval
     const shortestStepDuration = Math.min(
       ...allTrackInfo.map(track => getStepDurationInSeconds(track.trackIndex))
     );
 
-    // Get the maximum step index across all tracks
     const maxStepIndex = Math.max(
       ...steps.map(step => step.stepIndex),
       ...allTrackInfo.map(track => track.stepsPerMeasure - 1)
     );
 
     loopRef.current = new Tone.Loop((time) => {
-      playStep(stepCounterRef.current, time);
+      // Get fresh state for each step
+      const currentSteps = useSequencerStore.getState().steps;
+      const currentTrackInfo = useSequencerStore.getState().trackInfo;
+      
+      const soloTrackExists = currentTrackInfo.some(track => track.solo);
+
+      // Update visual step
+      Tone.getDraw().schedule(() => {
+        setCurrentStep(stepCounterRef.current);
+      }, time);
+
+      // Play step with fresh state
+      currentTrackInfo.forEach(track => {
+        if (track.muted || (soloTrackExists && !track.solo)) return;
+
+        const step = currentSteps.find(s =>
+          s.trackIndex === track.trackIndex &&
+          s.stepIndex === stepCounterRef.current
+        );
+
+        if (step?.active) {
+          const instrument = instrumentManager.getInstrument(track.instrumentId);
+          if (!instrument) return;
+
+          const stepDuration = getStepDurationInSeconds(track.trackIndex);
+          const velocity = track.commonVelocity ?? step.velocity;
+          const note = track.commonNote ?? step.note;
+
+          if (instrument instanceof Tone.NoiseSynth) {
+            instrument.triggerAttackRelease(stepDuration, time, velocity / 127);
+          } else {
+            instrument.triggerAttackRelease(note, stepDuration, time, velocity / 127);
+          }
+        }
+      });
 
       // Increment step counter
       stepCounterRef.current = (stepCounterRef.current + 1) % (maxStepIndex + 1);
@@ -105,12 +137,12 @@ export const useSequencerPlayback = () => {
     loopRef.current.start(0);
   }, [
     clearScheduledEvents,
-    playStep,
-    steps,
     allTrackInfo,
+    steps,
     getStepDurationInSeconds,
     loopEnabled,
-    stopSequencer
+    stopSequencer,
+    setCurrentStep
   ]);
 
   const startSequencer = useCallback(async () => {
@@ -150,6 +182,24 @@ export const useSequencerPlayback = () => {
       stepCounterRef.current = 0;
     };
   }, [clearScheduledEvents]);
+
+  // Add effect to reschedule sequence when steps change during playback
+  useEffect(() => {
+    if (status === SequenceStatus.Playing) {
+      const currentStepCount = stepCounterRef.current; // Save current position
+      scheduleSequence();
+      stepCounterRef.current = currentStepCount; // Restore position
+    }
+  }, [steps, status, scheduleSequence]);
+
+  // Add effect to handle track info changes (mute, solo, etc.)
+  useEffect(() => {
+    if (status === SequenceStatus.Playing) {
+      const currentStepCount = stepCounterRef.current;
+      scheduleSequence();
+      stepCounterRef.current = currentStepCount;
+    }
+  }, [allTrackInfo, status, scheduleSequence]);
 
   return {
     startSequencer,
