@@ -12,20 +12,19 @@ const StepVisualisation: React.FC<StepVisualisationProps> = ({ trackIndex }) => 
   const trackInfo = useSequencerStore(state => state.trackInfo[trackIndex]);
   const steps = useSequencerStore(useShallow(state => state.steps.filter(s => s.trackIndex === trackIndex)));
   const currentStep = useSequencerStore(state => state.currentStep);
-  const { stepsPerMeasure, loopLength } = trackInfo;
+  const { stepsPerMeasure } = trackInfo;
 
   return (
     <div className='flex flex-row'>
       {Array.from({ length: stepsPerMeasure }, (_, index) => {
-        const actualStepIndex = (index % loopLength + loopLength) % loopLength;
-        const step = steps.find(s => s.stepIndex === actualStepIndex) ?? { active: false };
+        const step = steps.find(s => s.stepIndex === index);
 
         return (
           <div
             key={index}
             className={`
               size-2 m-0.5
-              ${step.active ? 'bg-ts-blue' : 'bg-gray-200'}
+              ${step?.active ? 'bg-ts-blue' : 'bg-gray-200'}
               ${index === currentStep ? 'ring-2 ring-slate-600' : ''}
             `}
             aria-label={`Step ${index + 1} of track ${trackIndex}`}
