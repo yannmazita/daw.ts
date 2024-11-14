@@ -12,7 +12,6 @@ export const useSequencerPlayback = () => {
   const steps = useSequencerStore(state => state.steps);
   const allTrackInfo = useSequencerStore(state => state.trackInfo);
   const globalBpm = useSequencerStore(state => state.globalBpm);
-  const currentStep = useSequencerStore(state => state.currentStep);
   const setCurrentStep = useSequencerStore(state => state.setCurrentStep);
 
   const loopRef = useRef<Tone.Loop | null>(null);
