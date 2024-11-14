@@ -44,11 +44,34 @@ export const useSequencerStore = create<SequencerState>()(
       setSteps: (steps: SequencerStep[]) => set({ steps: steps.map(step => ({ ...step })) }),
       setCurrentStep: (currentStep: number) => set({ currentStep }),
       toggleStep: (trackIndex: number, stepIndex: number) => set((state) => {
-        const newSteps = state.steps.map(step =>
-          step.trackIndex === trackIndex && step.stepIndex === stepIndex
-            ? { ...step, active: !step.active }
-            : step
+        const trackInfo = state.trackInfo.find(t => t.trackIndex === trackIndex);
+        if (!trackInfo) return state;
+
+        const { loopLength, stepsPerMeasure } = trackInfo;
+        const relativeStepIndex = stepIndex % loopLength; // Position within the loop
+
+        // Find all steps that should be toggled based on the loop pattern
+        const stepsToToggle = new Set<number>();
+        for (let i = relativeStepIndex; i < stepsPerMeasure; i += loopLength) {
+          stepsToToggle.add(i);
+        }
+
+        // Find the current state of the clicked step to determine the new active state
+        const clickedStep = state.steps.find(
+          s => s.trackIndex === trackIndex && s.stepIndex === stepIndex
         );
+        const newActiveState = clickedStep ? !clickedStep.active : true;
+
+        // Update all affected steps
+        const newSteps = state.steps.map(step => {
+          if (
+            step.trackIndex === trackIndex &&
+            stepsToToggle.has(step.stepIndex)
+          ) {
+            return { ...step, active: newActiveState };
+          }
+          return step;
+        });
         return { steps: newSteps };
       }),
       initializeTracks: (numTracks: number) => set((state) => {
