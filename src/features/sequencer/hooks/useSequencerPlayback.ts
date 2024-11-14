@@ -4,7 +4,7 @@ import * as Tone from 'tone';
 import { useSequencerStore } from '../slices/useSequencerStore';
 import { instrumentManager } from '@/common/services/instrumentManagerInstance';
 import { SequenceStatus } from '@/core/enums/sequenceStatus';
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 export const useSequencerPlayback = () => {
   const status = useSequencerStore(state => state.status);
@@ -12,40 +12,67 @@ export const useSequencerPlayback = () => {
   const steps = useSequencerStore(state => state.steps);
   const allTrackInfo = useSequencerStore(state => state.trackInfo);
   const globalBpm = useSequencerStore(state => state.globalBpm);
+  const currentStep = useSequencerStore(state => state.currentStep);
   const setCurrentStep = useSequencerStore(state => state.setCurrentStep);
   
-  const loopRef = useRef<Tone.Loop | null>(null);
+ const loopRef = useRef<Tone.Loop | null>(null);
+  const playbackStartTimeRef = useRef<number | null>(null);
+  const lastManuallySelectedStepRef = useRef<number | null>(null);
+  const visualStepRef = useRef<number>(0);
+  const [loopEnabled, setLoopEnabled] = useState(true);
 
   const getStepDurationInSeconds = useCallback((trackIndex: number): number => {
     const track = allTrackInfo[trackIndex];
     const { timeSignature: [numerator, denominator], stepsPerMeasure } = track;
-    
-    // Calculate seconds per measure based on time signature and BPM
     const secondsPerMeasure = (60 / globalBpm) * 4 * (numerator / denominator);
-    
-    // Calculate duration of one step
     return secondsPerMeasure / stepsPerMeasure;
   }, [allTrackInfo, globalBpm]);
 
-  const calculateStepIndex = useCallback((trackIndex: number, currentTime: number): number => {
-    const track = allTrackInfo[trackIndex];
-    const stepDuration = getStepDurationInSeconds(trackIndex);
+  const updateVisualStep = useCallback((stepIndex: number, time: number) => {
+    if (visualStepRef.current !== stepIndex) {
+      Tone.getDraw().schedule(() => {
+        visualStepRef.current = stepIndex;
+        setCurrentStep(stepIndex);
+      }, time);
+    }
+  }, [setCurrentStep]);
+
+  const clearScheduledEvents = useCallback(() => {
+    if (loopRef.current) {
+      loopRef.current.dispose();
+      loopRef.current = null;
+    }
+    Tone.getDraw().cancel(); // Cancel any pending visual updates
+  }, []);
+
+  const resetPlaybackPosition = useCallback(() => {
+    visualStepRef.current = 0;
+    setCurrentStep(0);
+    lastManuallySelectedStepRef.current = null;
+  }, [setCurrentStep]);
+
+  const calculateCurrentStep = useCallback((time: number): number => {
+    if (playbackStartTimeRef.current === null) return 0;
     
-    // Calculate step index based on current time and loop length
-    const totalSteps = Math.floor(currentTime / stepDuration);
-    return totalSteps % track.loopLength;
+    const elapsedTime = time - playbackStartTimeRef.current;
+    const shortestStepDuration = Math.min(
+      ...allTrackInfo.map(track => getStepDurationInSeconds(track.trackIndex))
+    );
+    const stepsElapsed = Math.floor(elapsedTime / shortestStepDuration);
+    
+    const maxLoopLength = Math.max(...allTrackInfo.map(track => track.loopLength));
+    return stepsElapsed % maxLoopLength;
   }, [allTrackInfo, getStepDurationInSeconds]);
 
-  const playStep = useCallback((time: number): void => {
-    const currentTime = Tone.getTransport().seconds;
+  const playCurrentStep = useCallback((stepIndex: number, time: number): void => {
     const soloTrackExists = allTrackInfo.some(track => track.solo);
     
+    // Schedule visual update first
+    updateVisualStep(stepIndex, time);
+    
     allTrackInfo.forEach(track => {
-      if (track.muted || (soloTrackExists && !track.solo)) {
-        return;
-      }
+      if (track.muted || (soloTrackExists && !track.solo)) return;
 
-      const stepIndex = calculateStepIndex(track.trackIndex, currentTime);
       const activeSteps = steps.filter(step => 
         step.trackIndex === track.trackIndex && 
         step.stepIndex === stepIndex &&
@@ -54,81 +81,161 @@ export const useSequencerPlayback = () => {
 
       activeSteps.forEach(step => {
         const instrument = instrumentManager.getInstrument(track.instrumentId);
-        if (instrument) {
-          const stepDuration = getStepDurationInSeconds(track.trackIndex);
-          instrument.triggerAttackRelease(
-            step.note,
-            stepDuration,
-            time,
-            step.velocity / 127
-          );
-        }
-      });
+        if (!instrument) return;
 
-      // Update current step in the UI
-      Tone.getDraw().schedule(() => {
-        setCurrentStep(stepIndex);
-      }, time);
+        const stepDuration = getStepDurationInSeconds(track.trackIndex);
+        const velocity = track.commonVelocity ?? step.velocity;
+        const note = track.commonNote ?? step.note;
+
+        // Schedule audio slightly ahead of visual update for better sync
+        Tone.getDraw().schedule(() => {
+          if (instrument instanceof Tone.NoiseSynth) {
+            instrument.triggerAttackRelease(stepDuration, time, velocity / 127);
+          } else {
+            instrument.triggerAttackRelease(note, stepDuration, time, velocity / 127);
+          }
+        }, time - 0.05); // Schedule slightly ahead for better timing
+      });
     });
-  }, [steps, allTrackInfo, calculateStepIndex, getStepDurationInSeconds, setCurrentStep]);
+  }, [steps, allTrackInfo, getStepDurationInSeconds, updateVisualStep]);
+
+  const handleLooping = useCallback((currentStepIndex: number, time: number) => {
+    const maxLoopLength = Math.max(...allTrackInfo.map(track => track.loopLength));
+    
+    if (currentStepIndex >= maxLoopLength - 1) {
+      if (loopEnabled) {
+        // Schedule loop point update
+        Tone.getDraw().schedule(() => {
+          playbackStartTimeRef.current = Tone.now();
+        }, time);
+      } else {
+        // Schedule stop at loop end
+        Tone.getDraw().schedule(() => {
+          stopSequencer();
+        }, time + getStepDurationInSeconds(0)); // Use first track's duration as reference
+      }
+    }
+  }, [allTrackInfo, loopEnabled, getStepDurationInSeconds]);
+
+  const scheduleSequence = useCallback(() => {
+    clearScheduledEvents();
+
+    const shortestStepDuration = Math.min(
+      ...allTrackInfo.map(track => getStepDurationInSeconds(track.trackIndex))
+    );
+
+    loopRef.current = new Tone.Loop((time) => {
+      const currentStepIndex = calculateCurrentStep(time);
+      playCurrentStep(currentStepIndex, time);
+      handleLooping(currentStepIndex, time);
+    }, shortestStepDuration);
+
+    loopRef.current.start(0);
+  }, [
+    clearScheduledEvents,
+    calculateCurrentStep,
+    playCurrentStep,
+    handleLooping,
+    allTrackInfo,
+    getStepDurationInSeconds
+  ]);
 
   const startSequencer = useCallback(async () => {
-    if (Tone.getTransport().state === 'started') {
+    if (status === SequenceStatus.Playing) return;
+
+    if (status === SequenceStatus.Paused) {
+      setStatus(SequenceStatus.Playing);
+      Tone.getTransport().start();
       return;
     }
 
     await Tone.start();
     Tone.getTransport().bpm.value = globalBpm;
 
-    if (!loopRef.current) {
-      // Find the shortest step duration among all tracks
+    const startStep = lastManuallySelectedStepRef.current ?? currentStep;
+    setStatus(SequenceStatus.Scheduled);
+
+    // Schedule sequence start with visual feedback
+    Tone.getDraw().schedule(() => {
       const shortestStepDuration = Math.min(
         ...allTrackInfo.map(track => getStepDurationInSeconds(track.trackIndex))
       );
+      playbackStartTimeRef.current = Tone.now() - (shortestStepDuration * startStep);
+      scheduleSequence();
+      setStatus(SequenceStatus.Playing);
+    }, '+0.1'); // Small delay for stable start
 
-      loopRef.current = new Tone.Loop((time) => {
-        playStep(time);
-      }, shortestStepDuration);
-    }
-
-    loopRef.current.start(0);
     Tone.getTransport().start();
-    setStatus(SequenceStatus.Playing);
-  }, [globalBpm, playStep, setStatus, allTrackInfo, getStepDurationInSeconds]);
+    lastManuallySelectedStepRef.current = null;
+  }, [
+    status,
+    globalBpm,
+    currentStep,
+    allTrackInfo,
+    scheduleSequence,
+    setStatus,
+    getStepDurationInSeconds
+  ]);
 
   const stopSequencer = useCallback(() => {
-    if (loopRef.current) {
-      loopRef.current.stop();
-    }
-    Tone.getTransport().stop();
-    Tone.getTransport().position = 0;
-    setCurrentStep(0);
-    setStatus(SequenceStatus.Stopped);
-  }, [setCurrentStep, setStatus]);
+    Tone.getDraw().schedule(() => {
+      setStatus(SequenceStatus.Stopped);
+      Tone.getTransport().stop();
+      clearScheduledEvents();
+      resetPlaybackPosition();
+    }, '+0.1');
+  }, [setStatus, clearScheduledEvents, resetPlaybackPosition]);
 
   const pauseSequencer = useCallback(() => {
-    Tone.getTransport().pause();
-    setStatus(SequenceStatus.Paused);
-  }, [setStatus]);
+    if (status !== SequenceStatus.Playing) return;
+    
+    Tone.getDraw().schedule(() => {
+      setStatus(SequenceStatus.Paused);
+      Tone.getTransport().pause();
+    }, '+0.1');
+  }, [status, setStatus]);
+
+  const seekTo = useCallback((stepIndex: number) => {
+    Tone.getDraw().schedule(() => {
+      setCurrentStep(stepIndex);
+      visualStepRef.current = stepIndex;
+      
+      if (status === SequenceStatus.Playing) {
+        const shortestStepDuration = Math.min(
+          ...allTrackInfo.map(track => getStepDurationInSeconds(track.trackIndex))
+        );
+        playbackStartTimeRef.current = Tone.now() - (shortestStepDuration * stepIndex);
+      } else if (status === SequenceStatus.Stopped) {
+        lastManuallySelectedStepRef.current = stepIndex;
+      }
+    }, '+0.1');
+  }, [status, allTrackInfo, setCurrentStep, getStepDurationInSeconds]);
 
   useEffect(() => {
     Tone.getTransport().bpm.value = globalBpm;
   }, [globalBpm]);
 
-  // Cleanup effect
+  useEffect(() => {
+    if (status === SequenceStatus.Playing) {
+      scheduleSequence();
+    }
+  }, [allTrackInfo, status, scheduleSequence]);
+
   useEffect(() => {
     return () => {
-      if (loopRef.current) {
-        loopRef.current.dispose();
-      }
+      clearScheduledEvents();
       Tone.getTransport().stop();
     };
-  }, []);
+  }, [clearScheduledEvents]);
 
   return {
     startSequencer,
     stopSequencer,
     pauseSequencer,
+    seekTo,
     status,
+    loopEnabled,
+    setLoopEnabled,
+    visualStep: visualStepRef.current,
   };
 };
