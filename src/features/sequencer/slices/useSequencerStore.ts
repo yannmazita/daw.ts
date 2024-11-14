@@ -1,7 +1,7 @@
 // src/features/sequencer/slices/useSequencerStore.ts
 
 import { create } from 'zustand';
-import { devtools, persist } from 'zustand/middleware';
+import { devtools } from 'zustand/middleware';
 import type { } from '@redux-devtools/extension';
 import * as Tone from 'tone';
 import { SequencerState, SequencerTrackInfo, SequencerStep } from '@/core/interfaces/sequencer';
@@ -43,12 +43,6 @@ export const useSequencerStore = create<SequencerState>()(
         }),
         setSteps: (steps: SequencerStep[]) => set({ steps: steps.map(step => ({ ...step })) }),
         setCurrentStep: (currentStep: number) => set({ currentStep }),
-        setTrackInstrument: (trackIndex: number, instrumentId: string) => set((state) => {
-          const newTrackInfo = state.trackInfo.map(track =>
-            track.trackIndex === trackIndex ? { ...track, instrumentId } : track
-          );
-          return { trackInfo: newTrackInfo };
-        }),
         toggleStep: (trackIndex: number, stepIndex: number) => set((state) => {
           const newSteps = state.steps.map(step =>
             step.trackIndex === trackIndex && step.stepIndex === stepIndex
@@ -144,7 +138,7 @@ export const useSequencerStore = create<SequencerState>()(
             )
           };
         }),
-        setTrackInstrumentThunk: (trackIndex: number, instrument: Instrument) => {
+        setTrackInstrument: (trackIndex: number, instrument: Instrument) => {
           const instrumentId = `instrument_${trackIndex}_${Date.now()}`;
           instrumentManager.addInstrument(instrumentId, instrument);
           set((state) => ({
@@ -160,7 +154,7 @@ export const useSequencerStore = create<SequencerState>()(
 
           for (let i = 0; i < numTracks; i++) {
             const defaultInstrument = new Tone.Synth().toDestination();
-            get().setTrackInstrumentThunk(i, defaultInstrument);
+            get().setTrackInstrument(i, defaultInstrument);
           }
         },
       }),

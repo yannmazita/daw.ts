@@ -1,6 +1,6 @@
 // src/core/interfaces/sequencer.ts
 
-import { InstrumentName, Note, SequenceStatus } from '../enums';
+import { Note, SequenceStatus } from '../enums';
 import { Instrument } from '../types';
 
 /**
@@ -28,7 +28,6 @@ export interface SequencerStep {
 export interface SequencerTrackInfo {
   trackIndex: number;
   instrumentId: string;
-  //InstrumentName: InstrumentName;
   muted: boolean;
   solo: boolean;
   timeSignature: [number, number];
@@ -60,10 +59,9 @@ export interface SequencerState {
   setStep: (step: SequencerStep) => void;
   setSteps: (steps: SequencerStep[]) => void;
   setCurrentStep: (step: number) => void;
-  setTrackInstrument: (trackIndex: number, instrumentId: string, instrumentName: InstrumentName) => void;
   toggleStep: (trackIndex: number, stepIndex: number) => void;
   initializeTracks: (numTracks: number) => void;
   updateTrackInfoAndSteps: (trackInfoUpdate: Partial<SequencerTrackInfo> & { trackIndex: number }) => void;
-  setTrackInstrumentThunk: (trackIndex: number, instrument: Instrument) => void;
+  setTrackInstrument: (trackIndex: number, instrument: Instrument) => void;
   initializeSequencer: (numTracks: number) => void;
 }
