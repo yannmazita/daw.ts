@@ -33,39 +33,6 @@ export const useSequencerPlayback = () => {
     Tone.getDraw().cancel();
   }, []);
 
-  const playStep = useCallback((stepIndex: number, time: number): void => {
-    const soloTrackExists = allTrackInfo.some(track => track.solo);
-
-    // Update visual step
-    Tone.getDraw().schedule(() => {
-      setCurrentStep(stepIndex);
-    }, time);
-
-    allTrackInfo.forEach(track => {
-      if (track.muted || (soloTrackExists && !track.solo)) return;
-
-      const step = steps.find(s =>
-        s.trackIndex === track.trackIndex &&
-        s.stepIndex === stepIndex
-      );
-
-      if (step?.active) {
-        const instrument = instrumentManager.getInstrument(track.instrumentId);
-        if (!instrument) return;
-
-        const stepDuration = getStepDurationInSeconds(track.trackIndex);
-        const velocity = track.commonVelocity ?? step.velocity;
-        const note = track.commonNote ?? step.note;
-
-        if (instrument instanceof Tone.NoiseSynth) {
-          instrument.triggerAttackRelease(stepDuration, time, velocity / 127);
-        } else {
-          instrument.triggerAttackRelease(note, stepDuration, time, velocity / 127);
-        }
-      }
-    });
-  }, [steps, allTrackInfo, getStepDurationInSeconds, setCurrentStep]);
-
   const stopSequencer = useCallback(() => {
     setStatus(SequenceStatus.Stopped);
     Tone.getTransport().stop();
@@ -74,7 +41,7 @@ export const useSequencerPlayback = () => {
     setCurrentStep(0);
   }, [setStatus, clearScheduledEvents, setCurrentStep]);
 
-const scheduleSequence = useCallback(() => {
+  const scheduleSequence = useCallback(() => {
     clearScheduledEvents();
 
     const shortestStepDuration = Math.min(
@@ -90,7 +57,7 @@ const scheduleSequence = useCallback(() => {
       // Get fresh state for each step
       const currentSteps = useSequencerStore.getState().steps;
       const currentTrackInfo = useSequencerStore.getState().trackInfo;
-      
+
       const soloTrackExists = currentTrackInfo.some(track => track.solo);
 
       // Update visual step
@@ -171,10 +138,12 @@ const scheduleSequence = useCallback(() => {
     Tone.getTransport().pause();
   }, [status, setStatus]);
 
+  // Effect for BPM changes
   useEffect(() => {
     Tone.getTransport().bpm.value = globalBpm;
   }, [globalBpm]);
 
+  // Effect for cleanup
   useEffect(() => {
     return () => {
       clearScheduledEvents();
@@ -183,7 +152,7 @@ const scheduleSequence = useCallback(() => {
     };
   }, [clearScheduledEvents]);
 
-  // Add effect to reschedule sequence when steps change during playback
+  // Effect for step changes during playback
   useEffect(() => {
     if (status === SequenceStatus.Playing) {
       const currentStepCount = stepCounterRef.current; // Save current position
@@ -192,7 +161,7 @@ const scheduleSequence = useCallback(() => {
     }
   }, [steps, status, scheduleSequence]);
 
-  // Add effect to handle track info changes (mute, solo, etc.)
+  // Effect for track info changes during playback
   useEffect(() => {
     if (status === SequenceStatus.Playing) {
       const currentStepCount = stepCounterRef.current;
