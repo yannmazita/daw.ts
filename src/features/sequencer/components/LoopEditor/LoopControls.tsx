@@ -1,6 +1,6 @@
 // src/features/sequencer/components/LoopEditor/LoopControls.tsx
 
-import React from 'react';
+import React, { useCallback } from 'react';
 import { useSequencerStore } from '../../slices/useSequencerStore';
 import { SequencerTrackInfo } from '@/core/interfaces/sequencer';
 import { Input } from '@/common/shadcn/ui/input';
@@ -12,12 +12,19 @@ interface LoopControlsProps {
 }
 
 const LoopControls: React.FC<LoopControlsProps> = ({ trackInfo, displayedSteps }) => {
-  const updateTrackInfo = useSequencerStore((state) => state.updateTrackInfo);
+  const updateTrackInfoAndSteps = useSequencerStore((state) => state.updateTrackInfoAndSteps);
 
-  const handleLoopLengthChange = (value: string) => {
-    const newLength = Math.max(1, Math.min(parseInt(value), displayedSteps));
-    updateTrackInfo({ trackIndex: trackInfo.trackIndex, loopLength: newLength });
-  };
+  const handleLoopLengthChange = useCallback((value: string) => {
+    const newLength = Math.max(1, Math.min(parseInt(value) || 1, displayedSteps));
+    
+    // Only update if the value has actually changed
+    if (newLength !== trackInfo.loopLength) {
+      updateTrackInfoAndSteps({ 
+        trackIndex: trackInfo.trackIndex, 
+        loopLength: newLength 
+      });
+    }
+  }, [trackInfo.trackIndex, trackInfo.loopLength, displayedSteps, updateTrackInfoAndSteps]);
 
 return (
     <div className="flex space-x-4 mb-2">
