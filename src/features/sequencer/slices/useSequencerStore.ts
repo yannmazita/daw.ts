@@ -139,25 +139,43 @@ export const useSequencerStore = create<SequencerState>()(
             trackInfoUpdate.stepDuration ?? updatedTrackInfo.stepDuration
           );
 
-          const currentSteps = state.steps.filter(step => step.trackIndex === trackInfoUpdate.trackIndex);
+          const currentSteps = state.steps.filter(step =>
+            step.trackIndex === trackInfoUpdate.trackIndex
+          );
 
           let updatedSteps: SequencerStep[] = [];
 
           if (currentSteps.length > newStepsPerMeasure) {
+            // If reducing steps, just slice
             updatedSteps = currentSteps.slice(0, newStepsPerMeasure);
           } else if (currentSteps.length < newStepsPerMeasure) {
-            updatedSteps = [
-              ...currentSteps,
-              ...Array.from({ length: newStepsPerMeasure - currentSteps.length }, (_, index) => ({
+            // Keep existing steps
+            updatedSteps = [...currentSteps];
+
+            // Calculate loop pattern for new steps
+            const loopLength = updatedTrackInfo.loopLength;
+            const existingPattern = new Set<number>();
+
+            // Find active steps within the loop
+            currentSteps.forEach(step => {
+              if (step.active && step.stepIndex < loopLength) {
+                existingPattern.add(step.stepIndex % loopLength);
+              }
+            });
+
+            // Add new steps following the loop pattern
+            for (let i = currentSteps.length; i < newStepsPerMeasure; i++) {
+              const relativePosition = i % loopLength;
+              updatedSteps.push({
                 trackIndex: trackInfoUpdate.trackIndex,
-                stepIndex: currentSteps.length + index,
-                active: false,
+                stepIndex: i,
+                active: existingPattern.has(relativePosition),
                 note: updatedTrackInfo.commonNote ?? Note.C4,
                 velocity: updatedTrackInfo.commonVelocity ?? 100,
                 modulation: 0,
                 pitchBend: 0,
-              })),
-            ];
+              });
+            }
           } else {
             updatedSteps = currentSteps;
           }
