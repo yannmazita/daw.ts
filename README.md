@@ -7,6 +7,10 @@ Digital Audio Workstation built with [React](https://react.dev/), [tonejs](https
 ![image](https://github.com/user-attachments/assets/9f49d4a7-b1a5-45e0-b466-80fc36964794)
 
 ## Running
+- Install dependencies :
+```commandline
+npm install
+```
 - Start the UI with :
 ```commandline
 npm run dev
