@@ -113,8 +113,8 @@ export const useSequencerStore = create<SequencerState>()(
         if ('loopLength' in trackInfoUpdate) {
           const newSteps = state.steps.map(step => {
             if (
-              step.trackIndex === trackInfoUpdate.trackIndex &&
-              step.stepIndex >= trackInfoUpdate.loopLength!
+              trackInfoUpdate.loopLength !== undefined && step.trackIndex === trackInfoUpdate.trackIndex &&
+              step.stepIndex >= trackInfoUpdate.loopLength
             ) {
               return { ...step, active: false };
             }
