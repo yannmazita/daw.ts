@@ -4,7 +4,7 @@ Work in progress! Very early stage.
 
 Digital Audio Workstation built with [React](https://react.dev/), [tonejs](https://tonejs.github.io/) and [electron](https://www.electronjs.org/)
 
-![image](https://github.com/user-attachments/assets/a9649ccc-c8d0-4d51-a9a3-464dea30ad52)
+![image](https://github.com/user-attachments/assets/8eeb52a0-ed98-4a0c-90b3-da2ab2ef56f5)
 
 
 ## Running
