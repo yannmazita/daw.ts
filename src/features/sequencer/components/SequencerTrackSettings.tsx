@@ -1,6 +1,6 @@
 // src/features/sequencer/components/SequencerTrackSettings.tsx
 
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { useSequencerStore } from '../slices/useSequencerStore';
 import { Input } from '@/common/shadcn/ui/input';
 import { Label } from '@/common/shadcn/ui/label';
@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from "@/common/shadcn/ui/select";
 import { InstrumentName } from '@/core/enums/instrumentName';
+import TrackAnalytics from './TrackAnalytics/TrackAnalytics';
 
 const SequencerTrackSettings: React.FC = () => {
   const allTrackInfo = useSequencerStore(state => state.trackInfo);
@@ -155,10 +156,11 @@ const SequencerTrackSettings: React.FC = () => {
               </SelectContent>
             </Select>
           </div>
-          <div>
+          <div className="mb-4">
             <Label htmlFor="steps-per-measure">Steps per Measure: </Label>
             <span id="steps-per-measure" className="font-bold">{stepsPerMeasure}</span>
           </div>
+          <TrackAnalytics trackIndex={selectedTrackIndex}></TrackAnalytics>
         </>
       )}
     </div>
