@@ -3,10 +3,8 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import type { } from '@redux-devtools/extension';
-import * as Tone from 'tone';
 import { SequencerState, SequencerTrackInfo, SequencerStep } from '@/core/interfaces/sequencer';
 import { InstrumentName, Note, SequenceStatus } from '@/core/enums';
-import { Instrument } from '@/core/types/instrument';
 import { instrumentManager } from '@/common/services/instrumentManagerInstance';
 
 export const useSequencerStore = create<SequencerState>()(
@@ -78,6 +76,7 @@ export const useSequencerStore = create<SequencerState>()(
         const trackInfo = Array.from({ length: numTracks }, (_, index) => ({
           trackIndex: index,
           instrumentId: '',
+          instrumentName: InstrumentName.Synth,
           muted: false,
           solo: false,
           timeSignature: [4, 4] as [number, number],
@@ -202,13 +201,13 @@ export const useSequencerStore = create<SequencerState>()(
           )
         };
       }),
-      setTrackInstrument: (trackIndex: number, instrument: Instrument) => {
+      setTrackInstrument: (trackIndex: number, instrumentName: InstrumentName) => {
         const instrumentId = `instrument_${trackIndex}_${Date.now()}`;
-        instrumentManager.addInstrument(instrumentId, instrument);
+        instrumentManager.addInstrument(instrumentId, instrumentName);
         set((state) => ({
           trackInfo: state.trackInfo.map(track =>
             track.trackIndex === trackIndex
-              ? { ...track, instrumentId, instrumentName: InstrumentName[instrument.name as keyof typeof InstrumentName] }
+              ? { ...track, instrumentId, instrumentName }
               : track
           )
         }));
@@ -217,8 +216,7 @@ export const useSequencerStore = create<SequencerState>()(
         get().initializeTracks(numTracks);
 
         for (let i = 0; i < numTracks; i++) {
-          const defaultInstrument = new Tone.Synth().toDestination();
-          get().setTrackInstrument(i, defaultInstrument);
+          get().setTrackInstrument(i, InstrumentName.Synth);
         }
       },
     }),
