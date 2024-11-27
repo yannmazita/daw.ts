@@ -3,11 +3,11 @@
 @tailwind utilities;
 
 * {
-    min-width: 0;
+  min-width: 0;
 }
 
 @layer base {
   :root {
-        --radius: 0.5rem;
-    }
+    --radius: 0.5rem;
+  }
 }

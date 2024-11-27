@@ -1,16 +1,16 @@
 // src/features/sequencer/components/LoopEditor/LoopEditor.tsx
 
-import React, { useMemo, useState } from 'react';
-import { useSequencerStore } from '../../slices/useSequencerStore';
-import TrackEditor from './TrackEditor';
-import { Label } from '@/common/shadcn/ui/label';
+import React, { useMemo, useState } from "react";
+import { useSequencerStore } from "../../slices/useSequencerStore";
+import TrackEditor from "./TrackEditor";
+import { Label } from "@/common/shadcn/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/common/shadcn/ui/select"
+} from "@/common/shadcn/ui/select";
 
 const LoopEditor: React.FC = () => {
   const allTrackInfo = useSequencerStore((state) => state.trackInfo);
@@ -36,9 +36,15 @@ const LoopEditor: React.FC = () => {
 
       <div className="">
         <Label htmlFor="displayed-steps">Displayed Steps</Label>
-        <Select onValueChange={handleDisplayedStepsChange} value={`${displayedSteps}`}>
+        <Select
+          onValueChange={handleDisplayedStepsChange}
+          value={`${displayedSteps}`}
+        >
           <SelectTrigger className="w-full">
-            <SelectValue id="displayed-steps" placeholder="Select displayed steps" />
+            <SelectValue
+              id="displayed-steps"
+              placeholder="Select displayed steps"
+            />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="8">8 steps</SelectItem>
@@ -50,9 +56,7 @@ const LoopEditor: React.FC = () => {
       </div>
 
       <div className="overflow-x-auto">
-        <div className="inline-block">
-          {trackEditors}
-        </div>
+        <div className="inline-block">{trackEditors}</div>
       </div>
     </div>
   );

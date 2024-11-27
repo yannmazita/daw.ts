@@ -6,23 +6,23 @@
  */
 export enum InstrumentName {
   /** A basic synthesizer. */
-  Synth = 'Synth',
+  Synth = "Synth",
 
   /** An amplitude modulation synthesizer. */
-  AMSynth = 'AMSynth',
+  AMSynth = "AMSynth",
 
   /** A frequency modulation synthesizer. */
-  FMSynth = 'FMSynth',
+  FMSynth = "FMSynth",
 
   /** A synthesizer that produces percussion-like sounds. */
-  MembraneSynth = 'MembraneSynth',
+  MembraneSynth = "MembraneSynth",
 
   /** A synthesizer for metallic sounds. */
-  MetalSynth = 'MetalSynth',
+  MetalSynth = "MetalSynth",
 
   /** A monophonic synthesizer. */
-  MonoSynth = 'MonoSynth',
+  MonoSynth = "MonoSynth",
 
   /** A synthesizer that generates noise-based sounds. */
-  NoiseSynth = 'NoiseSynth'
+  NoiseSynth = "NoiseSynth",
 }

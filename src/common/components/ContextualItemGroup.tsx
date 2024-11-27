@@ -1,8 +1,8 @@
 // src/common/components/ContextualItemGroup.tsx
 
-import React from 'react';
-import ContextMenuItem from './ContextMenuItem';
-import { SerializableMenuItem } from '@/core/interfaces/contextMenu';
+import React from "react";
+import ContextMenuItem from "./ContextMenuItem";
+import { SerializableMenuItem } from "@/core/interfaces/contextMenu";
 
 interface ContextualItemGroupProps {
   groupId: string;
@@ -13,7 +13,7 @@ interface ContextualItemGroupProps {
 
 /**
  * A functional component that renders a group of context menu items.
- * 
+ *
  * @param props The properties for the component.
  * @param props.groupId The group ID
  * @param props.items The list of menu items to display.
@@ -29,7 +29,7 @@ const ContextualItemGroup: React.FC<ContextualItemGroupProps> = React.memo(
         <ContextMenuItem key={item.id} item={item} onClick={onItemClick} />
       ))}
     </>
-  )
+  ),
 );
 
 export default ContextualItemGroup;

@@ -1,7 +1,7 @@
 // src/views/MainView.tsx
 
-import React from 'react';
-import Sequencer from '@/features/sequencer/components/Sequencer';
+import React from "react";
+import Sequencer from "@/features/sequencer/components/Sequencer";
 
 const MainView: React.FC = () => {
   return (
@@ -9,6 +9,6 @@ const MainView: React.FC = () => {
       <Sequencer />
     </div>
   );
-}
+};
 
 export default MainView;

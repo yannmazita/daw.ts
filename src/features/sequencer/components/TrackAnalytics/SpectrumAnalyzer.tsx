@@ -1,9 +1,9 @@
 // src/features/sequencer/components/SequencerVisualisation/SpectrumAnalyzer.tsx
 
-import React, { useEffect, useRef, useState } from 'react';
-import * as Tone from 'tone';
-import { useSequencerStore } from '../../slices/useSequencerStore';
-import { instrumentManager } from '@/common/services/instrumentManagerInstance';
+import React, { useEffect, useRef, useState } from "react";
+import * as Tone from "tone";
+import { useSequencerStore } from "../../slices/useSequencerStore";
+import { instrumentManager } from "@/common/services/instrumentManagerInstance";
 
 interface SpectrumAnalyzerProps {
   trackIndex: number;
@@ -19,7 +19,7 @@ const SpectrumAnalyzer: React.FC<SpectrumAnalyzerProps> = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const analyzerRef = useRef<Tone.Analyser | null>(null);
   const animationFrameRef = useRef<number>();
-  const trackInfo = useSequencerStore(state => state.trackInfo[trackIndex]);
+  const trackInfo = useSequencerStore((state) => state.trackInfo[trackIndex]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   useEffect(() => {
@@ -30,9 +30,9 @@ const SpectrumAnalyzer: React.FC<SpectrumAnalyzerProps> = ({
 
     // Create analyzer node
     analyzerRef.current = new Tone.Analyser({
-      type: 'fft',
+      type: "fft",
       size: 64,
-      smoothing: 0.8
+      smoothing: 0.8,
     });
 
     // Connect instrument to analyzer
@@ -52,21 +52,21 @@ const SpectrumAnalyzer: React.FC<SpectrumAnalyzerProps> = ({
     if (!canvasRef.current || !analyzerRef.current || !isAnalyzing) return;
 
     const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
     const spectrum = analyzerRef.current.getValue() as Float32Array;
-    
+
     // Clear canvas
     ctx.clearRect(0, 0, width, height);
-    
+
     // Draw frequency bars
     const barWidth = width / spectrum.length;
     const barSpacing = 2;
     const maxDb = -20;
     const minDb = -100;
 
-    ctx.fillStyle = '#2563eb';
+    ctx.fillStyle = "#2563eb";
 
     spectrum.forEach((value, i) => {
       const dbValue = Math.max(minDb, Math.min(maxDb, value));
@@ -77,7 +77,7 @@ const SpectrumAnalyzer: React.FC<SpectrumAnalyzerProps> = ({
         i * (barWidth + barSpacing),
         height - barHeight,
         barWidth,
-        barHeight
+        barHeight,
       );
     });
 

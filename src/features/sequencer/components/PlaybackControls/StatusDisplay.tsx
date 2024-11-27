@@ -1,7 +1,7 @@
 // src/features/sequencer/components/PlaybackControls/StatusDisplay.tsx
 
-import React from 'react';
-import { SequenceStatus } from '@/core/enums/sequenceStatus';
+import React from "react";
+import { SequenceStatus } from "@/core/enums/sequenceStatus";
 
 interface StatusDisplayProps {
   status: SequenceStatus;

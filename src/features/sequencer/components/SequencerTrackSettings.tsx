@@ -1,9 +1,9 @@
 // src/features/sequencer/components/SequencerTrackSettings.tsx
 
-import React, { useState, useCallback, useMemo } from 'react';
-import { useSequencerStore } from '../slices/useSequencerStore';
-import { Input } from '@/common/shadcn/ui/input';
-import { Label } from '@/common/shadcn/ui/label';
+import React, { useState, useCallback, useMemo } from "react";
+import { useSequencerStore } from "../slices/useSequencerStore";
+import { Input } from "@/common/shadcn/ui/input";
+import { Label } from "@/common/shadcn/ui/label";
 import {
   Select,
   SelectContent,
@@ -11,15 +11,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/common/shadcn/ui/select";
-import { InstrumentName } from '@/core/enums/instrumentName';
-import TrackAnalytics from './TrackAnalytics/TrackAnalytics';
+import { InstrumentName } from "@/core/enums/instrumentName";
+import TrackAnalytics from "./TrackAnalytics/TrackAnalytics";
 
 const SequencerTrackSettings: React.FC = () => {
-  const allTrackInfo = useSequencerStore(state => state.trackInfo);
-  const globalBpm = useSequencerStore(state => state.globalBpm);
-  const setGlobalBpm = useSequencerStore(state => state.setGlobalBpm);
-  const updateTrackInfoAndSteps = useSequencerStore(state => state.updateTrackInfoAndSteps);
-  const setTrackInstrument = useSequencerStore(state => state.setTrackInstrument);
+  const allTrackInfo = useSequencerStore((state) => state.trackInfo);
+  const globalBpm = useSequencerStore((state) => state.globalBpm);
+  const setGlobalBpm = useSequencerStore((state) => state.setGlobalBpm);
+  const updateTrackInfoAndSteps = useSequencerStore(
+    (state) => state.updateTrackInfoAndSteps,
+  );
+  const setTrackInstrument = useSequencerStore(
+    (state) => state.setTrackInstrument,
+  );
 
   const [selectedTrackIndex, setSelectedTrackIndex] = useState(0);
   const selectedTrack = allTrackInfo[selectedTrackIndex];
@@ -32,24 +36,33 @@ const SequencerTrackSettings: React.FC = () => {
     setSelectedTrackIndex(parseInt(value));
   }, []);
 
-  const handleInstrumentChange = useCallback((value: string) => {
-    setTrackInstrument(selectedTrackIndex, value as InstrumentName);
-  }, [selectedTrackIndex, setTrackInstrument]);
+  const handleInstrumentChange = useCallback(
+    (value: string) => {
+      setTrackInstrument(selectedTrackIndex, value as InstrumentName);
+    },
+    [selectedTrackIndex, setTrackInstrument],
+  );
 
-  const handleTimeSignatureChange = useCallback((value: string) => {
-    const [numerator, denominator] = value.split('/').map(Number);
-    updateTrackInfoAndSteps({
-      trackIndex: selectedTrackIndex,
-      timeSignature: [numerator, denominator]
-    });
-  }, [selectedTrackIndex]);
+  const handleTimeSignatureChange = useCallback(
+    (value: string) => {
+      const [numerator, denominator] = value.split("/").map(Number);
+      updateTrackInfoAndSteps({
+        trackIndex: selectedTrackIndex,
+        timeSignature: [numerator, denominator],
+      });
+    },
+    [selectedTrackIndex],
+  );
 
-  const handleStepDurationChange = useCallback((value: string) => {
-    updateTrackInfoAndSteps({
-      trackIndex: selectedTrackIndex,
-      stepDuration: value
-    });
-  }, [selectedTrackIndex]);
+  const handleStepDurationChange = useCallback(
+    (value: string) => {
+      updateTrackInfoAndSteps({
+        trackIndex: selectedTrackIndex,
+        stepDuration: value,
+      });
+    },
+    [selectedTrackIndex],
+  );
 
   const stepsPerMeasure = useMemo(() => {
     if (selectedTrack) {
@@ -64,7 +77,10 @@ const SequencerTrackSettings: React.FC = () => {
 
       <div className="mb-4">
         <Label htmlFor="trackSelect">Select Track</Label>
-        <Select onValueChange={handleTrackChange} value={selectedTrackIndex.toString()}>
+        <Select
+          onValueChange={handleTrackChange}
+          value={selectedTrackIndex.toString()}
+        >
           <SelectTrigger className="w-full">
             <SelectValue placeholder="Select a track" />
           </SelectTrigger>
@@ -81,8 +97,8 @@ const SequencerTrackSettings: React.FC = () => {
       {selectedTrack && (
         <div className="mb-4">
           <Label htmlFor="instrumentSelect">Instrument</Label>
-          <Select 
-            onValueChange={handleInstrumentChange} 
+          <Select
+            onValueChange={handleInstrumentChange}
             value={selectedTrack.instrumentName || InstrumentName.Synth}
           >
             <SelectTrigger className="w-full">
@@ -101,27 +117,29 @@ const SequencerTrackSettings: React.FC = () => {
 
       <div className="mb-4">
         <Label htmlFor="globalBpm">Global BPM</Label>
-        <Input 
-          type="number" 
-          id="globalBpm" 
-          value={globalBpm.toString()} 
-          onChange={(e) => handleBpmChange(e.target.value)} 
-          min={1} 
+        <Input
+          type="number"
+          id="globalBpm"
+          value={globalBpm.toString()}
+          onChange={(e) => handleBpmChange(e.target.value)}
+          min={1}
         />
       </div>
 
       {selectedTrack && (
         <>
           <div className="mb-4">
-            <Label htmlFor={`timeSignature-track-${selectedTrackIndex}`}>Time Signature</Label>
-            <Select 
-              onValueChange={handleTimeSignatureChange} 
+            <Label htmlFor={`timeSignature-track-${selectedTrackIndex}`}>
+              Time Signature
+            </Label>
+            <Select
+              onValueChange={handleTimeSignatureChange}
               value={`${selectedTrack.timeSignature[0]}/${selectedTrack.timeSignature[1]}`}
             >
               <SelectTrigger className="w-full">
-                <SelectValue 
-                  id={`timeSignature-track-${selectedTrackIndex}`} 
-                  placeholder="Select time signature" 
+                <SelectValue
+                  id={`timeSignature-track-${selectedTrackIndex}`}
+                  placeholder="Select time signature"
                 />
               </SelectTrigger>
               <SelectContent>
@@ -135,15 +153,17 @@ const SequencerTrackSettings: React.FC = () => {
           </div>
 
           <div className="mb-4">
-            <Label htmlFor={`stepDuration-track-${selectedTrackIndex}`}>Step Duration</Label>
-            <Select 
-              onValueChange={handleStepDurationChange} 
+            <Label htmlFor={`stepDuration-track-${selectedTrackIndex}`}>
+              Step Duration
+            </Label>
+            <Select
+              onValueChange={handleStepDurationChange}
               value={selectedTrack.stepDuration}
             >
               <SelectTrigger className="w-full">
-                <SelectValue 
-                  id={`stepDuration-track-${selectedTrackIndex}`} 
-                  placeholder="Select step duration" 
+                <SelectValue
+                  id={`stepDuration-track-${selectedTrackIndex}`}
+                  placeholder="Select step duration"
                 />
               </SelectTrigger>
               <SelectContent>
@@ -158,7 +178,9 @@ const SequencerTrackSettings: React.FC = () => {
           </div>
           <div className="mb-4">
             <Label htmlFor="steps-per-measure">Steps per Measure: </Label>
-            <span id="steps-per-measure" className="font-bold">{stepsPerMeasure}</span>
+            <span id="steps-per-measure" className="font-bold">
+              {stepsPerMeasure}
+            </span>
           </div>
           <TrackAnalytics trackIndex={selectedTrackIndex}></TrackAnalytics>
         </>

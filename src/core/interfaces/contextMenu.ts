@@ -29,11 +29,13 @@ export interface MenuItemWithCommand extends MenuItem {
 
 /**
  * Converts a MenuItemWithCommand to a SerializableMenuItem.
- * 
+ *
  * @param item The menu item with a command to serialize.
  * @returns The serialized menu item.
  */
-export function createSerializableMenuItem(item: MenuItemWithCommand): SerializableMenuItem {
+export function createSerializableMenuItem(
+  item: MenuItemWithCommand,
+): SerializableMenuItem {
   return {
     ...item,
     commandType: item.command.constructor.name, // Assuming each Command class has a unique name
@@ -42,14 +44,14 @@ export function createSerializableMenuItem(item: MenuItemWithCommand): Serializa
 
 /**
  * Converts a SerializableMenuItem back to a MenuItemWithCommand using a command factory.
- * 
+ *
  * @param item The serializable menu item to convert.
  * @param commandFactory The factory function to create commands.
  * @returns The menu item with an associated command.
  */
 export function createMenuItemWithCommand(
   item: SerializableMenuItem,
-  commandFactory: (type: string, payload: any) => Command
+  commandFactory: (type: string, payload: any) => Command,
 ): MenuItemWithCommand {
   const { commandType, ...rest } = item;
   return {

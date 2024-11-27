@@ -4,5 +4,5 @@ export enum SequenceStatus {
   Stopped,
   Playing,
   Paused,
-  Scheduled
+  Scheduled,
 }

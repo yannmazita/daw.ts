@@ -6,27 +6,36 @@ Digital Audio Workstation built with [React](https://react.dev/), [tonejs](https
 
 ![image](https://github.com/user-attachments/assets/8eeb52a0-ed98-4a0c-90b3-da2ab2ef56f5)
 
-
 ## Running
+
 - Install dependencies :
+
 ```commandline
 npm install
 ```
+
 - Start the UI with :
+
 ```commandline
 npm run dev
 ```
+
 The `vite` development server is now accessible @`localhost:5173`.
 
 - Start the `electron` development app with :
+
 ```commandline
 npm run app:dev
 ```
+
 - Build the electron app with:
+
 ```commandline
 npm run app electron:build
 ```
+
 - Clean build files with:
+
 ```commandline
 npm run clean
 ```

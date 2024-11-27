@@ -1,6 +1,6 @@
 // src/core/interfaces/sequencer.ts
 
-import { InstrumentName, Note, SequenceStatus } from '../enums';
+import { InstrumentName, Note, SequenceStatus } from "../enums";
 
 /**
  * Represents a specific position within a sequencer, which could correspond to a particular
@@ -54,14 +54,21 @@ export interface SequencerState {
   setStatus: (status: SequenceStatus) => void;
   setGlobalBpm: (bpm: number) => void;
   addTrack: (track: SequencerTrackInfo) => void;
-  updateTrackInfo: (update: Partial<SequencerTrackInfo> & { trackIndex: number }) => void;
-  updateStepsForTrack: (trackIndex: number, updatedSteps: SequencerStep[]) => void;
+  updateTrackInfo: (
+    update: Partial<SequencerTrackInfo> & { trackIndex: number },
+  ) => void;
+  updateStepsForTrack: (
+    trackIndex: number,
+    updatedSteps: SequencerStep[],
+  ) => void;
   setStep: (step: SequencerStep) => void;
   setSteps: (steps: SequencerStep[]) => void;
   setCurrentStep: (step: number) => void;
   toggleStep: (trackIndex: number, stepIndex: number) => void;
   initializeTracks: (numTracks: number) => void;
-  updateTrackInfoAndSteps: (trackInfoUpdate: Partial<SequencerTrackInfo> & { trackIndex: number }) => void;
+  updateTrackInfoAndSteps: (
+    trackInfoUpdate: Partial<SequencerTrackInfo> & { trackIndex: number },
+  ) => void;
   setTrackInstrument: (trackIndex: number, instrument: InstrumentName) => void;
   initializeSequencer: (numTracks: number) => void;
 }

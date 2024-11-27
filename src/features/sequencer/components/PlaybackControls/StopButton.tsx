@@ -1,9 +1,9 @@
 // src/features/sequencer/components/PlaybackControls/StopButton.tsx
 
-import React from 'react';
-import { cn } from '@/common/shadcn/lib/utils';
-import { SequenceStatus } from '@/core/enums/sequenceStatus';
-import { StopIcon } from './icons';
+import React from "react";
+import { cn } from "@/common/shadcn/lib/utils";
+import { SequenceStatus } from "@/core/enums/sequenceStatus";
+import { StopIcon } from "./icons";
 
 interface StopButtonProps {
   status: SequenceStatus;
@@ -22,7 +22,7 @@ const StopButton: React.FC<StopButtonProps> = ({ status, onClick }) => {
         "bg-red-500 hover:bg-red-600",
         "transition-colors duration-200",
         "focus:outline-none focus:ring-2 focus:ring-blue-500",
-        isStopped && "opacity-50 cursor-not-allowed"
+        isStopped && "opacity-50 cursor-not-allowed",
       )}
       disabled={isStopped}
       aria-label="Stop"

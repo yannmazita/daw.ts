@@ -11,7 +11,7 @@
     "types": ["jsdom"],
     "paths": {
       "@/*": ["./src/*"]
-    },
+    }
   },
   "include": ["vite.config.ts"]
 }

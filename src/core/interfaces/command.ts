@@ -3,12 +3,12 @@
  * supporting the execution, undo, and redo functionalities as part of the Command pattern.
  */
 export interface Command {
-    /** Executes the command's main action. */
-    execute(): void;
+  /** Executes the command's main action. */
+  execute(): void;
 
-    /** Reverts the action previously executed by the command. */
-    undo(): void;
+  /** Reverts the action previously executed by the command. */
+  undo(): void;
 
-    /** Re-executes the action previously undone. */
-    redo(): void;
+  /** Re-executes the action previously undone. */
+  redo(): void;
 }

@@ -1,27 +1,49 @@
 // src/common/components/ContextMenu.tsx
 
-import React, { useRef, useMemo, useCallback, useLayoutEffect } from 'react';
-import { SerializableMenuItem } from '@/core/interfaces/contextMenu';
-import { useClickOutside } from '../hooks/useClickOutside';
-import ContextMenuItem from './ContextMenuItem';
-import ContextualItemGroup from './ContextualItemGroup';
-import { useContextMenuStore } from '../slices/useContextMenuStore';
+import React, { useRef, useMemo, useCallback, useLayoutEffect } from "react";
+import { SerializableMenuItem } from "@/core/interfaces/contextMenu";
+import { useClickOutside } from "../hooks/useClickOutside";
+import ContextMenuItem from "./ContextMenuItem";
+import ContextualItemGroup from "./ContextualItemGroup";
+import { useContextMenuStore } from "../slices/useContextMenuStore";
 
 const ContextMenu: React.FC = React.memo(() => {
-  const { visible, xPos, yPos, appLevelItems, contextualItems, closeContextMenu } = useContextMenuStore();
+  const {
+    visible,
+    xPos,
+    yPos,
+    appLevelItems,
+    contextualItems,
+    closeContextMenu,
+  } = useContextMenuStore();
   const contextMenuRef = useRef<HTMLDivElement>(null);
 
-  useClickOutside(contextMenuRef, useCallback(() => closeContextMenu(), [closeContextMenu]));
+  useClickOutside(
+    contextMenuRef,
+    useCallback(() => closeContextMenu(), [closeContextMenu]),
+  );
 
-  const styleObject = useMemo(() => ({ top: `${yPos}px`, left: `${xPos}px` }), [yPos, xPos]);
+  const styleObject = useMemo(
+    () => ({ top: `${yPos}px`, left: `${xPos}px` }),
+    [yPos, xPos],
+  );
 
-  const handleItemClick = useCallback((item: SerializableMenuItem) => {
-    // actually do something
-    closeContextMenu();
-  }, [closeContextMenu]);
+  const handleItemClick = useCallback(
+    (item: SerializableMenuItem) => {
+      // actually do something
+      closeContextMenu();
+    },
+    [closeContextMenu],
+  );
 
-  const appLevelItemsList = useMemo(() => Object.values(appLevelItems), [appLevelItems]);
-  const contextualItemGroups = useMemo(() => Object.entries(contextualItems), [contextualItems]);
+  const appLevelItemsList = useMemo(
+    () => Object.values(appLevelItems),
+    [appLevelItems],
+  );
+  const contextualItemGroups = useMemo(
+    () => Object.entries(contextualItems),
+    [contextualItems],
+  );
 
   useLayoutEffect(() => {
     if (contextMenuRef.current) {
@@ -46,7 +68,11 @@ const ContextMenu: React.FC = React.memo(() => {
     >
       <ul>
         {appLevelItemsList.map((item, index) => (
-          <ContextMenuItem key={`app-${index}`} item={item} onClick={handleItemClick} />
+          <ContextMenuItem
+            key={`app-${index}`}
+            item={item}
+            onClick={handleItemClick}
+          />
         ))}
         {contextualItemGroups.map(([groupId, items], groupIndex) => (
           <ContextualItemGroup

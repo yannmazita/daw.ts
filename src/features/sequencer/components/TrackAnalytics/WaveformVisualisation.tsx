@@ -1,9 +1,9 @@
 // src/features/sequencer/components/SequencerVisualisation/WaveformVisualisation.tsx
 
-import React, { useEffect, useRef, useState } from 'react';
-import * as Tone from 'tone';
-import { useSequencerStore } from '../../slices/useSequencerStore';
-import { instrumentManager } from '@/common/services/instrumentManagerInstance';
+import React, { useEffect, useRef, useState } from "react";
+import * as Tone from "tone";
+import { useSequencerStore } from "../../slices/useSequencerStore";
+import { instrumentManager } from "@/common/services/instrumentManagerInstance";
 
 interface WaveformVisualisationProps {
   trackIndex: number;
@@ -19,7 +19,7 @@ const WaveformVisualisation: React.FC<WaveformVisualisationProps> = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const analyzerRef = useRef<Tone.Analyser | null>(null);
   const animationFrameRef = useRef<number>();
-  const trackInfo = useSequencerStore(state => state.trackInfo[trackIndex]);
+  const trackInfo = useSequencerStore((state) => state.trackInfo[trackIndex]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   useEffect(() => {
@@ -30,9 +30,9 @@ const WaveformVisualisation: React.FC<WaveformVisualisationProps> = ({
 
     // Create analyzer node
     analyzerRef.current = new Tone.Analyser({
-      type: 'waveform',
+      type: "waveform",
       size: 1024,
-      smoothing: 0.8
+      smoothing: 0.8,
     });
 
     // Connect instrument to analyzer
@@ -52,7 +52,7 @@ const WaveformVisualisation: React.FC<WaveformVisualisationProps> = ({
     if (!canvasRef.current || !analyzerRef.current || !isAnalyzing) return;
 
     const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
     const waveform = analyzerRef.current.getValue() as Float32Array;
@@ -62,7 +62,7 @@ const WaveformVisualisation: React.FC<WaveformVisualisationProps> = ({
 
     // Set up styling
     ctx.beginPath();
-    ctx.strokeStyle = '#2563eb'; // Blue color
+    ctx.strokeStyle = "#2563eb"; // Blue color
     ctx.lineWidth = 2;
 
     // Draw waveform
@@ -72,7 +72,7 @@ const WaveformVisualisation: React.FC<WaveformVisualisationProps> = ({
     ctx.moveTo(0, height / 2);
 
     for (let i = 0; i < waveform.length; i++) {
-      const y = (waveform[i] + 1) * height / 2;
+      const y = ((waveform[i] + 1) * height) / 2;
 
       if (i === 0) {
         ctx.moveTo(x, y);

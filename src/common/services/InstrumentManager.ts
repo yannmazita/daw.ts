@@ -2,7 +2,7 @@
 
 import { Instrument } from "@/core/types/instrument";
 import { InstrumentName } from "@/core/enums/instrumentName";
-import * as Tone from 'tone';
+import * as Tone from "tone";
 
 export class InstrumentManager {
   private instruments = new Map<string, Instrument>();
@@ -46,7 +46,7 @@ export class InstrumentManager {
   addInstrument(id: string, instrumentName: InstrumentName) {
     // Dispose of existing instrument if it exists
     this.removeInstrument(id);
-    
+
     // Create and store new instrument
     const newInstrument = this.createInstrument(instrumentName);
     this.instruments.set(id, newInstrument);
@@ -75,7 +75,7 @@ export class InstrumentManager {
    * Disposes of all instruments and clears the collection
    */
   dispose() {
-    this.instruments.forEach(instrument => instrument.dispose());
+    this.instruments.forEach((instrument) => instrument.dispose());
     this.instruments.clear();
   }
 

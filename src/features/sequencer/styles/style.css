@@ -12,7 +12,9 @@
 .sequencer-track-enter-active {
   opacity: 1;
   transform: translateX(0);
-  transition: opacity 0.5s, transform 0.5s;
+  transition:
+    opacity 0.5s,
+    transform 0.5s;
 }
 
 .sequencer-track-exit {
@@ -22,5 +24,7 @@
 .sequencer-track-exit-active {
   opacity: 0;
   transform: translateX(-30px);
-  transition: opacity 0.5s, transform 0.5s;
+  transition:
+    opacity 0.5s,
+    transform 0.5s;
 }

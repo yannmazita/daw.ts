@@ -1,6 +1,6 @@
 // src/features/sequencer/components/PlaybackControls/icons.tsx
 
-import React from 'react';
+import React from "react";
 
 interface IconProps {
   className?: string;

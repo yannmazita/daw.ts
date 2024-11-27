@@ -1,29 +1,36 @@
 // src/features/sequencer/hooks/useSequencerPlayback.ts
 
-import * as Tone from 'tone';
-import { useSequencerStore } from '../slices/useSequencerStore';
-import { instrumentManager } from '@/common/services/instrumentManagerInstance';
-import { SequenceStatus } from '@/core/enums/sequenceStatus';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import * as Tone from "tone";
+import { useSequencerStore } from "../slices/useSequencerStore";
+import { instrumentManager } from "@/common/services/instrumentManagerInstance";
+import { SequenceStatus } from "@/core/enums/sequenceStatus";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 export const useSequencerPlayback = () => {
-  const status = useSequencerStore(state => state.status);
-  const setStatus = useSequencerStore(state => state.setStatus);
-  const steps = useSequencerStore(state => state.steps);
-  const allTrackInfo = useSequencerStore(state => state.trackInfo);
-  const globalBpm = useSequencerStore(state => state.globalBpm);
-  const setCurrentStep = useSequencerStore(state => state.setCurrentStep);
+  const status = useSequencerStore((state) => state.status);
+  const setStatus = useSequencerStore((state) => state.setStatus);
+  const steps = useSequencerStore((state) => state.steps);
+  const allTrackInfo = useSequencerStore((state) => state.trackInfo);
+  const globalBpm = useSequencerStore((state) => state.globalBpm);
+  const setCurrentStep = useSequencerStore((state) => state.setCurrentStep);
 
   const loopRef = useRef<Tone.Loop | null>(null);
   const stepCounterRef = useRef<number>(0);
   const [loopEnabled, setLoopEnabled] = useState(true);
 
-  const getStepDurationInSeconds = useCallback((trackIndex: number): number => {
-    const track = allTrackInfo[trackIndex];
-    const { timeSignature: [numerator, denominator], stepsPerMeasure } = track;
-    const secondsPerMeasure = (60 / globalBpm) * 4 * (numerator / denominator);
-    return secondsPerMeasure / stepsPerMeasure;
-  }, [allTrackInfo, globalBpm]);
+  const getStepDurationInSeconds = useCallback(
+    (trackIndex: number): number => {
+      const track = allTrackInfo[trackIndex];
+      const {
+        timeSignature: [numerator, denominator],
+        stepsPerMeasure,
+      } = track;
+      const secondsPerMeasure =
+        (60 / globalBpm) * 4 * (numerator / denominator);
+      return secondsPerMeasure / stepsPerMeasure;
+    },
+    [allTrackInfo, globalBpm],
+  );
 
   const clearScheduledEvents = useCallback(() => {
     if (loopRef.current) {
@@ -45,12 +52,14 @@ export const useSequencerPlayback = () => {
     clearScheduledEvents();
 
     const shortestStepDuration = Math.min(
-      ...allTrackInfo.map(track => getStepDurationInSeconds(track.trackIndex))
+      ...allTrackInfo.map((track) =>
+        getStepDurationInSeconds(track.trackIndex),
+      ),
     );
 
     const maxStepIndex = Math.max(
-      ...steps.map(step => step.stepIndex),
-      ...allTrackInfo.map(track => track.stepsPerMeasure - 1)
+      ...steps.map((step) => step.stepIndex),
+      ...allTrackInfo.map((track) => track.stepsPerMeasure - 1),
     );
 
     loopRef.current = new Tone.Loop((time) => {
@@ -58,7 +67,7 @@ export const useSequencerPlayback = () => {
       const currentSteps = useSequencerStore.getState().steps;
       const currentTrackInfo = useSequencerStore.getState().trackInfo;
 
-      const soloTrackExists = currentTrackInfo.some(track => track.solo);
+      const soloTrackExists = currentTrackInfo.some((track) => track.solo);
 
       // Update visual step
       Tone.getDraw().schedule(() => {
@@ -66,16 +75,19 @@ export const useSequencerPlayback = () => {
       }, time);
 
       // Play step with fresh state
-      currentTrackInfo.forEach(track => {
+      currentTrackInfo.forEach((track) => {
         if (track.muted || (soloTrackExists && !track.solo)) return;
 
-        const step = currentSteps.find(s =>
-          s.trackIndex === track.trackIndex &&
-          s.stepIndex === stepCounterRef.current
+        const step = currentSteps.find(
+          (s) =>
+            s.trackIndex === track.trackIndex &&
+            s.stepIndex === stepCounterRef.current,
         );
 
         if (step?.active) {
-          const instrument = instrumentManager.getInstrument(track.instrumentId);
+          const instrument = instrumentManager.getInstrument(
+            track.instrumentId,
+          );
           if (!instrument) return;
 
           const stepDuration = getStepDurationInSeconds(track.trackIndex);
@@ -85,13 +97,19 @@ export const useSequencerPlayback = () => {
           if (instrument instanceof Tone.NoiseSynth) {
             instrument.triggerAttackRelease(stepDuration, time, velocity / 127);
           } else {
-            instrument.triggerAttackRelease(note, stepDuration, time, velocity / 127);
+            instrument.triggerAttackRelease(
+              note,
+              stepDuration,
+              time,
+              velocity / 127,
+            );
           }
         }
       });
 
       // Increment step counter
-      stepCounterRef.current = (stepCounterRef.current + 1) % (maxStepIndex + 1);
+      stepCounterRef.current =
+        (stepCounterRef.current + 1) % (maxStepIndex + 1);
 
       // Handle loop end
       if (stepCounterRef.current === 0 && !loopEnabled) {
@@ -109,7 +127,7 @@ export const useSequencerPlayback = () => {
     getStepDurationInSeconds,
     loopEnabled,
     stopSequencer,
-    setCurrentStep
+    setCurrentStep,
   ]);
 
   const startSequencer = useCallback(async () => {
@@ -129,7 +147,6 @@ export const useSequencerPlayback = () => {
     scheduleSequence();
     Tone.getTransport().start();
   }, [status, globalBpm, scheduleSequence, setStatus]);
-
 
   const pauseSequencer = useCallback(() => {
     if (status !== SequenceStatus.Playing) return;

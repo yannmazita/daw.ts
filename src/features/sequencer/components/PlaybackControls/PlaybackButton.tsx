@@ -1,9 +1,9 @@
 // src/features/sequencer/components/PlaybackControls/PlaybackButton.tsx
 
-import React from 'react';
-import { cn } from '@/common/shadcn/lib/utils';
-import { SequenceStatus } from '@/core/enums/sequenceStatus';
-import { PlayIcon, PauseIcon } from './icons';
+import React from "react";
+import { cn } from "@/common/shadcn/lib/utils";
+import { SequenceStatus } from "@/core/enums/sequenceStatus";
+import { PlayIcon, PauseIcon } from "./icons";
 
 interface PlaybackButtonProps {
   status: SequenceStatus;
@@ -23,7 +23,7 @@ const PlaybackButton: React.FC<PlaybackButtonProps> = ({ status, onClick }) => {
         "focus:outline-none focus:ring-2 focus:ring-blue-500",
         isPlaying
           ? "bg-yellow-500 hover:bg-yellow-600"
-          : "bg-green-500 hover:bg-green-600"
+          : "bg-green-500 hover:bg-green-600",
       )}
       aria-label={isPlaying ? "Pause" : "Play"}
     >
