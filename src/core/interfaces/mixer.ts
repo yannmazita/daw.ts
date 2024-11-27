@@ -1,6 +1,5 @@
-// src/core/interfaces/interfaces/mixer.ts
+// src/core/interfaces/mixer.ts
 
-import * as Tone from "tone";
 import { EffectName } from "@/core/enums/EffectName";
 
 export interface MixerEffect {
@@ -9,7 +8,6 @@ export interface MixerEffect {
   bypass: boolean;
   wet: number;
   parameters: Record<string, number | string | boolean>;
-  instance?: Tone.ToneAudioNode;
 }
 
 export interface Send {
@@ -28,8 +26,6 @@ export interface MixerChannel {
   solo: boolean;
   effects: MixerEffect[];
   sends: Send[];
-  instance?: Tone.Channel;
-  meter?: Tone.Meter;
 }
 
 export interface MixerState {
