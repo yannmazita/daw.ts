@@ -5,12 +5,16 @@ import { Button } from "@/common/shadcn/ui/button";
 import { Plus } from "lucide-react";
 import { useMixerStore } from "../slices/useMixerStore";
 
-const AddChannelButton: React.FC = () => {
+interface Props {
+  channelCount: number;
+}
+
+const AddChannelButton: React.FC<Props> = ({ channelCount }) => {
   const addChannel = useMixerStore((state) => state.addChannel);
 
   const handleAddChannel = () => {
     addChannel({
-      name: `Channel ${Date.now()}`,
+      name: `Channel ${channelCount}`,
       volume: 0,
       pan: 0,
       mute: false,

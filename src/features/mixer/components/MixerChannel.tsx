@@ -1,6 +1,6 @@
 // src/features/mixer/components/MixerChannel.tsx
 
-import React from "react";
+import React, { useCallback } from "react";
 import { MixerChannel as IMixerChannel } from "@/core/interfaces/mixer";
 import { useMixerStore } from "../slices/useMixerStore";
 import Fader from "./controls/Fader";
@@ -17,22 +17,55 @@ const MixerChannel: React.FC<Props> = ({ channel }) => {
   const updateChannel = useMixerStore((state) => state.updateChannel);
   const removeChannel = useMixerStore((state) => state.removeChannel);
 
+  const handleMuteToggle = useCallback(() => {
+    updateChannel(channel.id, { mute: !channel.mute });
+  }, [channel.id, channel.mute, updateChannel]);
+
+  const handleSoloToggle = useCallback(() => {
+    updateChannel(channel.id, { solo: !channel.solo });
+  }, [channel.id, channel.solo, updateChannel]);
+
+  const handleNameChange = useCallback(
+    (name: string) => {
+      updateChannel(channel.id, { name });
+    },
+    [channel.id, updateChannel],
+  );
+
+  const handlePanChange = useCallback(
+    (pan: number) => {
+      updateChannel(channel.id, { pan });
+    },
+    [channel.id, updateChannel],
+  );
+
+  const handleVolumeChange = useCallback(
+    (volume: number) => {
+      updateChannel(channel.id, { volume });
+    },
+    [channel.id, updateChannel],
+  );
+
+  const handleDelete = useCallback(() => {
+    removeChannel(channel.id);
+  }, [channel.id, removeChannel]);
+
   return (
     <div className="flex flex-col w-32 bg-slate-100 p-2 rounded">
       <ChannelHeader
         name={channel.name}
         mute={channel.mute}
         solo={channel.solo}
-        onMute={() => updateChannel(channel.id, { mute: !channel.mute })}
-        onSolo={() => updateChannel(channel.id, { solo: !channel.solo })}
-        onNameChange={(name) => updateChannel(channel.id, { name })}
-        onDelete={() => removeChannel(channel.id)}
+        onMute={handleMuteToggle}
+        onSolo={handleSoloToggle}
+        onNameChange={handleNameChange}
+        onDelete={handleDelete}
       />
 
       <div className="flex gap-4 mb-4">
         <Pan
           value={channel.pan}
-          onChange={(pan) => updateChannel(channel.id, { pan })}
+          onChange={handlePanChange}
           className="flex-1"
         />
         <ChannelMeter channelId={channel.id} className="w-3" />
@@ -40,7 +73,7 @@ const MixerChannel: React.FC<Props> = ({ channel }) => {
 
       <Fader
         value={channel.volume}
-        onChange={(volume) => updateChannel(channel.id, { volume })}
+        onChange={handleVolumeChange}
         className="mb-4"
       />
 
@@ -49,4 +82,4 @@ const MixerChannel: React.FC<Props> = ({ channel }) => {
   );
 };
 
-export default MixerChannel;
+export default React.memo(MixerChannel);

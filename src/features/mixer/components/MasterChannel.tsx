@@ -1,6 +1,6 @@
 // src/features/mixer/components/MasterChannel.tsx
 
-import React from "react";
+import React, { useCallback } from "react";
 import { MixerChannel as IMixerChannel } from "@/core/interfaces/mixer";
 import { useMixerStore } from "../slices/useMixerStore";
 import Fader from "./controls/Fader";
@@ -17,6 +17,24 @@ interface Props {
 
 const MasterChannel: React.FC<Props> = ({ channel }) => {
   const updateChannel = useMixerStore((state) => state.updateChannel);
+
+  const handleMuteToggle = useCallback(() => {
+    updateChannel(channel.id, { mute: !channel.mute });
+  }, [channel.id, channel.mute, updateChannel]);
+
+  const handlePanChange = useCallback(
+    (pan: number) => {
+      updateChannel(channel.id, { pan });
+    },
+    [channel.id, updateChannel],
+  );
+
+  const handleVolumeChange = useCallback(
+    (volume: number) => {
+      updateChannel(channel.id, { volume });
+    },
+    [channel.id, updateChannel],
+  );
 
   return (
     <div
@@ -35,7 +53,7 @@ const MasterChannel: React.FC<Props> = ({ channel }) => {
         name={channel.name}
         mute={channel.mute}
         solo={false} // Master channel can't be soloed
-        onMute={() => updateChannel(channel.id, { mute: !channel.mute })}
+        onMute={handleMuteToggle}
         onSolo={() => {
           /* No-op for master */
         }}
@@ -45,7 +63,7 @@ const MasterChannel: React.FC<Props> = ({ channel }) => {
       <div className="flex gap-4 mb-4">
         <Pan
           value={channel.pan}
-          onChange={(pan) => updateChannel(channel.id, { pan })}
+          onChange={handlePanChange}
           className="flex-1"
         />
         <MasterMeter className="w-4" />
@@ -53,7 +71,7 @@ const MasterChannel: React.FC<Props> = ({ channel }) => {
 
       <Fader
         value={channel.volume}
-        onChange={(volume) => updateChannel(channel.id, { volume })}
+        onChange={handleVolumeChange}
         className="mb-4"
       />
 
@@ -62,4 +80,4 @@ const MasterChannel: React.FC<Props> = ({ channel }) => {
   );
 };
 
-export default MasterChannel;
+export default React.memo(MasterChannel);

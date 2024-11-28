@@ -1,6 +1,6 @@
 // src/features/mixer/components/effects/AddEffectButton.tsx
 
-import React from "react";
+import React, { useCallback } from "react";
 import { Button } from "@/common/shadcn/ui/button";
 import {
   Dialog,
@@ -21,14 +21,17 @@ interface Props {
 const AddEffectButton: React.FC<Props> = ({ channelId }) => {
   const addEffect = useMixerStore((state) => state.addEffect);
 
-  const handleAddEffect = (effectName: EffectName) => {
-    addEffect(channelId, {
-      effectName,
-      bypass: false,
-      wet: 1,
-      parameters: {},
-    });
-  };
+  const handleAddEffect = useCallback(
+    (effectName: EffectName) => {
+      addEffect(channelId, {
+        effectName,
+        bypass: false,
+        wet: 1,
+        parameters: {},
+      });
+    },
+    [addEffect, channelId],
+  );
 
   return (
     <Dialog>
