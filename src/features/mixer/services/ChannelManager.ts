@@ -1,4 +1,4 @@
-// src/common/services/ChannelManager.ts
+// src/features/mixer/services/ChannelManager.ts
 
 import * as Tone from "tone";
 
@@ -32,7 +32,13 @@ export class ChannelManager {
     if (isMaster) {
       channel.toDestination();
     } else {
-      channel.connect(this.masterChannel?.channel);
+      // Ensure master channel exists before connecting
+      if (this.masterChannel?.channel) {
+        channel.connect(this.masterChannel.channel);
+      } else {
+        // If no master channel, connect directly to destination
+        channel.toDestination();
+      }
     }
 
     channel.connect(meter);
@@ -179,12 +185,15 @@ export class ChannelManager {
    */
   connectChannel(id: string): void {
     const channel = this.getChannel(id);
-    if (channel) {
-      if (id === "master") {
-        channel.toDestination();
-      } else {
-        channel.connect(this.masterChannel?.channel);
-      }
+    if (!channel) return;
+
+    if (id === "master") {
+      channel.toDestination();
+    } else if (this.masterChannel?.channel) {
+      channel.connect(this.masterChannel.channel);
+    } else {
+      // Fallback to connecting directly to destination if master channel is not available
+      channel.toDestination();
     }
   }
 
