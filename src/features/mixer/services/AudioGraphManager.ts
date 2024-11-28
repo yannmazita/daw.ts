@@ -141,4 +141,14 @@ export class AudioGraphManager {
     this.channelEffects.set(channelId, effectIds);
     this.rebuildChannelChain(channelId);
   }
+
+  cleanup() {
+    Tone.getTransport().stop();
+    this.channelManager.dispose();
+    this.effectManager.dispose();
+    this.channelEffects.clear();
+
+    Tone.getContext().dispose();
+    Tone.setContext(new Tone.Context());
+  }
 }
