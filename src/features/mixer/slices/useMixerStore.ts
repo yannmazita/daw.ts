@@ -209,12 +209,15 @@ export const useMixerStore = create<MixerState>()(
         const id = audioGraphManager.createSend(
           sendData.from,
           sendData.to,
-          sendData.level,
+          sendData.preFader,
         );
 
-        // Update state
         set((state) => {
-          const newSend: Send = { ...sendData, id };
+          const newSend: Send = {
+            ...sendData,
+            id,
+            level: 0,
+          };
           return {
             sends: [...state.sends, newSend],
             channels: state.channels.map((ch) =>
@@ -222,10 +225,6 @@ export const useMixerStore = create<MixerState>()(
                 ? { ...ch, sends: [...ch.sends, newSend] }
                 : ch,
             ),
-            master:
-              sendData.from === "master"
-                ? { ...state.master, sends: [...state.master.sends, newSend] }
-                : state.master,
           };
         });
 
@@ -238,7 +237,7 @@ export const useMixerStore = create<MixerState>()(
           if (!send) return state;
 
           // Remove audio routing
-          audioGraphManager.removeSend(send.from, send.to);
+          audioGraphManager.removeSend(id);
 
           // Update state
           return {
@@ -260,25 +259,35 @@ export const useMixerStore = create<MixerState>()(
           const send = state.sends.find((s) => s.id === id);
           if (!send) return state;
 
-          // Update audio routing
-          if (typeof updates.level !== "undefined") {
-            audioGraphManager.updateSend(send.from, send.to, updates.level);
-          }
+          // Update audio processing
+          audioGraphManager.updateSend(send.from, send.to, {
+            level: updates.level,
+            preFader: updates.preFader,
+            mute: updates.mute,
+          });
 
           // Update state
-          const updatedSend = { ...send, ...updates };
+          if (send.from === "master") {
+            return {
+              master: {
+                ...state.master,
+                sends: state.master.sends.map((s) =>
+                  s.id === id ? { ...s, ...updates } : s,
+                ),
+              },
+            };
+          }
+
           return {
-            sends: state.sends.map((s) => (s.id === id ? updatedSend : s)),
+            sends: state.sends.map((s) =>
+              s.id === id ? { ...s, ...updates } : s,
+            ),
             channels: state.channels.map((ch) => ({
               ...ch,
-              sends: ch.sends.map((s) => (s.id === id ? updatedSend : s)),
-            })),
-            master: {
-              ...state.master,
-              sends: state.master.sends.map((s) =>
-                s.id === id ? updatedSend : s,
+              sends: ch.sends.map((s) =>
+                s.id === id ? { ...s, ...updates } : s,
               ),
-            },
+            })),
           };
         });
       },

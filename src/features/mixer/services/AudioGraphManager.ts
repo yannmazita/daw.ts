@@ -72,16 +72,25 @@ export class AudioGraphManager {
     this.channelManager.updateChannel(id, parameters);
   }
 
-  createSend(fromId: string, toId: string, level: number): string {
-    return this.channelManager.createSend(fromId, toId, level);
+  createSend(fromId: string, toId: string, preFader: boolean): string {
+    return this.channelManager.createSend(fromId, toId, preFader);
   }
 
-  updateSend(fromId: string, toId: string, level: number): void {
-    this.channelManager.updateSend(fromId, toId, level);
+  updateSend(
+    fromId: string,
+    toId: string,
+    parameters: {
+      level?: number;
+      preFader?: boolean;
+      mute?: boolean;
+    },
+  ): void {
+    const sendId = `send_${fromId}_${toId}`;
+    this.channelManager.updateSend(sendId, parameters);
   }
 
-  removeSend(fromId: string, toId: string): void {
-    this.channelManager.removeSend(fromId, toId);
+  removeSend(sendId: string): void {
+    this.channelManager.removeSend(sendId);
   }
 
   private rebuildChannelChain(channelId: string): void {

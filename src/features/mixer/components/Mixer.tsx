@@ -1,10 +1,11 @@
 // src/features/mixer/components/Mixer.tsx
 
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo } from "react";
 import { useMixerStore } from "../slices/useMixerStore";
 import MixerChannel from "./MixerChannel";
 import MasterChannel from "./MasterChannel";
 import AddChannelButton from "./AddChannelButton";
+import { audioGraphManager } from "../services/audioGraphManagerInstance";
 
 const Mixer: React.FC = () => {
   const channels = useMixerStore((state) => state.channels);
@@ -18,6 +19,11 @@ const Mixer: React.FC = () => {
       )),
     [channels],
   );
+  useEffect(() => {
+    return () => {
+      audioGraphManager.cleanup();
+    };
+  }, []);
 
   return (
     <div className="flex flex-col bg-slate-50 p-4 rounded-lg">

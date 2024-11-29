@@ -5,7 +5,7 @@ import * as Tone from "tone";
 interface ChannelNodes {
   channel: Tone.Channel;
   meter: Tone.Meter;
-  sends: Map<string, Tone.Gain>;
+  sends: Map<string, SendNodes>;
 }
 
 interface ChannelParameters {
@@ -15,10 +15,27 @@ interface ChannelParameters {
   solo?: boolean;
 }
 
+interface SendNodes {
+  gain: Tone.Gain;
+  meter: Tone.Meter;
+  preFaderNode: Tone.Gain;
+  postFaderNode: Tone.Gain;
+  muted: boolean;
+  level: number;
+  dispose: () => void;
+}
+
+interface SendParameters {
+  level?: number;
+  preFader?: boolean;
+  mute?: boolean;
+}
+
 export class ChannelManager {
   private channels = new Map<string, ChannelNodes>();
   private masterChannel?: ChannelNodes;
   private soloChannels = new Set<string>();
+  private sends = new Map<string, SendNodes>();
 
   constructor() {
     // Initialize master channel
@@ -118,24 +135,57 @@ export class ChannelManager {
     }
   }
 
+  private createSendNodes(): SendNodes {
+    const gain = new Tone.Gain(0);
+    const meter = new Tone.Meter();
+    const preFaderNode = new Tone.Gain(1);
+    const postFaderNode = new Tone.Gain(1);
+
+    return {
+      gain,
+      meter,
+      preFaderNode,
+      postFaderNode,
+      muted: false,
+      level: 0,
+      dispose: () => {
+        gain.dispose();
+        meter.dispose();
+        preFaderNode.dispose();
+        postFaderNode.dispose();
+      },
+    };
+  }
+
   /**
    * Creates a send from one channel to another
    */
-  createSend(fromId: string, toId: string, level: number): string {
+  createSend(fromId: string, toId: string, preFader: boolean): string {
     const sendId = `send_${fromId}_${toId}`;
-    const sourceNodes =
-      fromId === "master" ? this.masterChannel : this.channels.get(fromId);
-    const destChannel = this.getChannel(toId);
+    const sourceChannel = this.getChannel(fromId);
+    const targetChannel = this.getChannel(toId);
 
-    if (sourceNodes && destChannel) {
-      // Remove existing send if it exists
-      this.removeSend(fromId, toId);
+    if (sourceChannel && targetChannel) {
+      const sendNodes = this.createSendNodes();
 
-      // Create new send
-      const sendGain = new Tone.Gain(level);
-      sourceNodes.channel.connect(sendGain);
-      sendGain.connect(destChannel);
-      sourceNodes.sends.set(sendId, sendGain);
+      // Connect pre-fader tap
+      // Use the channel's internal nodes for proper routing
+      sourceChannel.connect(sendNodes.preFaderNode);
+      sendNodes.preFaderNode.connect(sendNodes.gain);
+
+      // Connect post-fader tap - this will automatically be post-fader
+      sourceChannel.connect(sendNodes.postFaderNode);
+      sendNodes.postFaderNode.connect(sendNodes.gain);
+
+      // Connect to meter and destination
+      sendNodes.gain.connect(sendNodes.meter);
+      sendNodes.gain.connect(targetChannel);
+
+      // Store send nodes
+      this.sends.set(sendId, sendNodes);
+
+      // Set initial routing
+      this.updateSend(sendId, { preFader });
     }
 
     return sendId;
@@ -144,30 +194,68 @@ export class ChannelManager {
   /**
    * Updates the level of an existing send
    */
-  updateSend(fromId: string, toId: string, level: number): void {
-    const sendId = `send_${fromId}_${toId}`;
-    const sourceNodes =
-      fromId === "master" ? this.masterChannel : this.channels.get(fromId);
-    const sendGain = sourceNodes?.sends.get(sendId);
+  updateSend(sendId: string, parameters: SendParameters): void {
+    const sendNodes = this.sends.get(sendId);
+    if (!sendNodes) return;
 
-    if (sendGain) {
-      sendGain.gain.value = level;
+    if (typeof parameters.level !== "undefined") {
+      sendNodes.gain.gain.value = parameters.level;
+    }
+
+    if (typeof parameters.preFader !== "undefined") {
+      sendNodes.preFaderNode.gain.value = parameters.preFader ? 1 : 0;
+      sendNodes.postFaderNode.gain.value = parameters.preFader ? 0 : 1;
+    }
+
+    if (typeof parameters.mute !== "undefined") {
+      sendNodes.muted = parameters.mute;
+      sendNodes.gain.gain.value = parameters.mute ? 0 : sendNodes.level;
     }
   }
 
   /**
    * Removes and disposes of a send
    */
-  removeSend(fromId: string, toId: string): void {
-    const sendId = `send_${fromId}_${toId}`;
-    const sourceNodes =
-      fromId === "master" ? this.masterChannel : this.channels.get(fromId);
-    const sendGain = sourceNodes?.sends.get(sendId);
-
-    if (sendGain) {
-      sendGain.dispose();
-      sourceNodes?.sends.delete(sendId);
+  removeSend(sendId: string): void {
+    const sendNodes = this.sends.get(sendId);
+    if (sendNodes) {
+      sendNodes.gain.dispose();
+      sendNodes.meter.dispose();
+      sendNodes.preFaderNode.dispose();
+      sendNodes.postFaderNode.dispose();
+      this.sends.delete(sendId);
     }
+  }
+
+  /**
+   * Gets the current send parameters
+   */
+  getSendParameters(sendId: string): SendParameters | undefined {
+    const sendNodes = this.sends.get(sendId);
+    if (!sendNodes) return undefined;
+
+    return {
+      level: sendNodes.level,
+      preFader: sendNodes.preFaderNode.gain.value > 0,
+      mute: sendNodes.muted,
+    };
+  }
+
+  getSendMeter(sendId: string): Tone.Meter | undefined {
+    return this.sends.get(sendId)?.meter;
+  }
+
+  /**
+   * Gets a channel's send gain nodes
+   */
+  getSends(channelId: string): Map<string, SendNodes> {
+    const emptyMap = new Map<string, SendNodes>();
+
+    if (channelId === "master") {
+      return this.masterChannel?.sends ?? emptyMap;
+    }
+
+    return this.channels.get(channelId)?.sends ?? emptyMap;
   }
 
   /**
@@ -238,14 +326,13 @@ export class ChannelManager {
 
     this.channels.clear();
     this.soloChannels.clear();
-  }
 
-  /**
-   * Gets a channel's send gain nodes
-   */
-  getSends(channelId: string): Map<string, Tone.Gain> {
-    return channelId === "master"
-      ? (this.masterChannel?.sends ?? new Map())
-      : (this.channels.get(channelId)?.sends ?? new Map());
+    this.sends.forEach((nodes) => {
+      nodes.gain.dispose();
+      nodes.meter.dispose();
+      nodes.preFaderNode.dispose();
+      nodes.postFaderNode.dispose();
+    });
+    this.sends.clear();
   }
 }

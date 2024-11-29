@@ -39,7 +39,7 @@ const MasterChannel: React.FC<Props> = ({ channel }) => {
   return (
     <div
       className={cn(
-        "flex flex-col w-40 bg-slate-100 p-2 rounded",
+        "flex flex-col w-48 bg-slate-100 p-2 rounded",
         "border-l-2 border-red-500",
       )}
     >
