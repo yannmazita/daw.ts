@@ -8,6 +8,7 @@ import Pan from "./controls/Pan";
 import ChannelHeader from "./controls/ChannelHeader";
 import EffectsList from "./effects/EffectsList";
 import ChannelMeter from "./meters/ChannelMeter";
+import SendControls from "./controls/SendControls";
 
 interface Props {
   channel: IMixerChannel;
@@ -51,7 +52,7 @@ const MixerChannel: React.FC<Props> = ({ channel }) => {
   }, [channel.id, removeChannel]);
 
   return (
-    <div className="flex flex-col w-32 bg-slate-100 p-2 rounded">
+    <div className="flex flex-col w-48 bg-slate-100 p-2 rounded">
       <ChannelHeader
         name={channel.name}
         mute={channel.mute}
@@ -76,6 +77,8 @@ const MixerChannel: React.FC<Props> = ({ channel }) => {
         onChange={handleVolumeChange}
         className="mb-4"
       />
+
+      <SendControls channelId={channel.id} sends={channel.sends} />
 
       <EffectsList channelId={channel.id} effects={channel.effects} />
     </div>

@@ -15,6 +15,8 @@ export interface Send {
   from: string;
   to: string;
   level: number;
+  preFader: boolean;
+  mute: boolean;
 }
 
 export interface MixerChannel {
