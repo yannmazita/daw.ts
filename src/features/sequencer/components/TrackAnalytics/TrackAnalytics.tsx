@@ -3,16 +3,20 @@
 import React from "react";
 import WaveformVisualisation from "./WaveformVisualisation";
 import SpectrumAnalyzer from "./SpectrumAnalyzer";
+import ChannelMeter from "@/features/mixer/components/meters/ChannelMeter";
 
 interface TrackAnalyticsProps {
-  trackIndex: number;
+  trackId: string;
 }
 
-const TrackAnalytics: React.FC<TrackAnalyticsProps> = ({ trackIndex }) => {
+const TrackAnalytics: React.FC<TrackAnalyticsProps> = ({ trackId }) => {
   return (
     <div className="flex flex-col gap-4">
-      <WaveformVisualisation trackIndex={trackIndex} width={230} />
-      <SpectrumAnalyzer trackIndex={trackIndex} width={230} />
+      <div className="flex gap-2">
+        <WaveformVisualisation trackId={trackId} width={200} />
+        <ChannelMeter channelId={trackId} className="w-4" />
+      </div>
+      <SpectrumAnalyzer trackId={trackId} width={230} />
     </div>
   );
 };

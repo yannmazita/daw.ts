@@ -1,4 +1,4 @@
-// src/features/sequencer/components/PlaybackControls/StopButton.tsx
+// src/common/components/PlaybackControls/StopButton.tsx
 
 import React from "react";
 import { cn } from "@/common/shadcn/lib/utils";

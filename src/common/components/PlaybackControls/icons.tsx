@@ -1,4 +1,4 @@
-// src/features/sequencer/components/PlaybackControls/icons.tsx
+// src/common/components/PlaybackControls/icons.tsx
 
 import React from "react";
 

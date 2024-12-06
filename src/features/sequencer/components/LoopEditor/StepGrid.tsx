@@ -4,21 +4,23 @@ import React, { useMemo } from "react";
 import StepButton from "./StepButton";
 
 interface StepGridProps {
-  trackIndex: number;
+  trackId: string;
+  patternId: string;
   displayedSteps: number;
 }
 
 const StepGrid: React.FC<StepGridProps> = React.memo(
-  ({ trackIndex, displayedSteps }) => {
+  ({ trackId, patternId, displayedSteps }) => {
     const stepButtons = useMemo(() => {
       return Array.from({ length: displayedSteps }, (_, stepIndex) => (
         <StepButton
-          key={`${trackIndex}-${stepIndex}`}
-          trackIndex={trackIndex}
+          key={`${trackId}-${stepIndex}`}
+          trackId={trackId}
+          patternId={patternId}
           stepIndex={stepIndex}
         />
       ));
-    }, [trackIndex, displayedSteps]);
+    }, [trackId, patternId, displayedSteps]);
 
     return <div className="flex flex-row">{stepButtons}</div>;
   },

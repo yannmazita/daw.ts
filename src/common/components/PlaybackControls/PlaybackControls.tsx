@@ -1,7 +1,7 @@
-// src/features/sequencer/components/PlaybackControls/PlaybackControls.tsx
+// src/core/components/PlaybackControls/PlaybackControls.tsx
 
 import React, { useCallback } from "react";
-import { useSequencerPlayback } from "../../hooks/useSequencerPlayback";
+import { useSequencerPlayback } from "@/features/sequencer/hooks/useSequencerPlayback";
 import { SequenceStatus } from "@/core/enums/sequenceStatus";
 import PlaybackButton from "./PlaybackButton";
 import StopButton from "./StopButton";

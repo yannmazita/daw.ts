@@ -1,6 +1,7 @@
 // src/features/sequencer/components/LoopEditor/LoopEditor.tsx
 
 import React, { useMemo, useState } from "react";
+import { usePatternStore } from "@/features/patterns/slices/usePatternStore";
 import { useSequencerStore } from "../../slices/useSequencerStore";
 import TrackEditor from "./TrackEditor";
 import { Label } from "@/common/shadcn/ui/label";
@@ -13,7 +14,10 @@ import {
 } from "@/common/shadcn/ui/select";
 
 const LoopEditor: React.FC = () => {
-  const allTrackInfo = useSequencerStore((state) => state.trackInfo);
+  const currentPatternId = useSequencerStore((state) => state.currentPatternId);
+  const currentPattern = usePatternStore((state) =>
+    state.patterns.find((p) => p.id === currentPatternId),
+  );
   const [displayedSteps, setDisplayedSteps] = useState(16);
 
   const handleDisplayedStepsChange = (value: string) => {
@@ -21,20 +25,31 @@ const LoopEditor: React.FC = () => {
   };
 
   const trackEditors = useMemo(() => {
-    return allTrackInfo.map((trackInfo) => (
+    if (!currentPattern) return null;
+
+    return currentPattern.tracks.map((track) => (
       <TrackEditor
-        key={trackInfo.trackIndex}
-        trackInfo={trackInfo}
+        key={track.id}
+        trackId={track.id}
+        patternId={currentPattern.id}
         displayedSteps={displayedSteps}
       />
     ));
-  }, [allTrackInfo, displayedSteps]);
+  }, [currentPattern, displayedSteps]);
+
+  if (!currentPattern) {
+    return (
+      <div className="bg-slate-50 p-2 col-span-2 text-center text-gray-500">
+        No pattern selected
+      </div>
+    );
+  }
 
   return (
     <div className="bg-slate-50 p-2 col-span-2">
       <h3 className="text-lg font-semibold mb-4">Loop Editor</h3>
 
-      <div className="">
+      <div className="mb-4">
         <Label htmlFor="displayed-steps">Displayed Steps</Label>
         <Select
           onValueChange={handleDisplayedStepsChange}

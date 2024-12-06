@@ -1,4 +1,4 @@
-// src/features/sequencer/components/PlaybackControls/StatusDisplay.tsx
+// src/common/components/PlaybackControls/StatusDisplay.tsx
 
 import React from "react";
 import { SequenceStatus } from "@/core/enums/sequenceStatus";

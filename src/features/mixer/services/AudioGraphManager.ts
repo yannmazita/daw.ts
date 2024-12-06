@@ -156,8 +156,5 @@ export class AudioGraphManager {
     this.channelManager.dispose();
     this.effectManager.dispose();
     this.channelEffects.clear();
-
-    Tone.getContext().dispose();
-    Tone.setContext(new Tone.Context());
   }
 }
