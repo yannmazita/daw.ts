@@ -1,26 +1,28 @@
 // src/features/sequencer/components/SequencerVisualisation/SequencerVisualisation.tsx
 
-import React from "react";
+import React, { useMemo } from "react";
 import { usePatternStore } from "@/features/patterns/slices/usePatternStore";
 import { useSequencerStore } from "../../slices/useSequencerStore";
 import TrackVisualisation from "./TrackVisualisation";
 import "../../styles/style.css";
 
 const SequencerVisualisation: React.FC = () => {
-  const initialized = useSequencerStore((state) => state.initialized);
   const currentPatternId = useSequencerStore((state) => state.currentPatternId);
   const currentPattern = usePatternStore((state) =>
     state.patterns.find((p) => p.id === currentPatternId),
   );
 
-  // Don't render until initialized
-  if (!initialized) {
-    return (
-      <div className="bg-slate-50 p-2 text-center text-gray-500">
-        Initializing...
-      </div>
-    );
-  }
+  const trackElements = useMemo(() => {
+    if (!currentPattern) return null;
+
+    return currentPattern.tracks.map((track) => (
+      <TrackVisualisation
+        key={track.id}
+        trackId={track.id}
+        patternId={currentPattern.id}
+      />
+    ));
+  }, [currentPattern]);
 
   if (!currentPattern) {
     return (
@@ -32,15 +34,7 @@ const SequencerVisualisation: React.FC = () => {
 
   return (
     <div className="bg-slate-50 p-2 overflow-x-auto">
-      <div className="inline-block min-w-full">
-        {currentPattern.tracks.map((track) => (
-          <TrackVisualisation
-            key={track.id}
-            trackId={track.id}
-            patternId={currentPattern.id}
-          />
-        ))}
-      </div>
+      <div className="inline-block min-w-full">{trackElements}</div>
     </div>
   );
 };

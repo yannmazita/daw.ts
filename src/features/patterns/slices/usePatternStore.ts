@@ -26,7 +26,6 @@ interface PatternState {
   ) => void;
 
   // Pattern Data Management
-  setCurrentPattern: (id: string) => void;
   updatePatternData: (
     patternId: string,
     trackId: string,
@@ -164,10 +163,6 @@ export const usePatternStore = create<PatternState>()(
               : p,
           ),
         }));
-      },
-
-      setCurrentPattern: (id: string) => {
-        set({ currentPatternId: id });
       },
 
       updatePatternData: (patternId, trackId, data) => {

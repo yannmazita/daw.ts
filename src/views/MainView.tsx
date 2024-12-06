@@ -1,6 +1,6 @@
 // src/views/MainView.tsx
 
-import React, { useCallback, useLayoutEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import Sequencer from "@/features/sequencer/components/Sequencer";
 import Mixer from "@/features/mixer/components/Mixer";
 import { TopBar } from "@/common/components/TopBar";
@@ -14,26 +14,27 @@ import { PlaybackMode } from "@/core/interfaces";
 import { PatternTrack } from "@/core/interfaces/pattern";
 
 const MainView: React.FC = () => {
+  const hasInitialized = useRef(false);
   const setPlaybackMode = useSequencerStore((state) => state.setPlaybackMode);
   const setCurrentPattern = useSequencerStore(
     (state) => state.setCurrentPattern,
   );
-  const initialized = useSequencerStore((state) => state.initialized);
-  const initialize = useSequencerStore((state) => state.initialize);
   const createPattern = usePatternStore((state) => state.addPattern);
   const patterns = usePatternStore((state) => state.patterns);
 
-  const initializeApplication = useCallback(() => {
-    if (initialized) return;
+  useEffect(() => {
+    if (hasInitialized.current) return;
+    hasInitialized.current = true;
 
-    // Initialize sequencer store
-    initialize();
+    console.log("Initializing application...");
 
     // Set pattern mode
     setPlaybackMode(PlaybackMode.PATTERN);
 
     // Create initial pattern if none exists
     if (patterns.length === 0) {
+      console.log("Creating initial pattern...");
+
       const defaultTrack: PatternTrack = {
         id: `track_${Date.now()}`,
         name: "Track 1",
@@ -73,6 +74,8 @@ const MainView: React.FC = () => {
         timeSignature: [4, 4],
       });
 
+      console.log("Created pattern with ID:", patternId);
+
       // Initialize instrument and connect to master
       instrumentManager.addInstrument(
         defaultTrack.instrumentId,
@@ -82,22 +85,8 @@ const MainView: React.FC = () => {
 
       // Set as current pattern in sequencer store
       setCurrentPattern(patternId);
-    } else if (patterns.length > 0) {
-      // If patterns exist but none selected, select the first one
-      setCurrentPattern(patterns[0].id);
     }
-  }, [
-    initialized,
-    initialize,
-    setPlaybackMode,
-    createPattern,
-    setCurrentPattern,
-    patterns,
-  ]);
-
-  useLayoutEffect(() => {
-    initializeApplication();
-  }, [initializeApplication]);
+  }, []); // Empty dependency array since we're using ref for control
 
   return (
     <div className="flex flex-col">

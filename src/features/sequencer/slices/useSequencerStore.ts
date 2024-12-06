@@ -14,14 +14,12 @@ import { instrumentManager } from "@/common/services/instrumentManagerInstance";
 import { PatternTrackType } from "@/core/enums/PatternTrackType";
 
 interface InternalState extends SequencerState {
-  initialized: boolean;
   scheduledEvents: Set<number>;
   lastTickTime: number;
   scheduleAheadTime: number;
   nextScheduleTime: number;
   currentSchedulePosition: number;
   updateInterval: number;
-  initialize: () => void;
   scheduleNextEvents: () => void;
   clearScheduledEvents: () => void;
   resetPlaybackPosition: () => void;
@@ -60,15 +58,6 @@ export const useSequencerStore = create<InternalState>()(
       nextScheduleTime: 0,
       currentSchedulePosition: 0,
       updateInterval: 1000 / 60, // 60fps for timing updates
-
-      initialized: false, // Add this field
-
-      initialize: () => {
-        const state = get();
-        if (state.initialized) return;
-
-        set({ initialized: true });
-      },
 
       // Transport Controls
       setPlaybackMode: (mode: PlaybackMode) => {
