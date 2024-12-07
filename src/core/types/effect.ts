@@ -5,7 +5,6 @@ import { Frequency, NormalRange, Time } from "tone/build/esm/core/type/Units";
 
 /**
  * Represents the types of audio effects available, as defined by the Tone.js library.
- * This type is used to manage instances of effects that can be assigned to mixer channels.
  */
 export type ToneEffectType =
   | Tone.AutoFilter
