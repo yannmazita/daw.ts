@@ -1,30 +1,9 @@
 graph TD
-    subgraph Core
-        Transport[Transport Controller]
-        AudioEngine[Audio Engine]
-    end
-
-    subgraph Pattern System
-        PatternStore[Pattern Store]
-        Sequencer[Sequencer]
-    end
-
-    subgraph Playlist System
-        PlaylistStore[Playlist Store]
-        Arrangement[Arrangement]
-    end
-
-    subgraph Mixer System
-        MixerStore[Mixer Store]
-        Channels[Channels]
-        Effects[Effects]
-    end
-
-    Transport --> AudioEngine
-    AudioEngine --> MixerStore
-    PatternStore --> Sequencer
-    Sequencer --> AudioEngine
-    PlaylistStore --> Arrangement
-    Arrangement --> AudioEngine
-    MixerStore --> Channels
-    Effects --> Channels
+    A[Transport Controller] --> B[Pattern Mode]
+    A --> C[Playlist Mode]
+    B --> D[Tone.Part/Sequence]
+    C --> E[Transport Schedule]
+    D --> F[Tone.js Instruments]
+    E --> F
+    F --> G[Tone.js Mixer]
+   Effects --> Channels
