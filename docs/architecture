@@ -1,9 +1,6 @@
 graph TD
-    A[Transport Controller] --> B[Pattern Mode]
-    A --> C[Playlist Mode]
-    B --> D[Tone.Part/Sequence]
-    C --> E[Transport Schedule]
-    D --> F[Tone.js Instruments]
-    E --> F
-    F --> G[Tone.js Mixer]
-   Effects --> Channels
+    A[Transport Manager] --> B[Pattern Manager]
+    A --> C[Playlist Manager]
+    B --> D[Mixer Manager]
+    C --> D
+    D --> E[Tone.js Audio Context]
