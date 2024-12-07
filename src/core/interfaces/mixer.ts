@@ -13,6 +13,22 @@ import {
 import { NormalRange } from "tone/build/esm/core/type/Units";
 import { EffectOptions } from "tone/build/esm/effect/Effect";
 
+export interface MeterConfig {
+  smoothing: NormalRange;
+  normalRange: boolean;
+  channels: number;
+}
+
+export interface MeterData {
+  values: number | number[]; // Single number for mono, array for multi-channel
+}
+
+export interface MeterState {
+  config: MeterConfig;
+  data: MeterData;
+  isEnabled: boolean;
+}
+
 export interface MixerChannelState {
   id: string;
   name: string;
@@ -26,6 +42,7 @@ export interface MixerChannelState {
     targetId: string;
     gain: NormalRange;
   }[];
+  meter: MeterState | null;
 }
 
 export interface MixerChannel {
@@ -34,6 +51,7 @@ export interface MixerChannel {
   channel: Tone.Channel;
   effects: Map<string, ToneEffectType>;
   sends: Map<string, Tone.Gain>;
+  meter?: Tone.Meter;
 }
 
 export interface MixerState {
@@ -150,17 +168,23 @@ export interface MixerActions {
 
   // Utility
   dispose: () => void;
+
+  // Metering
+  enableMetering: (channelId: string) => void;
+  disableMetering: (channelId: string) => void;
+  getMeterData: (channelId: string) => MeterData | null;
+  updateMeterConfig: (channelId: string, config: Partial<MeterConfig>) => void;
+
+  // Audio routing
+  getInputNode: (channelId: string) => Tone.ToneAudioNode;
+  getOutputNode: (channelId: string) => Tone.ToneAudioNode;
 }
 
 export interface Mixer {
   state: MixerState;
   actions: MixerActions;
-  master: Tone.Channel;
+  masterChannel: MixerChannel;
   channels: Map<string, MixerChannel>;
-
-  // Audio Processing
-  getInputNode: (channelId: string) => Tone.ToneAudioNode;
-  getOutputNode: (channelId: string) => Tone.ToneAudioNode;
 
   // State Management
   toJSON: () => MixerState;
