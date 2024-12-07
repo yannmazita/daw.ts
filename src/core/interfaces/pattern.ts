@@ -4,6 +4,7 @@
 import { Time } from "tone/build/esm/core/type/Units";
 import { Note } from "../types/common";
 import * as Tone from "tone";
+import { InstrumentType } from "../types";
 
 export interface BaseTrackEvent {
   time: Time;
@@ -34,14 +35,12 @@ export interface Track {
   pan: number;
 
   // Direct references to Tone.js objects
-  instrument?: Tone.Instrument;
+  instrument?: InstrumentType;
   player?: Tone.Player;
   channel: Tone.Channel;
 
   // Automation data using Tone.js Signals
-  parameters: {
-    [key: string]: Tone.Signal<any>;
-  };
+  parameters: Record<string, Tone.Signal<any>>;
 }
 
 export interface Pattern {
