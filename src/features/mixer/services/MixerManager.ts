@@ -7,6 +7,8 @@ import {
   MixerChannel,
   MixerChannelState,
   MixerActions,
+  MeterConfig,
+  MeterData,
 } from "@/core/interfaces/mixer";
 import {
   EffectName,
@@ -20,29 +22,34 @@ import {
 import { NormalRange } from "tone/build/esm/core/type/Units";
 
 export class MixerManager implements Mixer {
-  private _master: Tone.Channel;
-  private _channels: Map<string, MixerChannel>;
-  private _state: MixerState;
+  public readonly masterChannel: MixerChannel;
+  public readonly channels: Map<string, MixerChannel>;
+  public readonly state: MixerState;
+  private meterUpdateInterval: number | null = null;
+  private defaultMeterConfig: MeterConfig = {
+    smoothing: 0.8,
+    normalRange: false,
+    channels: 2,
+  };
 
   constructor() {
-    this._master = new Tone.Channel().toDestination();
-    this._channels = new Map();
-    this._state = {
-      master: this.createInitialChannelState("master"),
+    // Initialize master channel with the same structure as other channels
+    const masterState = this.createInitialChannelState("master");
+    const masterToneChannel = new Tone.Channel().toDestination();
+
+    this.masterChannel = {
+      id: masterState.id,
+      state: masterState,
+      channel: masterToneChannel,
+      effects: new Map(),
+      sends: new Map(),
+    };
+
+    this.channels = new Map();
+    this.state = {
+      master: masterState,
       channels: [],
     };
-  }
-
-  get state(): MixerState {
-    return this._state;
-  }
-
-  get master(): Tone.Channel {
-    return this._master;
-  }
-
-  get channels(): Map<string, MixerChannel> {
-    return this._channels;
   }
 
   private createInitialChannelState(name: string): MixerChannelState {
@@ -55,6 +62,7 @@ export class MixerManager implements Mixer {
       solo: false,
       effects: [],
       sends: [],
+      meter: null,
     };
   }
 
@@ -66,7 +74,7 @@ export class MixerManager implements Mixer {
     });
 
     // Connect to master by default
-    channel.connect(this._master);
+    channel.connect(this.masterChannel.channel);
 
     return {
       id: state.id,
@@ -153,7 +161,79 @@ export class MixerManager implements Mixer {
     }
 
     // Connect to master
-    lastNode.connect(this._master);
+    lastNode.connect(this.masterChannel.channel);
+  }
+
+  // Metering
+  private createMeter(
+    config: MeterConfig = this.defaultMeterConfig,
+  ): Tone.Meter {
+    return new Tone.Meter({
+      smoothing: config.smoothing,
+      normalRange: config.normalRange,
+      channelCount: config.channels,
+    });
+  }
+
+  private setupChannelMetering(
+    channel: MixerChannel,
+    config: MeterConfig = this.defaultMeterConfig,
+  ) {
+    // Clean up existing meter if any
+    if (channel.meter) {
+      channel?.meter.dispose();
+    }
+
+    // Create new meter
+    channel.meter = this.createMeter(config);
+
+    // Connect meter after the channel's processing chain
+    const lastNode = this.actions.getOutputNode(channel.id);
+    lastNode.connect(channel.meter);
+
+    // Initialize meter state
+    channel.state.meter = {
+      config,
+      data: {
+        values: config.channels === 1 ? 0 : new Array(config.channels).fill(0),
+      },
+      isEnabled: true,
+    };
+  }
+
+  private startMeterUpdates() {
+    if (this.meterUpdateInterval) return;
+
+    const updateMeters = () => {
+      this.channels.forEach((channel) => {
+        if (channel.meter && channel.state.meter?.isEnabled) {
+          channel.state.meter.data = {
+            values: channel.meter.getValue(),
+          };
+        }
+      });
+
+      // Update master channel meter
+      if (
+        this.masterChannel.meter &&
+        this.masterChannel.state.meter?.isEnabled
+      ) {
+        this.masterChannel.state.meter.data = {
+          values: this.masterChannel.meter.getValue(),
+        };
+      }
+
+      this.meterUpdateInterval = requestAnimationFrame(updateMeters);
+    };
+
+    this.meterUpdateInterval = requestAnimationFrame(updateMeters);
+  }
+
+  private stopMeterUpdates() {
+    if (this.meterUpdateInterval) {
+      cancelAnimationFrame(this.meterUpdateInterval);
+      this.meterUpdateInterval = null;
+    }
   }
 
   readonly actions: MixerActions = {
@@ -161,14 +241,14 @@ export class MixerManager implements Mixer {
       const state = this.createInitialChannelState(name);
       const channel = this.createChannel(state);
 
-      this._channels.set(state.id, channel);
-      this._state.channels.push(state);
+      this.channels.set(state.id, channel);
+      this.state.channels.push(state);
 
       return state.id;
     },
 
     removeChannel: (id: string): void => {
-      const channel = this._channels.get(id);
+      const channel = this.channels.get(id);
       if (!channel) return;
 
       // Clean up audio nodes
@@ -177,12 +257,12 @@ export class MixerManager implements Mixer {
       channel.sends.forEach((send) => send.dispose());
 
       // Remove from state
-      this._channels.delete(id);
-      this._state.channels = this._state.channels.filter((c) => c.id !== id);
+      this.channels.delete(id);
+      this.state.channels = this.state.channels.filter((c) => c.id !== id);
     },
 
     updateChannel: (id: string, updates: Partial<MixerChannelState>): void => {
-      const channel = this._channels.get(id);
+      const channel = this.channels.get(id);
       if (!channel) return;
 
       // Update audio parameters
@@ -193,7 +273,7 @@ export class MixerManager implements Mixer {
 
       // Update state
       channel.state = { ...channel.state, ...updates };
-      this._state.channels = this._state.channels.map((c) =>
+      this.state.channels = this.state.channels.map((c) =>
         c.id === id ? channel.state : c,
       );
     },
@@ -203,7 +283,7 @@ export class MixerManager implements Mixer {
       type: EffectName,
       options: any = { wet: 1 },
     ): string => {
-      const channel = this._channels.get(channelId);
+      const channel = this.channels.get(channelId);
       if (!channel) throw new Error(`Channel ${channelId} not found`);
 
       const effectState: EffectState = {
@@ -222,7 +302,7 @@ export class MixerManager implements Mixer {
     },
 
     removeEffect: (channelId: string, effectId: string): void => {
-      const channel = this._channels.get(channelId);
+      const channel = this.channels.get(channelId);
       if (!channel) return;
 
       const effect = channel.effects.get(effectId);
@@ -241,7 +321,7 @@ export class MixerManager implements Mixer {
       effectId: string,
       updates: Partial<EffectOptions>,
     ): void => {
-      const channel = this._channels.get(channelId);
+      const channel = this.channels.get(channelId);
       if (!channel) return;
 
       const effect = channel.effects.get(effectId);
@@ -264,7 +344,7 @@ export class MixerManager implements Mixer {
       effectId: string,
       bypass: boolean,
     ): void => {
-      const channel = this._channels.get(channelId);
+      const channel = this.channels.get(channelId);
       if (!channel) return;
 
       const effectState = channel.state.effects.find((e) => e.id === effectId);
@@ -279,8 +359,8 @@ export class MixerManager implements Mixer {
       toId: string,
       gain: NormalRange = 1,
     ): string => {
-      const fromChannel = this._channels.get(fromId);
-      const toChannel = this._channels.get(toId);
+      const fromChannel = this.channels.get(fromId);
+      const toChannel = this.channels.get(toId);
       if (!fromChannel || !toChannel) throw new Error("Invalid channel IDs");
 
       const sendId = `send_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
@@ -299,7 +379,7 @@ export class MixerManager implements Mixer {
     },
 
     removeSend: (channelId: string, sendId: string): void => {
-      const channel = this._channels.get(channelId);
+      const channel = this.channels.get(channelId);
       if (!channel) return;
 
       const send = channel.sends.get(sendId);
@@ -318,7 +398,7 @@ export class MixerManager implements Mixer {
       sendId: string,
       gain: NormalRange,
     ): void => {
-      const channel = this._channels.get(channelId);
+      const channel = this.channels.get(channelId);
       if (!channel) return;
 
       const send = channel.sends.get(sendId);
@@ -330,32 +410,101 @@ export class MixerManager implements Mixer {
     },
 
     dispose: (): void => {
-      this._master.dispose();
-      this._channels.forEach((channel) => {
+      this.stopMeterUpdates();
+
+      // Clean up master channel
+      this.masterChannel.channel.dispose();
+      this.masterChannel.effects.forEach((effect) => effect.dispose());
+      this.masterChannel.sends.forEach((send) => send.dispose());
+      this.masterChannel.meter?.dispose();
+
+      // Clean up other channels
+      this.channels.forEach((channel) => {
         channel.channel.dispose();
         channel.effects.forEach((effect) => effect.dispose());
         channel.sends.forEach((send) => send.dispose());
+        channel.meter?.dispose();
       });
-      this._channels.clear();
-      this._state.channels = [];
+
+      this.channels.clear();
+      this.state.channels = [];
+    },
+
+    enableMetering: (
+      channelId: string,
+      config?: Partial<MeterConfig>,
+    ): void => {
+      const channel = this.channels.get(channelId);
+      if (!channel) return;
+
+      this.setupChannelMetering(channel, {
+        ...this.defaultMeterConfig,
+        ...config,
+      });
+      this.startMeterUpdates();
+    },
+
+    disableMetering: (channelId: string): void => {
+      const channel = this.channels.get(channelId);
+      if (!channel?.meter) return;
+
+      channel.meter.dispose();
+      channel.meter = undefined;
+      if (channel.state.meter) {
+        channel.state.meter.isEnabled = false;
+      }
+
+      // Stop global updates if no meters are enabled
+      const hasEnabledMeters = Array.from(this.channels.values()).some(
+        (ch) => ch.state.meter?.isEnabled,
+      );
+
+      if (!hasEnabledMeters) {
+        this.stopMeterUpdates();
+      }
+    },
+
+    getMeterData: (channelId: string): MeterData | null => {
+      const channel = this.channels.get(channelId);
+      return channel?.state.meter?.data ?? null;
+    },
+
+    updateMeterConfig: (
+      channelId: string,
+      config: Partial<MeterConfig>,
+    ): void => {
+      const channel = this.channels.get(channelId);
+      if (!channel?.state.meter) return;
+
+      const newConfig = {
+        ...channel.state.meter.config,
+        ...config,
+      };
+
+      this.setupChannelMetering(channel, newConfig);
+    },
+    getInputNode: (channelId: string): Tone.ToneAudioNode => {
+      if (channelId === this.masterChannel.id) {
+        return this.masterChannel.channel;
+      }
+      const channel = this.channels.get(channelId);
+      return channel ? channel.channel : this.masterChannel.channel;
+    },
+
+    getOutputNode: (channelId: string): Tone.ToneAudioNode => {
+      if (channelId === this.masterChannel.id) {
+        return this.masterChannel.channel;
+      }
+      const channel = this.channels.get(channelId);
+      if (!channel) return this.masterChannel.channel;
+
+      const lastEffect = Array.from(channel.effects.values()).pop();
+      return lastEffect ?? channel.channel;
     },
   };
 
-  getInputNode(channelId: string): Tone.ToneAudioNode {
-    const channel = this._channels.get(channelId);
-    return channel ? channel.channel : this._master;
-  }
-
-  getOutputNode(channelId: string): Tone.ToneAudioNode {
-    const channel = this._channels.get(channelId);
-    if (!channel) return this._master;
-
-    const lastEffect = Array.from(channel.effects.values()).pop();
-    return lastEffect ?? channel.channel;
-  }
-
   toJSON(): MixerState {
-    return this._state;
+    return this.state;
   }
 
   fromJSON(state: MixerState): void {
@@ -363,13 +512,13 @@ export class MixerManager implements Mixer {
     this.actions.dispose();
 
     // Recreate master channel state
-    this._state.master = state.master;
+    this.state.master = state.master;
 
     // Recreate channels
     state.channels.forEach((channelState) => {
       const id = channelState.id;
       const channel = this.createChannel(channelState);
-      this._channels.set(id, channel);
+      this.channels.set(id, channel);
 
       // Recreate effects
       channelState.effects.forEach((effectState) => {
@@ -386,6 +535,6 @@ export class MixerManager implements Mixer {
       this.updateChannelRouting(channel);
     });
 
-    this._state = state;
+    this.state = state;
   }
 }
