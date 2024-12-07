@@ -4,9 +4,9 @@ import * as Tone from "tone";
 import {
   Pattern,
   Track,
-  TrackEvent,
-  NoteEvent,
-  AudioEvent,
+  SequenceEvent,
+  NoteSequenceEvent,
+  AudioSequenceEvent,
 } from "@/core/interfaces/pattern";
 import { transportManager } from "@/common/services/transportManagerInstance";
 import { mixerManager } from "@/features/mixer/services/mixerManagerInstance";
@@ -33,6 +33,14 @@ export class PatternManager {
       () => this.startPatternPlayback(),
       () => this.stopPatternPlayback(),
     );
+  }
+
+  public getPattern(id: string): Pattern | undefined {
+    return this.patterns.get(id);
+  }
+
+  public getCurrentPattern(): Pattern | null {
+    return this.currentPattern;
   }
 
   private createTrackInstrument(
@@ -68,10 +76,10 @@ export class PatternManager {
   private scheduleTrack(track: Track): void {
     if (track.type === "instrument" && track.instrument) {
       // Create Tone.Part for instrument track
-      const part = new Tone.Part<TrackEvent>((time, event) => {
+      const part = new Tone.Part<SequenceEvent>((time, event) => {
         if (track.muted || (!track.soloed && this.hasSoloedTracks())) return;
 
-        if (this.isNoteEvent(event)) {
+        if (this.isNoteSequenceEvent(event)) {
           track.instrument?.triggerAttackRelease(
             event.note,
             event.duration ?? "8n",
@@ -87,10 +95,10 @@ export class PatternManager {
       part.start(0);
     } else if (track.type === "audio" && track.player) {
       // Create Tone.Part for audio track
-      const part = new Tone.Part<TrackEvent>((time, event) => {
+      const part = new Tone.Part<SequenceEvent>((time, event) => {
         if (track.muted || (!track.soloed && this.hasSoloedTracks())) return;
 
-        if (this.isAudioEvent(event)) {
+        if (this.isAudioSequenceEvent(event)) {
           track.player?.start(time, event.offset ?? 0, event.duration);
         }
       }, track.events);
@@ -102,12 +110,16 @@ export class PatternManager {
     }
   }
 
-  private isNoteEvent(event: TrackEvent): event is NoteEvent {
-    return "note" in event;
+  private isNoteSequenceEvent(
+    event: SequenceEvent,
+  ): event is NoteSequenceEvent {
+    return event.type === "note";
   }
 
-  private isAudioEvent(event: TrackEvent): event is AudioEvent {
-    return "bufferIndex" in event;
+  private isAudioSequenceEvent(
+    event: SequenceEvent,
+  ): event is AudioSequenceEvent {
+    return event.type === "audio";
   }
 
   private hasSoloedTracks(): boolean {
@@ -179,7 +191,11 @@ export class PatternManager {
     return trackId;
   }
 
-  public addEvent(patternId: string, trackId: string, event: TrackEvent): void {
+  public addEvent(
+    patternId: string,
+    trackId: string,
+    event: SequenceEvent,
+  ): void {
     const pattern = this.patterns.get(patternId);
     if (!pattern) throw new Error("Pattern not found");
 
@@ -215,5 +231,17 @@ export class PatternManager {
     });
     this.patterns.clear();
     this.currentPattern = null;
+  }
+
+  public getPatterns(): Pattern[] {
+    return Array.from(this.patterns.values());
+  }
+
+  public hasPattern(id: string): boolean {
+    return this.patterns.has(id);
+  }
+
+  public getPatternByName(name: string): Pattern | undefined {
+    return Array.from(this.patterns.values()).find((p) => p.name === name);
   }
 }
