@@ -1,40 +1,41 @@
 // src/core/interfaces/pattern.ts
 // Pattern and track definitions
 
-import { Time } from "tone/build/esm/core/type/Units";
+import { NormalRange, Time } from "tone/build/esm/core/type/Units";
 import { Note } from "../types/common";
 import * as Tone from "tone";
 import { InstrumentType } from "../types";
 
-export interface BaseTrackEvent {
+export interface BaseSequenceEvent {
   time: Time;
   duration?: Time;
-  velocity?: number;
 }
 
-export interface NoteEvent extends BaseTrackEvent {
+export interface NoteSequenceEvent extends BaseSequenceEvent {
+  type: "note";
   note: Note;
+  velocity?: NormalRange;
 }
 
-export interface AudioEvent extends BaseTrackEvent {
+export interface AudioSequenceEvent extends BaseSequenceEvent {
+  type: "audio";
   bufferIndex: number;
   offset?: Time;
   playbackRate?: number;
 }
 
-export type TrackEvent = NoteEvent | AudioEvent;
+export type SequenceEvent = NoteSequenceEvent | AudioSequenceEvent;
 
 export interface Track {
   id: string;
   name: string;
   type: "instrument" | "audio";
-  events: TrackEvent[];
+  events: SequenceEvent[];
   muted: boolean;
   soloed: boolean;
   volume: number;
   pan: number;
 
-  // Direct references to Tone.js objects
   instrument?: InstrumentType;
   player?: Tone.Player;
   channel: Tone.Channel;
@@ -51,5 +52,5 @@ export interface Pattern {
   timeSignature: [number, number];
 
   // Tone.js Part for playback
-  part?: Tone.Part<TrackEvent>;
+  part?: Tone.Part<SequenceEvent>;
 }
