@@ -141,7 +141,6 @@ export class PatternManager {
     this.activeEvents.clear();
   }
 
-  // Public API
   public createPattern(name: string, timeSignature: [number, number]): string {
     const id = `pattern_${Date.now()}`;
     const pattern: Pattern = {
