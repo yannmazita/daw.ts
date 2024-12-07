@@ -177,7 +177,9 @@ export class PatternManager {
       soloed: false,
       volume: 0,
       pan: 0,
-      channel: mixerManager.getInputNode(mixerChannelId) as Tone.Channel,
+      channel: mixerManager.actions.getInputNode(
+        mixerChannelId,
+      ) as Tone.Channel,
       parameters: {},
     };
 
