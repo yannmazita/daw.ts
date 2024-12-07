@@ -1,0 +1,6 @@
+graph TD
+    A[Transport Manager] --> B[Pattern Manager]
+    A --> C[Playlist Manager]
+    B --> D[Mixer Manager]
+    C --> D
+    D --> E[Tone.Destination]
