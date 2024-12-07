@@ -1,61 +1,32 @@
 // src/core/interfaces/playlist.ts
+// Arangement and track definitions
 
+import { Time } from "tone/build/esm/core/type/Units";
 import { Pattern } from "./pattern";
+
+export interface PatternPlacement {
+  id: string;
+  patternId: string;
+  startTime: Time;
+  duration: Time;
+  offset: Time;
+}
 
 export interface PlaylistTrack {
   id: string;
   name: string;
-  color: string;
+  patterns: PatternPlacement[];
   muted: boolean;
-  solo: boolean;
-  height: number;
-  collapsed: boolean;
+  soloed: boolean;
 }
 
-export interface PatternInstance {
-  id: string;
-  patternId: string;
-  trackId: string;
-  startTime: number; // In bars
-  duration: number; // In bars
-  offset: number; // Start offset within pattern (in bars)
-  muted: boolean;
-}
-
-export interface PlaylistState {
+export interface Playlist {
   tracks: PlaylistTrack[];
-  patterns: PatternInstance[];
-  length: number; // Total length in bars
+  length: Time;
 
-  // Track Management
-  addTrack: (track: Omit<PlaylistTrack, "id">) => string;
-  removeTrack: (id: string) => void;
-  updateTrack: (id: string, updates: Partial<PlaylistTrack>) => void;
-  reorderTracks: (trackIds: string[]) => void;
-
-  // Pattern Management
-  addPatternInstance: (instance: Omit<PatternInstance, "id">) => string;
-  removePatternInstance: (id: string) => void;
-  updatePatternInstance: (
-    id: string,
-    updates: Partial<PatternInstance>,
-  ) => void;
-  movePatternInstance: (id: string, trackId: string, startTime: number) => void;
-
-  // Pattern Queries
-  getPatternInstancesInTimeRange: (
-    startTime: number,
-    endTime: number,
-  ) => PatternInstance[];
-  getPatternInstancesForTrack: (trackId: string) => PatternInstance[];
-
-  // Playlist Operations
-  clearTrack: (trackId: string) => void;
-  clearAll: () => void;
-  duplicatePatternInstance: (id: string) => string;
-
-  // Utility
-  hasPatterns: () => boolean;
-  getLength: () => number;
-  updateLength: () => void;
+  // Methods for pattern arrangement
+  addPattern: (trackId: string, pattern: Pattern, startTime: Time) => string;
+  removePattern: (trackId: string, placementId: string) => void;
+  movePattern: (placementId: string, trackId: string, startTime: Time) => void;
+  getPatternAt: (time: Time) => Pattern[];
 }

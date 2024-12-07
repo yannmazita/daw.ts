@@ -1,95 +1,56 @@
-// src/features/patterns/types/pattern.ts
+// src/core/interfaces/pattern.ts
+// Pattern and track definitions
 
-import { AutomationData } from "./automation";
-import { Note } from "@/core/enums/note";
-import { PatternTrackType } from "@/core/enums/PatternTrackType";
+import { Time } from "tone/build/esm/core/type/Units";
+import { Note } from "../types/common";
+import * as Tone from "tone";
 
-export interface BasePatternData {
-  type: PatternTrackType;
+export interface BaseTrackEvent {
+  time: Time;
+  duration?: Time;
+  velocity?: number;
 }
 
-export interface Step {
-  index: number;
-  velocity: number;
-  active: boolean;
+export interface NoteEvent extends BaseTrackEvent {
   note: Note;
-  modulation: number;
-  pitchBend: number;
-  parameters: Record<string, number>;
 }
 
-export interface StepSequenceData extends BasePatternData {
-  type: PatternTrackType.STEP_SEQUENCE;
-  steps: Step[];
-  gridResolution: number;
-  loopLength: number;
-  swing: number;
-  defaultNote: Note;
-  defaultVelocity: number;
+export interface AudioEvent extends BaseTrackEvent {
+  bufferIndex: number;
+  offset?: Time;
+  playbackRate?: number;
 }
 
-export interface NoteEvent {
-  note: Note;
-  velocity: number;
-  startTime: number;
-  duration: number;
-  parameters: Record<string, number>;
-}
+export type TrackEvent = NoteEvent | AudioEvent;
 
-export interface PianoRollData extends BasePatternData {
-  type: PatternTrackType.PIANO_ROLL;
-  notes: NoteEvent[];
-  timeSignature: [number, number];
-  quantization: number;
-}
-
-export interface AudioData extends BasePatternData {
-  type: PatternTrackType.AUDIO;
-  sampleId: string;
-  startOffset: number;
-  duration: number;
-  timeStretch: boolean;
-  pitch: number;
-}
-
-export type PatternData = StepSequenceData | PianoRollData | AudioData;
-
-export interface PatternTrack {
+export interface Track {
   id: string;
   name: string;
-  type: PatternTrackType;
-  mixerChannelId: string;
-  instrumentId: string;
+  type: "instrument" | "audio";
+  events: TrackEvent[];
   muted: boolean;
-  solo: boolean;
-  data: PatternData;
-  automationData: AutomationData[];
+  soloed: boolean;
+  volume: number;
+  pan: number;
+
+  // Direct references to Tone.js objects
+  instrument?: Tone.Instrument;
+  player?: Tone.Player;
+  channel: Tone.Channel;
+
+  // Automation data using Tone.js Signals
+  parameters: {
+    [key: string]: Tone.Signal<any>;
+  };
 }
 
 export interface Pattern {
   id: string;
   name: string;
-  color: string;
-  length: number; // in bars
+  tracks: Track[];
+  length: Time;
   timeSignature: [number, number];
-  tracks: PatternTrack[];
+
+  // Tone.js Part for playback
+  part?: Tone.Part<TrackEvent>;
 }
-
-// When creating new steps, we should use these defaults
-export const DEFAULT_STEP: Omit<Step, "index"> = {
-  active: false,
-  note: Note.C4,
-  velocity: 100,
-  modulation: 0,
-  pitchBend: 0,
-  parameters: {},
-};
-
-export const DEFAULT_STEP_SEQUENCE_DATA: Omit<StepSequenceData, "type"> = {
-  steps: [],
-  gridResolution: 16,
-  loopLength: 16,
-  swing: 0,
-  defaultNote: Note.C4,
-  defaultVelocity: 100,
-};
