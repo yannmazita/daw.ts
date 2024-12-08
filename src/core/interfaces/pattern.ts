@@ -4,7 +4,7 @@
 import { NormalRange, Time } from "tone/build/esm/core/type/Units";
 import { Note } from "../types/common";
 import * as Tone from "tone";
-import { InstrumentType } from "../types";
+import { InstrumentName, InstrumentOptions, InstrumentType } from "../types";
 
 export interface BaseSequenceEvent {
   time: Time;
@@ -26,31 +26,102 @@ export interface AudioSequenceEvent extends BaseSequenceEvent {
 
 export type SequenceEvent = NoteSequenceEvent | AudioSequenceEvent;
 
-export interface Track {
+export interface PatternTrackState {
   id: string;
   name: string;
   type: "instrument" | "audio";
-  events: SequenceEvent[];
+  instrumentType?: InstrumentName;
+  instrumentOptions?: InstrumentOptions;
+  mixerChannelId: string;
   muted: boolean;
   soloed: boolean;
   volume: number;
   pan: number;
+  events: SequenceEvent[];
+  parameters: Record<string, number>; // Parameter values
+}
 
+// Runtime state
+export interface PatternTrack {
+  id: string;
+  state: PatternTrackState;
+  name: string;
+  type: "instrument" | "audio";
+  mixerChannelId: string;
+  muted: boolean;
+  soloed: boolean;
+  volume: number;
+  pan: number;
+  events: SequenceEvent[];
+
+  // Runtime objects
   instrument?: InstrumentType;
   player?: Tone.Player;
   channel: Tone.Channel;
-
-  // Automation data using Tone.js Signals
   parameters: Record<string, Tone.Signal<any>>;
+}
+
+export interface PatternData {
+  id: string;
+  name: string;
+  tracks: PatternTrackState[];
+  length: Time;
+  timeSignature: [number, number];
+}
+
+export interface PatternState {
+  patterns: PatternData[];
+  currentPatternId: string | null;
 }
 
 export interface Pattern {
   id: string;
   name: string;
-  tracks: Track[];
+  tracks: PatternTrack[]; // Runtime tracks with Tone.js objects
   length: Time;
   timeSignature: [number, number];
-
-  // Tone.js Part for playback
   part?: Tone.Part<SequenceEvent>;
+
+  // Reference to state for serialization
+  state: PatternData;
+}
+
+export interface PatternActions {
+  // Pattern Management
+  createPattern: (name: string, timeSignature: [number, number]) => string;
+  deletePattern: (id: string) => void;
+  duplicatePattern: (id: string) => string;
+  updatePattern: (id: string, updates: Partial<Pattern>) => void;
+  setCurrentPattern: (id: string | null) => void;
+
+  // Track Management
+  addTrack: (
+    patternId: string,
+    name: string,
+    type: "instrument" | "audio",
+    instrumentType?: InstrumentName,
+    options?: InstrumentOptions,
+  ) => string;
+  removeTrack: (patternId: string, trackId: string) => void;
+  updateTrack: (
+    patternId: string,
+    trackId: string,
+    updates: Partial<PatternTrackState>,
+  ) => void;
+
+  // Event Management
+  addEvent: (patternId: string, trackId: string, event: SequenceEvent) => void;
+  removeEvent: (patternId: string, trackId: string, eventId: string) => void;
+  updateEvent: (
+    patternId: string,
+    trackId: string,
+    eventId: string,
+    updates: Partial<SequenceEvent>,
+  ) => void;
+
+  // Utility
+  getPattern: (id: string) => Pattern | undefined;
+  getCurrentPattern: () => Pattern | null;
+  getPatterns: () => Pattern[];
+  dispose: () => void;
 }

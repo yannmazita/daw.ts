@@ -45,9 +45,12 @@ export interface MixerChannelState {
   meter: MeterState | null;
 }
 
+// Runtime state
 export interface MixerChannel {
   id: string;
   state: MixerChannelState;
+
+  // Runtime objects
   channel: Tone.Channel;
   effects: Map<string, ToneEffectType>;
   sends: Map<string, Tone.Gain>;
@@ -178,15 +181,4 @@ export interface MixerActions {
   // Audio routing
   getInputNode: (channelId: string) => Tone.ToneAudioNode;
   getOutputNode: (channelId: string) => Tone.ToneAudioNode;
-}
-
-export interface Mixer {
-  state: MixerState;
-  actions: MixerActions;
-  masterChannel: MixerChannel;
-  channels: Map<string, MixerChannel>;
-
-  // State Management
-  toJSON: () => MixerState;
-  fromJSON: (state: MixerState) => void;
 }
