@@ -2,49 +2,63 @@
 
 import { useStore } from "@/common/slices/useStore";
 import { Button } from "@/common/shadcn/ui/button";
-import { useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 export function TempoTap() {
-  const { setBpm } = useStore();
-  const tapsRef = useRef<number[]>([]);
-  const timeoutRef = useRef<number>();
+  const { tap, resetTapTempo } = useStore();
+  const [tapCount, setTapCount] = useState(0);
+  const [isActive, setIsActive] = useState(false);
+
+  // Reset visual state after inactivity
+  useEffect(() => {
+    if (isActive) {
+      const timeout = setTimeout(() => {
+        setIsActive(false);
+        setTapCount(0);
+      }, 2000);
+
+      return () => clearTimeout(timeout);
+    }
+  }, [isActive, tapCount]);
+
+  // Handle keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key.toLowerCase() === "t" && !event.repeat) {
+        handleTap();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   const handleTap = useCallback(() => {
-    const now = Date.now();
+    setIsActive(true);
+    setTapCount((prev) => prev + 1);
+    tap();
+  }, [tap]);
 
-    // Update taps in ref
-    tapsRef.current = [...tapsRef.current, now].slice(-4); // Keep last 4 taps
-
-    if (tapsRef.current.length >= 2) {
-      const intervals = tapsRef.current
-        .slice(1)
-        .map((tap, i) => tap - tapsRef.current[i]);
-      const averageInterval =
-        intervals.reduce((a, b) => a + b) / intervals.length;
-      const bpm = Math.round(60000 / averageInterval);
-
-      if (bpm >= 20 && bpm <= 300) {
-        setBpm(bpm);
-      }
-    }
-
-    // Reset taps after 2 seconds of inactivity
-    if (timeoutRef.current) {
-      window.clearTimeout(timeoutRef.current);
-    }
-    timeoutRef.current = window.setTimeout(() => {
-      tapsRef.current = [];
-    }, 2000);
-  }, [setBpm]);
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => resetTapTempo();
+  }, [resetTapTempo]);
 
   return (
-    <Button
-      variant="outline"
-      size="sm"
-      onClick={handleTap}
-      className="px-3 py-1"
-    >
-      Tap
-    </Button>
+    <div className="flex items-center space-x-2">
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={handleTap}
+        className={`px-3 py-1 transition-colors ${
+          isActive ? "bg-slate-400 dark:bg-slate-600" : ""
+        }`}
+      >
+        {isActive ? `Tap (${tapCount})` : "Tap Tempo"}
+      </Button>
+      <span className="text-xs text-slate-500 dark:text-slate-400">
+        Press 'T'
+      </span>
+    </div>
   );
 }

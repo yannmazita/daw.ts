@@ -114,5 +114,24 @@ export const createTransportSlice: StateCreator<
         throw error;
       }
     },
+
+    // Tap Tempo
+    tap: () => {
+      try {
+        return transportManager.actions.tap();
+      } catch (error) {
+        console.error("Error processing tap tempo:", error);
+        throw error;
+      }
+    },
+
+    resetTapTempo: () => {
+      try {
+        transportManager.actions.resetTapTempo();
+      } catch (error) {
+        console.error("Error resetting tap tempo:", error);
+        throw error;
+      }
+    },
   };
 };

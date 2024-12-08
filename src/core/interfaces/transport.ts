@@ -27,4 +27,6 @@ export interface TransportActions {
   setSwing: (amount: number) => void;
   setLoop: (enabled: boolean, start?: Time, end?: Time) => void;
   setMode: (mode: PlaybackMode) => Promise<void>;
+  tap: () => number | null;
+  resetTapTempo: () => void;
 }

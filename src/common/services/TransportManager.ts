@@ -9,6 +9,10 @@ import { BaseManager } from "./BaseManager";
 export class TransportManager extends BaseManager<TransportState> {
   private modeHandlers: Map<PlaybackMode, () => void>;
   private cleanupHandlers: Map<PlaybackMode, () => void>;
+  private tapTimes: number[] = [];
+  private tapResetTimeout: NodeJS.Timeout | null = null;
+  private readonly TAP_TIMEOUT = 2000; // 2 seconds
+  private readonly MAX_TAP_SAMPLES = 4;
 
   constructor() {
     // Initialize state
@@ -56,6 +60,31 @@ export class TransportManager extends BaseManager<TransportState> {
   private validateTime(time: Time): Time {
     // Ensure time is valid and convert to Tone.Time if needed
     return Tone.Time(time).toBarsBeatsSixteenths();
+  }
+
+  private calculateTapTempo(): number | null {
+    if (this.tapTimes.length < 2) return null;
+
+    const intervals = this.tapTimes
+      .slice(1)
+      .map((time, i) => time - this.tapTimes[i]);
+
+    const averageInterval =
+      intervals.reduce((a, b) => a + b) / intervals.length;
+    const bpm = Math.round(60000 / averageInterval);
+
+    return bpm >= 20 && bpm <= 300 ? bpm : null;
+  }
+
+  private resetTapTimesAfterDelay() {
+    if (this.tapResetTimeout) {
+      clearTimeout(this.tapResetTimeout);
+    }
+
+    this.tapResetTimeout = setTimeout(() => {
+      this.tapTimes = [];
+      this.tapResetTimeout = null;
+    }, this.TAP_TIMEOUT);
   }
 
   public registerModeHandler(
@@ -187,6 +216,32 @@ export class TransportManager extends BaseManager<TransportState> {
       // Resume playback if it was playing
       if (wasPlaying) {
         await this.actions.play();
+      }
+    },
+
+    tap: () => {
+      const now = Date.now();
+      this.tapTimes.push(now);
+
+      // Keep only the last MAX_TAP_SAMPLES taps
+      if (this.tapTimes.length > this.MAX_TAP_SAMPLES) {
+        this.tapTimes = this.tapTimes.slice(-this.MAX_TAP_SAMPLES);
+      }
+
+      const calculatedBpm = this.calculateTapTempo();
+      if (calculatedBpm) {
+        this.actions.setBpm(calculatedBpm);
+      }
+
+      this.resetTapTimesAfterDelay();
+      return calculatedBpm;
+    },
+
+    resetTapTempo: () => {
+      this.tapTimes = [];
+      if (this.tapResetTimeout) {
+        clearTimeout(this.tapResetTimeout);
+        this.tapResetTimeout = null;
       }
     },
   };

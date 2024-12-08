@@ -12,7 +12,7 @@ import {
   Music2,
   ListMusic,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { TimeSignatureControl } from "./TimeSignatureControl";
 import { PositionDisplay } from "./PositionDisplay";
 import { LoopControls } from "./LoopControls";
@@ -31,6 +31,10 @@ export function PlaybackControls() {
       setBpm(numValue);
     }
   };
+
+  useEffect(() => {
+    setLocalBpm(bpm.toString());
+  }, [bpm]);
 
   return (
     <div className="flex flex-col space-y-2 rounded-lg bg-slate-200 p-4 dark:bg-slate-800">
