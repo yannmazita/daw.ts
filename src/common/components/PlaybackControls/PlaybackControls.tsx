@@ -1,5 +1,4 @@
 // src/common/components/PlaybackControls/PlaybackControls.tsx
-
 import { useStore } from "@/common/slices/useStore";
 import { Button } from "@/common/shadcn/ui/button";
 import { Input } from "@/common/shadcn/ui/input";
@@ -14,6 +13,10 @@ import {
   ListMusic,
 } from "lucide-react";
 import { useState } from "react";
+import { TimeSignatureControl } from "./TimeSignatureControl";
+import { PositionDisplay } from "./PositionDisplay";
+import { LoopControls } from "./LoopControls";
+import { TempoTap } from "./TempoTap";
 
 export function PlaybackControls() {
   const { isPlaying, bpm, mode, play, stop, pause, setBpm, setMode } =
@@ -30,65 +33,86 @@ export function PlaybackControls() {
   };
 
   return (
-    <div className="flex items-center space-x-4 rounded-lg bg-slate-200 p-4 dark:bg-slate-800">
-      <div className="flex items-center space-x-2">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setMode(PlaybackMode.PATTERN)}
-          className={
-            mode === PlaybackMode.PATTERN
-              ? "bg-slate-300 dark:bg-slate-700"
-              : ""
-          }
-        >
-          <Music2 className="h-5 w-5" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setMode(PlaybackMode.PLAYLIST)}
-          className={
-            mode === PlaybackMode.PLAYLIST
-              ? "bg-slate-300 dark:bg-slate-700"
-              : ""
-          }
-        >
-          <ListMusic className="h-5 w-5" />
-        </Button>
+    <div className="flex flex-col space-y-2 rounded-lg bg-slate-200 p-4 dark:bg-slate-800">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-4">
+          {/* Mode Selection */}
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setMode(PlaybackMode.PATTERN)}
+              className={
+                mode === PlaybackMode.PATTERN
+                  ? "bg-slate-300 dark:bg-slate-700"
+                  : ""
+              }
+            >
+              <Music2 className="h-5 w-5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setMode(PlaybackMode.PLAYLIST)}
+              className={
+                mode === PlaybackMode.PLAYLIST
+                  ? "bg-slate-300 dark:bg-slate-700"
+                  : ""
+              }
+            >
+              <ListMusic className="h-5 w-5" />
+            </Button>
+          </div>
+
+          {/* Transport Controls */}
+          <div className="flex items-center space-x-2">
+            <Button variant="ghost" size="icon">
+              <SkipBack className="h-5 w-5" />
+            </Button>
+            {isPlaying ? (
+              <Button variant="ghost" size="icon" onClick={() => pause()}>
+                <Pause className="h-5 w-5" />
+              </Button>
+            ) : (
+              <Button variant="ghost" size="icon" onClick={() => play()}>
+                <Play className="h-5 w-5" />
+              </Button>
+            )}
+            <Button variant="ghost" size="icon" onClick={() => stop()}>
+              <Square className="h-5 w-5" />
+            </Button>
+            <Button variant="ghost" size="icon">
+              <SkipForward className="h-5 w-5" />
+            </Button>
+          </div>
+
+          {/* Position Display */}
+          {/*<PositionDisplay />*/}
+        </div>
+
+        {/* Loop Controls */}
+        <LoopControls />
       </div>
 
-      <div className="flex items-center space-x-2">
-        <Button variant="ghost" size="icon">
-          <SkipBack className="h-5 w-5" />
-        </Button>
-        {isPlaying ? (
-          <Button variant="ghost" size="icon" onClick={() => pause()}>
-            <Pause className="h-5 w-5" />
-          </Button>
-        ) : (
-          <Button variant="ghost" size="icon" onClick={() => play()}>
-            <Play className="h-5 w-5" />
-          </Button>
-        )}
-        <Button variant="ghost" size="icon" onClick={() => stop()}>
-          <Square className="h-5 w-5" />
-        </Button>
-        <Button variant="ghost" size="icon">
-          <SkipForward className="h-5 w-5" />
-        </Button>
-      </div>
+      <div className="flex items-center space-x-6">
+        {/* Tempo Controls */}
+        <div className="flex items-center space-x-2">
+          <span className="text-sm text-slate-600 dark:text-slate-400">
+            BPM
+          </span>
+          <Input
+            type="number"
+            value={localBpm}
+            onChange={handleBpmChange}
+            className="w-20"
+            min={20}
+            max={300}
+          />
+          <TempoTap />
+        </div>
 
-      <div className="flex items-center space-x-2">
-        <span className="text-sm text-slate-600 dark:text-slate-400">BPM</span>
-        <Input
-          type="number"
-          value={localBpm}
-          onChange={handleBpmChange}
-          className="w-20"
-          min={20}
-          max={300}
-        />
+        {/* Time Signature */}
+        <TimeSignatureControl />
       </div>
     </div>
   );
