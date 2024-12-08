@@ -14,9 +14,9 @@ import {
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { TimeSignatureControl } from "./TimeSignatureControl";
-import { PositionDisplay } from "./PositionDisplay";
 import { LoopControls } from "./LoopControls";
 import { TempoTap } from "./TempoTap";
+import { Label } from "@/common/shadcn/ui/label";
 
 export function PlaybackControls() {
   const { isPlaying, bpm, mode, play, stop, pause, setBpm, setMode } =
@@ -89,9 +89,6 @@ export function PlaybackControls() {
               <SkipForward className="h-5 w-5" />
             </Button>
           </div>
-
-          {/* Position Display */}
-          {/*<PositionDisplay />*/}
         </div>
 
         {/* Loop Controls */}
@@ -101,9 +98,9 @@ export function PlaybackControls() {
       <div className="flex items-center space-x-6">
         {/* Tempo Controls */}
         <div className="flex items-center space-x-2">
-          <span className="text-sm text-slate-600 dark:text-slate-400">
+          <Label className="text-sm text-slate-600 dark:text-slate-400">
             BPM
-          </span>
+          </Label>
           <Input
             type="number"
             value={localBpm}
