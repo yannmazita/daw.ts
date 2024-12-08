@@ -4,7 +4,7 @@ import * as Tone from "tone";
 import { PlaybackMode } from "@/core/types/common";
 import { TransportState, TransportActions } from "@/core/interfaces/transport";
 import { Subdivision, Time } from "tone/build/esm/core/type/Units";
-import { BaseManager } from "./baseManager";
+import { BaseManager } from "./BaseManager";
 
 export class TransportManager extends BaseManager<TransportState> {
   private modeHandlers: Map<PlaybackMode, () => void>;
