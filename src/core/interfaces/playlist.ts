@@ -1,4 +1,5 @@
 // src/core/interfaces/playlist.ts
+// Arangement and track definitions
 
 import { Time } from "tone/build/esm/core/type/Units";
 import { Pattern } from "./pattern";
