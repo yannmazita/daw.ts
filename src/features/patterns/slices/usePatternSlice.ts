@@ -13,7 +13,6 @@ import { mixerManager } from "@/features/mixer/services/mixerManagerInstance";
 import { patternManager } from "@/features/patterns/services/patternManagerInstance";
 import { TransportSlice } from "@/common/slices/useTransportSlice";
 import { MixerSlice } from "@/features/mixer/slices/useMixerSlice";
-import { useEffect } from "react";
 
 export interface PatternSlice extends PatternState, PatternActions {}
 
@@ -23,23 +22,9 @@ export const createPatternSlice: StateCreator<
   [],
   PatternSlice
 > = (set, get) => {
-  useEffect(() => {
-    // Subscribe to pattern manager state changes
-    const unsubscribe = patternManager.onStateUpdate((state) => {
-      set({
-        patterns: state.patterns,
-        currentPatternId: state.currentPatternId,
-      });
-    });
-
-    // Cleanup subscription on unmount
-    return () => unsubscribe();
-  }, []);
-
   return {
-    // Initial state
-    patterns: [],
-    currentPatternId: null,
+    // Initial state from mixer manager
+    ...patternManager.state,
 
     // Pattern Management
     createPattern: (name: string, timeSignature: [number, number]): string => {

@@ -9,7 +9,6 @@ import {
 import { playlistManager } from "@/features/playlists/services/playlistManagerInstance";
 import { Pattern } from "@/core/interfaces/pattern";
 import { Time } from "tone/build/esm/core/type/Units";
-import { useEffect } from "react";
 
 export interface PlaylistSlice extends PlaylistState, PlaylistActions {}
 
@@ -19,19 +18,6 @@ export const createPlaylistSlice: StateCreator<
   [],
   PlaylistSlice
 > = (set, get) => {
-  // Set up subscription to playlist manager state changes
-  useEffect(() => {
-    const unsubscribe = playlistManager.onStateUpdate((state) => {
-      set((prev) => ({
-        ...prev,
-        tracks: state.tracks,
-        length: state.length,
-      }));
-    });
-
-    return () => unsubscribe();
-  }, []);
-
   return {
     // Initial state from playlist manager
     ...playlistManager.state,

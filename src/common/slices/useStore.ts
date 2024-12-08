@@ -1,5 +1,4 @@
 // src/common/slices/useStore.ts
-
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
 import type {} from "@redux-devtools/extension";
@@ -19,6 +18,10 @@ import {
   MixerSlice,
   createMixerSlice,
 } from "@/features/mixer/slices/useMixerSlice";
+import { transportManager } from "../services/transportManagerInstance";
+import { patternManager } from "@/features/patterns/services/patternManagerInstance";
+import { playlistManager } from "@/features/playlists/services/playlistManagerInstance";
+import { mixerManager } from "@/features/mixer/services/mixerManagerInstance";
 
 export type StoreState = TransportSlice &
   PatternSlice &
@@ -37,7 +40,6 @@ export const useStore = create<StoreState>()(
       {
         name: "daw-storage",
         partialize: (state) => ({
-          // Only persist necessary state
           patterns: state.patterns,
           mixer: {
             channels: state.channels,
@@ -48,3 +50,59 @@ export const useStore = create<StoreState>()(
     ),
   ),
 );
+
+// Sync middleware to handle manager subscriptions
+export const createSyncMiddleware = (store: typeof useStore) => {
+  const subscribeToManager = () => {
+    // Subscribe to manager updates when store is created
+    const unsubscribeTransport = transportManager.onStateUpdate((state) => {
+      store.setState((prev) => ({
+        ...prev,
+        ...state,
+      }));
+    });
+
+    const unsubscribePattern = patternManager.onStateUpdate((state) => {
+      store.setState((prev) => ({
+        ...prev,
+        patterns: state.patterns,
+        currentPatternId: state.currentPatternId,
+      }));
+    });
+
+    const unsubscribePlaylist = playlistManager.onStateUpdate((state) => {
+      store.setState((prev) => ({
+        ...prev,
+        tracks: state.tracks,
+        length: state.length,
+      }));
+    });
+
+    const unsubscribeMixer = mixerManager.onStateUpdate((state) => {
+      store.setState((prev) => ({
+        ...prev,
+        master: state.master,
+        channels: state.channels,
+      }));
+    });
+
+    // Return cleanup function
+    return () => {
+      unsubscribeTransport();
+      unsubscribePattern();
+      unsubscribePlaylist();
+      unsubscribeMixer();
+    };
+  };
+
+  // Subscribe when store is created
+  const unsubscribe = subscribeToManager();
+
+  // Clean up on store disposal
+  return () => {
+    unsubscribe();
+  };
+};
+
+// Initialize sync middleware
+createSyncMiddleware(useStore);

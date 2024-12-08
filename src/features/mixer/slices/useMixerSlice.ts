@@ -10,7 +10,6 @@ import {
 import { mixerManager } from "@/features/mixer/services/mixerManagerInstance";
 import { EffectName, EffectOptions } from "@/core/types/effect";
 import { NormalRange } from "tone/build/esm/core/type/Units";
-import { useEffect } from "react";
 
 export interface MixerSlice extends MixerState, MixerActions {}
 
@@ -18,20 +17,6 @@ export const createMixerSlice: StateCreator<MixerSlice, [], [], MixerSlice> = (
   set,
   get,
 ) => {
-  // Subscribe to mixer manager state changes
-  useEffect(() => {
-    const unsubscribe = mixerManager.onStateUpdate((state) => {
-      set((prev) => ({
-        ...prev,
-        master: state.master,
-        channels: state.channels,
-      }));
-    });
-
-    // Cleanup subscription on unmount
-    return () => unsubscribe();
-  }, []);
-
   return {
     // Initial state from mixer manager
     ...mixerManager.state,

@@ -5,7 +5,6 @@ import { TransportState, TransportActions } from "@/core/interfaces/transport";
 import { transportManager } from "@/common/services/transportManagerInstance";
 import { PlaybackMode } from "@/core/types/common";
 import { Time } from "tone/build/esm/core/type/Units";
-import { useEffect } from "react";
 
 export interface TransportSlice extends TransportState, TransportActions {}
 
@@ -15,22 +14,6 @@ export const createTransportSlice: StateCreator<
   [],
   TransportSlice
 > = (set, get) => {
-  // Set up subscription in an effect
-  useEffect(() => {
-    // Subscribe to transport manager state changes and get cleanup function
-    const unsubscribe = transportManager.onStateUpdate((state) => {
-      set((prev) => ({
-        ...prev,
-        ...state,
-      }));
-    });
-
-    // Return cleanup function for the subscription
-    return () => {
-      unsubscribe();
-    };
-  }, []);
-
   return {
     // Initial state from transport manager
     ...transportManager.getState(),
