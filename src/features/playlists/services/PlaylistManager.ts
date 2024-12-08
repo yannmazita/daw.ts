@@ -2,32 +2,30 @@
 
 import * as Tone from "tone";
 import {
-  Playlist,
-  PlaylistTrack,
+  PlaylistState,
+  PlaylistActions,
+  PlaylistTrackState,
   PatternPlacement,
 } from "@/core/interfaces/playlist";
-import {
-  AudioSequenceEvent,
-  NoteSequenceEvent,
-  Pattern,
-  SequenceEvent,
-} from "@/core/interfaces/pattern";
+import { Pattern } from "@/core/interfaces/pattern";
 import { transportManager } from "@/common/services/transportManagerInstance";
 import { patternManager } from "@/features/patterns/services/patternManagerInstance";
 import { PlaybackMode } from "@/core/types/common";
 import { Time } from "tone/build/esm/core/type/Units";
 
-export class PlaylistManager implements Playlist {
-  public tracks: PlaylistTrack[];
-  private patterns: Map<string, PatternPlacement>;
+export class PlaylistManager {
+  public readonly state: PlaylistState;
+  public readonly actions: PlaylistActions;
   private scheduledEvents: Set<number>;
-  private _length: Time;
+  private patternParts: Map<string, Tone.Part>;
 
   constructor() {
-    this.tracks = [];
-    this.patterns = new Map();
+    this.state = {
+      tracks: [],
+      length: "0",
+    };
     this.scheduledEvents = new Set();
-    this._length = "0";
+    this.patternParts = new Map();
 
     // Register playlist mode handler
     transportManager.registerModeHandler(
@@ -35,48 +33,223 @@ export class PlaylistManager implements Playlist {
       () => this.startPlaylistPlayback(),
       () => this.stopPlaylistPlayback(),
     );
-  }
 
-  get length(): Time {
-    return this._length;
-  }
+    this.actions = {
+      // Track Management
+      createTrack: (name: string): string => {
+        const id = `track_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+        const track: PlaylistTrackState = {
+          id,
+          name,
+          patterns: [],
+          muted: false,
+          soloed: false,
+        };
 
-  private getPatternsBetween(
-    startTime: Time,
-    endTime: Time,
-  ): PatternPlacement[] {
-    return this.tracks
-      .flatMap((track) => track.patterns)
-      .filter((placement) => {
-        const placementStart = Tone.Time(placement.startTime).toSeconds();
-        const placementEnd =
-          Tone.Time(placement.startTime).toSeconds() +
-          Tone.Time(placement.duration).toSeconds();
-        const timeStart = Tone.Time(startTime).toSeconds();
-        const timeEnd = Tone.Time(endTime).toSeconds();
-        return (
-          (placementStart >= timeStart && placementStart < timeEnd) ||
-          (placementEnd > timeStart && placementEnd <= timeEnd) ||
-          (placementStart <= timeStart && placementEnd >= timeEnd)
+        this.state.tracks.push(track);
+        return id;
+      },
+
+      deleteTrack: (trackId: string): void => {
+        const track = this.state.tracks.find((t) => t.id === trackId);
+        if (!track) return;
+
+        // Clean up all patterns in the track
+        track.patterns.forEach((pattern) => {
+          this.actions.removePattern(trackId, pattern.id);
+        });
+
+        this.state.tracks = this.state.tracks.filter((t) => t.id !== trackId);
+        this.updateLength();
+      },
+
+      updateTrack: (
+        trackId: string,
+        updates: Partial<PlaylistTrackState>,
+      ): void => {
+        this.state.tracks = this.state.tracks.map((track) =>
+          track.id === trackId ? { ...track, ...updates } : track,
         );
-      });
-  }
+      },
 
-  public getPatternAt(time: Time): Pattern[] {
-    const placements = this.getPatternsBetween(time, time);
-    return placements
-      .map((placement) => patternManager.getPattern(placement.patternId))
-      .filter((pattern): pattern is Pattern => pattern !== undefined);
+      reorderTracks: (trackIds: string[]): void => {
+        const orderedTracks = trackIds
+          .map((id) => this.state.tracks.find((t) => t.id === id))
+          .filter((track): track is PlaylistTrackState => track !== undefined);
+
+        this.state.tracks = orderedTracks;
+      },
+
+      // Pattern Management
+      addPattern: (
+        trackId: string,
+        pattern: Pattern,
+        startTime: Time,
+      ): string => {
+        const track = this.state.tracks.find((t) => t.id === trackId);
+        if (!track) throw new Error(`Track ${trackId} not found`);
+
+        // Validate pattern placement
+        if (!this.validatePatternPlacement(track, startTime, pattern.length)) {
+          throw new Error("Pattern placement overlaps with existing patterns");
+        }
+
+        const placement: PatternPlacement = {
+          id: `placement_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+          patternId: pattern.id,
+          startTime,
+          duration: pattern.length,
+          offset: "0",
+        };
+
+        track.patterns.push(placement);
+        this.updateLength();
+
+        return placement.id;
+      },
+
+      removePattern: (trackId: string, placementId: string): void => {
+        const track = this.state.tracks.find((t) => t.id === trackId);
+        if (!track) return;
+
+        // Clean up any scheduled parts
+        this.cleanupPatternPart(placementId);
+
+        track.patterns = track.patterns.filter((p) => p.id !== placementId);
+        this.updateLength();
+      },
+
+      movePattern: (
+        placementId: string,
+        trackId: string,
+        startTime: Time,
+      ): void => {
+        const track = this.state.tracks.find((t) => t.id === trackId);
+        if (!track) return;
+
+        const placementIndex = track.patterns.findIndex(
+          (p) => p.id === placementId,
+        );
+        if (placementIndex === -1) return;
+
+        const placement = track.patterns[placementIndex];
+
+        // Validate new position
+        if (
+          !this.validatePatternPlacement(
+            track,
+            startTime,
+            placement.duration,
+            placementId,
+          )
+        ) {
+          throw new Error("Pattern placement overlaps with existing patterns");
+        }
+
+        // Update placement
+        track.patterns[placementIndex] = {
+          ...placement,
+          startTime,
+        };
+
+        // Reschedule if playing
+        if (transportManager.getState().isPlaying) {
+          this.cleanupPatternPart(placementId);
+          this.schedulePattern(track, placement);
+        }
+
+        this.updateLength();
+      },
+
+      duplicatePattern: (placementId: string): string => {
+        const sourceTrack = this.state.tracks.find((t) =>
+          t.patterns.some((p) => p.id === placementId),
+        );
+        if (!sourceTrack) throw new Error("Pattern placement not found");
+
+        const sourcePlacement = sourceTrack.patterns.find(
+          (p) => p.id === placementId,
+        );
+        if (!sourcePlacement) throw new Error("Pattern placement not found");
+
+        const pattern = patternManager.actions.getPattern(
+          sourcePlacement.patternId,
+        );
+        if (!pattern) throw new Error("Pattern not found");
+
+        // Create new placement after the source
+        const newStartTime =
+          Tone.Time(sourcePlacement.startTime).toSeconds() +
+          Tone.Time(sourcePlacement.duration).toSeconds();
+
+        return this.actions.addPattern(sourceTrack.id, pattern, newStartTime);
+      },
+
+      // Playback Control
+      setTrackMute: (trackId: string, muted: boolean): void => {
+        const track = this.state.tracks.find((t) => t.id === trackId);
+        if (track) {
+          track.muted = muted;
+
+          // Update scheduled parts if playing
+          if (transportManager.getState().isPlaying) {
+            track.patterns.forEach((placement) => {
+              const part = this.patternParts.get(placement.id);
+              if (part) {
+                part.mute = muted;
+              }
+            });
+          }
+        }
+      },
+
+      setTrackSolo: (trackId: string, soloed: boolean): void => {
+        const track = this.state.tracks.find((t) => t.id === trackId);
+        if (track) {
+          track.soloed = soloed;
+          this.updateSoloStates();
+        }
+      },
+
+      // Query Methods
+      getPatternAt: (time: Time): Pattern[] => {
+        const placements = this.getPatternsBetween(time, time);
+        return placements
+          .map((placement) =>
+            patternManager.actions.getPattern(placement.patternId),
+          )
+          .filter((pattern): pattern is Pattern => pattern !== undefined);
+      },
+
+      getPatternsBetween: (
+        startTime: Time,
+        endTime: Time,
+      ): PatternPlacement[] => {
+        return this.getPatternsBetween(startTime, endTime);
+      },
+
+      getLength: (): Time => {
+        return this.state.length;
+      },
+
+      // Cleanup
+      dispose: (): void => {
+        this.stopPlaylistPlayback();
+        this.state.tracks = [];
+        this.state.length = "0";
+        this.patternParts.clear();
+      },
+    };
   }
 
   private updateLength(): void {
-    if (this.tracks.length === 0) {
-      this._length = "0";
+    if (this.state.tracks.length === 0) {
+      this.state.length = "0";
       return;
     }
 
     const lastEnd = Math.max(
-      ...this.tracks.flatMap((track) =>
+      ...this.state.tracks.flatMap((track) =>
         track.patterns.map(
           (placement) =>
             Tone.Time(placement.startTime).toSeconds() +
@@ -85,209 +258,47 @@ export class PlaylistManager implements Playlist {
       ),
     );
 
-    this._length = Tone.Time(lastEnd).toBarsBeatsSixteenths();
+    this.state.length = Tone.Time(lastEnd).toBarsBeatsSixteenths();
   }
 
-  // Track management
-  public createTrack(name: string): string {
-    const id = `track_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-    const track: PlaylistTrack = {
-      id,
-      name,
-      patterns: [],
-      muted: false,
-      soloed: false,
-    };
-    this.tracks.push(track);
-    return id;
-  }
+  private updateSoloStates(): void {
+    const hasSoloedTracks = this.state.tracks.some((t) => t.soloed);
 
-  public deleteTrack(trackId: string): void {
-    const track = this.tracks.find((t) => t.id === trackId);
-    if (!track) return;
-
-    // Clean up all patterns in the track
-    track.patterns.forEach((pattern) => {
-      this.removePattern(trackId, pattern.id);
-    });
-
-    this.tracks = this.tracks.filter((t) => t.id !== trackId);
-    this.updateLength();
-  }
-
-  public setTrackMute(trackId: string, muted: boolean): void {
-    const track = this.tracks.find((t) => t.id === trackId);
-    if (track) {
-      track.muted = muted;
-    }
-  }
-
-  public setTrackSolo(trackId: string, soloed: boolean): void {
-    const track = this.tracks.find((t) => t.id === trackId);
-    if (track) {
-      track.soloed = soloed;
-    }
-  }
-
-  // Pattern scheduling
-  private startPlaylistPlayback(): void {
-    const transport = Tone.getTransport();
-    const currentPosition = transport.position;
-
-    // Schedule patterns around current position
-    this.schedulePatternSegment(
-      currentPosition,
-      Tone.Time(currentPosition).toSeconds() + Tone.Time("2m").toSeconds(),
-    );
-
-    // Set up lookahead scheduler
-    const scheduleId = transport.scheduleRepeat((time) => {
-      this.schedulePatternSegment(
-        time,
-        Tone.Time(time).toSeconds() + Tone.Time("2m").toSeconds(),
-      );
-    }, "1m");
-
-    this.scheduledEvents.add(scheduleId);
-  }
-
-  private stopPlaylistPlayback(): void {
-    this.scheduledEvents.forEach((id) => {
-      Tone.getTransport().clear(id);
-    });
-    this.scheduledEvents.clear();
-  }
-
-  private schedulePatternSegment(startTime: Time, endTime: Time): void {
-    const patternsInRange = this.getPatternsBetween(startTime, endTime);
-
-    patternsInRange.forEach((placement) => {
-      const pattern = patternManager.getPattern(placement.patternId);
-      if (!pattern) return;
-
-      // Find the corresponding playlist track
-      const playlistTrack = this.tracks.find((track) =>
-        track.patterns.some((p) => p.id === placement.id),
-      );
-
-      if (!playlistTrack || playlistTrack.muted) return;
-
-      // Schedule each track in the pattern
-      pattern.tracks.forEach((track) => {
-        if (track.type === "instrument" && track.instrument) {
-          const part = new Tone.Part((time, event: SequenceEvent) => {
-            if (this.isNoteSequenceEvent(event)) {
-              track.instrument?.triggerAttackRelease(
-                event.note,
-                event.duration ?? "8n",
-                time,
-                event.velocity ?? 1,
-              );
-            }
-          }, track.events);
-
-          // Configure part timing
-          part.start(placement.startTime);
-          part.stop(
-            Tone.Time(placement.startTime).toSeconds() +
-              Tone.Time(placement.duration).toSeconds(),
-          );
-
-          // Store scheduled event for cleanup
-          const eventId = Tone.getTransport().schedule(
-            () => {
-              part.dispose();
-            },
-            Tone.Time(placement.startTime).toSeconds() +
-              Tone.Time(placement.duration).toSeconds(),
-          );
-
-          this.scheduledEvents.add(eventId);
-        } else if (track.type === "audio" && track.player) {
-          const eventId = Tone.getTransport().schedule((time) => {
-            track.events.forEach((event) => {
-              if (this.isAudioSequenceEvent(event)) {
-                track.player?.start(time, event.offset ?? 0, event.duration);
-              }
-            });
-          }, placement.startTime);
-
-          this.scheduledEvents.add(eventId);
-        }
+    if (transportManager.getState().isPlaying) {
+      this.state.tracks.forEach((track) => {
+        track.patterns.forEach((placement) => {
+          const part = this.patternParts.get(placement.id);
+          if (part) {
+            part.mute = track.muted || (hasSoloedTracks && !track.soloed);
+          }
+        });
       });
-    });
+    }
   }
 
-  // Pattern Management
-  public addPattern(
-    trackId: string,
-    pattern: Pattern,
+  private getPatternsBetween(
     startTime: Time,
-  ): string {
-    const track = this.tracks.find((t) => t.id === trackId);
-    if (!track) {
-      throw new Error(`Track ${trackId} not found`);
-    }
+    endTime: Time,
+  ): PatternPlacement[] {
+    const start = Tone.Time(startTime).toSeconds();
+    const end = Tone.Time(endTime).toSeconds();
 
-    // Validate pattern placement
-    if (!this.validatePatternPlacement(track, startTime, pattern.length)) {
-      throw new Error("Pattern placement overlaps with existing patterns");
-    }
-
-    const placement: PatternPlacement = {
-      id: `placement_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
-      patternId: pattern.id,
-      startTime,
-      duration: pattern.length,
-      offset: "0",
-    };
-
-    track.patterns.push(placement);
-    this.patterns.set(placement.id, placement);
-    this.updateLength();
-
-    return placement.id;
+    return this.state.tracks.flatMap((track) =>
+      track.patterns.filter((placement) => {
+        const placementStart = Tone.Time(placement.startTime).toSeconds();
+        const placementEnd =
+          placementStart + Tone.Time(placement.duration).toSeconds();
+        return (
+          (placementStart >= start && placementStart < end) ||
+          (placementEnd > start && placementEnd <= end) ||
+          (placementStart <= start && placementEnd >= end)
+        );
+      }),
+    );
   }
 
-  public removePattern(trackId: string, placementId: string): void {
-    const track = this.tracks.find((t) => t.id === trackId);
-    if (!track) return;
-
-    track.patterns = track.patterns.filter((p) => p.id !== placementId);
-    this.patterns.delete(placementId);
-    this.updateLength();
-  }
-
-  public movePattern(
-    placementId: string,
-    trackId: string,
-    startTime: Time,
-  ): void {
-    const track = this.tracks.find((t) => t.id === trackId);
-    if (!track) return;
-
-    const placement = this.patterns.get(placementId);
-    if (!placement) return;
-
-    // Validate new position
-    if (
-      !this.validatePatternPlacement(
-        track,
-        startTime,
-        placement.duration,
-        placementId,
-      )
-    ) {
-      throw new Error("Pattern placement overlaps with existing patterns");
-    }
-
-    placement.startTime = startTime;
-    this.updateLength();
-  }
-
-  // Utility methods
   private validatePatternPlacement(
-    track: PlaylistTrack,
+    track: PlaylistTrackState,
     startTime: Time,
     duration: Time,
     excludePlacementId?: string,
@@ -307,23 +318,114 @@ export class PlaylistManager implements Playlist {
     });
   }
 
-  public dispose(): void {
-    this.stopPlaylistPlayback();
-    this.tracks = [];
-    this.patterns.clear();
-    this._length = "0";
+  private startPlaylistPlayback(): void {
+    this.stopPlaylistPlayback(); // Clean up any existing playback
+
+    // Schedule initial segment
+    const currentTime = Tone.getTransport().seconds;
+    this.schedulePatternSegment(
+      currentTime,
+      currentTime + Tone.Time("2m").toSeconds(),
+    );
+
+    // Set up lookahead scheduler
+    const scheduleId = Tone.getTransport().scheduleRepeat((time) => {
+      this.schedulePatternSegment(time, time + Tone.Time("2m").toSeconds());
+    }, "1m");
+
+    this.scheduledEvents.add(scheduleId);
   }
 
-  // Helper methods
-  private isNoteSequenceEvent(
-    event: SequenceEvent,
-  ): event is NoteSequenceEvent {
-    return event.type === "note";
+  private stopPlaylistPlayback(): void {
+    // Clear scheduled events
+    this.scheduledEvents.forEach((id) => {
+      Tone.getTransport().clear(id);
+    });
+    this.scheduledEvents.clear();
+
+    // Dispose of pattern parts
+    this.patternParts.forEach((part) => {
+      part.dispose();
+    });
+    this.patternParts.clear();
   }
 
-  private isAudioSequenceEvent(
-    event: SequenceEvent,
-  ): event is AudioSequenceEvent {
-    return event.type === "audio";
+  private schedulePatternSegment(startTime: number, endTime: number): void {
+    const patternsInRange = this.getPatternsBetween(
+      Tone.Time(startTime).toBarsBeatsSixteenths(),
+      Tone.Time(endTime).toBarsBeatsSixteenths(),
+    );
+
+    patternsInRange.forEach((placement) => {
+      const track = this.state.tracks.find((t) =>
+        t.patterns.some((p) => p.id === placement.id),
+      );
+      if (!track) return;
+
+      this.schedulePattern(track, placement);
+    });
+  }
+
+  private schedulePattern(
+    track: PlaylistTrackState,
+    placement: PatternPlacement,
+  ): void {
+    const pattern = patternManager.actions.getPattern(placement.patternId);
+    if (!pattern) return;
+
+    // Create and configure pattern part
+    const part = new Tone.Part((time, event) => {
+      const patternTrack = pattern.tracks.find((t) => t.id === event.trackId);
+      if (!patternTrack) return;
+
+      if (patternTrack.instrument) {
+        patternTrack.instrument.triggerAttackRelease(
+          event.note,
+          event.duration ?? "8n",
+          time,
+          event.velocity ?? 1,
+        );
+      }
+    }, this.flattenPatternEvents(pattern));
+
+    part.start(placement.startTime);
+    part.stop(
+      Tone.Time(placement.startTime).toSeconds() +
+        Tone.Time(placement.duration).toSeconds(),
+    );
+    part.mute = track.muted || (this.hasSoloedTracks() && !track.soloed);
+
+    // Store for cleanup
+    this.patternParts.set(placement.id, part);
+  }
+
+  private flattenPatternEvents(pattern: Pattern): Array<any> {
+    return pattern.tracks.flatMap((track) =>
+      track.events.map((event) => ({
+        ...event,
+        trackId: track.id,
+      })),
+    );
+  }
+
+  private cleanupPatternPart(placementId: string): void {
+    const part = this.patternParts.get(placementId);
+    if (part) {
+      part.dispose();
+      this.patternParts.delete(placementId);
+    }
+  }
+
+  private hasSoloedTracks(): boolean {
+    return this.state.tracks.some((t) => t.soloed);
+  }
+
+  public toJSON(): PlaylistState {
+    return { ...this.state };
+  }
+
+  public fromJSON(state: PlaylistState): void {
+    this.actions.dispose();
+    this.state = state;
   }
 }

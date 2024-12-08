@@ -2,7 +2,6 @@
 
 import * as Tone from "tone";
 import {
-  Mixer,
   MixerState,
   MixerChannel,
   MixerChannelState,
@@ -21,7 +20,7 @@ import {
 } from "@/core/types/effect";
 import { NormalRange } from "tone/build/esm/core/type/Units";
 
-export class MixerManager implements Mixer {
+export class MixerManager {
   public readonly masterChannel: MixerChannel;
   public readonly channels: Map<string, MixerChannel>;
   public readonly state: MixerState;
