@@ -1,6 +1,30 @@
-graph TD
-    A[Transport Manager] --> B[Pattern Manager]
-    A --> C[Playlist Manager]
-    B --> D[Mixer Manager]
-    C --> D
-    D --> E[Tone.js Audio Context]
+graph TB
+    subgraph "Core Architecture"
+        A[Transport Manager] --> B[Pattern Manager]
+        A --> C[Playlist Manager]
+        B --> D[Mixer Manager]
+        C --> D
+        
+        subgraph "State Management"
+            E[Zustand Store] --> F[Transport Slice]
+            E --> G[Pattern Slice]
+            E --> H[Playlist Slice]
+            E --> I[Mixer Slice]
+        end
+
+        F -.-> A
+        G -.-> B
+        H -.-> C
+        I -.-> D
+    end
+
+    subgraph "Audio Engine"
+        J[Tone.js Transport] --- K[Pattern Playback]
+        J --- L[Playlist Playback]
+        K --> M[Audio Graph]
+        L --> M
+        M --> N[Web Audio Context]
+    end
+
+    A -.-> J
+    D -.-> M

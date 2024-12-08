@@ -1,8 +1,0 @@
-graph TD
-    A[PatternManager] --> B[TransportManager]
-    A --> C[MixerManager]
-    A --> D[Tone.Part]
-    D --> E[Track Events]
-    E --> F[Note Events]
-    E --> G[Audio Events]
-    A --> H[Parameter Automation]

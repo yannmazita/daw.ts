@@ -1,0 +1,7 @@
+graph LR
+    subgraph "State Flow"
+        A[Manager State] --> B[Store Slice]
+        B --> C[React Components]
+        C -- Actions --> D[Manager Actions]
+        D --> A
+    end

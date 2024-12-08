@@ -1,0 +1,12 @@
+graph TB
+    subgraph "Manager Relationships"
+        A[Base Manager] --> B[Transport Manager]
+        A --> C[Pattern Manager]
+        A --> D[Playlist Manager]
+        A --> E[Mixer Manager]
+        
+        B -- "Controls Playback" --> C
+        B -- "Controls Playback" --> D
+        C -- "Audio Routing" --> E
+        D -- "Audio Routing" --> E
+    end
