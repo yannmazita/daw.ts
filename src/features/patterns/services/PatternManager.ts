@@ -20,18 +20,18 @@ import {
   InstrumentOptions,
   InstrumentType,
 } from "@/core/types/instrument";
+import { BaseManager } from "@/common/services/BaseManager";
 
-export class PatternManager {
-  public readonly state: PatternState;
+export class PatternManager extends BaseManager<PatternState> {
   public readonly patterns: Map<string, Pattern>;
   private currentPattern: Pattern | null;
   private activeEvents: Set<number>;
 
   constructor() {
-    this.state = {
+    super({
       patterns: [],
       currentPatternId: null,
-    };
+    });
     this.patterns = new Map();
     this.currentPattern = null;
     this.activeEvents = new Set();
@@ -85,7 +85,9 @@ export class PatternManager {
       };
 
       this.patterns.set(id, pattern);
-      this.state.patterns.push(patternData);
+      this.updateState({
+        patterns: [...this.state.patterns, patternData],
+      });
 
       return id;
     },
@@ -102,10 +104,16 @@ export class PatternManager {
       });
 
       this.patterns.delete(id);
-      this.state.patterns = this.state.patterns.filter((p) => p.id !== id);
+
+      this.updateState({
+        patterns: this.state.patterns.filter((p) => p.id !== id),
+        currentPatternId:
+          this.state.currentPatternId === id
+            ? (this.state.patterns[0]?.id ?? null)
+            : this.state.currentPatternId,
+      });
 
       if (this.state.currentPatternId === id) {
-        this.state.currentPatternId = null;
         this.currentPattern = null;
       }
     },
@@ -262,7 +270,7 @@ export class PatternManager {
     setCurrentPattern: (id: string | null): void => {
       if (id === null) {
         this.currentPattern = null;
-        this.state.currentPatternId = null;
+        this.updateState({ currentPatternId: null });
         return;
       }
 
@@ -270,7 +278,7 @@ export class PatternManager {
       if (!pattern) return;
 
       this.currentPattern = pattern;
-      this.state.currentPatternId = id;
+      this.updateState({ currentPatternId: id });
     },
 
     getPattern: (id: string): Pattern | undefined => {
@@ -295,9 +303,9 @@ export class PatternManager {
         });
       });
       this.patterns.clear();
-      this.state.patterns = [];
+      this.updateState({ patterns: [] });
       this.currentPattern = null;
-      this.state.currentPatternId = null;
+      this.updateState({ currentPatternId: null });
     },
     duplicatePattern: (id: string): string => {
       const pattern = this.patterns.get(id);
