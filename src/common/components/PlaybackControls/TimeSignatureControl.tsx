@@ -1,6 +1,11 @@
 // src/common/components/PlaybackControls/TimeSignatureControl.tsx
-
-import { Select } from "@/common/shadcn/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/common/shadcn/ui/select";
 import { Label } from "@/common/shadcn/ui/label";
 import { useStore } from "@/common/slices/useStore";
 
@@ -13,32 +18,46 @@ export function TimeSignatureControl() {
 
   return (
     <div className="flex items-center space-x-2">
-      <Label className="text-sm text-slate-600 dark:text-slate-400">Time</Label>
-      <div className="flex items-center">
+      <Label className="text-sm text-slate-600 dark:text-slate-400">
+        Time Signature
+      </Label>
+      <div className="flex items-center space-x-1">
         <Select
           value={numerator.toString()}
           onValueChange={(value) =>
             setTimeSignature(parseInt(value), denominator)
           }
         >
-          {numerators.map((n) => (
-            <option key={n} value={n.toString()}>
-              {n}
-            </option>
-          ))}
+          <SelectTrigger className="w-[60px]">
+            <SelectValue placeholder={numerator.toString()} />
+          </SelectTrigger>
+          <SelectContent>
+            {numerators.map((n) => (
+              <SelectItem key={n} value={n.toString()}>
+                {n}
+              </SelectItem>
+            ))}
+          </SelectContent>
         </Select>
+
         <span className="mx-1 text-slate-600 dark:text-slate-400">/</span>
+
         <Select
           value={denominator.toString()}
           onValueChange={(value) =>
             setTimeSignature(numerator, parseInt(value))
           }
         >
-          {denominators.map((d) => (
-            <option key={d} value={d.toString()}>
-              {d}
-            </option>
-          ))}
+          <SelectTrigger className="w-[60px]">
+            <SelectValue placeholder={denominator.toString()} />
+          </SelectTrigger>
+          <SelectContent>
+            {denominators.map((d) => (
+              <SelectItem key={d} value={d.toString()}>
+                {d}
+              </SelectItem>
+            ))}
+          </SelectContent>
         </Select>
       </div>
     </div>
