@@ -4,16 +4,15 @@ import * as Tone from "tone";
 import { PlaybackMode } from "@/core/types/common";
 import { TransportState, TransportActions } from "@/core/interfaces/transport";
 import { Subdivision, Time } from "tone/build/esm/core/type/Units";
+import { BaseManager } from "./baseManager";
 
-export class TransportManager {
-  private state: TransportState;
+export class TransportManager extends BaseManager<TransportState> {
   private modeHandlers: Map<PlaybackMode, () => void>;
   private cleanupHandlers: Map<PlaybackMode, () => void>;
-  private onStateChange?: (state: TransportState) => void;
 
   constructor() {
     // Initialize state
-    this.state = {
+    super({
       bpm: 120,
       timeSignature: [4, 4],
       swing: 0,
@@ -24,7 +23,7 @@ export class TransportManager {
       loopStart: "0:0:0",
       loopEnd: "4:0:0",
       mode: PlaybackMode.PATTERN,
-    };
+    });
 
     // Initialize mode handlers
     this.modeHandlers = new Map();
@@ -50,13 +49,6 @@ export class TransportManager {
     });
   }
 
-  private updateState(updates: Partial<TransportState>): void {
-    this.state = { ...this.state, ...updates };
-    if (this.onStateChange) {
-      this.onStateChange(this.state);
-    }
-  }
-
   private getPositionInBars(): number {
     return Tone.getTransport().position as unknown as number;
   }
@@ -73,10 +65,6 @@ export class TransportManager {
   ): void {
     this.modeHandlers.set(mode, handler);
     this.cleanupHandlers.set(mode, cleanup);
-  }
-
-  public onStateUpdate(callback: (state: TransportState) => void): void {
-    this.onStateChange = callback;
   }
 
   public getState(): TransportState {
