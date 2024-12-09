@@ -4,7 +4,7 @@ import { Input } from "@/common/shadcn/ui/input";
 import { Switch } from "@/common/shadcn/ui/switch";
 import { Label } from "@/common/shadcn/ui/label";
 import { Repeat } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export function LoopControls() {
   const { isLooping, loopStart, loopEnd, setLoop } = useStore();
@@ -18,6 +18,11 @@ export function LoopControls() {
   const handleLoopPointsChange = () => {
     setLoop(isLooping, localStart, localEnd);
   };
+
+  useEffect(() => {
+    setLocalStart(loopStart);
+    setLocalEnd(loopEnd);
+  }, [loopStart, loopEnd]);
 
   return (
     <div className="flex items-center space-x-4">
