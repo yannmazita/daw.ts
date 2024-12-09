@@ -21,6 +21,27 @@ export function LoopControls() {
 
   return (
     <div className="flex items-center space-x-4">
+      {isLooping && (
+        <div className="flex items-center space-x-2">
+          <Input
+            value={localStart}
+            onChange={(e) => setLocalStart(e.target.value)}
+            onBlur={handleLoopPointsChange}
+            className="w-24"
+            placeholder="0:0:0"
+          />
+          <span className="text-muted-foreground dark:text-muted-foreground">
+            to
+          </span>
+          <Input
+            value={localEnd}
+            onChange={(e) => setLocalEnd(e.target.value)}
+            onBlur={handleLoopPointsChange}
+            className="w-24"
+            placeholder="4:0:0"
+          />
+        </div>
+      )}
       <div className="flex items-center space-x-2">
         <Switch
           checked={isLooping}
@@ -32,25 +53,6 @@ export function LoopControls() {
           Loop
         </Label>
       </div>
-      {isLooping && (
-        <div className="flex items-center space-x-2">
-          <Input
-            value={localStart}
-            onChange={(e) => setLocalStart(e.target.value)}
-            onBlur={handleLoopPointsChange}
-            className="w-24"
-            placeholder="0:0:0"
-          />
-          <span className="text-slate-600 dark:text-slate-400">to</span>
-          <Input
-            value={localEnd}
-            onChange={(e) => setLocalEnd(e.target.value)}
-            onBlur={handleLoopPointsChange}
-            className="w-24"
-            placeholder="4:0:0"
-          />
-        </div>
-      )}
     </div>
   );
 }

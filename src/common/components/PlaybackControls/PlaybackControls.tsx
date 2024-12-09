@@ -37,7 +37,7 @@ export function PlaybackControls() {
   }, [bpm]);
 
   return (
-    <div className="flex flex-col space-y-2 rounded-lg bg-slate-200 p-4 dark:bg-slate-800">
+    <div className="flex flex-col space-y-2 rounded-lg border border-border bg-card p-4 text-card-foreground dark:border-border dark:bg-card">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
           {/* Mode Selection */}
@@ -48,7 +48,7 @@ export function PlaybackControls() {
               onClick={() => setMode(PlaybackMode.PATTERN)}
               className={
                 mode === PlaybackMode.PATTERN
-                  ? "bg-slate-300 dark:bg-slate-700"
+                  ? "border border-primary bg-accent dark:border-primary dark:bg-accent"
                   : ""
               }
             >
@@ -60,7 +60,7 @@ export function PlaybackControls() {
               onClick={() => setMode(PlaybackMode.PLAYLIST)}
               className={
                 mode === PlaybackMode.PLAYLIST
-                  ? "bg-slate-300 dark:bg-slate-700"
+                  ? "border border-primary bg-accent dark:border-primary dark:bg-accent"
                   : ""
               }
             >
@@ -98,7 +98,7 @@ export function PlaybackControls() {
       <div className="flex items-center space-x-6">
         {/* Tempo Controls */}
         <div className="flex items-center space-x-2">
-          <Label className="text-sm text-slate-600 dark:text-slate-400">
+          <Label className="text-sm text-muted-foreground dark:text-muted-foreground">
             BPM
           </Label>
           <Input

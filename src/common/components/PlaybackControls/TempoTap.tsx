@@ -51,12 +51,12 @@ export function TempoTap() {
         size="sm"
         onClick={handleTap}
         className={`px-3 py-1 transition-colors ${
-          isActive ? "bg-slate-400 dark:bg-slate-600" : ""
+          isActive ? "bg-muted-foreground dark:bg-muted-foreground" : ""
         }`}
       >
         {isActive ? `Tap (${tapCount})` : "Tap Tempo"}
       </Button>
-      <span className="text-xs text-slate-500 dark:text-slate-400">
+      <span className="text-xs text-muted-foreground dark:text-muted-foreground">
         Press 'T'
       </span>
     </div>

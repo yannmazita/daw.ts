@@ -18,7 +18,7 @@ export function TimeSignatureControl() {
 
   return (
     <div className="flex items-center space-x-2">
-      <Label className="text-sm text-slate-600 dark:text-slate-400">
+      <Label className="text-sm text-muted-foreground dark:text-muted-foreground">
         Time Signature
       </Label>
       <div className="flex items-center space-x-1">
@@ -40,7 +40,9 @@ export function TimeSignatureControl() {
           </SelectContent>
         </Select>
 
-        <span className="mx-1 text-slate-600 dark:text-slate-400">/</span>
+        <span className="mx-1 text-muted-foreground dark:text-muted-foreground">
+          /
+        </span>
 
         <Select
           value={denominator.toString()}

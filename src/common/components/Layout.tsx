@@ -12,11 +12,11 @@ export function Layout({ children }: LayoutProps) {
   const { theme, setTheme } = useThemeStore();
 
   return (
-    <div className="min-h-screen bg-slate-100 dark:bg-slate-900">
-      <header className="border-b border-slate-200 dark:border-slate-800">
+    <div className="min-h-screen bg-background dark:bg-background">
+      <header className="border-b border-border dark:border-border">
         <div className="flex h-14 items-center justify-between px-4">
           <div className="flex items-center space-x-4">
-            <h1 className="text-xl font-bold text-slate-900 dark:text-slate-50">
+            <h1 className="text-xl font-bold text-primary dark:text-primary">
               daw.ts
             </h1>
           </div>
