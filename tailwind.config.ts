@@ -10,116 +10,51 @@ export default {
       colors: {
         "ts-blue": "#5bcefa",
         "ts-pink": "#f5a9b8",
-        // Main application colors using slate
-        background: {
-          DEFAULT: "rgb(var(--background))",
-          primary: "rgb(var(--slate-100))",
-          secondary: "rgb(var(--slate-200))",
-          dark: "rgb(var(--slate-900))",
+        background: "hsl(var(--background))",
+        foreground: "hsl(var(--foreground))",
+        card: {
+          DEFAULT: "hsl(var(--card))",
+          foreground: "hsl(var(--card-foreground))",
         },
-
-        // UI element colors
-        border: {
-          DEFAULT: "rgb(var(--slate-200))",
-          dark: "rgb(var(--slate-800))",
+        popover: {
+          DEFAULT: "hsl(var(--popover))",
+          foreground: "hsl(var(--popover-foreground))",
         },
-
-        // Interactive element colors
-        ring: {
-          DEFAULT: "rgb(var(--slate-200))",
-          dark: "rgb(var(--slate-800))",
+        primary: {
+          DEFAULT: "hsl(var(--primary))",
+          foreground: "hsl(var(--primary-foreground))",
         },
-
-        // Text colors
-        text: {
-          primary: "rgb(var(--slate-900))",
-          secondary: "rgb(var(--slate-700))",
-          muted: "rgb(var(--slate-500))",
-          dark: "rgb(var(--slate-50))",
+        secondary: {
+          DEFAULT: "hsl(var(--secondary))",
+          foreground: "hsl(var(--secondary-foreground))",
         },
-
-        // DAW-specific colors
-        daw: {
-          // Waveform and visualization colors
-          waveform: {
-            background: "rgb(var(--slate-800))",
-            primary: "rgb(var(--slate-400))",
-            secondary: "rgb(var(--slate-600))",
-          },
-          // Track colors
-          track: {
-            background: "rgb(var(--slate-700))",
-            border: "rgb(var(--slate-600))",
-            selected: "rgb(var(--slate-500))",
-          },
-          // Control colors
-          control: {
-            background: "rgb(var(--slate-200))",
-            active: "rgb(var(--slate-300))",
-            dark: "rgb(var(--slate-800))",
-          },
+        muted: {
+          DEFAULT: "hsl(var(--muted))",
+          foreground: "hsl(var(--muted-foreground))",
+        },
+        accent: {
+          DEFAULT: "hsl(var(--accent))",
+          foreground: "hsl(var(--accent-foreground))",
+        },
+        destructive: {
+          DEFAULT: "hsl(var(--destructive))",
+          foreground: "hsl(var(--destructive-foreground))",
+        },
+        border: "hsl(var(--border))",
+        input: "hsl(var(--input))",
+        ring: "hsl(var(--ring))",
+        chart: {
+          1: "hsl(var(--chart-1))",
+          2: "hsl(var(--chart-2))",
+          3: "hsl(var(--chart-3))",
+          4: "hsl(var(--chart-4))",
+          5: "hsl(var(--chart-5))",
         },
       },
-      // Animation configurations
-      animation: {
-        "fade-in": "fade-in 0.2s ease-in-out",
-        "fade-out": "fade-out 0.2s ease-in-out",
-        "slide-up": "slide-up 0.2s ease-out",
-        "slide-down": "slide-down 0.2s ease-out",
+      borderRadius: {
+        DEFAULT: "var(--radius)",
       },
-
-      // Keyframe definitions
-      keyframes: {
-        "fade-in": {
-          "0%": { opacity: "0" },
-          "100%": { opacity: "1" },
-        },
-        "fade-out": {
-          "0%": { opacity: "1" },
-          "100%": { opacity: "0" },
-        },
-        "slide-up": {
-          "0%": { transform: "translateY(10px)", opacity: "0" },
-          "100%": { transform: "translateY(0)", opacity: "1" },
-        },
-        "slide-down": {
-          "0%": { transform: "translateY(-10px)", opacity: "0" },
-          "100%": { transform: "translateY(0)", opacity: "1" },
-        },
-      },
-
-      // DAW-specific sizing
-      spacing: {
-        track: "128px", // Standard track height
-        marker: "24px", // Timeline marker height
-        grid: "24px", // Grid line spacing
-      },
-    },
-    borderRadius: {
-      lg: "var(--radius)",
-      md: "calc(var(--radius) - 2px)",
-      sm: "calc(var(--radius) - 4px)",
     },
   },
-  plugins: [
-    tailwindcssAnimate,
-    typography,
-    // Custom plugin for DAW-specific utilities
-    function ({ addUtilities }) {
-      addUtilities({
-        ".scrollbar-hide": {
-          "-ms-overflow-style": "none",
-          "scrollbar-width": "none",
-          "&::-webkit-scrollbar": {
-            display: "none",
-          },
-        },
-        ".grid-pattern": {
-          "background-image":
-            "linear-gradient(to right, var(--slate-200) 1px, transparent 1px), linear-gradient(to bottom, var(--slate-200) 1px, transparent 1px)",
-          "background-size": "24px 24px",
-        },
-      });
-    },
-  ],
+  plugins: [tailwindcssAnimate, typography],
 } satisfies Config;
