@@ -1,4 +1,5 @@
 // src/features/patterns/components/CreatePatternDialog.tsx
+// src/features/patterns/components/CreatePatternDialog.tsx
 import { useState } from "react";
 import {
   Dialog,
@@ -18,6 +19,7 @@ import {
   SelectValue,
 } from "@/common/shadcn/ui/select";
 import { Plus } from "lucide-react";
+import { SidebarMenuButton } from "@/common/shadcn/ui/sidebar";
 
 interface CreatePatternDialogProps {
   onCreatePattern: (name: string, timeSignature: [number, number]) => void;
@@ -42,10 +44,10 @@ export const CreatePatternDialog: React.FC<CreatePatternDialogProps> = ({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="w-full">
+        <SidebarMenuButton className="w-full justify-start text-sidebar-foreground/70 hover:text-sidebar-foreground">
           <Plus className="mr-2 h-4 w-4" />
-          New Pattern
-        </Button>
+          <span>New Pattern</span>
+        </SidebarMenuButton>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
@@ -59,6 +61,7 @@ export const CreatePatternDialog: React.FC<CreatePatternDialogProps> = ({
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Pattern name"
+              className="bg-background"
             />
           </div>
           <div className="grid gap-2">
@@ -70,7 +73,7 @@ export const CreatePatternDialog: React.FC<CreatePatternDialogProps> = ({
                   setTimeSignature([parseInt(value), timeSignature[1]])
                 }
               >
-                <SelectTrigger className="w-24">
+                <SelectTrigger className="w-24 bg-background">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -87,7 +90,7 @@ export const CreatePatternDialog: React.FC<CreatePatternDialogProps> = ({
                   setTimeSignature([timeSignature[0], parseInt(value)])
                 }
               >
-                <SelectTrigger className="w-24">
+                <SelectTrigger className="w-24 bg-background">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
