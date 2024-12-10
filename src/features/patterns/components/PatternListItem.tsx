@@ -1,12 +1,12 @@
 // src/features/patterns/components/PatternListItem.tsx
 
-import { Pattern } from "@/core/interfaces/pattern";
+import { PatternData } from "@/core/interfaces/pattern";
 import { Button } from "@/common/shadcn/ui/button";
 import { Trash2, Copy } from "lucide-react";
 import React from "react";
 
 interface PatternListItemProps {
-  pattern: Pattern;
+  pattern: PatternData;
   isSelected: boolean;
   onSelect: (id: string) => void;
   onDelete: (id: string) => void;
