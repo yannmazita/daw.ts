@@ -8,7 +8,7 @@ interface LayoutProps {
   children: React.ReactNode;
 }
 
-export function Layout({ children }: LayoutProps) {
+export const Layout: React.FC<LayoutProps> = ({ children }: LayoutProps) => {
   const { theme, setTheme } = useThemeStore();
 
   return (
@@ -36,4 +36,4 @@ export function Layout({ children }: LayoutProps) {
       <main className="container mx-auto p-4">{children}</main>
     </div>
   );
-}
+};

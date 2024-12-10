@@ -20,7 +20,7 @@ import { PositionDisplay } from "./PositionDisplay";
 import { TransportBar } from "./TransportBar";
 import { Label } from "@/common/shadcn/ui/label";
 
-export function PlaybackControls() {
+export const PlaybackControls: React.FC = () => {
   const { isPlaying, bpm, mode, play, stop, pause, setBpm, setMode } =
     useStore();
   const [localBpm, setLocalBpm] = useState(bpm.toString());
@@ -125,4 +125,4 @@ export function PlaybackControls() {
       </div>
     </div>
   );
-}
+};

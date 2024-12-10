@@ -5,7 +5,7 @@ import { Input } from "@/common/shadcn/ui/input";
 import { Label } from "@/common/shadcn/ui/label";
 import * as Tone from "tone";
 
-export function PositionDisplay() {
+export const PositionDisplay: React.FC = () => {
   const { position, length, isPlaying, seekTo } = useStore();
   const [displayPosition, setDisplayPosition] = useState("0:0:0");
   const [isEditing, setIsEditing] = useState(false);
@@ -81,4 +81,4 @@ export function PositionDisplay() {
       </div>
     </div>
   );
-}
+};

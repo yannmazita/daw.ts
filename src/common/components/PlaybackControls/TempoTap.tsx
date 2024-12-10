@@ -4,7 +4,7 @@ import { useStore } from "@/common/slices/useStore";
 import { Button } from "@/common/shadcn/ui/button";
 import { useState, useEffect, useCallback } from "react";
 
-export function TempoTap() {
+export const TempoTap: React.FC = () => {
   const { tap, resetTapTempo } = useStore();
   const [tapCount, setTapCount] = useState(0);
   const [isActive, setIsActive] = useState(false);
@@ -61,4 +61,4 @@ export function TempoTap() {
       </span>
     </div>
   );
-}
+};

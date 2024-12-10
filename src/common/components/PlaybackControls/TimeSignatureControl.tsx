@@ -9,7 +9,7 @@ import {
 import { Label } from "@/common/shadcn/ui/label";
 import { useStore } from "@/common/slices/useStore";
 
-export function TimeSignatureControl() {
+export const TimeSignatureControl: React.FC = () => {
   const { timeSignature, setTimeSignature } = useStore();
   const [numerator, denominator] = timeSignature;
 
@@ -64,4 +64,4 @@ export function TimeSignatureControl() {
       </div>
     </div>
   );
-}
+};

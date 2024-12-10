@@ -8,7 +8,7 @@ interface TransportBarProps {
   height?: number;
 }
 
-export function TransportBar({ height = 24 }: TransportBarProps) {
+export const TransportBar: React.FC<TransportBarProps> = ({ height = 24 }) => {
   const {
     position,
     length,
@@ -167,4 +167,4 @@ export function TransportBar({ height = 24 }: TransportBarProps) {
       </div>
     </div>
   );
-}
+};

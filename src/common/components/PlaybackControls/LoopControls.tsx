@@ -6,7 +6,7 @@ import { Label } from "@/common/shadcn/ui/label";
 import { Repeat } from "lucide-react";
 import { useState, useEffect } from "react";
 
-export function LoopControls() {
+export const LoopControls: React.FC = () => {
   const { isLooping, loopStart, loopEnd, setLoop } = useStore();
   const [localStart, setLocalStart] = useState(loopStart);
   const [localEnd, setLocalEnd] = useState(loopEnd);
@@ -60,4 +60,4 @@ export function LoopControls() {
       </div>
     </div>
   );
-}
+};

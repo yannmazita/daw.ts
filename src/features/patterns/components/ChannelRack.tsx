@@ -1,12 +1,12 @@
 // src/features/patterns/components/ChannelRack.tsx
 
-import { useCallback } from "react";
+import React, { useCallback } from "react";
 import { useStore } from "@/common/slices/useStore";
 import { Button } from "@/common/shadcn/ui/button";
 import { Plus } from "lucide-react";
 import { InstrumentName } from "@/core/types/instrument";
 
-export function ChannelRack() {
+export const ChannelRack: React.FC = () => {
   const currentPattern = useStore((state) => state.getCurrentPattern());
   const addTrack = useStore((state) => state.addTrack);
 
@@ -86,4 +86,4 @@ export function ChannelRack() {
       </div>
     </div>
   );
-}
+};
