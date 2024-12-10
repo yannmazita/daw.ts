@@ -16,6 +16,8 @@ import { useState, useEffect } from "react";
 import { TimeSignatureControl } from "./TimeSignatureControl";
 import { LoopControls } from "./LoopControls";
 import { TempoTap } from "./TempoTap";
+import { PositionDisplay } from "./PositionDisplay";
+import { TransportBar } from "./TransportBar";
 import { Label } from "@/common/shadcn/ui/label";
 
 export function PlaybackControls() {
@@ -37,7 +39,7 @@ export function PlaybackControls() {
   }, [bpm]);
 
   return (
-    <div className="flex flex-col space-y-2 rounded-lg border border-border bg-card p-4 text-card-foreground dark:border-border dark:bg-card">
+    <div className="flex flex-col space-y-2 rounded-lg border border-border bg-card p-4 text-card-foreground dark:border-border dark:bg-card dark:text-card-foreground">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
           {/* Mode Selection */}
@@ -94,26 +96,32 @@ export function PlaybackControls() {
         {/* Loop Controls */}
         <LoopControls />
       </div>
+      <TransportBar />
 
-      <div className="flex items-center space-x-6">
-        {/* Tempo Controls */}
-        <div className="flex items-center space-x-2">
-          <Label className="text-sm text-muted-foreground dark:text-muted-foreground">
-            BPM
-          </Label>
-          <Input
-            type="number"
-            value={localBpm}
-            onChange={handleBpmChange}
-            className="w-20"
-            min={20}
-            max={300}
-          />
-          <TempoTap />
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-6">
+          {/* Tempo Controls */}
+          <div className="flex items-center space-x-2">
+            <Label className="text-sm text-muted-foreground dark:text-muted-foreground">
+              BPM
+            </Label>
+            <Input
+              type="number"
+              value={localBpm}
+              onChange={handleBpmChange}
+              className="w-20"
+              min={20}
+              max={300}
+            />
+            <TempoTap />
+          </div>
+
+          {/* Time Signature */}
+          <TimeSignatureControl />
+
+          {/* Position Display */}
+          <PositionDisplay />
         </div>
-
-        {/* Time Signature */}
-        <TimeSignatureControl />
       </div>
     </div>
   );
