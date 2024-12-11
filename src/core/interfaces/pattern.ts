@@ -67,6 +67,11 @@ export interface PatternData {
   tracks: PatternTrackState[];
   length: Time;
   timeSignature: [number, number];
+  color?: string;
+  defaultLoopLength?: Time;
+  isLoop?: boolean;
+  loopStart?: Time;
+  loopEnd?: Time;
 }
 
 export interface PatternState {
@@ -76,10 +81,7 @@ export interface PatternState {
 
 export interface Pattern {
   id: string;
-  name: string;
   tracks: PatternTrack[]; // Runtime tracks with Tone.js objects
-  length: Time;
-  timeSignature: [number, number];
   part?: Tone.Part<SequenceEvent>;
 
   // Reference to state for serialization
@@ -118,6 +120,11 @@ export interface PatternActions {
     eventId: string,
     updates: Partial<SequenceEvent>,
   ) => void;
+
+  // Session view support
+  setLoop: (id: string, isLoop: boolean, start?: Time, end?: Time) => void;
+  setColor: (id: string, color: string) => void;
+  setDefaultLoopLength: (id: string, length: Time) => void;
 
   // Utility
   getPattern: (id: string) => Pattern | undefined;

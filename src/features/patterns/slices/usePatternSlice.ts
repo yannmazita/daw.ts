@@ -13,6 +13,7 @@ import { mixerManager } from "@/features/mixer/services/mixerManagerInstance";
 import { patternManager } from "@/features/patterns/services/patternManagerInstance";
 import { TransportSlice } from "@/common/slices/useTransportSlice";
 import { MixerSlice } from "@/features/mixer/slices/useMixerSlice";
+import { Time } from "tone/build/esm/core/type/Units";
 
 export interface PatternSlice extends PatternState, PatternActions {}
 
@@ -234,6 +235,25 @@ export const createPatternSlice: StateCreator<
         patternManager.actions.setCurrentPattern(id);
       } catch (error) {
         console.error("Error setting current pattern:", error);
+        throw error;
+      }
+    },
+
+    // Session
+    setLoop: (id: string, isLoop: boolean, start?: Time, end?: Time): void => {
+      try {
+        patternManager.actions.setLoop(id, isLoop, start, end);
+      } catch (error) {
+        console.error("Error setting pattern loop:", error);
+        throw error;
+      }
+    },
+
+    setColor: (id: string, color: string): void => {
+      try {
+        patternManager.actions.setColor(id, color);
+      } catch (error) {
+        console.error("Error setting pattern color:", error);
         throw error;
       }
     },

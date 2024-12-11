@@ -21,6 +21,7 @@ import {
   InstrumentType,
 } from "@/core/types/instrument";
 import { BaseManager } from "@/common/services/BaseManager";
+import { Time } from "tone/build/esm/core/type/Units";
 
 export class PatternManager extends BaseManager<PatternState> {
   public readonly patterns: Map<string, Pattern>;
@@ -44,28 +45,6 @@ export class PatternManager extends BaseManager<PatternState> {
     );
   }
 
-  private createTrackInstrument(
-    type: InstrumentName,
-    options?: InstrumentOptions,
-  ): InstrumentType {
-    switch (type) {
-      case InstrumentName.AMSynth:
-        return new Tone.AMSynth(options);
-      case InstrumentName.FMSynth:
-        return new Tone.FMSynth(options);
-      case InstrumentName.MembraneSynth:
-        return new Tone.MembraneSynth(options);
-      case InstrumentName.MetalSynth:
-        return new Tone.MetalSynth(options);
-      case InstrumentName.MonoSynth:
-        return new Tone.MonoSynth(options);
-      case InstrumentName.NoiseSynth:
-        return new Tone.NoiseSynth(options);
-      default:
-        return new Tone.Synth(options);
-    }
-  }
-
   public readonly actions: PatternActions = {
     createPattern: (name: string, timeSignature: [number, number]): string => {
       const id = `pattern_${Date.now()}`;
@@ -76,10 +55,15 @@ export class PatternManager extends BaseManager<PatternState> {
         tracks: [],
         length: "4m",
         timeSignature,
+        color: undefined,
+        defaultLoopLength: "4m",
+        isLoop: true,
+        loopStart: "0:0:0",
+        loopEnd: "4:0:0",
       };
 
       const pattern: Pattern = {
-        ...patternData,
+        id,
         tracks: [],
         state: patternData,
       };
@@ -307,32 +291,150 @@ export class PatternManager extends BaseManager<PatternState> {
       this.currentPattern = null;
       this.updateState({ currentPatternId: null });
     },
+
     duplicatePattern: (id: string): string => {
       const pattern = this.patterns.get(id);
       if (!pattern) throw new Error("Pattern not found");
-      const newPatternId = this.actions.createPattern(
-        `${pattern.state.name} (copy)`,
-        pattern.state.timeSignature,
-      );
-      pattern.state.tracks.forEach((track) => {
+      const newPatternId = `pattern_${Date.now()}`;
+      const newPatternData: PatternData = {
+        ...pattern.state,
+        id: newPatternId,
+        name: `${pattern.state.name} (Copy)`,
+      };
+      const newPattern: Pattern = {
+        id: newPatternId,
+        tracks: [],
+        state: newPatternData,
+      };
+      // Duplicate tracks
+      pattern.tracks.forEach((track) => {
         const newTrackId = this.actions.addTrack(
           newPatternId,
-          track.name,
-          track.type,
-          track.instrumentType,
-          track.instrumentOptions,
+          track.state.name,
+          track.state.type,
+          track.state.instrumentType,
+          track.state.instrumentOptions,
         );
-        track.events.forEach((event) => {
-          this.actions.addEvent(newPatternId, newTrackId, event);
-        });
+        const newTrack = newPattern.tracks.find((t) => t.id === newTrackId);
+        if (newTrack) {
+          newTrack.muted = track.muted;
+          newTrack.soloed = track.soloed;
+          newTrack.volume = track.volume;
+          newTrack.pan = track.pan;
+          newTrack.events = [...track.events];
+          newTrack.state.events = [...track.state.events];
+        }
+      });
+      this.patterns.set(newPatternId, newPattern);
+      this.updateState({
+        patterns: [...this.state.patterns, newPatternData],
       });
       return newPatternId;
     },
+
     updatePattern: (id: string, updates: Partial<Pattern>): void => {
       const pattern = this.patterns.get(id);
       if (!pattern) return;
+
+      // Update runtime pattern
       Object.assign(pattern, updates);
-      Object.assign(pattern.state, updates);
+
+      // Update state
+      const updatedState = {
+        ...pattern.state,
+        ...updates,
+        tracks: pattern.state.tracks, // Preserve tracks
+      };
+      pattern.state = updatedState;
+
+      this.updateState({
+        patterns: this.state.patterns.map((p) =>
+          p.id === id ? updatedState : p,
+        ),
+      });
+
+      // Update part if it exists and relevant properties changed
+      if (pattern.part) {
+        if ("isLoop" in updates) {
+          pattern.part.loop = updates.isLoop ?? pattern.part.loop;
+        }
+        if ("loopStart" in updates) {
+          pattern.part.loopStart = updates.loopStart ?? pattern.part.loopStart;
+        }
+        if ("loopEnd" in updates) {
+          pattern.part.loopEnd = updates.loopEnd ?? pattern.part.loopEnd;
+        }
+      }
+    },
+
+    setLoop: (id: string, isLoop: boolean, start?: Time, end?: Time): void => {
+      const pattern = this.patterns.get(id);
+      if (!pattern) return;
+
+      // Update state
+      pattern.state = {
+        ...pattern.state,
+        isLoop,
+        loopStart: start,
+        loopEnd: end,
+      };
+
+      // Update part if it exists
+      if (pattern.part) {
+        pattern.part.loop = isLoop;
+        if (isLoop && start !== undefined) {
+          pattern.part.loopStart = start;
+        }
+        if (isLoop && end !== undefined) {
+          pattern.part.loopEnd = end;
+        }
+      }
+
+      this.updateState({
+        patterns: this.state.patterns.map((p) =>
+          p.id === id ? pattern.state : p,
+        ),
+      });
+    },
+
+    setColor: (id: string, color: string): void => {
+      const pattern = this.patterns.get(id);
+      if (!pattern) return;
+
+      // Update state
+      pattern.state = {
+        ...pattern.state,
+        color,
+      };
+
+      this.updateState({
+        patterns: this.state.patterns.map((p) =>
+          p.id === id ? pattern.state : p,
+        ),
+      });
+    },
+
+    setDefaultLoopLength: (id: string, length: Time): void => {
+      const pattern = this.patterns.get(id);
+      if (!pattern) return;
+
+      // Validate length
+      const lengthInSeconds = Tone.Time(length).toSeconds();
+      if (lengthInSeconds <= 0) {
+        throw new Error("Loop length must be greater than 0");
+      }
+
+      // Update state
+      pattern.state = {
+        ...pattern.state,
+        defaultLoopLength: length,
+      };
+
+      this.updateState({
+        patterns: this.state.patterns.map((p) =>
+          p.id === id ? pattern.state : p,
+        ),
+      });
     },
   };
 
@@ -398,8 +500,48 @@ export class PatternManager extends BaseManager<PatternState> {
     return event.type === "audio";
   }
 
+  private createTrackInstrument(
+    type: InstrumentName,
+    options?: InstrumentOptions,
+  ): InstrumentType {
+    switch (type) {
+      case InstrumentName.AMSynth:
+        return new Tone.AMSynth(options);
+      case InstrumentName.FMSynth:
+        return new Tone.FMSynth(options);
+      case InstrumentName.MembraneSynth:
+        return new Tone.MembraneSynth(options);
+      case InstrumentName.MetalSynth:
+        return new Tone.MetalSynth(options);
+      case InstrumentName.MonoSynth:
+        return new Tone.MonoSynth(options);
+      case InstrumentName.NoiseSynth:
+        return new Tone.NoiseSynth(options);
+      default:
+        return new Tone.Synth(options);
+    }
+  }
+
+  private createRuntimePattern(patternData: PatternData): Pattern {
+    return {
+      id: patternData.id,
+      tracks: [],
+      state: patternData,
+    };
+  }
+
   public toJSON(): PatternState {
-    return { ...this.state };
+    return {
+      ...this.state,
+      patterns: this.state.patterns.map((pattern) => ({
+        ...pattern,
+        color: pattern.color,
+        defaultLoopLength: pattern.defaultLoopLength,
+        isLoop: pattern.isLoop,
+        loopStart: pattern.loopStart,
+        loopEnd: pattern.loopEnd,
+      })),
+    };
   }
 
   public fromJSON(state: PatternState): void {
