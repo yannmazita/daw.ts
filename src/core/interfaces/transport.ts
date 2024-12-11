@@ -1,7 +1,7 @@
 // src/core/interfaces/transport.ts
 // Playback and timing control interfaces
 
-import { PlaybackMode } from "../types/common";
+import { LaunchQuantization, PlaybackMode } from "../types/common";
 import { Subdivision, Time } from "tone/build/esm/core/type/Units";
 
 export interface TransportState {
@@ -15,6 +15,12 @@ export interface TransportState {
   loopStart: Time;
   loopEnd: Time;
   mode: PlaybackMode;
+
+  // Session view support
+  globalQuantization: LaunchQuantization;
+  recordQuantization: LaunchQuantization;
+  overdubEnabled: boolean;
+  metronomeEnabled: boolean;
 }
 
 export interface TransportActions {
