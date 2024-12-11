@@ -18,7 +18,7 @@ export class BaseManager<T> {
     };
   }
 
-  protected updateState(updates: Partial<T>): void {
+  public updateState(updates: Partial<T>): void {
     this.state = { ...this.state, ...updates };
     if (this.onStateChange) {
       this.onStateChange(this.state);

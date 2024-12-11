@@ -6,7 +6,6 @@ import {
   SidebarHeader,
   SidebarTrigger,
 } from "@/common/shadcn/ui/sidebar";
-import { PatternList } from "@/features/patterns/components/PatternList";
 import { useSidebar } from "@/common/shadcn/ui/sidebar";
 
 export const AppSidebar: React.FC = () => {
@@ -25,9 +24,7 @@ export const AppSidebar: React.FC = () => {
           </>
         )}
       </SidebarHeader>
-      <SidebarContent>
-        <PatternList />
-      </SidebarContent>
+      <SidebarContent />
       <SidebarFooter />
     </Sidebar>
   );
