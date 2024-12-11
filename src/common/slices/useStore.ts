@@ -22,11 +22,16 @@ import { transportManager } from "../services/transportManagerInstance";
 import { patternManager } from "@/features/patterns/services/patternManagerInstance";
 import { playlistManager } from "@/features/playlists/services/playlistManagerInstance";
 import { mixerManager } from "@/features/mixer/services/mixerManagerInstance";
+import {
+  createSessionSlice,
+  SessionSlice,
+} from "@/features/session/slices/useSessionSlice";
 
 export type StoreState = TransportSlice &
   PatternSlice &
   PlaylistSlice &
-  MixerSlice;
+  MixerSlice &
+  SessionSlice;
 
 export const useStore = create<StoreState>()(
   devtools(
@@ -36,6 +41,7 @@ export const useStore = create<StoreState>()(
         ...createPatternSlice(...a),
         ...createPlaylistSlice(...a),
         ...createMixerSlice(...a),
+        ...createSessionSlice(...a),
       }),
       {
         name: "daw-storage",
@@ -44,6 +50,10 @@ export const useStore = create<StoreState>()(
           mixer: {
             channels: state.channels,
             master: state.master,
+          },
+          session: {
+            tracks: state.tracks,
+            scenes: state.scenes,
           },
         }),
       },
