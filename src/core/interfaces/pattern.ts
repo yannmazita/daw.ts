@@ -1,137 +1,156 @@
 // src/core/interfaces/pattern.ts
-// Pattern and track definitions
 
-import { NormalRange, Time } from "tone/build/esm/core/type/Units";
-import { Note } from "../types/common";
 import * as Tone from "tone";
-import { InstrumentName, InstrumentOptions, InstrumentType } from "../types";
+import {
+  AudioNode,
+  Identifiable,
+  TimelineObject,
+  Disposable,
+} from "../interfaces/base";
+import { Note } from "../types/common";
+import {
+  InstrumentName,
+  InstrumentOptions,
+  InstrumentType,
+} from "../types/instrument";
+import { NormalRange, Time } from "tone/build/esm/core/type/Units";
 
-export interface BaseSequenceEvent {
-  time: Time;
-  duration?: Time;
+// Event system
+export interface BaseEvent extends TimelineObject {
+  id: string;
 }
 
-export interface NoteSequenceEvent extends BaseSequenceEvent {
+export interface NoteEvent extends BaseEvent {
   type: "note";
   note: Note;
   velocity?: NormalRange;
 }
 
-export interface AudioSequenceEvent extends BaseSequenceEvent {
+export interface AudioEvent extends BaseEvent {
   type: "audio";
   bufferIndex: number;
   offset?: Time;
   playbackRate?: number;
 }
 
-export type SequenceEvent = NoteSequenceEvent | AudioSequenceEvent;
+export type SequenceEvent = NoteEvent | AudioEvent;
 
-export interface PatternTrackState {
-  id: string;
-  name: string;
-  type: "instrument" | "audio";
-  instrumentType?: InstrumentName;
+// Track system
+export interface BaseTrack extends Identifiable, AudioNode {
+  mixerChannelId: string;
+  events: SequenceEvent[];
+  parameters: Record<string, number>;
+}
+
+export interface InstrumentTrack extends BaseTrack {
+  type: "instrument";
+  instrumentType: InstrumentName;
   instrumentOptions?: InstrumentOptions;
-  mixerChannelId: string;
-  muted: boolean;
-  soloed: boolean;
-  volume: number;
-  pan: number;
-  events: SequenceEvent[];
-  parameters: Record<string, number>; // Parameter values
-}
-
-// Runtime state
-export interface PatternTrack {
-  id: string;
-  state: PatternTrackState;
-  name: string;
-  type: "instrument" | "audio";
-  mixerChannelId: string;
-  muted: boolean;
-  soloed: boolean;
-  volume: number;
-  pan: number;
-  events: SequenceEvent[];
-
-  // Runtime objects
-  instrument?: InstrumentType;
-  player?: Tone.Player;
+  instrument: InstrumentType;
   channel: Tone.Channel;
-  parameters: Record<string, Tone.Signal<any>>;
+  signals: Record<string, Tone.Signal<any>>;
 }
 
-export interface PatternData {
-  id: string;
-  name: string;
-  tracks: PatternTrackState[];
-  length: Time;
-  timeSignature: [number, number];
-  color?: string;
-  defaultLoopLength?: Time;
-  isLoop?: boolean;
-  loopStart?: Time;
-  loopEnd?: Time;
-  startTime: Time;
-  duration: Time;
-  offset: Time;
+export interface AudioTrack extends BaseTrack {
+  type: "audio";
+  player: Tone.Player;
+  channel: Tone.Channel;
+  signals: Record<string, Tone.Signal<any>>;
 }
+
+export type PatternTrack = InstrumentTrack | AudioTrack;
+
+// Pattern interfaces
+export interface Pattern extends Identifiable, TimelineObject, Disposable {
+  tracks: PatternTrack[];
+  timeSignature: [number, number];
+  part?: Tone.Part<SequenceEvent>;
+}
+
+// Serializable state types
+export type SerializableTrack = Omit<BaseTrack, "mixerChannelId"> & {
+  mixerChannelId: string;
+} & (
+    | {
+        type: "instrument";
+        instrumentType: InstrumentName;
+        instrumentOptions?: InstrumentOptions;
+      }
+    | {
+        type: "audio";
+      }
+  );
 
 export interface PatternState {
-  patterns: PatternData[];
+  id: string;
+  name: string;
+  startTime: Time;
+  duration: Time;
+  timeSignature: [number, number];
+  tracks: SerializableTrack[];
+}
+
+// Root state
+export interface PatternsState {
+  patterns: PatternState[];
   currentPatternId: string | null;
 }
 
-export interface Pattern {
-  id: string;
-  tracks: PatternTrack[]; // Runtime tracks with Tone.js objects
-  part?: Tone.Part<SequenceEvent>;
-
-  // Reference to state for serialization
-  state: PatternData;
-}
-
-export interface PatternActions {
-  // Pattern Management
-  createPattern: (name: string, timeSignature: [number, number]) => string;
-  deletePattern: (id: string) => void;
-  duplicatePattern: (id: string) => string;
-  updatePattern: (id: string, updates: Partial<Pattern>) => void;
-  setCurrentPattern: (id: string | null) => void;
-
-  // Track Management
-  addTrack: (
+// Action interfaces
+export interface TrackActions {
+  createInstrumentTrack(
     patternId: string,
     name: string,
-    type: "instrument" | "audio",
-    instrumentType?: InstrumentName,
+    instrumentType: InstrumentName,
     options?: InstrumentOptions,
-  ) => string;
-  removeTrack: (patternId: string, trackId: string) => void;
-  updateTrack: (
+  ): string;
+
+  createAudioTrack(patternId: string, name: string): string;
+
+  removePatternTrack(patternId: string, trackId: string): void;
+
+  updatePatternTrack<T extends PatternTrack>(
     patternId: string,
     trackId: string,
-    updates: Partial<PatternTrackState>,
-  ) => void;
+    updates: Partial<T>,
+  ): void;
+}
 
-  // Event Management
-  addEvent: (patternId: string, trackId: string, event: SequenceEvent) => void;
-  removeEvent: (patternId: string, trackId: string, eventId: string) => void;
-  updateEvent: (
+export interface EventActions {
+  addNoteEvent(
+    patternId: string,
+    trackId: string,
+    event: Omit<NoteEvent, "id">,
+  ): string;
+
+  addAudioEvent(
+    patternId: string,
+    trackId: string,
+    event: Omit<AudioEvent, "id">,
+  ): string;
+
+  removeEvent(patternId: string, trackId: string, eventId: string): void;
+
+  updateEvent<T extends SequenceEvent>(
     patternId: string,
     trackId: string,
     eventId: string,
-    updates: Partial<SequenceEvent>,
-  ) => void;
+    updates: Partial<Omit<T, "id" | "type">>,
+  ): void;
+}
 
-  // Session view support
-  setLoop: (id: string, isLoop: boolean, start?: Time, end?: Time) => void;
-  setColor: (id: string, color: string) => void;
-  setDefaultLoopLength: (id: string, length: Time) => void;
+export interface PatternActions extends TrackActions, EventActions {
+  createPattern(name: string, timeSignature: [number, number]): string;
+  deletePattern(id: string): void;
+  duplicatePattern(id: string): string;
+  updatePattern(
+    id: string,
+    updates: Partial<Omit<Pattern, "tracks" | "part">>,
+  ): void;
+  setCurrentPattern(id: string | null): void;
 
-  // Utility
-  getPattern: (id: string) => Pattern | undefined;
-  getCurrentPattern: () => Pattern | null;
-  getPatterns: () => Pattern[];
-  dispose: () => void;
+  // Utility methods
+  getPattern(id: string): Pattern | undefined;
+  getCurrentPattern(): Pattern | null;
+  getPatterns(): Pattern[];
 }

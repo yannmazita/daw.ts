@@ -4,8 +4,9 @@ import { StateCreator } from "zustand";
 import {
   MixerState,
   MixerActions,
-  MixerChannelState,
-  MeterConfig,
+  SerializableChannel,
+  MeterData,
+  Meter,
 } from "@/core/interfaces/mixer";
 import { mixerManager } from "@/features/mixer/services/mixerManagerInstance";
 import { EffectName, EffectOptions } from "@/core/types/effect";
@@ -13,10 +14,12 @@ import { NormalRange } from "tone/build/esm/core/type/Units";
 
 export interface MixerSlice extends MixerState, MixerActions {}
 
-export const createMixerSlice: StateCreator<MixerSlice, [], [], MixerSlice> = (
-  set,
-  get,
-) => {
+export const createMixerSlice: StateCreator<
+  MixerSlice,
+  [],
+  [],
+  MixerSlice
+> = () => {
   return {
     // Initial state from mixer manager
     ...mixerManager.state,
@@ -40,7 +43,10 @@ export const createMixerSlice: StateCreator<MixerSlice, [], [], MixerSlice> = (
       }
     },
 
-    updateChannel: (id: string, updates: Partial<MixerChannelState>): void => {
+    updateChannel: (
+      id: string,
+      updates: Partial<SerializableChannel>,
+    ): void => {
       try {
         mixerManager.actions.updateChannel(id, updates);
       } catch (error) {
@@ -50,13 +56,13 @@ export const createMixerSlice: StateCreator<MixerSlice, [], [], MixerSlice> = (
     },
 
     // Effect Management
-    addEffect: (
+    addEffect: <T extends EffectOptions>(
       channelId: string,
       type: EffectName,
-      options?: EffectOptions,
+      options?: Partial<T>,
     ): string => {
       try {
-        return mixerManager.actions.addEffect(channelId, type, options);
+        return mixerManager.actions.addEffect<T>(channelId, type, options);
       } catch (error) {
         console.error("Error adding effect:", error);
         throw error;
@@ -72,13 +78,13 @@ export const createMixerSlice: StateCreator<MixerSlice, [], [], MixerSlice> = (
       }
     },
 
-    updateEffect: (
+    updateEffect: <T extends EffectOptions>(
       channelId: string,
       effectId: string,
-      updates: Partial<EffectOptions>,
+      updates: Partial<T>,
     ): void => {
       try {
-        mixerManager.actions.updateEffect(channelId, effectId, updates);
+        mixerManager.actions.updateEffect<T>(channelId, effectId, updates);
       } catch (error) {
         console.error("Error updating effect:", error);
         throw error;
@@ -99,7 +105,11 @@ export const createMixerSlice: StateCreator<MixerSlice, [], [], MixerSlice> = (
     },
 
     // Send Management
-    createSend: (fromId: string, toId: string, gain?: NormalRange): string => {
+    createSend: (
+      fromId: string,
+      toId: string,
+      gain: NormalRange = 1,
+    ): string => {
       try {
         return mixerManager.actions.createSend(fromId, toId, gain);
       } catch (error) {
@@ -149,18 +159,18 @@ export const createMixerSlice: StateCreator<MixerSlice, [], [], MixerSlice> = (
       }
     },
 
-    getMeterData: (channelId: string) => {
+    getMeterData: (channelId: string): MeterData | null => {
       try {
         return mixerManager.actions.getMeterData(channelId);
       } catch (error) {
         console.error("Error getting meter data:", error);
-        throw error;
+        return null;
       }
     },
 
     updateMeterConfig: (
       channelId: string,
-      config: Partial<MeterConfig>,
+      config: Partial<Omit<Meter, "data">>,
     ): void => {
       try {
         mixerManager.actions.updateMeterConfig(channelId, config);
@@ -192,7 +202,7 @@ export const createMixerSlice: StateCreator<MixerSlice, [], [], MixerSlice> = (
     // Cleanup
     dispose: (): void => {
       try {
-        mixerManager.actions.dispose();
+        mixerManager.dispose();
       } catch (error) {
         console.error("Error disposing mixer:", error);
         throw error;

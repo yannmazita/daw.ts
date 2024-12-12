@@ -1,184 +1,106 @@
 // src/core/interfaces/mixer.ts
-// Audio routing interface
 
 import * as Tone from "tone";
 import {
-  EffectName,
-  EffectState,
-  FeedbackDelayOptions,
-  FrequencyShifterOptions,
-  ReverbOptions,
-  ToneEffectType,
-} from "../types/effect";
+  AudioNode,
+  Identifiable,
+  AudioProcessor,
+  AnalysisNode,
+  Disposable,
+} from "../interfaces/base";
+import { EffectName, EffectOptions, ToneEffectType } from "../types/effect";
 import { NormalRange } from "tone/build/esm/core/type/Units";
-import { EffectOptions } from "tone/build/esm/effect/Effect";
 
-export interface MeterConfig {
-  smoothing: NormalRange;
-  normalRange: boolean;
-  channels: number;
-}
-
+// Analysis/Metering
 export interface MeterData {
-  values: number | number[]; // Single number for mono, array for multi-channel
+  values: number | number[];
 }
 
-export interface MeterState {
-  config: MeterConfig;
+export interface Meter extends AnalysisNode {
   data: MeterData;
-  isEnabled: boolean;
 }
 
-export interface MixerChannelState {
+// Effects
+export interface Effect<T extends EffectOptions = EffectOptions>
+  extends AudioProcessor {
   id: string;
-  name: string;
-  volume: number;
-  pan: number;
-  mute: boolean;
-  solo: boolean;
-  effects: EffectState[];
-  sends: {
-    id: string;
-    targetId: string;
-    gain: NormalRange;
-  }[];
-  meter: MeterState | null;
+  type: EffectName;
+  options: T;
+  node: ToneEffectType;
 }
 
-// Runtime state
-export interface MixerChannel {
-  id: string;
-  state: MixerChannelState;
+// Sends
+export interface Send extends Identifiable {
+  targetId: string;
+  gain: NormalRange;
+  node: Tone.Gain;
+}
 
-  // Runtime objects
+// Channel
+export interface MixerChannel extends Identifiable, AudioNode, Disposable {
+  effects: Effect[];
+  sends: Send[];
+  meter: Meter | null;
   channel: Tone.Channel;
-  effects: Map<string, ToneEffectType>;
-  sends: Map<string, Tone.Gain>;
-  meter?: Tone.Meter;
 }
+
+// Serializable state
+export type SerializableEffect = Omit<Effect, "node">;
+export type SerializableSend = Omit<Send, "node">;
+export type SerializableChannel = Omit<MixerChannel, "channel" | "dispose">;
 
 export interface MixerState {
-  master: MixerChannelState;
-  channels: MixerChannelState[];
+  master: SerializableChannel;
+  channels: SerializableChannel[];
 }
 
+// Actions interface
 export interface MixerActions {
   // Channel Management
-  createChannel: (name: string) => string;
-  removeChannel: (id: string) => void;
-  updateChannel: (id: string, updates: Partial<MixerChannelState>) => void;
+  createChannel(name: string): string;
+  removeChannel(id: string): void;
+  updateChannel(id: string, updates: Partial<SerializableChannel>): void;
 
   // Effect Management
-  addEffect: {
-    (
-      channelId: string,
-      type: EffectName.AutoFilter,
-      options?: Tone.AutoFilterOptions,
-    ): string;
-    (
-      channelId: string,
-      type: EffectName.AutoPanner,
-      options?: Tone.AutoPannerOptions,
-    ): string;
-    (
-      channelId: string,
-      type: EffectName.AutoWah,
-      options?: Tone.AutoWahOptions,
-    ): string;
-    (
-      channelId: string,
-      type: EffectName.BitCrusher,
-      options?: Tone.BitCrusherOptions,
-    ): string;
-    (
-      channelId: string,
-      type: EffectName.Chebyshev,
-      options?: Tone.ChebyshevOptions,
-    ): string;
-    (
-      channelId: string,
-      type: EffectName.Chorus,
-      options?: Tone.ChorusOptions,
-    ): string;
-    (
-      channelId: string,
-      type: EffectName.Distortion,
-      options?: Tone.DistortionOptions,
-    ): string;
-    (
-      channelId: string,
-      type: EffectName.FeedbackDelay,
-      options?: FeedbackDelayOptions,
-    ): string;
-    (
-      channelId: string,
-      type: EffectName.Freeverb,
-      options?: Tone.FreeverbOptions,
-    ): string;
-    (
-      channelId: string,
-      type: EffectName.FrequencyShifter,
-      options?: FrequencyShifterOptions,
-    ): string;
-    (
-      channelId: string,
-      type: EffectName.JCReverb,
-      options?: Tone.JCReverbOptions,
-    ): string;
-    (
-      channelId: string,
-      type: EffectName.Phaser,
-      options?: Tone.PhaserOptions,
-    ): string;
-    (
-      channelId: string,
-      type: EffectName.PingPongDelay,
-      options?: Tone.PingPongDelayOptions,
-    ): string;
-    (
-      channelId: string,
-      type: EffectName.PitchShift,
-      options?: Tone.PitchShiftOptions,
-    ): string;
-    (
-      channelId: string,
-      type: EffectName.Reverb,
-      options?: ReverbOptions,
-    ): string;
-    (
-      channelId: string,
-      type: EffectName.StereoWidener,
-      options?: Tone.StereoWidenerOptions,
-    ): string;
-    (
-      channelId: string,
-      type: EffectName.Tremolo,
-      options?: Tone.TremoloOptions,
-    ): string;
-  };
-  removeEffect: (channelId: string, effectId: string) => void;
-  updateEffect: (
+  addEffect: <T extends EffectOptions>(
+    channelId: string,
+    type: EffectName,
+    options?: Partial<T>,
+  ) => string;
+
+  removeEffect(channelId: string, effectId: string): void;
+
+  updateEffect: <T extends EffectOptions>(
     channelId: string,
     effectId: string,
-    updates: Partial<EffectOptions>,
+    updates: Partial<T>,
   ) => void;
-  bypassEffect: (channelId: string, effectId: string, bypass: boolean) => void;
+
+  bypassEffect(channelId: string, effectId: string, bypass: boolean): void;
 
   // Send Management
-  createSend: (fromId: string, toId: string, gain?: NormalRange) => string;
-  removeSend: (channelId: string, sendId: string) => void;
-  updateSend: (channelId: string, sendId: string, gain: NormalRange) => void;
+  createSend(fromId: string, toId: string, gain?: NormalRange): string;
 
-  // Utility
-  dispose: () => void;
+  removeSend(channelId: string, sendId: string): void;
+
+  updateSend(channelId: string, sendId: string, gain: NormalRange): void;
 
   // Metering
-  enableMetering: (channelId: string) => void;
-  disableMetering: (channelId: string) => void;
-  getMeterData: (channelId: string) => MeterData | null;
-  updateMeterConfig: (channelId: string, config: Partial<MeterConfig>) => void;
+  enableMetering(channelId: string): void;
+  disableMetering(channelId: string): void;
+  getMeterData(channelId: string): MeterData | null;
+  updateMeterConfig(
+    channelId: string,
+    config: Partial<Omit<Meter, "data">>,
+  ): void;
 
-  // Audio routing
-  getInputNode: (channelId: string) => Tone.ToneAudioNode;
-  getOutputNode: (channelId: string) => Tone.ToneAudioNode;
+  // Audio Routing
+  getInputNode(channelId: string): Tone.ToneAudioNode;
+  getOutputNode(channelId: string): Tone.ToneAudioNode;
+}
+
+// Root interface combining state and actions
+export interface Mixer extends Disposable {
+  state: MixerState;
+  actions: MixerActions;
 }

@@ -4,10 +4,10 @@ import { StateCreator } from "zustand";
 import {
   PlaylistState,
   PlaylistActions,
-  PlaylistTrackState,
+  PlaylistTrack,
 } from "@/core/interfaces/playlist";
-import { playlistManager } from "@/features/playlists/services/playlistManagerInstance";
 import { Pattern } from "@/core/interfaces/pattern";
+import { playlistManager } from "@/features/playlists/services/playlistManagerInstance";
 import { Time } from "tone/build/esm/core/type/Units";
 
 export interface PlaylistSlice extends PlaylistState, PlaylistActions {}
@@ -17,92 +17,87 @@ export const createPlaylistSlice: StateCreator<
   [],
   [],
   PlaylistSlice
-> = (set, get) => {
+> = () => {
   return {
     // Initial state from playlist manager
     ...playlistManager.state,
 
     // Track Management
-    createTrack: (name: string): string => {
+    createPlaylistTrack: (name: string): string => {
       try {
-        return playlistManager.actions.createTrack(name);
+        return playlistManager.actions.createPlaylistTrack(name);
       } catch (error) {
-        console.error("Error creating track:", error);
+        console.error("Error creating playlist track:", error);
         throw error;
       }
     },
 
-    deleteTrack: (trackId: string): void => {
+    deletePlaylistTrack: (trackId: string): void => {
       try {
-        playlistManager.actions.deleteTrack(trackId);
+        playlistManager.actions.deletePlaylistTrack(trackId);
       } catch (error) {
-        console.error("Error deleting track:", error);
+        console.error("Error deleting playlist track:", error);
         throw error;
       }
     },
 
-    updateTrack: (
+    updatePlaylistTrack: (
       trackId: string,
-      updates: Partial<PlaylistTrackState>,
+      updates: Partial<PlaylistTrack>,
     ): void => {
       try {
-        playlistManager.actions.updateTrack(trackId, updates);
+        playlistManager.actions.updatePlaylistTrack(trackId, updates);
       } catch (error) {
-        console.error("Error updating track:", error);
+        console.error("Error updating playlist track:", error);
         throw error;
       }
     },
 
-    reorderTracks: (trackIds: string[]): void => {
+    reorderPlaylistTracks: (trackIds: string[]): void => {
       try {
-        playlistManager.actions.reorderTracks(trackIds);
+        playlistManager.actions.reorderPlaylistTracks(trackIds);
       } catch (error) {
-        console.error("Error reordering tracks:", error);
+        console.error("Error reordering playlist tracks:", error);
         throw error;
       }
     },
 
     // Pattern Management
-    addPattern: (
+    addPlaylistPattern: (
       trackId: string,
-      pattern: Pattern,
+      patternId: string,
       startTime: Time,
     ): string => {
       try {
-        return playlistManager.actions.addPattern(trackId, pattern, startTime);
+        return playlistManager.actions.addPlaylistPattern(
+          trackId,
+          patternId,
+          startTime,
+        );
       } catch (error) {
-        console.error("Error adding pattern:", error);
+        console.error("Error adding pattern to playlist:", error);
         throw error;
       }
     },
 
-    removePattern: (trackId: string, placementId: string): void => {
+    removePlaylistPattern: (trackId: string, patternId: string): void => {
       try {
-        playlistManager.actions.removePattern(trackId, placementId);
+        playlistManager.actions.removePlaylistPattern(trackId, patternId);
       } catch (error) {
-        console.error("Error removing pattern:", error);
+        console.error("Error removing pattern from playlist:", error);
         throw error;
       }
     },
 
     movePattern: (
-      placementId: string,
       trackId: string,
+      patternId: string,
       startTime: Time,
     ): void => {
       try {
-        playlistManager.actions.movePattern(placementId, trackId, startTime);
+        playlistManager.actions.movePattern(trackId, patternId, startTime);
       } catch (error) {
         console.error("Error moving pattern:", error);
-        throw error;
-      }
-    },
-
-    duplicatePattern: (placementId: string): string => {
-      try {
-        return playlistManager.actions.duplicatePattern(placementId);
-      } catch (error) {
-        console.error("Error duplicating pattern:", error);
         throw error;
       }
     },
@@ -127,40 +122,38 @@ export const createPlaylistSlice: StateCreator<
     },
 
     // Query Methods
-    getPatternAt: (time: Time) => {
+    getPatternAt: (time: Time): Pattern[] => {
       try {
         return playlistManager.actions.getPatternAt(time);
       } catch (error) {
-        console.error("Error getting pattern at time:", error);
-        throw error;
+        console.error("Error getting patterns at time:", error);
+        return [];
       }
     },
 
-    getPatternsBetween: (startTime: Time, endTime: Time) => {
+    getPatternsBetween: (startTime: Time, endTime: Time): Pattern[] => {
       try {
         return playlistManager.actions.getPatternsBetween(startTime, endTime);
       } catch (error) {
         console.error("Error getting patterns between times:", error);
-        throw error;
+        return [];
       }
     },
 
-    getLength: () => {
+    getLength: (): Time => {
       try {
         return playlistManager.actions.getLength();
       } catch (error) {
-        console.error("Error getting length:", error);
-        throw error;
+        console.error("Error getting playlist length:", error);
+        return "0";
       }
     },
 
-    // Cleanup
-    dispose: (): void => {
+    dispose: () => {
       try {
-        playlistManager.actions.dispose();
+        playlistManager.dispose();
       } catch (error) {
-        console.error("Error disposing playlist:", error);
-        throw error;
+        console.error("Error disposing playlist manager:", error);
       }
     },
   };
