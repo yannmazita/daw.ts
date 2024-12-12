@@ -258,6 +258,15 @@ export const createPatternSlice: StateCreator<
       }
     },
 
+    setDefaultLoopLength(id: string, length: Time): void {
+      try {
+        patternManager.actions.setDefaultLoopLength(id, length);
+      } catch (error) {
+        console.error("Error setting default loop length:", error);
+        throw error;
+      }
+    },
+
     // Utility Methods
     getPattern: (id: string): Pattern | undefined => {
       return patternManager.actions.getPattern(id);

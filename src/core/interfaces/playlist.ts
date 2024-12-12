@@ -21,7 +21,7 @@ export interface PlaylistTrackState {
 }
 
 export interface PlaylistState {
-  tracks: PlaylistTrackState[];
+  playlistTracks: PlaylistTrackState[];
   length: Time;
 }
 

@@ -38,7 +38,7 @@ export interface SceneState {
 }
 
 export interface SessionState {
-  tracks: SessionTrackState[];
+  sessionTracks: SessionTrackState[];
   scenes: SceneState[];
   clipLaunchQuantization: LaunchQuantization;
   sceneFollowAction?: FollowActionConfig;

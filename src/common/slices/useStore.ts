@@ -52,7 +52,7 @@ export const useStore = create<StoreState>()(
             master: state.master,
           },
           session: {
-            tracks: state.tracks,
+            sessionTracks: state.sessionTracks,
             scenes: state.scenes,
           },
         }),
@@ -83,7 +83,7 @@ export const createSyncMiddleware = (store: typeof useStore) => {
     const unsubscribePlaylist = playlistManager.onStateUpdate((state) => {
       store.setState((prev) => ({
         ...prev,
-        tracks: state.tracks,
+        playlistTracks: state.playlistTracks,
         length: state.length,
       }));
     });
