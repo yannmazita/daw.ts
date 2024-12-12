@@ -17,7 +17,7 @@ export const SessionView: React.FC<SessionViewProps> = ({ className }) => {
 
   // Store state
   const {
-    tracks,
+    sessionTracks: tracks,
     scenes,
     selectedClipIds,
     focusedTrackId,

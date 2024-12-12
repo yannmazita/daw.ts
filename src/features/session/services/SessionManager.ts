@@ -28,7 +28,7 @@ export class SessionManager extends BaseManager<SessionState> {
 
   constructor() {
     super({
-      tracks: [],
+      sessionTracks: [],
       scenes: [],
       clipLaunchQuantization: LaunchQuantization.ONE_BAR,
       selectedClipIds: new Set(),
@@ -56,14 +56,14 @@ export class SessionManager extends BaseManager<SessionState> {
       };
 
       this.updateState({
-        tracks: [...this.state.tracks, track],
+        sessionTracks: [...this.state.sessionTracks, track],
       });
 
       return id;
     },
 
     deleteTrack: (id: string): void => {
-      const track = this.state.tracks.find((t) => t.id === id);
+      const track = this.state.sessionTracks.find((t) => t.id === id);
       if (!track) return;
 
       // Stop all clips in track
@@ -80,27 +80,27 @@ export class SessionManager extends BaseManager<SessionState> {
       mixerManager.actions.removeChannel(track.mixerChannelId);
 
       this.updateState({
-        tracks: this.state.tracks.filter((t) => t.id !== id),
+        sessionTracks: this.state.sessionTracks.filter((t) => t.id !== id),
       });
     },
 
     updateTrack: (id: string, updates: Partial<SessionTrackState>): void => {
       this.updateState({
-        tracks: this.state.tracks.map((track) =>
+        sessionTracks: this.state.sessionTracks.map((track) =>
           track.id === id ? { ...track, ...updates } : track,
         ),
       });
     },
 
     moveTrack: (id: string, newIndex: number): void => {
-      const tracks = [...this.state.tracks];
-      const currentIndex = tracks.findIndex((t) => t.id === id);
+      const sessionTracks = [...this.state.sessionTracks];
+      const currentIndex = sessionTracks.findIndex((t) => t.id === id);
       if (currentIndex === -1) return;
 
-      const [track] = tracks.splice(currentIndex, 1);
-      tracks.splice(newIndex, 0, track);
+      const [sessionTrack] = sessionTracks.splice(currentIndex, 1);
+      sessionTracks.splice(newIndex, 0, sessionTrack);
 
-      this.updateState({ tracks });
+      this.updateState({ sessionTracks });
     },
 
     // Clip Management
@@ -109,7 +109,7 @@ export class SessionManager extends BaseManager<SessionState> {
       slotIndex: number,
       patternId: string,
     ): string => {
-      const track = this.state.tracks.find((t) => t.id === trackId);
+      const track = this.state.sessionTracks.find((t) => t.id === trackId);
       if (!track) throw new Error("Track not found");
 
       const pattern = patternManager.actions.getPattern(patternId);
@@ -136,7 +136,7 @@ export class SessionManager extends BaseManager<SessionState> {
       clipSlots[slotIndex] = clip;
 
       this.updateState({
-        tracks: this.state.tracks.map((t) =>
+        sessionTracks: this.state.sessionTracks.map((t) =>
           t.id === trackId ? { ...t, clipSlots } : t,
         ),
       });
@@ -145,7 +145,7 @@ export class SessionManager extends BaseManager<SessionState> {
     },
 
     deleteClip: (trackId: string, slotIndex: number): void => {
-      const track = this.state.tracks.find((t) => t.id === trackId);
+      const track = this.state.sessionTracks.find((t) => t.id === trackId);
       if (!track?.clipSlots[slotIndex]) return;
 
       const clip = track.clipSlots[slotIndex];
@@ -161,7 +161,7 @@ export class SessionManager extends BaseManager<SessionState> {
       };
 
       this.updateState({
-        tracks: this.state.tracks.map((t) =>
+        sessionTracks: this.state.sessionTracks.map((t) =>
           t.id === trackId ? { ...t, clipSlots } : t,
         ),
       });
@@ -173,7 +173,7 @@ export class SessionManager extends BaseManager<SessionState> {
       updates: Partial<ClipSlot>,
     ): void => {
       this.updateState({
-        tracks: this.state.tracks.map((track) =>
+        sessionTracks: this.state.sessionTracks.map((track) =>
           track.id === trackId
             ? {
                 ...track,
@@ -192,7 +192,9 @@ export class SessionManager extends BaseManager<SessionState> {
       targetTrackId: string,
       targetSlotIndex: number,
     ): string => {
-      const sourceTrack = this.state.tracks.find((t) => t.id === sourceTrackId);
+      const sourceTrack = this.state.sessionTracks.find(
+        (t) => t.id === sourceTrackId,
+      );
       if (!sourceTrack) throw new Error("Source track not found");
 
       const sourceClip = sourceTrack.clipSlots[sourceSlotIndex];
@@ -253,7 +255,7 @@ export class SessionManager extends BaseManager<SessionState> {
 
     // Playback Control
     launchClip: (trackId: string, slotIndex: number) => {
-      const track = this.state.tracks.find((t) => t.id === trackId);
+      const track = this.state.sessionTracks.find((t) => t.id === trackId);
       if (!track) return;
 
       const clip = track.clipSlots[slotIndex];
@@ -318,7 +320,7 @@ export class SessionManager extends BaseManager<SessionState> {
     },
 
     stopClip: (trackId: string, slotIndex: number): void => {
-      const track = this.state.tracks.find((t) => t.id === trackId);
+      const track = this.state.sessionTracks.find((t) => t.id === trackId);
       if (!track) return;
 
       const clip = track.clipSlots[slotIndex];
@@ -352,7 +354,7 @@ export class SessionManager extends BaseManager<SessionState> {
 
       // Launch clips for each track at the scene index
       await Promise.all(
-        this.state.tracks.map((track) => {
+        this.state.sessionTracks.map((track) => {
           const clip = track.clipSlots[sceneIndex];
           if (clip?.patternId) {
             return this.actions.launchClip(track.id, sceneIndex);
@@ -371,7 +373,7 @@ export class SessionManager extends BaseManager<SessionState> {
     },
 
     stopScene: (sceneIndex: number): void => {
-      this.state.tracks.forEach((track) => {
+      this.state.sessionTracks.forEach((track) => {
         const clip = track.clipSlots[sceneIndex];
         if (
           clip &&
@@ -383,7 +385,7 @@ export class SessionManager extends BaseManager<SessionState> {
     },
 
     stopAllClips: (): void => {
-      this.state.tracks.forEach((track) => {
+      this.state.sessionTracks.forEach((track) => {
         track.clipSlots.forEach((clip, index) => {
           if (
             clip.state === ClipState.PLAYING ||
@@ -405,7 +407,7 @@ export class SessionManager extends BaseManager<SessionState> {
     },
 
     recordIntoSlot: (trackId: string, slotIndex: number): void => {
-      const track = this.state.tracks.find((t) => t.id === trackId);
+      const track = this.state.sessionTracks.find((t) => t.id === trackId);
       if (!track?.isArmed) return;
 
       // Create new pattern for recording
@@ -462,12 +464,12 @@ export class SessionManager extends BaseManager<SessionState> {
 
     // Utility Methods
     getClipAt: (trackId: string, slotIndex: number): ClipSlot | null => {
-      const track = this.state.tracks.find((t) => t.id === trackId);
+      const track = this.state.sessionTracks.find((t) => t.id === trackId);
       return track?.clipSlots[slotIndex] ?? null;
     },
 
     getTrack: (id: string): SessionTrackState | undefined => {
-      return this.state.tracks.find((t) => t.id === id);
+      return this.state.sessionTracks.find((t) => t.id === id);
     },
 
     getScene: (id: string): SceneState | undefined => {
@@ -480,7 +482,7 @@ export class SessionManager extends BaseManager<SessionState> {
       this.scheduledStops.clear();
       this.followActionTimeouts.clear();
       this.updateState({
-        tracks: [],
+        sessionTracks: [],
         scenes: [],
         selectedClipIds: new Set(),
       });
@@ -550,7 +552,7 @@ export class SessionManager extends BaseManager<SessionState> {
           case FollowAction.OTHER:
             if (config.targetClipId) {
               // Find target clip and launch it
-              this.state.tracks.forEach((track, trackIndex) => {
+              this.state.sessionTracks.forEach((track, trackIndex) => {
                 track.clipSlots.forEach((slot, slotIndex) => {
                   if (slot.id === config.targetClipId) {
                     this.actions.launchClip(track.id, slotIndex);

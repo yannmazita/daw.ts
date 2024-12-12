@@ -72,6 +72,9 @@ export interface PatternData {
   isLoop?: boolean;
   loopStart?: Time;
   loopEnd?: Time;
+  startTime: Time;
+  duration: Time;
+  offset: Time;
 }
 
 export interface PatternState {

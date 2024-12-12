@@ -60,6 +60,9 @@ export class PatternManager extends BaseManager<PatternState> {
         isLoop: true,
         loopStart: "0:0:0",
         loopEnd: "4:0:0",
+        startTime: "0:0:0",
+        duration: "4m",
+        offset: "0:0:0",
       };
 
       const pattern: Pattern = {
