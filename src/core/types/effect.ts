@@ -55,24 +55,28 @@ export interface ReverbOptions extends Tone.ToneAudioNodeOptions {
   wet?: number;
 }
 
+export interface BaseEffectOptions {
+  wet: NormalRange;
+}
+
 export type EffectOptions =
-  | Tone.AutoFilterOptions
-  | Tone.AutoPannerOptions
-  | Tone.AutoWahOptions
-  | Tone.BitCrusherOptions
-  | Tone.ChebyshevOptions
-  | Tone.ChorusOptions
-  | Tone.DistortionOptions
-  | FeedbackDelayOptions
-  | Tone.FreeverbOptions
-  | FrequencyShifterOptions
-  | Tone.JCReverbOptions
-  | Tone.PhaserOptions
-  | Tone.PingPongDelayOptions
-  | Tone.PitchShiftOptions
-  | ReverbOptions
-  | Tone.StereoWidenerOptions
-  | Tone.TremoloOptions;
+  | (Tone.AutoFilterOptions & BaseEffectOptions)
+  | (Tone.AutoPannerOptions & BaseEffectOptions)
+  | (Tone.AutoWahOptions & BaseEffectOptions)
+  | (Tone.BitCrusherOptions & BaseEffectOptions)
+  | (Tone.ChebyshevOptions & BaseEffectOptions)
+  | (Tone.ChorusOptions & BaseEffectOptions)
+  | (Tone.DistortionOptions & BaseEffectOptions)
+  | (FeedbackDelayOptions & BaseEffectOptions)
+  | (Tone.FreeverbOptions & BaseEffectOptions)
+  | (FrequencyShifterOptions & BaseEffectOptions)
+  | (Tone.JCReverbOptions & BaseEffectOptions)
+  | (Tone.PhaserOptions & BaseEffectOptions)
+  | (Tone.PingPongDelayOptions & BaseEffectOptions)
+  | (Tone.PitchShiftOptions & BaseEffectOptions)
+  | (ReverbOptions & BaseEffectOptions)
+  | (Tone.StereoWidenerOptions & BaseEffectOptions)
+  | (Tone.TremoloOptions & BaseEffectOptions);
 
 export enum EffectName {
   /** An auto-filter effect that sweeps a frequency band with an LFO. */
@@ -130,9 +134,11 @@ export enum EffectName {
   Vibrato = "Vibrato",
 }
 
+/*
 export interface EffectState {
   id: string;
   type: EffectName;
   bypass: boolean;
   options: EffectOptions;
 }
+*/

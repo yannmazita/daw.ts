@@ -1,48 +1,53 @@
 // src/core/interfaces/playlist.ts
-// Arangement and track definitions
 
 import { Time } from "tone/build/esm/core/type/Units";
 import { Pattern } from "./pattern";
+import { Identifiable, AudioNode, Disposable } from "../interfaces/base";
 
-export interface PlaylistTrackState {
-  id: string;
-  name: string;
-  pla: string[]; // pattern ids
-  muted: boolean;
-  soloed: boolean;
+export interface PatternPlacement {
+  patternId: string;
+  startTime: Time;
+  duration: Time;
+}
+
+export interface PlaylistTrack extends Identifiable, AudioNode {
+  patterns: PatternPlacement[];
 }
 
 export interface PlaylistState {
-  playlistTracks: PlaylistTrackState[];
+  tracks: PlaylistTrack[];
   length: Time;
 }
 
+// Simplified actions
 export interface PlaylistActions {
   // Track Management
-  createTrack: (name: string) => string;
-  deleteTrack: (trackId: string) => void;
-  updateTrack: (trackId: string, updates: Partial<PlaylistTrackState>) => void;
-  reorderTracks: (trackIds: string[]) => void;
+  createPlaylistTrack(name: string): string;
+  deletePlaylistTrack(trackId: string): void;
+  updatePlaylistTrack(trackId: string, updates: Partial<PlaylistTrack>): void;
+  reorderPlaylistTracks(trackIds: string[]): void;
 
   // Pattern Management
-  addPatternToPlaylist: (patternId: string) => string;
-  removePatternFromPlaylist: (patternId: string) => void;
-  movePatternFromPlaylist: (
-    placementId: string,
+  addPlaylistPattern(
     trackId: string,
+    patternId: string,
     startTime: Time,
-  ) => void;
-  duplicatePatternFromPlaylist: (placementId: string) => string;
+  ): string;
+  removePlaylistPattern(trackId: string, patternId: string): void;
+  movePattern(trackId: string, patternId: string, startTime: Time): void;
 
   // Playback Control
-  setTrackMute: (trackId: string, muted: boolean) => void;
-  setTrackSolo: (trackId: string, soloed: boolean) => void;
+  setTrackMute(trackId: string, muted: boolean): void;
+  setTrackSolo(trackId: string, soloed: boolean): void;
 
   // Query Methods
-  getPatternAt: (time: Time) => Pattern[];
-  getPatternsBetween: (startTime: Time, endTime: Time) => string[];
-  getLength: () => Time;
+  getPatternAt(time: Time): Pattern[];
+  getPatternsBetween(startTime: Time, endTime: Time): Pattern[];
+  getLength(): Time;
+}
 
-  // Cleanup
-  dispose: () => void;
+// Root interface
+export interface Playlist extends Disposable {
+  state: PlaylistState;
+  actions: PlaylistActions;
 }

@@ -3,14 +3,16 @@
 import * as Tone from "tone";
 import {
   Pattern,
-  PatternData,
-  PatternState,
   PatternTrack,
-  PatternTrackState,
   PatternActions,
   SequenceEvent,
-  NoteSequenceEvent,
-  AudioSequenceEvent,
+  NoteEvent,
+  AudioEvent,
+  InstrumentTrack,
+  AudioTrack,
+  SerializableTrack,
+  PatternsState,
+  PatternState,
 } from "@/core/interfaces/pattern";
 import { transportManager } from "@/common/services/transportManagerInstance";
 import { mixerManager } from "@/features/mixer/services/mixerManagerInstance";
@@ -20,24 +22,23 @@ import {
   InstrumentOptions,
   InstrumentType,
 } from "@/core/types/instrument";
-import { BaseManager } from "@/common/services/BaseManager";
-import { Time } from "tone/build/esm/core/type/Units";
 
-export class PatternManager extends BaseManager<PatternState> {
-  public readonly patterns: Map<string, Pattern>;
+export class PatternManager {
+  public readonly state: PatternsState;
+  private readonly patterns: Map<string, Pattern>;
   private currentPattern: Pattern | null;
   private activeEvents: Set<number>;
 
   constructor() {
-    super({
+    this.state = {
       patterns: [],
       currentPatternId: null,
-    });
+    };
+
     this.patterns = new Map();
     this.currentPattern = null;
     this.activeEvents = new Set();
 
-    // Register pattern mode handler with transport
     transportManager.registerModeHandler(
       PlaybackMode.PATTERN,
       () => this.startPatternPlayback(),
@@ -47,161 +48,239 @@ export class PatternManager extends BaseManager<PatternState> {
 
   public readonly actions: PatternActions = {
     createPattern: (name: string, timeSignature: [number, number]): string => {
-      const id = `pattern_${Date.now()}`;
-
-      const patternData: PatternData = {
-        id,
+      const pattern: Pattern = {
+        id: `pattern_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
         name,
         tracks: [],
-        length: "4m",
-        timeSignature,
-        color: undefined,
-        defaultLoopLength: "4m",
-        isLoop: true,
-        loopStart: "0:0:0",
-        loopEnd: "4:0:0",
-        startTime: "0:0:0",
+        startTime: 0,
         duration: "4m",
-        offset: "0:0:0",
+        timeSignature,
+        dispose: () => this.disposePattern(pattern.id),
       };
 
-      const pattern: Pattern = {
-        id,
+      this.patterns.set(pattern.id, pattern);
+
+      this.state.patterns.push({
+        id: pattern.id,
+        name: pattern.name,
+        startTime: pattern.startTime,
+        duration: pattern.duration,
+        timeSignature: pattern.timeSignature,
         tracks: [],
-        state: patternData,
-      };
-
-      this.patterns.set(id, pattern);
-      this.updateState({
-        patterns: [...this.state.patterns, patternData],
       });
 
-      return id;
+      return pattern.id;
     },
 
-    deletePattern: (id: string): void => {
-      const pattern = this.patterns.get(id);
-      if (!pattern) return;
-
-      // Clean up tracks
-      pattern.tracks.forEach((track) => {
-        track.instrument?.dispose();
-        track.player?.dispose();
-        Object.values(track.parameters).forEach((param) => param.dispose());
-      });
-
-      this.patterns.delete(id);
-
-      this.updateState({
-        patterns: this.state.patterns.filter((p) => p.id !== id),
-        currentPatternId:
-          this.state.currentPatternId === id
-            ? (this.state.patterns[0]?.id ?? null)
-            : this.state.currentPatternId,
-      });
-
-      if (this.state.currentPatternId === id) {
-        this.currentPattern = null;
-      }
-    },
-
-    addTrack: (
+    createInstrumentTrack: (
       patternId: string,
       name: string,
-      type: "instrument" | "audio",
-      instrumentType?: InstrumentName,
+      instrumentType: InstrumentName,
       options?: InstrumentOptions,
     ): string => {
       const pattern = this.patterns.get(patternId);
       if (!pattern) throw new Error("Pattern not found");
 
-      const trackId = `track_${Date.now()}`;
+      const id = `track_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
       const mixerChannelId = mixerManager.actions.createChannel(name);
+      const instrument = this.createInstrument(instrumentType, options);
+      const channel = mixerManager.actions.getInputNode(
+        mixerChannelId,
+      ) as Tone.Channel;
 
-      const trackState: PatternTrackState = {
-        id: trackId,
+      instrument.connect(channel);
+
+      const track: InstrumentTrack = {
+        id,
         name,
-        type,
+        type: "instrument",
         instrumentType,
         instrumentOptions: options,
         mixerChannelId,
-        muted: false,
-        soloed: false,
+        mute: false,
+        solo: false,
         volume: 0,
         pan: 0,
         events: [],
         parameters: {},
+        instrument,
+        channel,
+        signals: {},
       };
-
-      const track: PatternTrack = {
-        ...trackState,
-        channel: mixerManager.actions.getInputNode(
-          mixerChannelId,
-        ) as Tone.Channel,
-        parameters: {},
-        state: trackState,
-      };
-
-      if (type === "instrument" && instrumentType) {
-        track.instrument = this.createTrackInstrument(instrumentType, options);
-        track.instrument.connect(track.channel);
-      }
 
       pattern.tracks.push(track);
-      pattern.state.tracks.push(trackState);
 
-      return trackId;
+      const patternState = this.state.patterns.find((p) => p.id === patternId);
+      if (patternState) {
+        patternState.tracks.push(this.serializeTrack(track));
+      }
+
+      return track.id;
     },
 
-    removeTrack: (patternId: string, trackId: string): void => {
+    createAudioTrack: (patternId: string, name: string): string => {
+      const pattern = this.patterns.get(patternId);
+      if (!pattern) throw new Error("Pattern not found");
+
+      const id = `track_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+      const mixerChannelId = mixerManager.actions.createChannel(name);
+      const channel = mixerManager.actions.getInputNode(
+        mixerChannelId,
+      ) as Tone.Channel;
+
+      const track: AudioTrack = {
+        id,
+        name,
+        type: "audio",
+        mixerChannelId,
+        mute: false,
+        solo: false,
+        volume: 0,
+        pan: 0,
+        events: [],
+        parameters: {},
+        player: new Tone.Player(),
+        channel,
+        signals: {},
+      };
+
+      track.player.connect(channel);
+      pattern.tracks.push(track);
+
+      const patternState = this.state.patterns.find((p) => p.id === patternId);
+      if (patternState) {
+        patternState.tracks.push(this.serializeTrack(track));
+      }
+
+      return track.id;
+    },
+    removePatternTrack: (patternId: string, trackId: string): void => {
       const pattern = this.patterns.get(patternId);
       if (!pattern) return;
 
       const track = pattern.tracks.find((t) => t.id === trackId);
-      if (track) {
-        track.instrument?.dispose();
-        track.player?.dispose();
-        Object.values(track.parameters).forEach((param) => param.dispose());
-      }
+      if (!track) return;
 
+      // Cleanup track resources
+      if (this.isInstrumentTrack(track)) {
+        track.instrument.dispose();
+      } else {
+        track.player.dispose();
+      }
+      Object.values(track.signals).forEach((signal) => signal.dispose());
+
+      // Remove from mixer
+      mixerManager.actions.removeChannel(track.mixerChannelId);
+
+      // Update pattern
       pattern.tracks = pattern.tracks.filter((t) => t.id !== trackId);
-      pattern.state.tracks = pattern.state.tracks.filter(
-        (t) => t.id !== trackId,
-      );
+
+      // Update state
+      const patternState = this.state.patterns.find((p) => p.id === patternId);
+      if (patternState) {
+        patternState.tracks = patternState.tracks.filter(
+          (t) => t.id !== trackId,
+        );
+      }
     },
 
-    updateTrack: (
+    updatePatternTrack: <T extends PatternTrack>(
       patternId: string,
       trackId: string,
-      updates: Partial<PatternTrackState>,
+      updates: Partial<T>,
     ): void => {
       const pattern = this.patterns.get(patternId);
       if (!pattern) return;
 
-      const track = pattern.tracks.find((t) => t.id === trackId);
-      const trackState = pattern.state.tracks.find((t) => t.id === trackId);
+      const track = pattern.tracks.find((t) => t.id === trackId) as T;
+      if (!track) return;
 
-      if (track && trackState) {
-        Object.assign(track, updates);
-        Object.assign(trackState, updates);
+      // Update runtime properties
+      if ("volume" in updates) track.channel.volume.value = updates.volume!;
+      if ("pan" in updates) track.channel.pan.value = updates.pan!;
+      if ("mute" in updates) track.channel.mute = updates.mute!;
+
+      // Update track state
+      Object.assign(track, updates);
+
+      // Update pattern state
+      const patternState = this.state.patterns.find((p) => p.id === patternId);
+      if (patternState) {
+        const trackState = patternState.tracks.find((t) => t.id === trackId);
+        if (trackState) {
+          Object.assign(trackState, updates);
+        }
       }
     },
 
-    addEvent: (
+    addNoteEvent: (
       patternId: string,
       trackId: string,
-      event: SequenceEvent,
-    ): void => {
+      event: Omit<NoteEvent, "id">,
+    ): string => {
       const pattern = this.patterns.get(patternId);
-      if (!pattern) return;
+      if (!pattern) throw new Error("Pattern not found");
 
       const track = pattern.tracks.find((t) => t.id === trackId);
-      const trackState = pattern.state.tracks.find((t) => t.id === trackId);
-
-      if (track && trackState) {
-        track.events.push(event);
-        trackState.events.push(event);
+      if (!track || !this.isInstrumentTrack(track)) {
+        throw new Error("Instrument track not found");
       }
+
+      const id = `event_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+      const noteEvent: NoteEvent = { ...event, id };
+
+      track.events.push(noteEvent);
+
+      // Update pattern state
+      const patternState = this.state.patterns.find((p) => p.id === patternId);
+      if (patternState) {
+        const trackState = patternState.tracks.find((t) => t.id === trackId);
+        if (trackState) {
+          trackState.events.push(noteEvent);
+        }
+      }
+
+      // Update part if playing
+      if (pattern.part) {
+        pattern.part.add(noteEvent.startTime, noteEvent);
+      }
+
+      return id;
+    },
+
+    addAudioEvent: (
+      patternId: string,
+      trackId: string,
+      event: Omit<AudioEvent, "id">,
+    ): string => {
+      const pattern = this.patterns.get(patternId);
+      if (!pattern) throw new Error("Pattern not found");
+
+      const track = pattern.tracks.find((t) => t.id === trackId);
+      if (!track || !this.isAudioTrack(track)) {
+        throw new Error("Audio track not found");
+      }
+
+      const id = `event_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+      const audioEvent: AudioEvent = { ...event, id };
+
+      track.events.push(audioEvent);
+
+      // Update pattern state
+      const patternState = this.state.patterns.find((p) => p.id === patternId);
+      if (patternState) {
+        const trackState = patternState.tracks.find((t) => t.id === trackId);
+        if (trackState) {
+          trackState.events.push(audioEvent);
+        }
+      }
+
+      // Update part if playing
+      if (pattern.part) {
+        pattern.part.add(audioEvent.startTime, audioEvent);
+      }
+
+      return id;
     },
 
     removeEvent: (
@@ -213,51 +292,135 @@ export class PatternManager extends BaseManager<PatternState> {
       if (!pattern) return;
 
       const track = pattern.tracks.find((t) => t.id === trackId);
-      const trackState = pattern.state.tracks.find((t) => t.id === trackId);
+      if (!track) return;
 
-      if (track && trackState) {
-        // Assuming events have an id property
-        track.events = track.events.filter((e) => (e as any).id !== eventId);
-        trackState.events = trackState.events.filter(
-          (e) => (e as any).id !== eventId,
-        );
+      track.events = track.events.filter((e) => e.id !== eventId);
+
+      // Update pattern state
+      const patternState = this.state.patterns.find((p) => p.id === patternId);
+      if (patternState) {
+        const trackState = patternState.tracks.find((t) => t.id === trackId);
+        if (trackState) {
+          trackState.events = trackState.events.filter((e) => e.id !== eventId);
+        }
+      }
+
+      // Update part if playing
+      if (pattern.part) {
+        pattern.part.remove(eventId);
       }
     },
 
-    updateEvent: (
+    updateEvent: <T extends SequenceEvent>(
       patternId: string,
       trackId: string,
       eventId: string,
-      updates: Partial<SequenceEvent>,
+      updates: Partial<Omit<T, "id" | "type">>,
     ): void => {
       const pattern = this.patterns.get(patternId);
       if (!pattern) return;
 
       const track = pattern.tracks.find((t) => t.id === trackId);
-      const trackState = pattern.state.tracks.find((t) => t.id === trackId);
+      if (!track) return;
 
-      if (track && trackState) {
-        // Assuming events have an id property
-        const eventIndex = track.events.findIndex(
-          (e) => (e as any).id === eventId,
-        );
-        if (eventIndex !== -1) {
-          track.events[eventIndex] = {
-            ...track.events[eventIndex],
-            ...updates,
-          };
-          trackState.events[eventIndex] = {
-            ...trackState.events[eventIndex],
-            ...updates,
-          };
+      const eventIndex = track.events.findIndex((e) => e.id === eventId);
+      if (eventIndex === -1) return;
+
+      const event = track.events[eventIndex] as T;
+      const updatedEvent = { ...event, ...updates };
+      track.events[eventIndex] = updatedEvent;
+
+      // Update pattern state
+      const patternState = this.state.patterns.find((p) => p.id === patternId);
+      if (patternState) {
+        const trackState = patternState.tracks.find((t) => t.id === trackId);
+        if (trackState) {
+          const stateEventIndex = trackState.events.findIndex(
+            (e) => e.id === eventId,
+          );
+          if (stateEventIndex !== -1) {
+            trackState.events[stateEventIndex] = updatedEvent;
+          }
         }
+      }
+
+      // Update part if playing
+      if (pattern.part) {
+        pattern.part.remove(eventId);
+        pattern.part.add(updatedEvent.startTime, updatedEvent);
+      }
+    },
+
+    deletePattern: (id: string): void => {
+      const pattern = this.patterns.get(id);
+      if (!pattern) return;
+
+      pattern.dispose();
+      this.patterns.delete(id);
+
+      this.state.patterns = this.state.patterns.filter((p) => p.id !== id);
+      if (this.state.currentPatternId === id) {
+        this.currentPattern = null;
+        this.state.currentPatternId = null;
+      }
+    },
+
+    duplicatePattern: (id: string): string => {
+      const sourcePattern = this.patterns.get(id);
+      if (!sourcePattern) throw new Error("Pattern not found");
+
+      const newId = this.actions.createPattern(
+        `${sourcePattern.name} (copy)`,
+        sourcePattern.timeSignature,
+      );
+
+      // Duplicate tracks
+      for (const sourceTrack of sourcePattern.tracks) {
+        let trackId: string;
+
+        if (this.isInstrumentTrack(sourceTrack)) {
+          trackId = this.actions.createInstrumentTrack(
+            newId,
+            sourceTrack.name,
+            sourceTrack.instrumentType,
+            sourceTrack.instrumentOptions,
+          );
+        } else {
+          trackId = this.actions.createAudioTrack(newId, sourceTrack.name);
+        }
+
+        // Copy events
+        sourceTrack.events.forEach((event) => {
+          if (event.type === "note") {
+            this.actions.addNoteEvent(newId, trackId, event);
+          } else {
+            this.actions.addAudioEvent(newId, trackId, event);
+          }
+        });
+      }
+
+      return newId;
+    },
+
+    updatePattern: (
+      id: string,
+      updates: Partial<Omit<Pattern, "tracks" | "part">>,
+    ): void => {
+      const pattern = this.patterns.get(id);
+      if (!pattern) return;
+
+      Object.assign(pattern, updates);
+
+      const patternState = this.state.patterns.find((p) => p.id === id);
+      if (patternState) {
+        Object.assign(patternState, updates);
       }
     },
 
     setCurrentPattern: (id: string | null): void => {
       if (id === null) {
         this.currentPattern = null;
-        this.updateState({ currentPatternId: null });
+        this.state.currentPatternId = null;
         return;
       }
 
@@ -265,7 +428,7 @@ export class PatternManager extends BaseManager<PatternState> {
       if (!pattern) return;
 
       this.currentPattern = pattern;
-      this.updateState({ currentPatternId: id });
+      this.state.currentPatternId = id;
     },
 
     getPattern: (id: string): Pattern | undefined => {
@@ -279,237 +442,16 @@ export class PatternManager extends BaseManager<PatternState> {
     getPatterns: (): Pattern[] => {
       return Array.from(this.patterns.values());
     },
-
-    dispose: (): void => {
-      this.stopPatternPlayback();
-      this.patterns.forEach((pattern) => {
-        pattern.tracks.forEach((track) => {
-          track.instrument?.dispose();
-          track.player?.dispose();
-          Object.values(track.parameters).forEach((param) => param.dispose());
-        });
-      });
-      this.patterns.clear();
-      this.updateState({ patterns: [] });
-      this.currentPattern = null;
-      this.updateState({ currentPatternId: null });
-    },
-
-    duplicatePattern: (id: string): string => {
-      const pattern = this.patterns.get(id);
-      if (!pattern) throw new Error("Pattern not found");
-      const newPatternId = `pattern_${Date.now()}`;
-      const newPatternData: PatternData = {
-        ...pattern.state,
-        id: newPatternId,
-        name: `${pattern.state.name} (Copy)`,
-      };
-      const newPattern: Pattern = {
-        id: newPatternId,
-        tracks: [],
-        state: newPatternData,
-      };
-      // Duplicate tracks
-      pattern.tracks.forEach((track) => {
-        const newTrackId = this.actions.addTrack(
-          newPatternId,
-          track.state.name,
-          track.state.type,
-          track.state.instrumentType,
-          track.state.instrumentOptions,
-        );
-        const newTrack = newPattern.tracks.find((t) => t.id === newTrackId);
-        if (newTrack) {
-          newTrack.muted = track.muted;
-          newTrack.soloed = track.soloed;
-          newTrack.volume = track.volume;
-          newTrack.pan = track.pan;
-          newTrack.events = [...track.events];
-          newTrack.state.events = [...track.state.events];
-        }
-      });
-      this.patterns.set(newPatternId, newPattern);
-      this.updateState({
-        patterns: [...this.state.patterns, newPatternData],
-      });
-      return newPatternId;
-    },
-
-    updatePattern: (id: string, updates: Partial<Pattern>): void => {
-      const pattern = this.patterns.get(id);
-      if (!pattern) return;
-
-      // Update runtime pattern
-      Object.assign(pattern, updates);
-
-      // Update state
-      const updatedState = {
-        ...pattern.state,
-        ...updates,
-        tracks: pattern.state.tracks, // Preserve tracks
-      };
-      pattern.state = updatedState;
-
-      this.updateState({
-        patterns: this.state.patterns.map((p) =>
-          p.id === id ? updatedState : p,
-        ),
-      });
-
-      // Update part if it exists and relevant properties changed
-      if (pattern.part) {
-        if ("isLoop" in updates) {
-          pattern.part.loop = updates.isLoop ?? pattern.part.loop;
-        }
-        if ("loopStart" in updates) {
-          pattern.part.loopStart = updates.loopStart ?? pattern.part.loopStart;
-        }
-        if ("loopEnd" in updates) {
-          pattern.part.loopEnd = updates.loopEnd ?? pattern.part.loopEnd;
-        }
-      }
-    },
-
-    setLoop: (id: string, isLoop: boolean, start?: Time, end?: Time): void => {
-      const pattern = this.patterns.get(id);
-      if (!pattern) return;
-
-      // Update state
-      pattern.state = {
-        ...pattern.state,
-        isLoop,
-        loopStart: start,
-        loopEnd: end,
-      };
-
-      // Update part if it exists
-      if (pattern.part) {
-        pattern.part.loop = isLoop;
-        if (isLoop && start !== undefined) {
-          pattern.part.loopStart = start;
-        }
-        if (isLoop && end !== undefined) {
-          pattern.part.loopEnd = end;
-        }
-      }
-
-      this.updateState({
-        patterns: this.state.patterns.map((p) =>
-          p.id === id ? pattern.state : p,
-        ),
-      });
-    },
-
-    setColor: (id: string, color: string): void => {
-      const pattern = this.patterns.get(id);
-      if (!pattern) return;
-
-      // Update state
-      pattern.state = {
-        ...pattern.state,
-        color,
-      };
-
-      this.updateState({
-        patterns: this.state.patterns.map((p) =>
-          p.id === id ? pattern.state : p,
-        ),
-      });
-    },
-
-    setDefaultLoopLength: (id: string, length: Time): void => {
-      const pattern = this.patterns.get(id);
-      if (!pattern) return;
-
-      // Validate length
-      const lengthInSeconds = Tone.Time(length).toSeconds();
-      if (lengthInSeconds <= 0) {
-        throw new Error("Loop length must be greater than 0");
-      }
-
-      // Update state
-      pattern.state = {
-        ...pattern.state,
-        defaultLoopLength: length,
-      };
-
-      this.updateState({
-        patterns: this.state.patterns.map((p) =>
-          p.id === id ? pattern.state : p,
-        ),
-      });
-    },
   };
-
-  private startPatternPlayback(): void {
-    if (!this.currentPattern) return;
-
-    this.currentPattern.tracks.forEach((track) => {
-      if (track.type === "instrument" && track.instrument) {
-        // Create Tone.Part for instrument track
-        const part = new Tone.Part((time, event: SequenceEvent) => {
-          if (track.muted || (!track.soloed && this.hasSoloedTracks())) return;
-
-          if (this.isNoteSequenceEvent(event)) {
-            track.instrument?.triggerAttackRelease(
-              event.note,
-              event.duration ?? "8n",
-              time,
-              event.velocity ?? 1,
-            );
-          }
-        }, track.events);
-
-        part.loop = transportManager.getState().isLooping;
-        part.loopStart = transportManager.getState().loopStart;
-        part.loopEnd = transportManager.getState().loopEnd;
-        part.start(0);
-      } else if (track.type === "audio" && track.player) {
-        // Create Tone.Part for audio track
-        const part = new Tone.Part<SequenceEvent>((time, event) => {
-          if (track.muted || (!track.soloed && this.hasSoloedTracks())) return;
-
-          if (this.isAudioSequenceEvent(event)) {
-            track.player?.start(time, event.offset ?? 0, event.duration);
-          }
-        }, track.events);
-
-        part.loop = transportManager.getState().isLooping;
-        part.loopStart = transportManager.getState().loopStart;
-        part.loopEnd = transportManager.getState().loopEnd;
-        part.start(0);
-      }
-    });
-  }
-
-  private stopPatternPlayback(): void {
-    Tone.getTransport().cancel();
-    this.activeEvents.clear();
-  }
-
-  private hasSoloedTracks(): boolean {
-    return this.currentPattern?.tracks.some((t) => t.soloed) ?? false;
-  }
-
-  private isNoteSequenceEvent(
-    event: SequenceEvent,
-  ): event is NoteSequenceEvent {
-    return event.type === "note";
-  }
-
-  private isAudioSequenceEvent(
-    event: SequenceEvent,
-  ): event is AudioSequenceEvent {
-    return event.type === "audio";
-  }
-
-  private createTrackInstrument(
+  private createInstrument(
     type: InstrumentName,
     options?: InstrumentOptions,
   ): InstrumentType {
     switch (type) {
       case InstrumentName.AMSynth:
         return new Tone.AMSynth(options);
+      case InstrumentName.DuoSynth:
+        return new Tone.DuoSynth(options);
       case InstrumentName.FMSynth:
         return new Tone.FMSynth(options);
       case InstrumentName.MembraneSynth:
@@ -520,73 +462,199 @@ export class PatternManager extends BaseManager<PatternState> {
         return new Tone.MonoSynth(options);
       case InstrumentName.NoiseSynth:
         return new Tone.NoiseSynth(options);
+      case InstrumentName.Sampler:
+        return new Tone.Sampler(options);
       default:
         return new Tone.Synth(options);
     }
   }
 
-  private createRuntimePattern(patternData: PatternData): Pattern {
+  private isInstrumentTrack(track: PatternTrack): track is InstrumentTrack {
+    return track.type === "instrument";
+  }
+
+  private isAudioTrack(track: PatternTrack): track is AudioTrack {
+    return track.type === "audio";
+  }
+
+  private serializeTrack(track: PatternTrack): SerializableTrack {
+    const baseTrack = {
+      id: track.id,
+      name: track.name,
+      type: track.type,
+      mixerChannelId: track.mixerChannelId,
+      mute: track.mute,
+      solo: track.solo,
+      volume: track.volume,
+      pan: track.pan,
+      events: track.events,
+      parameters: track.parameters,
+    };
+
+    if (this.isInstrumentTrack(track)) {
+      return {
+        ...baseTrack,
+        type: "instrument" as const,
+        instrumentType: track.instrumentType,
+        instrumentOptions: track.instrumentOptions,
+      };
+    } else {
+      return {
+        ...baseTrack,
+        type: "audio" as const,
+      };
+    }
+  }
+
+  private disposePattern(patternId: string): void {
+    const pattern = this.patterns.get(patternId);
+    if (!pattern) return;
+
+    // Cleanup tracks
+    pattern.tracks.forEach((track) => {
+      if (this.isInstrumentTrack(track)) {
+        track.instrument.dispose();
+      } else {
+        track.player.dispose();
+      }
+
+      Object.values(track.signals).forEach((signal) => signal.dispose());
+      track.channel.dispose();
+
+      // Remove from mixer
+      mixerManager.actions.removeChannel(track.mixerChannelId);
+    });
+
+    // Cleanup pattern part
+    pattern.part?.dispose();
+  }
+
+  private startPatternPlayback(): void {
+    if (!this.currentPattern) return;
+
+    this.stopPatternPlayback();
+
+    const pattern = this.currentPattern;
+    pattern.part = new Tone.Part((time, event: SequenceEvent) => {
+      const track = pattern.tracks.find((t) =>
+        t.events.some((e) => e.id === event.id),
+      );
+
+      if (!track) return;
+      if (track.mute || (!track.solo && this.hasSoloedTracks(pattern))) return;
+
+      if (event.type === "note" && this.isInstrumentTrack(track)) {
+        track.instrument.triggerAttackRelease(
+          event.note,
+          event.duration ?? "8n",
+          time,
+          event.velocity ?? 1,
+        );
+      } else if (event.type === "audio" && this.isAudioTrack(track)) {
+        track.player.start(time, event.offset ?? 0, event.duration);
+      }
+    }, this.flattenPatternEvents(pattern));
+
+    const transportState = transportManager.getState();
+    pattern.part.loop = transportState.isLooping;
+    pattern.part.loopStart = transportState.loopStart;
+    pattern.part.loopEnd = transportState.loopEnd;
+    pattern.part.start(0);
+  }
+
+  private stopPatternPlayback(): void {
+    if (this.currentPattern?.part) {
+      this.currentPattern.part.dispose();
+      this.currentPattern.part = undefined;
+    }
+    this.activeEvents.clear();
+  }
+
+  private flattenPatternEvents(pattern: Pattern): SequenceEvent[] {
+    return pattern.tracks.flatMap((track) => track.events);
+  }
+
+  private hasSoloedTracks(pattern: Pattern): boolean {
+    return pattern.tracks.some((t) => t.solo);
+  }
+
+  public dispose(): void {
+    this.stopPatternPlayback();
+
+    // Cleanup all patterns
+    this.patterns.forEach((pattern) => {
+      this.disposePattern(pattern.id);
+    });
+
+    this.patterns.clear();
+    this.currentPattern = null;
+    this.state.patterns = [];
+    this.state.currentPatternId = null;
+  }
+
+  // Serialization methods for persistence
+  public toJSON(): PatternsState {
     return {
-      id: patternData.id,
-      tracks: [],
-      state: patternData,
+      patterns: this.state.patterns.map((pattern) => {
+        const patternState: PatternState = {
+          id: pattern.id,
+          name: pattern.name,
+          startTime: pattern.startTime,
+          duration: pattern.duration,
+          timeSignature: pattern.timeSignature,
+          tracks: pattern.tracks, // already SerializableTrack[]
+        };
+        return patternState;
+      }),
+      currentPatternId: this.state.currentPatternId,
     };
   }
 
-  public toJSON(): PatternState {
-    return {
-      ...this.state,
-      patterns: this.state.patterns.map((pattern) => ({
-        ...pattern,
-        color: pattern.color,
-        defaultLoopLength: pattern.defaultLoopLength,
-        isLoop: pattern.isLoop,
-        loopStart: pattern.loopStart,
-        loopEnd: pattern.loopEnd,
-      })),
-    };
-  }
-
-  public fromJSON(state: PatternState): void {
-    // Clean up existing patterns
-    this.actions.dispose();
+  public fromJSON(state: PatternsState): void {
+    // Cleanup existing patterns
+    this.dispose();
 
     // Recreate patterns from state
-    state.patterns.forEach((patternData) => {
-      const pattern: Pattern = {
-        ...patternData,
-        tracks: [],
-        state: patternData,
-      };
+    state.patterns.forEach((patternState) => {
+      const id = this.actions.createPattern(
+        patternState.name,
+        patternState.timeSignature,
+      );
+
+      const pattern = this.patterns.get(id)!;
+      pattern.startTime = patternState.startTime;
+      pattern.duration = patternState.duration;
 
       // Recreate tracks
-      patternData.tracks.forEach((trackState) => {
-        const track: PatternTrack = {
-          ...trackState,
-          channel: mixerManager.actions.getInputNode(
-            trackState.mixerChannelId,
-          ) as Tone.Channel,
-          parameters: {},
-          state: trackState,
-        };
-
-        if (track.type === "instrument" && trackState.instrumentType) {
-          track.instrument = this.createTrackInstrument(
+      patternState.tracks.forEach((trackState) => {
+        if (trackState.type === "instrument") {
+          this.actions.createInstrumentTrack(
+            id,
+            trackState.name,
             trackState.instrumentType,
             trackState.instrumentOptions,
           );
-          track.instrument.connect(track.channel);
+        } else {
+          this.actions.createAudioTrack(id, trackState.name);
         }
 
-        pattern.tracks.push(track);
-      });
+        // Restore track state
+        this.actions.updatePatternTrack(id, trackState.id, trackState);
 
-      this.patterns.set(pattern.id, pattern);
+        // Restore events
+        trackState.events.forEach((event) => {
+          if (event.type === "note") {
+            this.actions.addNoteEvent(id, trackState.id, event);
+          } else {
+            this.actions.addAudioEvent(id, trackState.id, event);
+          }
+        });
+      });
     });
 
-    this.state = state;
-    this.currentPattern = state.currentPatternId
-      ? (this.patterns.get(state.currentPatternId) ?? null)
-      : null;
+    // Restore current pattern
+    if (state.currentPatternId) {
+      this.actions.setCurrentPattern(state.currentPatternId);
+    }
   }
 }

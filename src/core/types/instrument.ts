@@ -13,7 +13,6 @@ export type InstrumentType =
   | Tone.MetalSynth
   | Tone.MonoSynth
   | Tone.NoiseSynth
-  | Tone.PluckSynth
   | Tone.Sampler
   | Tone.Synth;
 
@@ -25,7 +24,6 @@ export type InstrumentOptions =
   | Tone.MetalSynthOptions
   | Tone.MonoSynthOptions
   | Tone.NoiseSynthOptions
-  | Tone.PluckSynthOptions
   | Tone.SamplerOptions
   | Tone.SynthOptions;
 
@@ -53,9 +51,6 @@ export enum InstrumentName {
 
   /** A synthesizer that generates noise-based sounds. */
   NoiseSynth = "NoiseSynth",
-
-  /** A synthesizer that generates plucked string sounds. */
-  PluckSynth = "PluckSynth",
 
   /** A sampler instrument. */
   Sampler = "Sampler",
