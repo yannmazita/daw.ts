@@ -9,6 +9,7 @@ import {
 import { Pattern } from "@/core/interfaces/pattern/index";
 import { playlistManager } from "@/features/playlists/services/playlistManagerInstance";
 import { Time } from "tone/build/esm/core/type/Units";
+import { ClipState } from "@/core/types/common";
 
 export interface PlaylistSlice extends PlaylistState, PlaylistActions {}
 
@@ -137,6 +138,48 @@ export const createPlaylistSlice: StateCreator<
       } catch (error) {
         console.error("Error getting patterns between times:", error);
         return [];
+      }
+    },
+
+    getClipState: (trackId: string, slotIndex: number): ClipState => {
+      try {
+        return playlistManager.actions.getClipState(trackId, slotIndex);
+      } catch (error) {
+        console.error("Error getting clip state:", error);
+        return ClipState.EMPTY;
+      }
+    },
+
+    setClipState: (
+      trackId: string,
+      slotIndex: number,
+      state: ClipState,
+    ): void => {
+      try {
+        playlistManager.actions.setClipState(trackId, slotIndex, state);
+      } catch (error) {
+        console.error("Error setting clip state:", error);
+        throw error;
+      }
+    },
+
+    clearClipState: (trackId: string, slotIndex: number): void => {
+      try {
+        playlistManager.actions.clearClipState(trackId, slotIndex);
+      } catch (error) {
+        console.error("Error clearing clip state:", error);
+        throw error;
+      }
+    },
+
+    getPatternAtSlot: (
+      trackId: string,
+      slotIndex: number,
+    ): Pattern | undefined => {
+      try {
+        return playlistManager.actions.getPatternAtSlot(trackId, slotIndex);
+      } catch (error) {
+        console.error("Error getting pattern at slot:", error);
       }
     },
 

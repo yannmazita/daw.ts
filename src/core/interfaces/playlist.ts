@@ -36,7 +36,7 @@ export interface PlaylistActions {
   addPlaylistPattern(
     trackId: string,
     patternId: string,
-    startTime: Time,
+    startTime: string,
   ): string;
   removePlaylistPattern(trackId: string, patternId: string): void;
   movePattern(trackId: string, patternId: string, startTime: Time): void;
