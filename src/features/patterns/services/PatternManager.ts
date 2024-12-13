@@ -28,6 +28,7 @@ export class PatternManager extends BaseManager<PatternsState> {
   private readonly patterns: Map<string, Pattern>;
   private currentPattern: Pattern | null;
   private activeEvents: Set<number>;
+  private scenePatterns = new Map<string, Set<string>>();
 
   constructor() {
     super({
@@ -455,6 +456,81 @@ export class PatternManager extends BaseManager<PatternsState> {
 
     getPatterns: (): Pattern[] => {
       return Array.from(this.patterns.values());
+    },
+
+    assignToScene: (
+      patternId: string,
+      sceneId: string,
+      trackId: string,
+      clipSlot: number,
+    ): void => {
+      const pattern = this.patterns.get(patternId);
+      if (!pattern) return;
+
+      // Remove from previous scene if exists
+      if (pattern.sceneAssociation) {
+        this.actions.removeFromScene(patternId);
+      }
+
+      // Update pattern
+      pattern.sceneAssociation = {
+        sceneId,
+        trackId,
+        clipSlot,
+      };
+
+      // Update scene patterns map
+      if (!this.scenePatterns.has(sceneId)) {
+        this.scenePatterns.set(sceneId, new Set());
+      }
+      this.scenePatterns.get(sceneId)!.add(patternId);
+
+      // Update state
+      this.updateState({
+        patterns: this.state.patterns.map((p) =>
+          p.id === patternId
+            ? {
+                ...p,
+                sceneAssociation: pattern.sceneAssociation,
+              }
+            : p,
+        ),
+      });
+    },
+
+    removeFromScene: (patternId: string): void => {
+      const pattern = this.patterns.get(patternId);
+      if (!pattern?.sceneAssociation) return;
+
+      const { sceneId } = pattern.sceneAssociation;
+
+      // Remove from scene patterns map
+      this.scenePatterns.get(sceneId)?.delete(patternId);
+      if (this.scenePatterns.get(sceneId)?.size === 0) {
+        this.scenePatterns.delete(sceneId);
+      }
+
+      // Update pattern
+      pattern.sceneAssociation = undefined;
+
+      // Update state
+      this.updateState({
+        patterns: this.state.patterns.map((p) =>
+          p.id === patternId
+            ? {
+                ...p,
+                sceneAssociation: undefined,
+              }
+            : p,
+        ),
+      });
+    },
+
+    getPatternsInScene: (sceneId: string): Pattern[] => {
+      const patternIds = this.scenePatterns.get(sceneId) ?? new Set();
+      return Array.from(patternIds)
+        .map((id) => this.patterns.get(id))
+        .filter((pattern): pattern is Pattern => pattern !== undefined);
     },
   };
   private createInstrument(

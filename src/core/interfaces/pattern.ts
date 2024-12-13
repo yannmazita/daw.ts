@@ -7,7 +7,7 @@ import {
   TimelineObject,
   Disposable,
 } from "../interfaces/base";
-import { Note } from "../types/common";
+import { FollowAction, LaunchQuantization, Note } from "../types/common";
 import {
   InstrumentName,
   InstrumentOptions,
@@ -60,11 +60,20 @@ export interface AudioTrack extends BaseTrack {
 
 export type PatternTrack = InstrumentTrack | AudioTrack;
 
+export interface PatternSceneAssociation {
+  sceneId: string;
+  trackId: string;
+  clipSlot: number;
+}
+
 // Pattern interfaces
 export interface Pattern extends Identifiable, TimelineObject, Disposable {
   tracks: PatternTrack[];
   timeSignature: [number, number];
   part?: Tone.Part<SequenceEvent>;
+  sceneAssociation?: PatternSceneAssociation;
+  followAction?: FollowActionConfig;
+  quantization?: LaunchQuantization;
 }
 
 // Serializable state types
@@ -139,6 +148,13 @@ export interface EventActions {
   ): void;
 }
 
+export interface FollowActionConfig {
+  action: FollowAction;
+  targetId?: string;
+  chance: number;
+  time: Time;
+}
+
 export interface PatternActions extends TrackActions, EventActions {
   createPattern(name: string, timeSignature: [number, number]): string;
   deletePattern(id: string): void;
@@ -148,6 +164,14 @@ export interface PatternActions extends TrackActions, EventActions {
     updates: Partial<Omit<Pattern, "tracks" | "part">>,
   ): void;
   setCurrentPattern(id: string | null): void;
+  assignToScene(
+    patternId: string,
+    sceneId: string,
+    trackId: string,
+    clipSlot: number,
+  ): void;
+  removeFromScene(patternId: string): void;
+  getPatternsInScene(sceneId: string): Pattern[];
 
   // Utility methods
   getPattern(id: string): Pattern | undefined;
