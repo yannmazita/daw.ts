@@ -13,22 +13,24 @@ import { transportManager } from "@/common/services/transportManagerInstance";
 import { patternManager } from "@/features/patterns/services/patternManagerInstance";
 import { PlaybackMode } from "@/core/types/common";
 import { Time } from "tone/build/esm/core/type/Units";
+import { BaseManager } from "@/common/services/BaseManager";
 
-export class PlaylistManager implements Playlist {
-  public readonly state: PlaylistState;
+export class PlaylistManager
+  extends BaseManager<PlaylistState>
+  implements Playlist
+{
   private readonly scheduledEvents: Set<number>;
   private readonly patternParts: Map<string, Tone.Part>;
 
   constructor() {
-    this.state = {
+    super({
       tracks: [],
       length: "0",
-    };
+    });
 
     this.scheduledEvents = new Set();
     this.patternParts = new Map();
 
-    // Register playlist mode handler
     transportManager.registerModeHandler(
       PlaybackMode.PLAYLIST,
       () => this.startPlaylistPlayback(),
@@ -71,7 +73,7 @@ export class PlaylistManager implements Playlist {
 
   private updateLength(): void {
     if (this.state.tracks.length === 0) {
-      this.state.length = "0";
+      this.updateState({ length: "0" });
       return;
     }
 
@@ -85,13 +87,13 @@ export class PlaylistManager implements Playlist {
       ),
     );
 
-    this.state.length = Tone.Time(lastEnd).toBarsBeatsSixteenths();
+    this.updateState({ length: Tone.Time(lastEnd).toBarsBeatsSixteenths() });
   }
 
   public readonly actions: PlaylistActions = {
     createPlaylistTrack: (name: string): string => {
       const track = this.createTrack(name);
-      this.state.tracks.push(track);
+      this.updateState({ tracks: [...this.state.tracks, track] });
       return track.id;
     },
 
@@ -99,7 +101,6 @@ export class PlaylistManager implements Playlist {
       const track = this.state.tracks.find((t) => t.id === trackId);
       if (!track) return;
 
-      // Cleanup pattern parts for this track
       track.patterns.forEach((placement) => {
         const part = this.patternParts.get(placement.patternId);
         if (part) {
@@ -108,7 +109,9 @@ export class PlaylistManager implements Playlist {
         }
       });
 
-      this.state.tracks = this.state.tracks.filter((t) => t.id !== trackId);
+      this.updateState({
+        tracks: this.state.tracks.filter((t) => t.id !== trackId),
+      });
       this.updateLength();
     },
 
@@ -116,12 +119,12 @@ export class PlaylistManager implements Playlist {
       trackId: string,
       updates: Partial<PlaylistTrack>,
     ): void => {
-      const track = this.state.tracks.find((t) => t.id === trackId);
-      if (!track) return;
+      const updatedTracks = this.state.tracks.map((t) =>
+        t.id === trackId ? { ...t, ...updates } : t,
+      );
 
-      Object.assign(track, updates);
+      this.updateState({ tracks: updatedTracks });
 
-      // Update playback state if needed
       if ("mute" in updates || "solo" in updates) {
         this.updatePlaybackState();
       }
@@ -132,7 +135,7 @@ export class PlaylistManager implements Playlist {
         .map((id) => this.state.tracks.find((t) => t.id === id))
         .filter((track): track is PlaylistTrack => track !== undefined);
 
-      this.state.tracks = orderedTracks;
+      this.updateState({ tracks: orderedTracks });
     },
 
     addPlaylistPattern: (
@@ -156,10 +159,13 @@ export class PlaylistManager implements Playlist {
         duration: pattern.duration,
       };
 
-      track.patterns.push(placement);
+      const updatedTracks = this.state.tracks.map((t) =>
+        t.id === trackId ? { ...t, patterns: [...t.patterns, placement] } : t,
+      );
+
+      this.updateState({ tracks: updatedTracks });
       this.updateLength();
 
-      // Schedule if playing
       if (transportManager.getState().isPlaying) {
         this.schedulePattern(track, placement);
       }
@@ -171,14 +177,22 @@ export class PlaylistManager implements Playlist {
       const track = this.state.tracks.find((t) => t.id === trackId);
       if (!track) return;
 
-      // Cleanup pattern part
       const part = this.patternParts.get(patternId);
       if (part) {
         part.dispose();
         this.patternParts.delete(patternId);
       }
 
-      track.patterns = track.patterns.filter((p) => p.patternId !== patternId);
+      const updatedTracks = this.state.tracks.map((t) =>
+        t.id === trackId
+          ? {
+              ...t,
+              patterns: t.patterns.filter((p) => p.patternId !== patternId),
+            }
+          : t,
+      );
+
+      this.updateState({ tracks: updatedTracks });
       this.updateLength();
     },
 
@@ -204,10 +218,20 @@ export class PlaylistManager implements Playlist {
         throw new Error("Pattern placement overlaps with existing patterns");
       }
 
-      placement.startTime = startTime;
+      const updatedTracks = this.state.tracks.map((t) =>
+        t.id === trackId
+          ? {
+              ...t,
+              patterns: t.patterns.map((p) =>
+                p.patternId === patternId ? { ...p, startTime } : p,
+              ),
+            }
+          : t,
+      );
+
+      this.updateState({ tracks: updatedTracks });
       this.updateLength();
 
-      // Reschedule if playing
       if (transportManager.getState().isPlaying) {
         const part = this.patternParts.get(patternId);
         if (part) {
@@ -219,18 +243,20 @@ export class PlaylistManager implements Playlist {
     },
 
     setTrackMute: (trackId: string, muted: boolean): void => {
-      const track = this.state.tracks.find((t) => t.id === trackId);
-      if (!track) return;
+      const updatedTracks = this.state.tracks.map((t) =>
+        t.id === trackId ? { ...t, mute: muted } : t,
+      );
 
-      track.mute = muted;
+      this.updateState({ tracks: updatedTracks });
       this.updatePlaybackState();
     },
 
     setTrackSolo: (trackId: string, soloed: boolean): void => {
-      const track = this.state.tracks.find((t) => t.id === trackId);
-      if (!track) return;
+      const updatedTracks = this.state.tracks.map((t) =>
+        t.id === trackId ? { ...t, solo: soloed } : t,
+      );
 
-      track.solo = soloed;
+      this.updateState({ tracks: updatedTracks });
       this.updatePlaybackState();
     },
 
@@ -300,7 +326,6 @@ export class PlaylistManager implements Playlist {
       (time, event) => {
         if (track.mute || (!track.solo && this.hasSoloedTracks())) return;
 
-        // Delegate event handling to pattern manager
         pattern.part?.callback(time, event);
       },
       pattern.tracks.flatMap((t) => t.events),
@@ -334,7 +359,6 @@ export class PlaylistManager implements Playlist {
 
   public dispose(): void {
     this.stopPlaylistPlayback();
-    this.state.tracks = [];
-    this.state.length = "0";
+    this.updateState({ tracks: [], length: "0" });
   }
 }

@@ -22,16 +22,11 @@ import { transportManager } from "../services/transportManagerInstance";
 import { patternManager } from "@/features/patterns/services/patternManagerInstance";
 import { playlistManager } from "@/features/playlists/services/playlistManagerInstance";
 import { mixerManager } from "@/features/mixer/services/mixerManagerInstance";
-import {
-  createSessionSlice,
-  SessionSlice,
-} from "@/features/session/slices/useSessionSlice";
 
 export type StoreState = TransportSlice &
   PatternSlice &
   PlaylistSlice &
-  MixerSlice &
-  SessionSlice;
+  MixerSlice;
 
 export const useStore = create<StoreState>()(
   devtools(
@@ -41,20 +36,23 @@ export const useStore = create<StoreState>()(
         ...createPatternSlice(...a),
         ...createPlaylistSlice(...a),
         ...createMixerSlice(...a),
-        ...createSessionSlice(...a),
       }),
       {
         name: "daw-storage",
         partialize: (state) => ({
+          // Pattern state
           patterns: state.patterns,
+          currentPatternId: state.currentPatternId,
+
+          // Mixer state
           mixer: {
             channels: state.channels,
             master: state.master,
           },
-          session: {
-            sessionTracks: state.sessionTracks,
-            scenes: state.scenes,
-          },
+
+          // Playlist state
+          tracks: state.tracks,
+          length: state.length,
         }),
       },
     ),
@@ -83,7 +81,7 @@ export const createSyncMiddleware = (store: typeof useStore) => {
     const unsubscribePlaylist = playlistManager.onStateUpdate((state) => {
       store.setState((prev) => ({
         ...prev,
-        playlistTracks: state.playlistTracks,
+        tracks: state.tracks, // Updated to match new interface
         length: state.length,
       }));
     });
