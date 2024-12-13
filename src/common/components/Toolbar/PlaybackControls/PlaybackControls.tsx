@@ -39,7 +39,7 @@ export const PlaybackControls: React.FC = () => {
   }, [bpm]);
 
   return (
-    <div className="flex flex-col space-y-2 rounded-lg border border-border bg-card p-4 text-card-foreground dark:border-border dark:bg-card dark:text-card-foreground">
+    <div className="flex flex-col space-y-2 rounded-lg bg-card p-4 text-card-foreground dark:bg-card dark:text-card-foreground">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
           {/* Mode Selection */}

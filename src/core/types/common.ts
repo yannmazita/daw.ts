@@ -3,6 +3,11 @@
 export type Note = string; // e.g., "C4", "A#3"
 export type Tick = number;
 
+export enum ViewType {
+  ARRANGEMENT = "arrangement",
+  SESSION = "session",
+}
+
 export enum PlaybackMode {
   PATTERN = "pattern",
   PLAYLIST = "playlist",
