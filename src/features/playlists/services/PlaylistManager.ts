@@ -11,7 +11,7 @@ import {
 import { Pattern } from "@/core/interfaces/pattern/index";
 import { transportManager } from "@/common/services/transportManagerInstance";
 import { patternManager } from "@/features/patterns/services/patternManagerInstance";
-import { PlaybackMode } from "@/core/types/common";
+import { ClipState, PlaybackMode } from "@/core/types/common";
 import { Time } from "tone/build/esm/core/type/Units";
 import { BaseManager } from "@/common/services/BaseManager";
 
@@ -21,15 +21,18 @@ export class PlaylistManager
 {
   private readonly scheduledEvents: Set<number>;
   private readonly patternParts: Map<string, Tone.Part>;
+  private readonly clipStateChangeCallbacks: Set<() => void>;
 
   constructor() {
     super({
       tracks: [],
       length: "0",
+      clipStates: {},
     });
 
     this.scheduledEvents = new Set();
     this.patternParts = new Map();
+    this.clipStateChangeCallbacks = new Set();
 
     transportManager.registerModeHandler(
       PlaybackMode.PLAYLIST,
@@ -88,6 +91,26 @@ export class PlaylistManager
     );
 
     this.updateState({ length: Tone.Time(lastEnd).toBarsBeatsSixteenths() });
+  }
+
+  private handleTransportStop(): void {
+    // Reset playing clips to stopped state
+    Object.entries(this.state.clipStates).forEach(([trackId, trackStates]) => {
+      Object.entries(trackStates).forEach(([slotIndex, state]) => {
+        if (state === ClipState.PLAYING || state === ClipState.QUEUED) {
+          this.actions.setClipState(
+            trackId,
+            parseInt(slotIndex),
+            ClipState.STOPPED,
+          );
+        }
+      });
+    });
+  }
+
+  private getInitialClipState(trackId: string, slotIndex: number): ClipState {
+    const pattern = this.actions.getPatternAtSlot(trackId, slotIndex);
+    return pattern ? ClipState.STOPPED : ClipState.EMPTY;
   }
 
   public readonly actions: PlaylistActions = {
@@ -149,26 +172,26 @@ export class PlaylistManager
       const pattern = patternManager.actions.getPattern(patternId);
       if (!pattern) throw new Error("Pattern not found");
 
-      if (!this.validatePatternPlacement(track, startTime, pattern.duration)) {
-        throw new Error("Pattern placement overlaps with existing patterns");
-      }
+      const slotIndex = parseInt(Tone.Time(startTime).toSeconds().toString());
 
+      // Create pattern placement
       const placement: PatternPlacement = {
         patternId,
         startTime,
         duration: pattern.duration,
+        slotIndex,
       };
 
+      // Update track patterns
       const updatedTracks = this.state.tracks.map((t) =>
         t.id === trackId ? { ...t, patterns: [...t.patterns, placement] } : t,
       );
 
+      // Initialize clip state
+      this.actions.setClipState(trackId, slotIndex, ClipState.STOPPED);
+
       this.updateState({ tracks: updatedTracks });
       this.updateLength();
-
-      if (transportManager.getState().isPlaying) {
-        this.schedulePattern(track, placement);
-      }
 
       return patternId;
     },
@@ -177,12 +200,14 @@ export class PlaylistManager
       const track = this.state.tracks.find((t) => t.id === trackId);
       if (!track) return;
 
-      const part = this.patternParts.get(patternId);
-      if (part) {
-        part.dispose();
-        this.patternParts.delete(patternId);
-      }
+      // Find the placement to get the slot index
+      const placement = track.patterns.find((p) => p.patternId === patternId);
+      if (!placement) return;
 
+      // Clean up clip state
+      this.actions.clearClipState(trackId, placement.slotIndex);
+
+      // Remove pattern
       const updatedTracks = this.state.tracks.map((t) =>
         t.id === trackId
           ? {
@@ -260,6 +285,56 @@ export class PlaylistManager
       this.updatePlaybackState();
     },
 
+    getClipState: (trackId: string, slotIndex: number): ClipState => {
+      return (
+        this.state.clipStates[trackId]?.[slotIndex] ??
+        this.getInitialClipState(trackId, slotIndex)
+      );
+    },
+
+    setClipState: (
+      trackId: string,
+      slotIndex: number,
+      state: ClipState,
+    ): void => {
+      const newClipStates = {
+        ...this.state.clipStates,
+        [trackId]: {
+          ...this.state.clipStates[trackId],
+          [slotIndex]: state,
+        },
+      };
+
+      this.updateState({ clipStates: newClipStates });
+    },
+
+    clearClipState: (trackId: string, slotIndex: number): void => {
+      if (!this.state.clipStates[trackId]) return;
+
+      const trackStates = { ...this.state.clipStates[trackId] };
+      delete trackStates[slotIndex];
+
+      const newClipStates = {
+        ...this.state.clipStates,
+        [trackId]: trackStates,
+      };
+
+      this.updateState({ clipStates: newClipStates });
+    },
+
+    getPatternAtSlot: (
+      trackId: string,
+      slotIndex: number,
+    ): Pattern | undefined => {
+      const track = this.state.tracks.find((t) => t.id === trackId);
+      if (!track) return undefined;
+
+      const placement = track.patterns.find((p) => p.slotIndex === slotIndex);
+      if (!placement) return undefined;
+
+      return patternManager.actions.getPattern(placement.patternId);
+    },
+
     getPatternAt: (time: Time): Pattern[] => {
       return this.actions.getPatternsBetween(time, time);
     },
@@ -322,21 +397,28 @@ export class PlaylistManager
     const pattern = patternManager.actions.getPattern(placement.patternId);
     if (!pattern) return;
 
+    // Calculate launch time based on quantization
+    const launchTime = Tone.now(); // We'll add quantization later
+
+    // Schedule the pattern
     const part = new Tone.Part(
       (time, event) => {
         if (track.mute || (!track.solo && this.hasSoloedTracks())) return;
-
         pattern.part?.callback(time, event);
       },
       pattern.tracks.flatMap((t) => t.events),
     );
 
-    part.start(placement.startTime);
+    part.start(launchTime);
     part.stop(
       Tone.Time(placement.startTime).toSeconds() +
         Tone.Time(placement.duration).toSeconds(),
     );
 
+    // Update clip state
+    this.actions.setClipState(track.id, placement.slotIndex, ClipState.PLAYING);
+
+    // Store the part for cleanup
     this.patternParts.set(placement.patternId, part);
   }
 
@@ -359,6 +441,6 @@ export class PlaylistManager
 
   public dispose(): void {
     this.stopPlaylistPlayback();
-    this.updateState({ tracks: [], length: "0" });
+    this.updateState({ tracks: [], length: "0", clipStates: {} });
   }
 }
