@@ -8,7 +8,7 @@ import {
   PatternTrack,
   NoteEvent,
   AudioEvent,
-} from "@/core/interfaces/pattern";
+} from "@/core/interfaces/pattern/index";
 import { InstrumentName, InstrumentOptions } from "@/core/types/instrument";
 import { patternManager } from "@/features/patterns/services/patternManagerInstance";
 
@@ -174,6 +174,35 @@ export const createPatternSlice: StateCreator<
       }
     },
 
+    // Scene Management
+    assignToScene: (
+      patternId: string,
+      sceneId: string,
+      trackId: string,
+      clipSlot: number,
+    ): void => {
+      try {
+        patternManager.actions.assignToScene(
+          patternId,
+          sceneId,
+          trackId,
+          clipSlot,
+        );
+      } catch (error) {
+        console.error("Error assigning pattern to scene:", error);
+        throw error;
+      }
+    },
+
+    removeFromScene: (patternId: string): void => {
+      try {
+        patternManager.actions.removeFromScene(patternId);
+      } catch (error) {
+        console.error("Error removing pattern from scene:", error);
+        throw error;
+      }
+    },
+
     // Pattern Selection
     setCurrentPattern: (id: string | null): void => {
       try {
@@ -208,6 +237,15 @@ export const createPatternSlice: StateCreator<
         return patternManager.actions.getPatterns();
       } catch (error) {
         console.error("Error getting patterns:", error);
+        return [];
+      }
+    },
+
+    getPatternsInScene: (sceneId: string): Pattern[] => {
+      try {
+        return patternManager.actions.getPatternsInScene(sceneId);
+      } catch (error) {
+        console.error("Error getting patterns in scene:", error);
         return [];
       }
     },

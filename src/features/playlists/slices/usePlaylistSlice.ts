@@ -6,7 +6,7 @@ import {
   PlaylistActions,
   PlaylistTrack,
 } from "@/core/interfaces/playlist";
-import { Pattern } from "@/core/interfaces/pattern";
+import { Pattern } from "@/core/interfaces/pattern/index";
 import { playlistManager } from "@/features/playlists/services/playlistManagerInstance";
 import { Time } from "tone/build/esm/core/type/Units";
 

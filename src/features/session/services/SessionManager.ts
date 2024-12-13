@@ -7,7 +7,7 @@ import { transportManager } from "@/common/services/transportManagerInstance";
 import { LaunchQuantization, SceneState } from "@/core/types/common";
 import { Time } from "tone/build/esm/core/type/Units";
 import { patternManager } from "@/features/patterns/services/patternManagerInstance";
-import { Pattern } from "@/core/interfaces/pattern";
+import { Pattern } from "@/core/interfaces/pattern/index";
 
 export class SessionManager extends BaseManager<SessionState> {
   private scheduledScenes: Map<string, number>;

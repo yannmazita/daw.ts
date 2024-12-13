@@ -13,7 +13,7 @@ import {
   SerializableTrack,
   PatternsState,
   PatternState,
-} from "@/core/interfaces/pattern";
+} from "@/core/interfaces/pattern/index";
 import { transportManager } from "@/common/services/transportManagerInstance";
 import { mixerManager } from "@/features/mixer/services/mixerManagerInstance";
 import { PlaybackMode } from "@/core/types/common";

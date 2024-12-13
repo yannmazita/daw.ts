@@ -8,7 +8,7 @@ import {
   PlaylistTrack,
   PatternPlacement,
 } from "@/core/interfaces/playlist";
-import { Pattern } from "@/core/interfaces/pattern";
+import { Pattern } from "@/core/interfaces/pattern/index";
 import { transportManager } from "@/common/services/transportManagerInstance";
 import { patternManager } from "@/features/patterns/services/patternManagerInstance";
 import { PlaybackMode } from "@/core/types/common";
