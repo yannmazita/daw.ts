@@ -11,22 +11,14 @@ import {
   createMixerSlice,
 } from "@/features/mixer/slices/useMixerSlice";
 import {
-  SessionSlice,
-  createSessionSlice,
-} from "@/features/session/slices/useSessionSlice";
-import {
   ArrangementSlice,
   createArrangementSlice,
 } from "@/features/arrangement/slices/useArrangementSlice";
 import { transportManager } from "../services/transportManagerInstance";
 import { mixerManager } from "@/features/mixer/services/mixerManagerInstance";
-import { sessionManager } from "@/features/session/services/SessionManagerInstance";
 import { arrangementCoordinator } from "@/features/arrangement/services/arrangementCoordinatorInstance";
 
-export type StoreState = TransportSlice &
-  MixerSlice &
-  SessionSlice &
-  ArrangementSlice;
+export type StoreState = TransportSlice & MixerSlice & ArrangementSlice;
 
 export const useStore = create<StoreState>()(
   devtools(
@@ -34,7 +26,6 @@ export const useStore = create<StoreState>()(
       (...a) => ({
         ...createTransportSlice(...a),
         ...createMixerSlice(...a),
-        ...createSessionSlice(...a),
         ...createArrangementSlice(...a),
       }),
       {
@@ -45,12 +36,6 @@ export const useStore = create<StoreState>()(
             channels: state.channels,
             master: state.master,
           },
-
-          // Scene state
-          scenes: state.scenes,
-          currentSceneId: state.currentSceneId,
-          globalQuantization: state.globalQuantization,
-          clipQuantization: state.clipQuantization,
 
           // Arrangement state
           viewportStartTime: state.viewportStartTime,
@@ -88,16 +73,6 @@ export const createSyncMiddleware = (store: typeof useStore) => {
       }));
     });
 
-    const unsubscribeSession = sessionManager.onStateUpdate((state) => {
-      store.setState((prev) => ({
-        ...prev,
-        scenes: state.scenes,
-        currentSceneId: state.currentSceneId,
-        globalQuantization: state.globalQuantization,
-        clipQuantization: state.clipQuantization,
-      }));
-    });
-
     const unsubscribeArrangement = arrangementCoordinator.onStateUpdate(
       (state) => {
         store.setState((prev) => ({
@@ -120,7 +95,6 @@ export const createSyncMiddleware = (store: typeof useStore) => {
     return () => {
       unsubscribeTransport();
       unsubscribeMixer();
-      unsubscribeSession();
       unsubscribeArrangement();
     };
   };
