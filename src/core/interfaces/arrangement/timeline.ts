@@ -1,6 +1,6 @@
 // src/core/interfaces/arrangement/timeline.ts
 import { Time } from "tone/build/esm/core/type/Units";
-import { Identifiable } from "../base";
+import { Disposable, Identifiable } from "../base";
 
 export enum TimelineSnapUnit {
   NONE = "none",
