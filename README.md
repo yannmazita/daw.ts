@@ -4,9 +4,7 @@ Work in progress! Very early stage.
 
 Digital Audio Workstation built with [React](https://react.dev/), [tonejs](https://tonejs.github.io/) and [electron](https://www.electronjs.org/)
 
-
 ![image](https://github.com/user-attachments/assets/6f8893a1-06b8-4206-9cbe-9bd51cb9fd74)
-
 
 ## Running
 
@@ -47,18 +45,12 @@ npm run clean
 
 More building commands are defined in `package.json`.
 Currently the electron window needs to have the development server running `@localhost:5173`.
+
 </details>
 
 ## Architecture
 
 Fast moving, these diagrams may get outdated quickly.
-
-<details>
-  <summary>
-    High-level component architecture
-  </summary>
-    <img src="https://raw.githubusercontent.com/yannmazita/daw.ts/refs/heads/main/docs/high-level_component_architecture.png">
-</details>
 
 <details>
   <summary>
@@ -79,13 +71,6 @@ Fast moving, these diagrams may get outdated quickly.
     Pattern system structure
   </summary>
     <img src="https://raw.githubusercontent.com/yannmazita/daw.ts/refs/heads/main/docs/pattern_system_structure.png">
-</details>
-
-<details>
-  <summary>
-    Session view organization
-  </summary>
-    <img src="https://raw.githubusercontent.com/yannmazita/daw.ts/refs/heads/main/docs/session_view_organization.png">
 </details>
 
 <details>
