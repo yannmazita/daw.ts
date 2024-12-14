@@ -93,6 +93,8 @@ export class TransportManager extends BaseManager<TransportState> {
   private updateLength(): void {
     let newLength: Time = "4:0:0"; // Default length
 
+    // circular dependency (PatternManager <-> TransportManager)
+    /*
     switch (this.state.mode) {
       case PlaybackMode.PATTERN: {
         const currentPattern = patternManager.actions.getCurrentPattern();
@@ -138,6 +140,7 @@ export class TransportManager extends BaseManager<TransportState> {
     if (newLength !== this.state.length) {
       this.updateState({ length: newLength });
     }
+      */
   }
 
   public registerModeHandler(
