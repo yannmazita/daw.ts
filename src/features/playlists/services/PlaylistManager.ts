@@ -164,7 +164,7 @@ export class PlaylistManager
     addPlaylistPattern: (
       trackId: string,
       patternId: string,
-      startTime: Time,
+      slotIndex: string,
     ): string => {
       const track = this.state.tracks.find((t) => t.id === trackId);
       if (!track) throw new Error("Track not found");
@@ -172,14 +172,22 @@ export class PlaylistManager
       const pattern = patternManager.actions.getPattern(patternId);
       if (!pattern) throw new Error("Pattern not found");
 
-      const slotIndex = parseInt(Tone.Time(startTime).toSeconds().toString());
+      // Convert slotIndex to number
+      const index = parseInt(slotIndex, 10);
+      if (isNaN(index)) throw new Error("Invalid slot index");
+
+      // Check if slot is already occupied
+      const existingPattern = track.patterns.find((p) => p.slotIndex === index);
+      if (existingPattern) {
+        throw new Error("Slot is already occupied");
+      }
 
       // Create pattern placement
       const placement: PatternPlacement = {
         patternId,
-        startTime,
+        startTime: index.toString(), // Convert index to Time format
         duration: pattern.duration,
-        slotIndex,
+        slotIndex: index,
       };
 
       // Update track patterns
@@ -187,11 +195,12 @@ export class PlaylistManager
         t.id === trackId ? { ...t, patterns: [...t.patterns, placement] } : t,
       );
 
-      // Initialize clip state
-      this.actions.setClipState(trackId, slotIndex, ClipState.STOPPED);
-
       this.updateState({ tracks: updatedTracks });
       this.updateLength();
+
+      if (transportManager.getState().isPlaying) {
+        this.schedulePattern(track, placement);
+      }
 
       return patternId;
     },

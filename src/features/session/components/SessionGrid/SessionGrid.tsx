@@ -2,23 +2,33 @@
 import { useStore } from "@/common/slices/useStore";
 import { SceneList } from "./SceneList/SceneList";
 import { TrackList } from "./TrackList/TrackList";
+import { CreateTrack } from "./TrackList/CreateTrack";
+import { CreateScene } from "./SceneList/CreateScene";
 
 export const SessionGrid: React.FC = () => {
   const scenes = useStore((state) => state.scenes);
   const tracks = useStore((state) => state.tracks);
 
   return (
-    <div className="relative flex h-full overflow-hidden rounded-lg border border-border bg-background">
+    <div className="relative flex h-full overflow-hidden border-b border-border bg-background dark:border-b dark:border-border">
       {/* Scene Launch Column */}
-      <div className="flex w-24 flex-none flex-col border-r border-border">
-        <div className="h-12 border-b border-border bg-muted" />{" "}
-        {/* Header space */}
-        <SceneList scenes={scenes} />
+      <div className="flex w-fit flex-none flex-col border-r border-border">
+        <div className="flex flex-col">
+          <SceneList scenes={scenes} />
+          <div className="w-fit p-2">
+            <CreateScene />
+          </div>
+        </div>
       </div>
 
       {/* Tracks Grid */}
-      <div className="flex-1 overflow-auto">
-        <TrackList tracks={tracks} />
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <div className="flex-1 overflow-auto">
+          <TrackList tracks={tracks} />
+        </div>
+        <div className="w-fit p-2">
+          <CreateTrack />
+        </div>
       </div>
     </div>
   );

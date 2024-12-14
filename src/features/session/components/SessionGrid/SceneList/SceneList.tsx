@@ -1,4 +1,4 @@
-// src/features/session/components/SessionGrid/SceneList/SceneList.tsx
+// src/features/session/components/SceneList/SceneList.tsx
 import { Scene } from "@/core/interfaces/session";
 import { SceneRow } from "./SceneRow";
 
