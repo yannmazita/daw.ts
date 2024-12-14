@@ -26,6 +26,7 @@ import { transportManager } from "../services/transportManagerInstance";
 import { patternManager } from "@/features/patterns/services/patternManagerInstance";
 import { playlistManager } from "@/features/playlists/services/playlistManagerInstance";
 import { mixerManager } from "@/features/mixer/services/mixerManagerInstance";
+import { sessionManager } from "@/features/session/services/SessionManagerInstance";
 
 export type StoreState = TransportSlice &
   PatternSlice &
@@ -106,12 +107,23 @@ export const createSyncMiddleware = (store: typeof useStore) => {
       }));
     });
 
+    const unsubscribeSession = sessionManager.onStateUpdate((state) => {
+      store.setState((prev) => ({
+        ...prev,
+        scenes: state.scenes,
+        currentSceneId: state.currentSceneId,
+        globalQuantization: state.globalQuantization,
+        clipQuantization: state.clipQuantization,
+      }));
+    });
+
     // Return cleanup function
     return () => {
       unsubscribeTransport();
       unsubscribePattern();
       unsubscribePlaylist();
       unsubscribeMixer();
+      unsubscribeSession();
     };
   };
 

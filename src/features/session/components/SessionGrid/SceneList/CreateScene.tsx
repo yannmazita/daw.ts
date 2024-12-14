@@ -22,7 +22,6 @@ export const CreateScene = () => {
     e.preventDefault();
     if (sceneName.trim()) {
       createScene(sceneName);
-      console.log(sceneName);
       setSceneName("");
       setIsOpen(false);
     }
