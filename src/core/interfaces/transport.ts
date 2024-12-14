@@ -15,6 +15,7 @@ export interface TransportState {
   loopStart: Time;
   loopEnd: Time;
   mode: PlaybackMode;
+  length: Time;
 }
 
 export interface TransportActions {

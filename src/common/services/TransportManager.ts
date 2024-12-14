@@ -5,6 +5,8 @@ import { PlaybackMode } from "@/core/types/common";
 import { TransportState, TransportActions } from "@/core/interfaces/transport";
 import { Subdivision, Time } from "tone/build/esm/core/type/Units";
 import { BaseManager } from "./BaseManager";
+import { patternManager } from "@/features/patterns/services/patternManagerInstance";
+import { arrangementCoordinator } from "@/features/arrangement/services/arrangementCoordinatorInstance";
 
 export class TransportManager extends BaseManager<TransportState> {
   private modeHandlers: Map<PlaybackMode, () => void>;
@@ -27,6 +29,7 @@ export class TransportManager extends BaseManager<TransportState> {
       loopStart: "0:0:0",
       loopEnd: "4:0:0",
       mode: PlaybackMode.PATTERN,
+      length: "4:0:0",
     });
 
     // Initialize mode handlers
@@ -85,6 +88,56 @@ export class TransportManager extends BaseManager<TransportState> {
       this.tapTimes = [];
       this.tapResetTimeout = null;
     }, this.TAP_TIMEOUT);
+  }
+
+  private updateLength(): void {
+    let newLength: Time = "4:0:0"; // Default length
+
+    switch (this.state.mode) {
+      case PlaybackMode.PATTERN: {
+        const currentPattern = patternManager.actions.getCurrentPattern();
+        if (currentPattern) {
+          newLength = currentPattern.duration;
+        }
+        break;
+      }
+      case PlaybackMode.ARRANGEMENT: {
+        // Find the latest end time of any timeline item
+        const endTimes: number[] = [];
+
+        // Check patterns
+        arrangementCoordinator.state.patterns.forEach((pattern) => {
+          const endTime =
+            Tone.Time(pattern.startTime).toSeconds() +
+            Tone.Time(pattern.duration).toSeconds();
+          endTimes.push(endTime);
+        });
+
+        // Check automation points
+        Object.values(arrangementCoordinator.state.automationLanes).forEach(
+          (lane) => {
+            lane.points.forEach((point) => {
+              endTimes.push(Tone.Time(point.time).toSeconds());
+            });
+          },
+        );
+
+        // Check markers
+        arrangementCoordinator.state.markers.forEach((marker) => {
+          endTimes.push(Tone.Time(marker.time).toSeconds());
+        });
+
+        if (endTimes.length > 0) {
+          const latestTime = Math.max(...endTimes);
+          newLength = Tone.Time(latestTime).toBarsBeatsSixteenths();
+        }
+        break;
+      }
+    }
+
+    if (newLength !== this.state.length) {
+      this.updateState({ length: newLength });
+    }
   }
 
   public registerModeHandler(
@@ -212,6 +265,7 @@ export class TransportManager extends BaseManager<TransportState> {
 
       // Switch mode
       this.updateState({ mode });
+      this.updateLength();
 
       // Resume playback if it was playing
       if (wasPlaying) {
