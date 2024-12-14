@@ -12,7 +12,7 @@ interface TrackColumnProps {
 export const TrackColumn: React.FC<TrackColumnProps> = ({ track }) => {
   return (
     <TrackContextMenu trackId={track.id}>
-      <div className="flex w-32 flex-none flex-col border-r border-border">
+      <div className="flex w-32 flex-none flex-col border-b border-r border-border dark:border-r dark:border-border">
         <TrackHeader track={track} />
         <div className="flex flex-col">
           {Array.from({ length: 8 }).map((_, index) => (

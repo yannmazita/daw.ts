@@ -15,7 +15,7 @@ export const SessionGrid: React.FC = () => {
       <div className="flex w-fit flex-none flex-col border-r border-border">
         <div className="flex flex-col">
           <SceneList scenes={scenes} />
-          <div className="w-fit p-2">
+          <div className="flex items-center justify-center p-2">
             <CreateScene />
           </div>
         </div>
@@ -25,9 +25,9 @@ export const SessionGrid: React.FC = () => {
       <div className="flex flex-1 flex-col overflow-hidden">
         <div className="flex-1 overflow-auto">
           <TrackList tracks={tracks} />
-        </div>
-        <div className="w-fit p-2">
-          <CreateTrack />
+          <div className="flex w-32 items-center justify-center border-r border-border p-2">
+            <CreateTrack />
+          </div>
         </div>
       </div>
     </div>
