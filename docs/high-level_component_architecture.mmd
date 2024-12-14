@@ -1,0 +1,18 @@
+graph TD
+    A[App] --> B[Transport Manager]
+    A --> C[Pattern Manager]
+    A --> D[Mixer Manager]
+    A --> E[Session Manager]
+    A --> F[Playlist Manager]
+    
+    B --> G[Tone.js Transport]
+    C --> H[Pattern Engine]
+    D --> I[Audio Effects]
+    D --> J[Audio Routing]
+    E --> K[Scene Management]
+    F --> L[Timeline Management]
+    
+    H --> M[MIDI Events]
+    H --> N[Audio Events]
+    I --> O[Audio Processing]
+    J --> P[Audio Output]

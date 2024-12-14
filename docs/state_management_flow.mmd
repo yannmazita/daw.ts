@@ -1,0 +1,9 @@
+graph LR
+    A[User Action] --> B[Zustand Store]
+    B --> C[Manager Layer]
+    C --> D[Audio Engine]
+    D --> E[Audio Output]
+    
+    B --> F[UI Updates]
+    C --> G[State Updates]
+    G --> B

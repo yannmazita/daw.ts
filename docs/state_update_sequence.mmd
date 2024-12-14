@@ -1,0 +1,12 @@
+sequenceDiagram
+    participant U as User
+    participant S as Store
+    participant M as Manager
+    participant A as Audio Engine
+    
+    U->>S: Trigger Action
+    S->>M: Process Action
+    M->>A: Update Audio State
+    A->>M: Confirm Update
+    M->>S: Update UI State
+    S->>U: Reflect Changes
