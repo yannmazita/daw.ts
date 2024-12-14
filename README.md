@@ -22,9 +22,12 @@ npm install
 npm run dev
 ```
 
-The `vite` development server is now accessible @`localhost:5173`.
+The `vite` development server is now accessible `@localhost:5173`.
 
-- Start the `electron` development app with :
+<details>
+  <summary>Electron</summary>
+  
+  - Start the `electron` development app with :
 
 ```commandline
 npm run app:dev
@@ -43,4 +46,51 @@ npm run clean
 ```
 
 More building commands are defined in `package.json`.
-Currently the electron window needs to have the development server running @`localhost:5173`.
+Currently the electron window needs to have the development server running `@localhost:5173`.
+</details>
+
+## Architecture
+
+Fast moving, these diagrams may get outdated quickly.
+
+<details>
+  <summary>
+    High-level component architecture
+  </summary>
+    <img src="https://raw.githubusercontent.com/yannmazita/daw.ts/refs/heads/main/docs/high-level_component_architecture.png">
+</details>
+
+<details>
+  <summary>
+    State management flow
+  </summary>
+    <img src="https://raw.githubusercontent.com/yannmazita/daw.ts/refs/heads/main/docs/state_management_flow.png">
+</details>
+
+<details>
+  <summary>
+    Audio signal flow
+  </summary>
+    <img src="https://raw.githubusercontent.com/yannmazita/daw.ts/refs/heads/main/docs/audio_signal_flow.png">
+</details>
+
+<details>
+  <summary>
+    Pattern system structure
+  </summary>
+    <img src="https://raw.githubusercontent.com/yannmazita/daw.ts/refs/heads/main/docs/pattern_system_structure.png">
+</details>
+
+<details>
+  <summary>
+    Session view organization
+  </summary>
+    <img src="https://raw.githubusercontent.com/yannmazita/daw.ts/refs/heads/main/docs/session_view_organization.png">
+</details>
+
+<details>
+  <summary>
+    State update sequence
+  </summary>
+    <img src="https://raw.githubusercontent.com/yannmazita/daw.ts/refs/heads/main/docs/state_update_sequence.png">
+</details>
