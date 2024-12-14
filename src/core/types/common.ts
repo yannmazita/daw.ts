@@ -12,6 +12,7 @@ export enum PlaybackMode {
   PATTERN = "pattern",
   PLAYLIST = "playlist",
   SESSION = "session",
+  ARRANGEMENT = "arrangement",
 }
 
 export enum SceneState {

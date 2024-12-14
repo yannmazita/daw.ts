@@ -89,8 +89,7 @@ export interface TimelineManagerActions {
   validateTrackOrder(trackIds: string[]): boolean;
 }
 
-export interface TimelineManager {
+export interface TimelineManager extends Disposable {
   state: TimelineManagerState;
   actions: TimelineManagerActions;
-  dispose(): void;
 }

@@ -7,14 +7,6 @@ import {
   createTransportSlice,
 } from "@/common/slices/useTransportSlice";
 import {
-  PatternSlice,
-  createPatternSlice,
-} from "@/features/patterns/slices/usePatternSlice";
-import {
-  PlaylistSlice,
-  createPlaylistSlice,
-} from "@/features/playlists/slices/usePlaylistSlice";
-import {
   MixerSlice,
   createMixerSlice,
 } from "@/features/mixer/slices/useMixerSlice";
@@ -23,50 +15,36 @@ import {
   createSessionSlice,
 } from "@/features/session/slices/useSessionSlice";
 import {
-  MarkerSlice,
-  createMarkerSlice,
-} from "@/features/arrangement/slices/useMarkertSlice";
+  ArrangementSlice,
+  createArrangementSlice,
+} from "@/features/arrangement/slices/useArrangementSlice";
 import { transportManager } from "../services/transportManagerInstance";
-import { patternManager } from "@/features/patterns/services/patternManagerInstance";
-import { playlistManager } from "@/features/playlists/services/playlistManagerInstance";
 import { mixerManager } from "@/features/mixer/services/mixerManagerInstance";
 import { sessionManager } from "@/features/session/services/SessionManagerInstance";
-import { markerManager } from "@/features/arrangement/services/markerManagerInstance";
+import { arrangementCoordinator } from "@/features/arrangement/services/arrangementCoordinatorInstance";
 
 export type StoreState = TransportSlice &
-  PatternSlice &
-  PlaylistSlice &
   MixerSlice &
   SessionSlice &
-  MarkerSlice;
+  ArrangementSlice;
 
 export const useStore = create<StoreState>()(
   devtools(
     persist(
       (...a) => ({
         ...createTransportSlice(...a),
-        ...createPatternSlice(...a),
-        ...createPlaylistSlice(...a),
         ...createMixerSlice(...a),
         ...createSessionSlice(...a),
-        ...createMarkerSlice(...a),
+        ...createArrangementSlice(...a),
       }),
       {
         name: "daw-storage",
         partialize: (state) => ({
-          // Pattern state
-          patterns: state.patterns,
-          currentPatternId: state.currentPatternId,
-
           // Mixer state
           mixer: {
             channels: state.channels,
             master: state.master,
           },
-
-          // Playlist state
-          tracks: state.tracks,
-          length: state.length,
 
           // Scene state
           scenes: state.scenes,
@@ -74,10 +52,17 @@ export const useStore = create<StoreState>()(
           globalQuantization: state.globalQuantization,
           clipQuantization: state.clipQuantization,
 
-          // Marker state
+          // Arrangement state
+          viewportStartTime: state.viewportStartTime,
+          viewportEndTime: state.viewportEndTime,
+          viewportVerticalOffset: state.viewportVerticalOffset,
+          zoom: state.zoom,
+          tracks: state.tracks,
+          patterns: state.patterns,
           markers: state.markers,
           regions: state.regions,
-          activeLoopRegion: state.activeLoopRegion,
+          automationLanes: state.automationLanes,
+          selectedItems: state.selectedItems,
         }),
       },
     ),
@@ -92,22 +77,6 @@ export const createSyncMiddleware = (store: typeof useStore) => {
       store.setState((prev) => ({
         ...prev,
         ...state,
-      }));
-    });
-
-    const unsubscribePattern = patternManager.onStateUpdate((state) => {
-      store.setState((prev) => ({
-        ...prev,
-        patterns: state.patterns,
-        currentPatternId: state.currentPatternId,
-      }));
-    });
-
-    const unsubscribePlaylist = playlistManager.onStateUpdate((state) => {
-      store.setState((prev) => ({
-        ...prev,
-        tracks: state.tracks, // Updated to match new interface
-        length: state.length,
       }));
     });
 
@@ -129,23 +98,30 @@ export const createSyncMiddleware = (store: typeof useStore) => {
       }));
     });
 
-    const unsubscribeMarker = markerManager.onStateUpdate((state) => {
-      store.setState((prev) => ({
-        ...prev,
-        markers: state.markers,
-        regions: state.regions,
-        activeLoopRegion: state.activeLoopRegion,
-      }));
-    });
+    const unsubscribeArrangement = arrangementCoordinator.onStateUpdate(
+      (state) => {
+        store.setState((prev) => ({
+          ...prev,
+          viewportStartTime: state.viewportStartTime,
+          viewportEndTime: state.viewportEndTime,
+          viewportVerticalOffset: state.viewportVerticalOffset,
+          zoom: state.zoom,
+          tracks: state.tracks,
+          patterns: state.patterns,
+          markers: state.markers,
+          regions: state.regions,
+          automationLanes: state.automationLanes,
+          selectedItems: state.selectedItems,
+        }));
+      },
+    );
 
     // Return cleanup function
     return () => {
       unsubscribeTransport();
-      unsubscribePattern();
-      unsubscribePlaylist();
       unsubscribeMixer();
       unsubscribeSession();
-      unsubscribeMarker();
+      unsubscribeArrangement();
     };
   };
 
