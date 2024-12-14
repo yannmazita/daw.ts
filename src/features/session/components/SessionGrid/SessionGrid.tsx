@@ -4,6 +4,7 @@ import { SceneList } from "./SceneList/SceneList";
 import { TrackList } from "./TrackList/TrackList";
 import { CreateTrack } from "./TrackList/CreateTrack";
 import { CreateScene } from "./SceneList/CreateScene";
+import { cn } from "@/common/shadcn/lib/utils";
 
 export const SessionGrid: React.FC = () => {
   const scenes = useStore((state) => state.scenes);
@@ -25,7 +26,14 @@ export const SessionGrid: React.FC = () => {
       <div className="flex flex-1 flex-col overflow-hidden">
         <div className="flex-1 overflow-auto">
           <TrackList tracks={tracks} />
-          <div className="flex w-32 items-center justify-center border-r border-border p-2">
+          <div
+            className={cn(
+              "flex w-32 items-center justify-center border-r border-border p-2",
+              {
+                "border-b": tracks.length !== 0 || scenes.length !== 0,
+              },
+            )}
+          >
             <CreateTrack />
           </div>
         </div>
