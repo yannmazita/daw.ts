@@ -22,17 +22,23 @@ import {
   SessionSlice,
   createSessionSlice,
 } from "@/features/session/slices/useSessionSlice";
+import {
+  MarkerSlice,
+  createMarkerSlice,
+} from "@/features/arrangement/slices/useMarkertSlice";
 import { transportManager } from "../services/transportManagerInstance";
 import { patternManager } from "@/features/patterns/services/patternManagerInstance";
 import { playlistManager } from "@/features/playlists/services/playlistManagerInstance";
 import { mixerManager } from "@/features/mixer/services/mixerManagerInstance";
 import { sessionManager } from "@/features/session/services/SessionManagerInstance";
+import { markerManager } from "@/features/arrangement/services/markerManagerInstance";
 
 export type StoreState = TransportSlice &
   PatternSlice &
   PlaylistSlice &
   MixerSlice &
-  SessionSlice;
+  SessionSlice &
+  MarkerSlice;
 
 export const useStore = create<StoreState>()(
   devtools(
@@ -43,6 +49,7 @@ export const useStore = create<StoreState>()(
         ...createPlaylistSlice(...a),
         ...createMixerSlice(...a),
         ...createSessionSlice(...a),
+        ...createMarkerSlice(...a),
       }),
       {
         name: "daw-storage",
@@ -66,6 +73,11 @@ export const useStore = create<StoreState>()(
           currentSceneId: state.currentSceneId,
           globalQuantization: state.globalQuantization,
           clipQuantization: state.clipQuantization,
+
+          // Marker state
+          markers: state.markers,
+          regions: state.regions,
+          activeLoopRegion: state.activeLoopRegion,
         }),
       },
     ),
@@ -117,6 +129,15 @@ export const createSyncMiddleware = (store: typeof useStore) => {
       }));
     });
 
+    const unsubscribeMarker = markerManager.onStateUpdate((state) => {
+      store.setState((prev) => ({
+        ...prev,
+        markers: state.markers,
+        regions: state.regions,
+        activeLoopRegion: state.activeLoopRegion,
+      }));
+    });
+
     // Return cleanup function
     return () => {
       unsubscribeTransport();
@@ -124,6 +145,7 @@ export const createSyncMiddleware = (store: typeof useStore) => {
       unsubscribePlaylist();
       unsubscribeMixer();
       unsubscribeSession();
+      unsubscribeMarker();
     };
   };
 
