@@ -1,0 +1,41 @@
+@startuml Engine Interaction
+
+[TransportEngine] as Transport
+[ClipEngine] as Clip
+[MixEngine] as Mix
+[AutomationEngine] as Automation
+[ArrangementEngine] as Arrangement
+
+Transport --> Clip : Provides timing
+Transport --> Automation : Schedules changes
+Transport --> Arrangement : Playback control
+
+Clip --> Mix : Audio output
+Clip --> Arrangement : Content management
+
+Mix --> Arrangement : Audio routing
+Mix --> Automation : Parameter targets
+
+Automation --> Mix : Parameter changes
+Automation --> Clip : Clip parameter control
+
+note right of Transport
+  Tone.Transport
+  - Timing
+  - Scheduling
+  - Tempo/Time Sig
+end note
+
+note right of Mix
+  Tone.Channel
+  Tone.Effects
+  Audio Routing
+end note
+
+note right of Clip
+  Tone.Part
+  Tone.Player
+  Content Management
+end note
+
+@enduml

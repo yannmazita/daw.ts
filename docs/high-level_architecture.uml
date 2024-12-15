@@ -1,0 +1,40 @@
+@startuml High Level Architecture
+
+package "Core" {
+  [Tone.js] as ToneJS
+  [Types]
+}
+
+package "Engines" {
+  [TransportEngine]
+  [ClipEngine]
+  [MixEngine]
+  [AutomationEngine]
+  [ArrangementEngine]
+}
+
+package "State Management" {
+  [Stores]
+  [State Types]
+}
+
+package "UI" {
+  [Components]
+  [Hooks]
+}
+
+ToneJS --> TransportEngine
+ToneJS --> ClipEngine
+ToneJS --> MixEngine
+ToneJS --> AutomationEngine
+
+TransportEngine --> ArrangementEngine
+ClipEngine --> ArrangementEngine
+MixEngine --> ArrangementEngine
+AutomationEngine --> ArrangementEngine
+
+ArrangementEngine --> Stores
+Stores --> Components
+Components --> Hooks
+
+@enduml

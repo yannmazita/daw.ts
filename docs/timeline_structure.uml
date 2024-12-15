@@ -1,0 +1,45 @@
+@startuml Timeline Structure
+
+package "Timeline" {
+  [Clips]
+  [Automation Lanes]
+  [Markers]
+}
+
+package "Track Types" {
+  [Audio Track]
+  [MIDI Track]
+  [Return Track]
+  [Master Track]
+}
+
+package "Processing" {
+  [Device Chain]
+  [Sends]
+  [Routing]
+}
+
+[Clips] --> [Audio Track]
+[Clips] --> [MIDI Track]
+[Automation Lanes] --> [Device Chain]
+[Automation Lanes] --> [Sends]
+
+[Audio Track] --> [Device Chain]
+[MIDI Track] --> [Device Chain]
+[Return Track] --> [Device Chain]
+
+[Device Chain] --> [Routing]
+[Sends] --> [Return Track]
+[Routing] --> [Master Track]
+
+note right of [Device Chain]
+  Tone.js Effects Chain
+  Pre/Post FX
+end note
+
+note right of [Clips]
+  Tone.Part (MIDI)
+  Tone.Player (Audio)
+end note
+
+@enduml
