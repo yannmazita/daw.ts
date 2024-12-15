@@ -131,20 +131,21 @@ export const UnifiedTimelineGrid = ({
 
       // Draw main track separator
       ctx.beginPath();
-      ctx.strokeStyle = getCSSColor("--border", 0.8);
+      ctx.strokeStyle = getCSSColor("--foreground");
       ctx.moveTo(0, y);
       ctx.lineTo(width, y);
       ctx.stroke();
 
-      // Optional: Draw lighter middle guide line
+      /*
       const middleY = y + GRID_CONSTANTS.TRACK_HEIGHT / 2;
       if (middleY < height) {
         ctx.beginPath();
-        ctx.strokeStyle = getCSSColor("--border", 0.2);
+        ctx.strokeStyle = getCSSColor("--primary", 0.2);
         ctx.moveTo(0, middleY);
         ctx.lineTo(width, middleY);
         ctx.stroke();
       }
+      */
     }
   };
 
