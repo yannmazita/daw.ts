@@ -120,13 +120,13 @@ export const UnifiedTimelineGrid = ({
       ctx.lineTo(width, y);
       ctx.stroke();
     }
-  }, [zoom, scrollPosition.x, beatsPerBar, theme]); // Add theme dependency
+  }, [zoom, scrollPosition.x, beatsPerBar, theme]);
 
   return (
     <canvas
       ref={canvasRef}
       className="absolute inset-0"
-      style={{ backgroundColor: "transparent" }} // Ensure transparent background
+      style={{ backgroundColor: "transparent" }}
     />
   );
 };
