@@ -19,6 +19,12 @@ export const ArrangementView = () => {
       x: target.scrollLeft,
       y: target.scrollTop,
     });
+
+    // If we have a track list container, sync its scroll position
+    const trackListContainer = document.querySelector(".track-list-container")!;
+    if (trackListContainer) {
+      trackListContainer.scrollTop = target.scrollTop;
+    }
   };
 
   const handleWheel = (e: React.WheelEvent) => {
@@ -34,7 +40,7 @@ export const ArrangementView = () => {
   };
 
   return (
-    <div className="relative flex h-full">
+    <div className="relative flex">
       {/* Fixed Left Panel */}
       <div
         className="flex flex-shrink-0 flex-col border-r border-border bg-background"
@@ -46,21 +52,19 @@ export const ArrangementView = () => {
           style={{ height: GRID_CONSTANTS.RULER_HEIGHT }}
         />
         {/* Track headers */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="track-list-container flex-1 overflow-y-hidden">
           <TrackList />
         </div>
       </div>
 
       {/* Scrollable Content */}
       <div className="relative flex-1 overflow-hidden">
-        {/* Scrollable tracks area */}
         <div
           ref={containerRef}
           className="h-full overflow-auto"
           onScroll={handleScroll}
           onWheel={handleWheel}
         >
-          {/* Content area */}
           <div
             className="relative"
             style={{

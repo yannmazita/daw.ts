@@ -1,5 +1,5 @@
 // src/features/arrangement/components/UnifiedTimelineGrid.tsx
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { GRID_CONSTANTS } from "../utils/constants";
 import { useStore } from "@/common/slices/useStore";
 import { useThemeStore } from "@/common/slices/useThemeStore";
@@ -34,16 +34,129 @@ export const UnifiedTimelineGrid = ({
   const theme = useThemeStore((state) => state.theme);
   const [beatsPerBar] = timeSignature;
 
+  // Memoize colors to prevent recalculation
+  const colors = useMemo(
+    () => ({
+      background: getCSSColor("--background"),
+      rulerBg: getCSSColor("--accent"),
+      text: getCSSColor("--accent-foreground"),
+      border: getCSSColor("--border"),
+      gridLines: {
+        major: getCSSColor(
+          "--foreground",
+          GRID_CONSTANTS.SUBDIVISION_LEVELS.MAJOR_BAR.opacity,
+        ),
+        bar: getCSSColor(
+          "--foreground",
+          GRID_CONSTANTS.SUBDIVISION_LEVELS.BAR.opacity,
+        ),
+        beat: getCSSColor(
+          "--foreground",
+          GRID_CONSTANTS.SUBDIVISION_LEVELS.BEAT.opacity,
+        ),
+        subdivision: getCSSColor(
+          "--foreground",
+          GRID_CONSTANTS.SUBDIVISION_LEVELS.SUBDIVISION.opacity,
+        ),
+      },
+    }),
+    [theme],
+  );
+
+  const drawGridLine = (
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    height: number,
+    style: { opacity: number; width: number },
+    startY = 0,
+  ) => {
+    ctx.beginPath();
+    ctx.strokeStyle = getCSSColor("--foreground", style.opacity);
+    ctx.lineWidth = style.width;
+    const adjustedX = Math.floor(x) + 0.5; // Align to pixel grid
+    ctx.moveTo(adjustedX, startY);
+    ctx.lineTo(adjustedX, height);
+    ctx.stroke();
+  };
+
+  const drawRulerTick = (
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    height: number,
+    label?: string,
+  ) => {
+    ctx.beginPath();
+    ctx.moveTo(x, GRID_CONSTANTS.RULER_HEIGHT);
+    ctx.lineTo(x, GRID_CONSTANTS.RULER_HEIGHT - height);
+    ctx.stroke();
+
+    if (label) {
+      ctx.fillStyle = colors.text;
+      ctx.font = `${GRID_CONSTANTS.RULER.FONT_SIZE}px ${GRID_CONSTANTS.RULER.FONT_FAMILY}`;
+      ctx.textAlign = "center";
+      ctx.fillText(
+        label,
+        x,
+        GRID_CONSTANTS.RULER_HEIGHT -
+          GRID_CONSTANTS.RULER.MAJOR_TICK_HEIGHT -
+          2,
+      );
+    }
+  };
+
+  const drawTrackLines = (
+    ctx: CanvasRenderingContext2D,
+    width: number,
+    height: number,
+    scrollY: number,
+  ) => {
+    const startTrack = Math.floor(scrollY / GRID_CONSTANTS.TRACK_HEIGHT);
+    const endTrack = Math.ceil(
+      (scrollY + height - GRID_CONSTANTS.RULER_HEIGHT) /
+        GRID_CONSTANTS.TRACK_HEIGHT,
+    );
+
+    ctx.beginPath();
+    ctx.strokeStyle = colors.border;
+    ctx.lineWidth = 1;
+
+    // Draw track separator lines
+    for (let i = startTrack; i <= endTrack; i++) {
+      const y =
+        Math.floor(
+          GRID_CONSTANTS.RULER_HEIGHT +
+            i * GRID_CONSTANTS.TRACK_HEIGHT -
+            scrollY,
+        ) + 0.5; // Add 0.5 for crisp lines
+
+      // Draw main track separator
+      ctx.beginPath();
+      ctx.strokeStyle = getCSSColor("--border", 0.8);
+      ctx.moveTo(0, y);
+      ctx.lineTo(width, y);
+      ctx.stroke();
+
+      // Optional: Draw lighter middle guide line
+      const middleY = y + GRID_CONSTANTS.TRACK_HEIGHT / 2;
+      if (middleY < height) {
+        ctx.beginPath();
+        ctx.strokeStyle = getCSSColor("--border", 0.2);
+        ctx.moveTo(0, middleY);
+        ctx.lineTo(width, middleY);
+        ctx.stroke();
+      }
+    }
+  };
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const container = canvas.parentElement;
-    if (!container) return;
-
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d", { alpha: false });
     if (!ctx) return;
 
+    // Setup canvas
+    const container = canvas.parentElement!;
     const pixelRatio = window.devicePixelRatio || 1;
     const width = container.clientWidth;
     const height = container.clientHeight;
@@ -54,73 +167,96 @@ export const UnifiedTimelineGrid = ({
     canvas.style.height = `${height}px`;
     ctx.scale(pixelRatio, pixelRatio);
 
-    // Clear canvas with theme background
-    ctx.fillStyle = getCSSColor("--background");
+    // Clear canvas
+    ctx.fillStyle = colors.background;
     ctx.fillRect(0, 0, width, height);
 
+    // Draw ruler background
+    ctx.fillStyle = colors.rulerBg;
+    ctx.fillRect(0, 0, width, GRID_CONSTANTS.RULER_HEIGHT);
+
+    // Calculate grid dimensions
     const pixelsPerBeat = zoom;
     const pixelsPerBar = pixelsPerBeat * beatsPerBar;
     const startBar = Math.floor(scrollPosition.x / pixelsPerBar);
     const endBar = Math.ceil((scrollPosition.x + width) / pixelsPerBar);
+    const subdivisions = GRID_CONSTANTS.BEAT_SUBDIVISIONS;
 
-    // Draw ruler area
-    ctx.fillStyle = getCSSColor("--accent");
-    ctx.fillRect(0, 0, width, GRID_CONSTANTS.RULER_HEIGHT);
-
-    // Draw grid lines
+    // Draw grid lines and ruler
     for (let bar = startBar; bar <= endBar; bar++) {
       const barX = Math.round(bar * pixelsPerBar - scrollPosition.x);
+      const isMajorBar = bar % GRID_CONSTANTS.MAJOR_BAR_INTERVAL === 0;
 
-      // Bar numbers
+      // Draw bar line
+      drawGridLine(
+        ctx,
+        barX,
+        height,
+        isMajorBar
+          ? GRID_CONSTANTS.SUBDIVISION_LEVELS.MAJOR_BAR
+          : GRID_CONSTANTS.SUBDIVISION_LEVELS.BAR,
+      );
+
+      // Draw bar number in ruler
       if (bar >= 0) {
-        ctx.font = "10px Inter, system-ui, sans-serif";
-        ctx.fillStyle = getCSSColor("--accent-foreground");
-        ctx.textAlign = "center";
-        ctx.fillText(bar.toString(), barX + 2, GRID_CONSTANTS.RULER_HEIGHT / 2);
+        drawRulerTick(
+          ctx,
+          barX,
+          isMajorBar
+            ? GRID_CONSTANTS.RULER.MAJOR_TICK_HEIGHT
+            : GRID_CONSTANTS.RULER.BEAT_TICK_HEIGHT,
+          isMajorBar ? bar.toString() : undefined,
+        );
       }
 
-      // Bar lines
-      ctx.beginPath();
-      ctx.strokeStyle = getCSSColor("--foreground", bar % 4 === 0 ? 0.8 : 0.4);
-      ctx.lineWidth = bar % 4 === 0 ? 1 : 0.5;
-      ctx.moveTo(barX, 0);
-      ctx.lineTo(barX, height);
-      ctx.stroke();
+      // Draw beats and subdivisions
+      for (let beat = 0; beat < beatsPerBar; beat++) {
+        const beatX = barX + beat * pixelsPerBeat;
 
-      // Beat lines
-      for (let beat = 1; beat < beatsPerBar; beat++) {
-        const beatX = Math.round(barX + beat * pixelsPerBeat);
-        ctx.beginPath();
-        ctx.strokeStyle = getCSSColor("--foreground", 0.4);
-        ctx.lineWidth = 0.5;
-        ctx.moveTo(beatX, GRID_CONSTANTS.RULER_HEIGHT);
-        ctx.lineTo(beatX, height);
-        ctx.stroke();
+        // Draw beat lines
+        if (beat > 0) {
+          drawGridLine(
+            ctx,
+            beatX,
+            height,
+            GRID_CONSTANTS.SUBDIVISION_LEVELS.BEAT,
+            GRID_CONSTANTS.RULER_HEIGHT,
+          );
+          drawRulerTick(ctx, beatX, GRID_CONSTANTS.RULER.BEAT_TICK_HEIGHT);
+        }
+
+        // Draw subdivisions
+        if (zoom > GRID_CONSTANTS.MIN_ZOOM * 1.5) {
+          for (let sub = 1; sub < subdivisions; sub++) {
+            const subX = beatX + (sub * pixelsPerBeat) / subdivisions;
+            drawGridLine(
+              ctx,
+              subX,
+              height,
+              GRID_CONSTANTS.SUBDIVISION_LEVELS.SUBDIVISION,
+              GRID_CONSTANTS.RULER_HEIGHT,
+            );
+            drawRulerTick(
+              ctx,
+              subX,
+              GRID_CONSTANTS.RULER.SUBDIVISION_TICK_HEIGHT,
+            );
+          }
+        }
       }
     }
 
-    // Ruler border
+    // Draw horizontal track lines
+    drawTrackLines(ctx, width, height, scrollPosition.y);
+
+    // Draw ruler border
     ctx.beginPath();
-    ctx.strokeStyle = getCSSColor("--border", 0.8);
+    ctx.strokeStyle = colors.border;
     ctx.lineWidth = 1;
-    ctx.moveTo(0, GRID_CONSTANTS.RULER_HEIGHT);
-    ctx.lineTo(width, GRID_CONSTANTS.RULER_HEIGHT);
+    ctx.moveTo(0, GRID_CONSTANTS.RULER_HEIGHT + 0.5);
+    ctx.lineTo(width, GRID_CONSTANTS.RULER_HEIGHT + 0.5);
     ctx.stroke();
-
-    // Track lines
-    const trackCount = Math.ceil(
-      (height - GRID_CONSTANTS.RULER_HEIGHT) / GRID_CONSTANTS.TRACK_HEIGHT,
-    );
-    for (let i = 0; i <= trackCount; i++) {
-      const y = GRID_CONSTANTS.RULER_HEIGHT + i * GRID_CONSTANTS.TRACK_HEIGHT;
-      ctx.beginPath();
-      ctx.strokeStyle = getCSSColor("--foreground", 0.4);
-      ctx.lineWidth = 0.5;
-      ctx.moveTo(0, y);
-      ctx.lineTo(width, y);
-      ctx.stroke();
-    }
-  }, [zoom, scrollPosition.x, beatsPerBar, theme]);
+  }, [zoom, scrollPosition.x, scrollPosition.y, beatsPerBar, colors]);
 
   return (
     <canvas
