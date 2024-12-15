@@ -18,12 +18,12 @@ export const ViewSelector = () => {
         Arrange
       </Button>
       <Button
-        variant={currentView === ViewType.SESSION ? "default" : "ghost"}
+        variant={currentView === ViewType.NOTHING ? "default" : "ghost"}
         size="sm"
-        onClick={() => setView(ViewType.SESSION)}
+        onClick={() => setView(ViewType.NOTHING)}
       >
         <Grid className="mr-2 h-4 w-4" />
-        Session
+        nothing
       </Button>
     </div>
   );

@@ -5,13 +5,12 @@ export type Tick = number;
 
 export enum ViewType {
   ARRANGEMENT = "arrangement",
-  SESSION = "session",
+  NOTHING = "nothing",
 }
 
 export enum PlaybackMode {
   PATTERN = "pattern",
-  PLAYLIST = "playlist",
-  SESSION = "session",
+  ARRANGEMENT = "arrangement",
 }
 
 export enum SceneState {
