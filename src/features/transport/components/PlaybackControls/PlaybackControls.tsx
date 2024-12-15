@@ -59,9 +59,9 @@ export const PlaybackControls: React.FC = () => {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => setMode(PlaybackMode.PLAYLIST)}
+              onClick={() => setMode(PlaybackMode.ARRANGEMENT)}
               className={
-                mode === PlaybackMode.PLAYLIST
+                mode === PlaybackMode.ARRANGEMENT
                   ? "border border-primary bg-accent dark:border-primary dark:bg-accent"
                   : ""
               }
