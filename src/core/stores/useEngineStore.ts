@@ -113,18 +113,7 @@ export const useEngineStore = create<EngineState>()(
                   type: device.type,
                   name: device.name,
                   bypass: device.bypass,
-                  parameters: Object.fromEntries(
-                    Object.entries(device.parameters).map(([pid, param]) => [
-                      pid,
-                      {
-                        id: param.id,
-                        name: param.name,
-                        value: param.value,
-                        range: param.range,
-                        defaultValue: param.defaultValue,
-                      },
-                    ]),
-                  ),
+                  options: device.options,
                 },
               ]),
             ),
