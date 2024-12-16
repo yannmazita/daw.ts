@@ -10,4 +10,5 @@ export const initialClipState: ClipState = {
     startTime: 0,
     type: "midi",
   },
+  independentPlayback: {},
 };

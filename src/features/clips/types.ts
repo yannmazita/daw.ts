@@ -81,6 +81,7 @@ export interface ClipState {
     startTime: Time;
     type: "midi" | "audio";
   };
+  independentPlayback: Record<string, boolean>; // Track independent playback state per contentId
 }
 
 export interface PersistableClipState {
@@ -97,6 +98,7 @@ export interface PersistableClipState {
     startTime: Time;
     type: "midi" | "audio";
   };
+  independentPlayback: Record<string, boolean>;
 }
 
 export interface ClipEngine {
@@ -113,6 +115,10 @@ export interface ClipEngine {
   setClipLoop(clipId: string, enabled: boolean, settings?: ClipLoop): void;
   setClipGain(clipId: string, gain: Decibels): void;
   setClipFades(clipId: string, fadeIn: Time, fadeOut: Time): void;
+
+  // Independant playback
+  playClip(clipId: string, startTime?: Time): void;
+  stopClip(clipId: string): void;
 
   // Playback state
   isClipPlaying(clipId: string): boolean;
