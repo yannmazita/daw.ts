@@ -1,12 +1,12 @@
 // src/features/transport/types.ts
-import { Time, TimeSignature } from "tone/build/esm/core/type/Units";
+import { BPM, Time, TimeSignature } from "tone/build/esm/core/type/Units";
 
 export interface TransportState {
   isPlaying: boolean;
   isRecording: boolean;
   currentTime: Time;
 
-  tempo: number;
+  bpm: BPM;
   timeSignature: TimeSignature;
 
   loop: {
@@ -30,6 +30,10 @@ export interface TransportEngine {
   setTempo(bpm: number): void;
   setTimeSignature(numerator: number, denominator: number): void;
   setSwing(amount: number, subdivision?: Time): void;
+
+  // Tap
+  startTapTempo(): BPM;
+  endTapTempo(): void;
 
   // Loop
   setLoop(enabled: boolean): void;
