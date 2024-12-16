@@ -1,30 +1,23 @@
 // src/features/mix/types.ts
-import { EffectName, ParameterDefinition } from "../../core/types/effect";
-import { Channel, Gain, Meter, Param, ToneAudioNode } from "tone";
+import { EffectName, EffectOptions } from "../../core/types/effect";
+import { Channel, Gain, Meter, ToneAudioNode } from "tone";
 import { AudioMeterData } from "../../core/types/audio";
 
-export interface DeviceParameter {
-  id: string;
-  value: number;
-  param: Param<any>;
-  definition: ParameterDefinition;
-}
-
-export interface Device {
+export interface Device<T extends EffectOptions = EffectOptions> {
   id: string;
   type: EffectName;
   name: string;
   bypass: boolean;
   node: ToneAudioNode;
-  parameters: Record<string, DeviceParameter>;
+  options?: T;
 }
 
-export interface PersistableDevice {
+export interface PersistableDevice<T extends EffectOptions = EffectOptions> {
   id: string;
   type: EffectName;
   name: string;
   bypass: boolean;
-  parameters: Record<string, DeviceParameter>;
+  options?: T;
 }
 
 export interface Send {
@@ -88,13 +81,16 @@ export interface MixEngine {
 
   // Device management
   addDevice(channelId: string, deviceType: EffectName): string;
+  updateDevice<T extends EffectOptions>(
+    channelId: string,
+    deviceId: string,
+    updates: Partial<Device<T>>,
+  ): void;
   removeDevice(channelId: string, deviceId: string): void;
-  setDeviceParameter(deviceId: string, paramId: string, value: number): void;
-  getDeviceParameters(deviceId: string): Record<string, ParameterDefinition>;
-  getParameterValue(deviceId: string, paramId: string): number;
 
   // Sends
   createSend(fromId: string, toId: string): string;
+  updateSend(channelId: string, sendId: string, updates: Partial<Send>): void;
   removeSend(channelId: string, sendId: string): void;
   setSendAmount(channelId: string, sendId: string, amount: number): void;
 
