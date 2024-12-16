@@ -5,7 +5,7 @@ export const initialTransportState: TransportState = {
   isPlaying: false,
   isRecording: false,
   currentTime: 0,
-  tempo: 120,
+  bpm: 120,
   timeSignature: [4, 4],
   loop: {
     enabled: false,
