@@ -1,7 +1,12 @@
 // src/features/arrangement/types.ts
 import { Time } from "tone/build/esm/core/type/Units";
 import { TransportEngine } from "../transport/types";
-import { ArrangementClip, ClipContent, ClipEngine } from "../clips/types";
+import {
+  ArrangementClip,
+  ClipContent,
+  ClipEngine,
+  PersistableClipContent,
+} from "../clips/types";
 import { MixEngine } from "../mix/types";
 import { AutomationEngine, AutomationLane } from "../automation/types";
 
@@ -51,12 +56,31 @@ export interface ArrangementState {
   };
 }
 
-export type PersistableArrangementState = Omit<
-  ArrangementState,
-  "clipContents"
-> & {
-  clipContents: Record<string, Omit<ClipContent, "buffer">>;
-};
+export interface PersistableArrangementState {
+  tracks: Record<string, Track>;
+  returnTracks: string[];
+  masterTrackId: string;
+  trackOrder: string[];
+
+  clips: Record<string, ArrangementClip>;
+  clipContents: Record<string, PersistableClipContent>;
+
+  selection: {
+    trackIds: string[];
+    clipIds: string[];
+    automationPoints: {
+      laneId: string;
+      pointId: string;
+    }[];
+  };
+
+  viewState: {
+    startTime: Time;
+    endTime: Time;
+    verticalScroll: number;
+    zoom: number;
+  };
+}
 
 export interface ArrangementEngine {
   transportEngine: TransportEngine;

@@ -30,6 +30,21 @@ export interface ClipContent {
   }[];
 }
 
+export interface PersistableClipContent {
+  id: string;
+  type: "midi" | "audio";
+  name: string;
+
+  // MIDI
+  notes?: MidiNote[];
+
+  // Audio
+  warpMarkers?: {
+    time: Time;
+    position: Time;
+  }[];
+}
+
 export interface ClipLoop {
   enabled: boolean;
   start: Time;
@@ -68,14 +83,21 @@ export interface ClipState {
   };
 }
 
-export type PersistableClipState = Omit<
-  ClipState,
-  "contents" | "activeClips"
-> & {
-  contents: Record<string, Omit<ClipContent, "buffer">>;
-} & {
-  activeClips: Record<string, { clip: ArrangementClip }>;
-};
+export interface PersistableClipState {
+  contents: Record<string, ClipContent>;
+  activeClips: Record<
+    string,
+    {
+      clip: ArrangementClip;
+    }
+  >;
+  isRecording: boolean;
+  recordingTake?: {
+    trackId: string;
+    startTime: Time;
+    type: "midi" | "audio";
+  };
+}
 
 export interface ClipEngine {
   // Content management

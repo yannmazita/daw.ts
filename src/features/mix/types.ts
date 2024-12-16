@@ -20,6 +20,13 @@ export interface Device {
   parameters: Record<string, DeviceParameter>;
 }
 
+export interface PersistableDevice {
+  id: string;
+  type: string;
+  name: string;
+  bypass: boolean;
+}
+
 export interface Send {
   id: string;
   name: string;
@@ -48,6 +55,16 @@ export interface MixerChannel {
   };
 }
 
+export interface PersistableMixerChannel {
+  id: string;
+  name: string;
+  type: "audio" | "midi" | "return" | "master";
+  output: {
+    type: "master" | "track" | "return";
+    targetId?: string;
+  };
+}
+
 export interface MixState {
   channels: Record<string, MixerChannel>;
   devices: Record<string, Device>;
@@ -58,21 +75,12 @@ export interface MixState {
   meterData: Record<string, AudioMeterData>;
 }
 
-export type PersistableMixState = Omit<MixState, "meterData"> & {
-  channels: Record<
-    string,
-    Omit<
-      MixerChannel,
-      "input" | "channel" | "preDevices" | "postDevices" | "sends" | "meter"
-    >
-  >;
-  devices: Record<
-    string,
-    Omit<Device, "node" | "parameters"> & {
-      parameters: Record<string, Omit<DeviceParameter, "param">>;
-    }
-  >;
-};
+export interface PersistableMixState {
+  channels: Record<string, PersistableMixerChannel>;
+  devices: Record<string, PersistableDevice>;
+  returnTracks: string[];
+  masterChannelId: string;
+}
 
 export interface MixEngine {
   createChannel(type: MixerChannel["type"]): string;
