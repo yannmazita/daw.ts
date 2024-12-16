@@ -17,7 +17,7 @@ export class TransportEngineImpl implements TransportEngine {
     // Initialize Tone Transport with stored values
     const state = useEngineStore.getState().transport;
 
-    Tone.getTransport().bpm.value = state.bpm;
+    Tone.getTransport().bpm.value = state.tempo;
     Tone.getTransport().timeSignature = state.timeSignature;
     Tone.getTransport().swing = state.swing;
     Tone.getTransport().swingSubdivision = state.swingSubdivision;
