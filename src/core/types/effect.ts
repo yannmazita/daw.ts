@@ -23,7 +23,8 @@ export type ToneEffectType =
   | Tone.PitchShift
   | Tone.Reverb
   | Tone.StereoWidener
-  | Tone.Tremolo;
+  | Tone.Tremolo
+  | Tone.Vibrato;
 
 /**
  * Effect options for Tone.Feedbackdelay.
@@ -76,7 +77,8 @@ export type EffectOptions =
   | (Tone.PitchShiftOptions & BaseEffectOptions)
   | (ReverbOptions & BaseEffectOptions)
   | (Tone.StereoWidenerOptions & BaseEffectOptions)
-  | (Tone.TremoloOptions & BaseEffectOptions);
+  | (Tone.TremoloOptions & BaseEffectOptions)
+  | (Tone.VibratoOptions & BaseEffectOptions);
 
 export enum EffectName {
   /** An auto-filter effect that sweeps a frequency band with an LFO. */
@@ -134,11 +136,9 @@ export enum EffectName {
   Vibrato = "Vibrato",
 }
 
-/*
-export interface EffectState {
-  id: string;
-  type: EffectName;
-  bypass: boolean;
-  options: EffectOptions;
+export interface ParameterDefinition {
+  name: string;
+  range: [number, number];
+  defaultValue: number;
+  units?: string;
 }
-*/
