@@ -1,19 +1,18 @@
 // src/features/mix/types.ts
+import { EffectName, ParameterDefinition } from "../../core/types/effect";
 import { Channel, Gain, Meter, Param, ToneAudioNode } from "tone";
 import { AudioMeterData } from "../../core/types/audio";
 
 export interface DeviceParameter {
   id: string;
-  name: string;
   value: number;
   param: Param<any>;
-  range: [number, number];
-  defaultValue: number;
+  definition: ParameterDefinition;
 }
 
 export interface Device {
   id: string;
-  type: string; // Maps to Tone.js effect types
+  type: EffectName;
   name: string;
   bypass: boolean;
   node: ToneAudioNode;
@@ -22,9 +21,10 @@ export interface Device {
 
 export interface PersistableDevice {
   id: string;
-  type: string;
+  type: EffectName;
   name: string;
   bypass: boolean;
+  parameters: Record<string, DeviceParameter>;
 }
 
 export interface Send {
@@ -87,14 +87,11 @@ export interface MixEngine {
   deleteChannel(id: string): void;
 
   // Device management
-  addDevice(channelId: string, deviceType: string): string;
+  addDevice(channelId: string, deviceType: EffectName): string;
   removeDevice(channelId: string, deviceId: string): void;
-  setDeviceParameter(
-    channelId: string,
-    deviceId: string,
-    paramId: string,
-    value: number,
-  ): void;
+  setDeviceParameter(deviceId: string, paramId: string, value: number): void;
+  getDeviceParameters(deviceId: string): Record<string, ParameterDefinition>;
+  getParameterValue(deviceId: string, paramId: string): number;
 
   // Sends
   createSend(fromId: string, toId: string): string;
