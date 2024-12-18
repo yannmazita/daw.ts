@@ -129,11 +129,6 @@ export const useEngineStore = create<EngineState>()(
           },
           arrangement: {
             ...state.arrangement,
-            clipContents: Object.fromEntries(
-              Object.entries(state.arrangement.clipContents).map(
-                ([id, content]) => [id, { ...content }],
-              ),
-            ),
           },
         }),
       },
