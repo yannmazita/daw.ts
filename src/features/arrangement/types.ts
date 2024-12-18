@@ -82,11 +82,6 @@ export interface ArrangementEngine {
   deleteTrack(trackId: string): void;
   moveTrack(trackId: string, newIndex: number): void;
 
-  // Clip operations
-  addClip(trackId: string, contentId: string, startTime: Time): string;
-  removeClip(clipId: string): void;
-  moveClip(clipId: string, newTime: Time): void;
-
   // Selection
   setSelection(selection: Partial<ArrangementState["selection"]>): void;
 
