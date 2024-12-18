@@ -1,6 +1,10 @@
 // src/features/mix/types.ts
-import { EffectName, EffectOptions } from "../../core/types/effect";
-import { Channel, Gain, Meter, ToneAudioNode } from "tone";
+import {
+  EffectName,
+  EffectOptions,
+  ToneEffectType,
+} from "../../core/types/effect";
+import { Channel, Gain, Meter } from "tone";
 import { AudioMeterData } from "../../core/types/audio";
 
 export interface Device<T extends EffectOptions = EffectOptions> {
@@ -8,7 +12,7 @@ export interface Device<T extends EffectOptions = EffectOptions> {
   type: EffectName;
   name: string;
   bypass: boolean;
-  node: ToneAudioNode;
+  node: ToneEffectType;
   options?: T;
 }
 
@@ -36,8 +40,8 @@ export interface MixerChannel {
   // Tone.js nodes
   input: Gain;
   channel: Channel;
-  preDevices: ToneAudioNode[];
-  postDevices: ToneAudioNode[];
+  preDevices: ToneEffectType[];
+  postDevices: ToneEffectType[];
   sends: Send[];
   meter: Meter;
 
@@ -61,7 +65,6 @@ export interface PersistableMixerChannel {
 export interface MixState {
   channels: Record<string, MixerChannel>;
   devices: Record<string, Device>;
-  returnTracks: string[];
   masterChannelId: string;
 
   // Metering state
@@ -71,7 +74,6 @@ export interface MixState {
 export interface PersistableMixState {
   channels: Record<string, PersistableMixerChannel>;
   devices: Record<string, PersistableDevice>;
-  returnTracks: string[];
   masterChannelId: string;
 }
 

@@ -1,5 +1,6 @@
 // src/features/arrangement/services/ArrangementEngine.ts
 import { v4 as uuidv4 } from "uuid";
+import * as Tone from "tone";
 import { Time } from "tone/build/esm/core/type/Units";
 import { ArrangementEngine, ArrangementState, Track } from "../types";
 import { TransportEngine } from "../../transport/types";
@@ -22,169 +23,273 @@ export class ArrangementEngineImpl implements ArrangementEngine {
   }
 
   createTrack(type: Track["type"], name: string): string {
-    const state = useEngineStore.getState().arrangement;
     const id = uuidv4();
-    const index = state.trackOrder.length;
+    let mixerChannelId: string | undefined;
 
-    // Create mixer channel first
-    const mixerChannelId = this.mixEngine.createChannel(type);
+    try {
+      useEngineStore.setState((state) => {
+        const index = state.arrangement.trackOrder.length;
 
-    const track: Track = {
-      id,
-      type,
-      name,
-      index,
-      height: 100, // Default height
-      isVisible: true,
-      isFolded: false,
-      mixerChannelId,
-      clipIds: [],
-      automationIds: [],
-      color: `hsl(${Math.random() * 360}, 70%, 50%)`, // Random color
-    };
+        // Create mixer channel first
+        try {
+          mixerChannelId = this.mixEngine.createChannel(type);
+        } catch (error) {
+          console.error("Failed to create mixer channel:", error);
+          throw new Error("Mixer channel creation failed:");
+        }
 
-    // Update state
-    useEngineStore.getState().updateArrangement({
-      tracks: {
-        ...state.tracks,
-        [id]: track,
-      },
-      trackOrder: [...state.trackOrder, id],
-    });
+        const track: Track = {
+          id,
+          type,
+          name,
+          index,
+          height: 100,
+          isVisible: true,
+          isFolded: false,
+          mixerChannelId,
+          clipIds: [],
+          automationIds: [],
+          color: `hsl(${Math.random() * 360}, 70%, 50%)`,
+        };
 
-    // Handle special track types
-    if (type === "return") {
-      useEngineStore.getState().updateArrangement({
-        returnTracks: [...state.returnTracks, id],
+        return {
+          arrangement: {
+            ...state.arrangement,
+            tracks: {
+              ...state.arrangement.tracks,
+              [id]: track,
+            },
+            trackOrder: [...state.arrangement.trackOrder, id],
+            ...(type === "return" && {
+              returnTracks: [...state.arrangement.returnTracks, id],
+            }),
+          },
+        };
       });
-    }
 
-    return id;
+      return id;
+    } catch (error) {
+      // Cleanup on failure
+      if (mixerChannelId) {
+        try {
+          this.mixEngine.deleteChannel(mixerChannelId);
+        } catch (cleanupError) {
+          console.error("Failed to cleanup mixer channel:", cleanupError);
+          // Don't throw cleanup error, we want to throw the original error
+        }
+      }
+
+      // Ensure arrangement state is clean
+      useEngineStore.setState((state) => {
+        const { [id]: removedTrack, ...remainingTracks } =
+          state.arrangement.tracks;
+        return {
+          arrangement: {
+            ...state.arrangement,
+            tracks: remainingTracks,
+            trackOrder: state.arrangement.trackOrder.filter(
+              (trackId) => trackId !== id,
+            ),
+            ...(type === "return" && {
+              returnTracks: state.arrangement.returnTracks.filter(
+                (trackId) => trackId !== id,
+              ),
+            }),
+          },
+        };
+      });
+
+      // Throw the original error with context
+      throw new Error(`Track creation failed: ${error.message}`);
+    }
   }
 
   deleteTrack(trackId: string): void {
-    const state = useEngineStore.getState().arrangement;
-    const track = state.tracks[trackId];
-    if (!track) return;
+    useEngineStore.setState((state) => {
+      const track = state.arrangement.tracks[trackId];
+      if (!track) return state;
 
-    // Prevent master track deletion
-    if (trackId === state.masterTrackId) {
-      throw new Error("Cannot delete master track");
-    }
+      // Prevent master track deletion
+      if (trackId === state.arrangement.masterTrackId) {
+        throw new Error("Cannot delete master track");
+      }
 
-    // Clean up clips
-    track.clipIds.forEach((clipId) => {
-      this.clipEngine.unscheduleClip(clipId);
-    });
+      try {
+        // Clean up clips
+        track.clipIds.forEach((clipId) => {
+          this.clipEngine.unscheduleClip(clipId);
+        });
 
-    // Clean up automation
-    track.automationIds.forEach((automationId) => {
-      this.automationEngine.unscheduleLane(automationId);
-    });
+        // Clean up automation
+        track.automationIds.forEach((automationId) => {
+          this.automationEngine.unscheduleLane(automationId);
+        });
 
-    // Clean up mixer channel
-    this.mixEngine.deleteChannel(track.mixerChannelId);
+        // Clean up mixer channel
+        this.mixEngine.deleteChannel(track.mixerChannelId);
 
-    // Update state
-    useEngineStore.getState().updateArrangement({
-      tracks: Object.fromEntries(
-        Object.entries(state.tracks).filter(([id]) => id !== trackId),
-      ),
-      trackOrder: state.trackOrder.filter((id) => id !== trackId),
-    });
-    if (track.type === "return") {
-      useEngineStore.getState().updateArrangement({
-        returnTracks: state.returnTracks.filter((id) => id !== trackId),
-      });
-    }
+        // Remove track and update all related state in one operation
+        const { [trackId]: removedTrack, ...remainingTracks } =
+          state.arrangement.tracks;
 
-    // Clear selection if needed
-    if (state.selection.trackIds.includes(trackId)) {
-      useEngineStore.getState().updateArrangement({
-        selection: {
-          ...state.selection,
-          trackIds: state.selection.trackIds.filter((id) => id !== trackId),
-        },
-      });
-    }
+        // Reindex remaining tracks
+        const reindexedTracks = Object.fromEntries(
+          Object.entries(remainingTracks).map(([id, t]) => [
+            id,
+            t.index > track.index ? { ...t, index: t.index - 1 } : t,
+          ]),
+        );
 
-    // Reindex remaining tracks
-    useEngineStore.getState().updateArrangement({
-      tracks: Object.fromEntries(
-        Object.entries(state.tracks).map(([id, track]) => {
-          if (track.index > track.index) {
-            return [id, { ...track, index: track.index - 1 }];
-          }
-          return [id, track];
-        }),
-      ),
+        return {
+          arrangement: {
+            ...state.arrangement,
+            tracks: reindexedTracks,
+            trackOrder: state.arrangement.trackOrder.filter(
+              (id) => id !== trackId,
+            ),
+            returnTracks:
+              track.type === "return"
+                ? state.arrangement.returnTracks.filter((id) => id !== trackId)
+                : state.arrangement.returnTracks,
+            selection: {
+              ...state.arrangement.selection,
+              trackIds: state.arrangement.selection.trackIds.filter(
+                (id) => id !== trackId,
+              ),
+              // Optionally also clean up related clip and automation selections
+              clipIds: state.arrangement.selection.clipIds.filter(
+                (id) => !track.clipIds.includes(id),
+              ),
+              automationPoints:
+                state.arrangement.selection.automationPoints.filter(
+                  (point) => !track.automationIds.includes(point.laneId),
+                ),
+            },
+          },
+        };
+      } catch (error) {
+        console.error("Failed to delete track:", error);
+        throw new Error(`Failed to delete track: ${error.message}`);
+      }
     });
   }
 
   moveTrack(trackId: string, newIndex: number): void {
-    const state = useEngineStore.getState().arrangement;
-    const track = state.tracks[trackId];
-    if (!track) return;
+    useEngineStore.setState((state) => {
+      const track = state.arrangement.tracks[trackId];
+      if (!track) return state; // No change if track not found
 
-    // Validate new index
-    if (newIndex < 0 || newIndex >= state.trackOrder.length) {
-      throw new Error("Invalid track index");
-    }
+      // Validate new index
+      if (newIndex < 0 || newIndex >= state.arrangement.trackOrder.length) {
+        throw new Error("Invalid track index");
+      }
 
-    // Remove from current position
-    useEngineStore.getState().updateArrangement({
-      trackOrder: state.trackOrder.filter((id) => id !== trackId),
-    });
-
-    // Insert at new position
-    useEngineStore.getState().updateArrangement({
-      trackOrder: [
-        ...state.trackOrder.slice(0, newIndex),
+      // Create new track order by removing and inserting at new position
+      const filteredOrder = state.arrangement.trackOrder.filter(
+        (id) => id !== trackId,
+      );
+      const newTrackOrder = [
+        ...filteredOrder.slice(0, newIndex),
         trackId,
-        ...state.trackOrder.slice(newIndex),
-      ],
-    });
+        ...filteredOrder.slice(newIndex),
+      ];
 
-    // Update indices
-    useEngineStore.getState().updateArrangement({
-      tracks: {
-        ...state.tracks,
-        [trackId]: {
-          ...track,
-          index: newIndex,
+      // Update all track indices based on new order
+      const updatedTracks = Object.fromEntries(
+        Object.entries(state.arrangement.tracks).map(([id, track]) => [
+          id,
+          {
+            ...track,
+            index: newTrackOrder.indexOf(id),
+          },
+        ]),
+      );
+
+      return {
+        arrangement: {
+          ...state.arrangement,
+          trackOrder: newTrackOrder,
+          tracks: updatedTracks,
         },
-      },
+      };
     });
   }
 
   setSelection(selection: Partial<ArrangementState["selection"]>): void {
-    const state = useEngineStore.getState().arrangement;
-    useEngineStore.getState().updateArrangement({
-      selection: {
-        ...state.selection,
-        ...selection,
-      },
+    useEngineStore.setState((state) => {
+      // Validate track IDs exist
+      const invalidTrackIds = (selection.trackIds ?? []).filter(
+        (id) => !state.arrangement.tracks[id],
+      );
+      if (invalidTrackIds.length > 0) {
+        throw new Error(`Invalid track IDs: ${invalidTrackIds.join(", ")}`);
+      }
+
+      // Validate clip IDs exist
+      const invalidClipIds = (selection.clipIds ?? []).filter(
+        (id) =>
+          !Object.values(state.arrangement.tracks).some((track) =>
+            track.clipIds.includes(id),
+          ),
+      );
+      if (invalidClipIds.length > 0) {
+        throw new Error(`Invalid clip IDs: ${invalidClipIds.join(", ")}`);
+      }
+
+      return {
+        arrangement: {
+          ...state.arrangement,
+          selection: {
+            ...state.arrangement.selection,
+            ...selection,
+          },
+        },
+      };
     });
   }
 
   setViewRange(startTime: Time, endTime: Time): void {
-    const state = useEngineStore.getState().arrangement;
-    useEngineStore.getState().updateArrangement({
-      viewState: {
-        ...state.viewState,
-        startTime,
-        endTime,
-      },
+    useEngineStore.setState((state) => {
+      // Validate time range
+      if (Tone.Time(endTime).toSeconds() <= Tone.Time(startTime).toSeconds()) {
+        throw new Error("End time must be after start time");
+      }
+
+      return {
+        arrangement: {
+          ...state.arrangement,
+          viewState: {
+            ...state.arrangement.viewState,
+            startTime,
+            endTime,
+          },
+        },
+      };
     });
   }
 
   setZoom(zoom: number): void {
-    const state = useEngineStore.getState().arrangement;
-    useEngineStore.getState().updateArrangement({
-      viewState: {
-        ...state.viewState,
-        zoom: Math.max(0.1, Math.min(10, zoom)),
-      },
+    if (typeof zoom !== "number" || !isFinite(zoom)) {
+      throw new Error("Invalid zoom value");
+    }
+
+    useEngineStore.setState((state) => {
+      const clampedZoom = Math.max(0.1, Math.min(10, zoom));
+
+      // Optional logging
+      if (clampedZoom !== zoom) {
+        console.warn(`Zoom value ${zoom} clamped to ${clampedZoom}`);
+      }
+
+      return {
+        arrangement: {
+          ...state.arrangement,
+          viewState: {
+            ...state.arrangement.viewState,
+            zoom: clampedZoom,
+          },
+        },
+      };
     });
   }
 

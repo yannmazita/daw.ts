@@ -143,7 +143,7 @@ export interface ClipEngine {
   // Content management
   createMidiClip(midiData: MidiClipContent): string;
   createAudioClip(buffer: ToneAudioBuffer): string;
-  getClipContent(contentId: string): ClipContent | undefined;
+  getClipContent(contentId: string): ClipContent;
 
   // Clip instance management
   scheduleClip(clip: ArrangementClip): void;

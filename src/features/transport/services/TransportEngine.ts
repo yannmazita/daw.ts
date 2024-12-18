@@ -37,9 +37,12 @@ export class TransportEngineImpl implements TransportEngine {
 
   private updateCurrentTime() {
     if (!this.disposed) {
-      useEngineStore.getState().updateTransport({
-        currentTime: Tone.getTransport().seconds,
-      });
+      useEngineStore.setState((state) => ({
+        transport: {
+          ...state.transport,
+          currentTime: Tone.getTransport().seconds,
+        },
+      }));
     }
   }
 
@@ -47,7 +50,12 @@ export class TransportEngineImpl implements TransportEngine {
     try {
       await Tone.start();
       Tone.getTransport().start(time);
-      useEngineStore.getState().updateTransport({ isPlaying: true });
+      useEngineStore.setState((state) => ({
+        transport: {
+          ...state.transport,
+          isPlaying: true,
+        },
+      }));
     } catch (error) {
       console.error("Failed to start transport:", error);
       throw error;
@@ -56,16 +64,24 @@ export class TransportEngineImpl implements TransportEngine {
 
   pause(): void {
     Tone.getTransport().pause();
-    useEngineStore.getState().updateTransport({ isPlaying: false });
+    useEngineStore.setState((state) => ({
+      transport: {
+        ...state.transport,
+        isPlaying: false,
+      },
+    }));
   }
 
   stop(): void {
     Tone.getTransport().stop();
-    useEngineStore.getState().updateTransport({
-      isPlaying: false,
-      isRecording: false,
-      currentTime: 0,
-    });
+    useEngineStore.setState((state) => ({
+      transport: {
+        ...state.transport,
+        isPlaying: false,
+        isRecording: false,
+        currentTime: 0,
+      },
+    }));
   }
 
   seekTo(time: Time): void {
@@ -81,7 +97,12 @@ export class TransportEngineImpl implements TransportEngine {
       throw new Error("BPM must be between 20 and 999");
     }
     Tone.getTransport().bpm.value = tempo;
-    useEngineStore.getState().updateTransport({ tempo });
+    useEngineStore.setState((state) => ({
+      transport: {
+        ...state.transport,
+        tempo,
+      },
+    }));
   }
 
   setTimeSignature(numerator: number, denominator: number): void {
@@ -90,7 +111,12 @@ export class TransportEngineImpl implements TransportEngine {
     }
     const timeSignature: TimeSignature = [numerator, denominator];
     Tone.getTransport().timeSignature = timeSignature;
-    useEngineStore.getState().updateTransport({ timeSignature });
+    useEngineStore.setState((state) => ({
+      transport: {
+        ...state.transport,
+        timeSignature,
+      },
+    }));
   }
 
   setSwing(amount: number, subdivision?: Subdivision): void {
@@ -101,10 +127,13 @@ export class TransportEngineImpl implements TransportEngine {
     if (subdivision) {
       Tone.getTransport().swingSubdivision = subdivision;
     }
-    useEngineStore.getState().updateTransport({
-      swing: amount,
-      ...(subdivision && { swingSubdivision: subdivision }),
-    });
+    useEngineStore.setState((state) => ({
+      transport: {
+        ...state.transport,
+        swing: amount,
+        ...(subdivision && { swingSubdivision: subdivision }),
+      },
+    }));
   }
 
   startTapTempo(): BPM {
@@ -142,13 +171,15 @@ export class TransportEngineImpl implements TransportEngine {
 
   setLoop(enabled: boolean): void {
     Tone.getTransport().loop = enabled;
-    const currentState = useEngineStore.getState().transport;
-    useEngineStore.getState().updateTransport({
-      loop: {
-        ...currentState.loop,
-        enabled,
+    useEngineStore.setState((state) => ({
+      transport: {
+        ...state.transport,
+        loop: {
+          ...state.transport.loop,
+          enabled,
+        },
       },
-    });
+    }));
   }
 
   setLoopPoints(start: Time, end: Time): void {
@@ -162,14 +193,16 @@ export class TransportEngineImpl implements TransportEngine {
     Tone.getTransport().loopStart = start;
     Tone.getTransport().loopEnd = end;
 
-    const currentState = useEngineStore.getState().transport;
-    useEngineStore.getState().updateTransport({
-      loop: {
-        ...currentState.loop,
-        start,
-        end,
+    useEngineStore.setState((state) => ({
+      transport: {
+        ...state.transport,
+        loop: {
+          ...state.transport.loop,
+          start,
+          end,
+        },
       },
-    });
+    }));
   }
 
   getState() {
