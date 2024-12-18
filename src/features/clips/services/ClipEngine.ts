@@ -224,8 +224,8 @@ export class ClipEngineImpl implements ClipEngine {
   }
 
   unscheduleClip(clipId: string): void {
-    const state = useEngineStore.getState();
-    const activeClip = state.clips.activeClips[clipId];
+    const state = useEngineStore.getState().clips;
+    const activeClip = state.activeClips[clipId];
 
     if (activeClip) {
       if (activeClip.part instanceof Tone.Part) {
@@ -235,11 +235,93 @@ export class ClipEngineImpl implements ClipEngine {
       }
 
       // Create new activeClips object without the specified clipId
-      const { [clipId]: removed, ...remainingClips } = state.clips.activeClips;
+      const { [clipId]: removed, ...remainingClips } = state.activeClips;
 
       useEngineStore.getState().updateClips({
         activeClips: remainingClips,
       });
+    }
+  }
+
+  addClip(contentId: string, startTime: Time): string {
+    const state = useEngineStore.getState().clips;
+    const content = this.getClipContent(contentId);
+
+    if (!content) {
+      throw new Error("Clip content not found");
+    }
+
+    const id = uuidv4();
+    const clip: ArrangementClip = {
+      id,
+      contentId,
+      startTime,
+      // Set duration based on content type
+      duration:
+        content.type === "midi"
+          ? (content.midiData?.duration ?? 0)
+          : (content.buffer?.duration ?? 0),
+      gain: 0,
+      fadeIn: 0,
+      fadeOut: 0,
+    };
+
+    // Update clips state
+    useEngineStore.getState().updateClips({
+      activeClips: {
+        ...state.activeClips,
+        [id]: {
+          part: null, // Will be set by scheduleClip
+          clip,
+        },
+      },
+    });
+
+    // Schedule the clip
+    this.scheduleClip(clip);
+
+    return id;
+  }
+
+  removeClip(clipId: string): void {
+    const state = useEngineStore.getState().clips;
+
+    // First unschedule the clip to clean up audio resources
+    this.unscheduleClip(clipId);
+
+    // Remove from active clips
+    const { [clipId]: removed, ...remainingClips } = state.activeClips;
+
+    useEngineStore.getState().updateClips({
+      activeClips: remainingClips,
+    });
+  }
+
+  moveClip(clipId: string, newTime: Time): void {
+    const state = useEngineStore.getState().clips;
+    const activeClip = state.activeClips[clipId];
+    if (activeClip) {
+      if (activeClip.part instanceof Tone.Part) {
+        useEngineStore.getState().updateClips({
+          activeClips: {
+            ...state.activeClips,
+            [clipId]: {
+              ...activeClip,
+              clip: { ...activeClip.clip, startTime: newTime },
+            },
+          },
+        });
+      } else if (activeClip.part instanceof Tone.Player) {
+        useEngineStore.getState().updateClips({
+          activeClips: {
+            ...state.activeClips,
+            [clipId]: {
+              ...activeClip,
+              clip: { ...activeClip.clip, startTime: newTime },
+            },
+          },
+        });
+      }
     }
   }
 

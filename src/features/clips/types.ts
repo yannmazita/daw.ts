@@ -105,7 +105,7 @@ export interface ClipState {
   activeClips: Record<
     string,
     {
-      part: Part | Player;
+      part: Part | Player | null;
       clip: ArrangementClip;
     }
   >;
@@ -148,6 +148,11 @@ export interface ClipEngine {
   // Clip instance management
   scheduleClip(clip: ArrangementClip): void;
   unscheduleClip(clipId: string): void;
+
+  // Clip operations
+  addClip(contentId: string, startTime: Time): string;
+  removeClip(clipId: string): void;
+  moveClip(clipId: string, newTime: Time): void;
 
   // Clip properties
   setClipLoop(clipId: string, enabled: boolean, settings?: ClipLoop): void;
