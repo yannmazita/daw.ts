@@ -1,14 +1,9 @@
 // src/features/arrangement/types.ts
 import { Time } from "tone/build/esm/core/type/Units";
 import { TransportEngine } from "../transport/types";
-import {
-  ArrangementClip,
-  ClipContent,
-  ClipEngine,
-  PersistableClipContent,
-} from "../clips/types";
+import { ClipEngine } from "../clips/types";
 import { MixEngine } from "../mix/types";
-import { AutomationEngine, AutomationLane } from "../automation/types";
+import { AutomationEngine } from "../automation/types";
 
 export interface Track {
   id: string;
@@ -26,8 +21,8 @@ export interface Track {
   mixerChannelId: string;
 
   // Content
-  clips: ArrangementClip[];
-  automationLanes: AutomationLane[];
+  clipIds: string[];
+  automationIds: string[];
 }
 
 export interface ArrangementState {
@@ -35,9 +30,6 @@ export interface ArrangementState {
   returnTracks: string[];
   masterTrackId: string;
   trackOrder: string[];
-
-  clips: Record<string, ArrangementClip>;
-  clipContents: Record<string, ClipContent>;
 
   selection: {
     trackIds: string[];
@@ -61,9 +53,6 @@ export interface PersistableArrangementState {
   returnTracks: string[];
   masterTrackId: string;
   trackOrder: string[];
-
-  clips: Record<string, ArrangementClip>;
-  clipContents: Record<string, PersistableClipContent>;
 
   selection: {
     trackIds: string[];

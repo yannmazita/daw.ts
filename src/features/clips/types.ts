@@ -1,17 +1,52 @@
 // src/features/clips/types.ts
 import { Part, Player, ToneAudioBuffer } from "tone";
-import {
-  Decibels,
-  NormalRange,
-  Note,
-  Time,
-} from "tone/build/esm/core/type/Units";
+import { Decibels, Time } from "tone/build/esm/core/type/Units";
 
 export interface MidiNote {
-  note: Note;
-  velocity: NormalRange;
-  duration: Time;
-  time: Time;
+  midi: number; // MIDI note number
+  name: string; // Note name (e.g., "C4")
+  pitch: string; // Pitch class (e.g., "C")
+  octave: number; // Octave number
+  velocity: number; // Normalized 0-1
+  duration: number; // Duration in seconds
+  time: number; // Time in seconds
+  ticks?: number; // Optional MIDI ticks
+}
+
+export interface MidiControlChange {
+  number: number; // CC number
+  value: number; // Normalized 0-1
+  time: number; // Time in seconds
+  ticks?: number; // Optional MIDI ticks
+}
+
+export interface MidiTrackInstrument {
+  number: number; // Program number
+  family: string; // Instrument family
+  name: string; // Instrument name
+  percussion: boolean; // Is percussion channel
+}
+
+export interface MidiTrackData {
+  name?: string;
+  notes: MidiNote[];
+  controlChanges: Record<number, MidiControlChange[]>;
+  instrument: MidiTrackInstrument;
+  channel: number;
+}
+
+export interface MidiClipContent {
+  name: string;
+  tracks: MidiTrackData[];
+  duration: number;
+  tempos?: {
+    bpm: number;
+    time: number;
+  }[];
+  timeSignatures?: {
+    timeSignature: [number, number];
+    time: number;
+  }[];
 }
 
 export interface ClipContent {
@@ -19,10 +54,10 @@ export interface ClipContent {
   type: "midi" | "audio";
   name: string;
 
-  // MIDI
-  notes?: MidiNote[];
+  // MIDI specific
+  midiData?: MidiClipContent;
 
-  // Audio
+  // Audio specific
   buffer?: ToneAudioBuffer;
   warpMarkers?: {
     time: Time;
@@ -36,7 +71,7 @@ export interface PersistableClipContent {
   name: string;
 
   // MIDI
-  notes?: MidiNote[];
+  midiData?: MidiClipContent;
 
   // Audio
   warpMarkers?: {
@@ -54,7 +89,6 @@ export interface ClipLoop {
 export interface ArrangementClip {
   id: string;
   contentId: string;
-  trackId: string;
 
   startTime: Time;
   duration: Time;
@@ -85,7 +119,7 @@ export interface ClipState {
 }
 
 export interface PersistableClipState {
-  contents: Record<string, ClipContent>;
+  contents: Record<string, PersistableClipContent>;
   activeClips: Record<
     string,
     {
@@ -102,8 +136,12 @@ export interface PersistableClipState {
 }
 
 export interface ClipEngine {
+  // MIDI import/export
+  parseMidiFile(midiData: ArrayBuffer): string;
+  exportMidiFile(contentId: string): Uint8Array;
+
   // Content management
-  createMidiClip(notes: MidiNote[]): string;
+  createMidiClip(midiData: MidiClipContent): string;
   createAudioClip(buffer: ToneAudioBuffer): string;
   getClipContent(contentId: string): ClipContent | undefined;
 
