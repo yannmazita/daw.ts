@@ -18,7 +18,7 @@ import { initialMixState } from "@/features/mix/utils/initialState";
 import { initialAutomationState } from "@/features/automation/utils/initialState";
 import { initialArrangementState } from "@/features/arrangement/utils/initialState";
 
-interface EngineState {
+export interface EngineState {
   transport: TransportState;
   clips: ClipState;
   mix: MixState;
