@@ -10,7 +10,7 @@ import {
   ReverbOptions,
   ToneEffectType,
 } from "@/core/types/effect";
-import { useEngineStore } from "@/core/stores/useEngineStore";
+import { EngineState, useEngineStore } from "@/core/stores/useEngineStore";
 import { AudioMeterData } from "@/core/types/audio";
 
 export class MixEngineImpl implements MixEngine {
@@ -42,33 +42,27 @@ export class MixEngineImpl implements MixEngine {
   }
 
   private updateMeters() {
-    if (this.disposed) return;
+    // Gather all meter values first
+    const meterValues = new Map<string, number[]>();
 
+    useEngineStore.getState().mix.channels.forEach((channel) => {
+      meterValues.set(channel.id, channel.meter.getValue());
+    });
+
+    // Then update state atomically
     useEngineStore.setState((state) => {
-      // Early exit if no channels
-      if (Object.keys(state.mix.channels).length === 0) return state;
-
-      // Process in chunks if too many channels
-      const meterData = Object.values(state.mix.channels).reduce(
-        (acc, channel) => {
-          const values = channel.meter.getValue();
-          acc[channel.id] = {
+      const meterData = Object.fromEntries(
+        Array.from(meterValues.entries()).map(([id, values]) => [
+          id,
+          {
             peak: Array.isArray(values) ? values : [values, values],
             rms: Array.isArray(values)
               ? values.map((v) => v * 0.7)
               : [values * 0.7, values * 0.7],
-          };
-          return acc;
-        },
-        {} as Record<string, AudioMeterData>,
+          },
+        ]),
       );
-
-      return {
-        mix: {
-          ...state.mix,
-          meterData,
-        },
-      };
+      return { mix: { ...state.mix, meterData } };
     });
   }
 
@@ -116,46 +110,88 @@ export class MixEngineImpl implements MixEngine {
       input?.dispose();
       channel?.dispose();
       meter?.dispose();
-      throw new Error("Failed to create channel");
+      throw error;
     }
   }
 
   deleteChannel(id: string): void {
-    useEngineStore.setState((state) => {
-      const channel = state.mix.channels[id];
-      if (!channel || id === state.mix.masterChannelId) {
-        throw new Error("Cannot delete channel");
-      }
+    // First, validate and get channel data outside setState
+    const currentState = useEngineStore.getState();
+    const channel = currentState.mix.channels[id];
 
+    if (!channel || id === currentState.mix.masterChannelId) {
+      throw new Error("Cannot delete channel");
+    }
+
+    try {
+      // Perform all audio node cleanup outside of setState
+      this.cleanupChannelNodes(channel);
+
+      // Then update state atomically
+      useEngineStore.setState((state) => {
+        const { [id]: removedChannel, ...remainingChannels } =
+          state.mix.channels;
+
+        return {
+          mix: {
+            ...state.mix,
+            channels: remainingChannels,
+          },
+          arrangement: {
+            ...state.arrangement,
+            returnTracks: state.arrangement.returnTracks.filter(
+              (trackId) => trackId !== id,
+            ),
+          },
+        };
+      });
+    } catch (error) {
+      console.error("Failed to cleanup channel:", error);
+      throw error;
+    }
+  }
+
+  private cleanupChannelNodes(channel: MixerChannel): void {
+    try {
       // Clean up devices
-      channel.preDevices.forEach((device) => device.disconnect());
-      channel.postDevices.forEach((device) => device.disconnect());
+      channel.preDevices.forEach((device) => {
+        try {
+          device.disconnect();
+        } catch (e) {
+          console.warn("Failed to disconnect pre-device", e);
+        }
+      });
+
+      channel.postDevices.forEach((device) => {
+        try {
+          device.disconnect();
+        } catch (e) {
+          console.warn("Failed to disconnect post-device", e);
+        }
+      });
 
       // Clean up sends
-      channel.sends.forEach((send) => send.gain.dispose());
+      channel.sends.forEach((send) => {
+        try {
+          send.gain.dispose();
+        } catch (e) {
+          console.warn("Failed to dispose send", e);
+        }
+      });
 
       // Clean up channel nodes
-      channel.input.dispose();
-      channel.channel.dispose();
-      channel.meter.dispose();
-
-      // Remove channel and its devices using destructuring
-      const { [id]: removedChannel, ...remainingChannels } = state.mix.channels;
-
-      // Update state
-      return {
-        mix: {
-          ...state.mix,
-          channels: remainingChannels,
-        },
-        arrangement: {
-          ...state.arrangement,
-          returnTracks: state.arrangement.returnTracks.filter(
-            (trackId) => trackId !== id,
-          ),
-        },
-      };
-    });
+      try {
+        channel.input.dispose();
+        channel.channel.dispose();
+        channel.meter.dispose();
+      } catch (e) {
+        console.warn("Failed to dispose channel nodes", e);
+      }
+    } catch (error) {
+      // Log the error but continue with state update
+      console.error("Channel cleanup failed:", error);
+      throw error;
+    }
   }
 
   private createEffectNode(
@@ -212,14 +248,16 @@ export class MixEngineImpl implements MixEngine {
   addDevice(channelId: string, deviceType: EffectName): string {
     const id = uuidv4();
 
-    useEngineStore.setState((state) => {
-      const channel = state.mix.channels[channelId];
-      if (!channel) throw new Error("Channel not found");
+    // Validate channel exists before any operations
+    const currentState = useEngineStore.getState();
+    const channel = currentState.mix.channels[channelId];
+    if (!channel) throw new Error("Channel not found");
 
-      // Create the effect node
+    try {
+      // Create audio nodes outside setState
       const node = this.createEffectNode(deviceType);
 
-      // Create device record
+      // Prepare device record
       const device: Device = {
         id,
         type: deviceType,
@@ -228,33 +266,84 @@ export class MixEngineImpl implements MixEngine {
         node,
       };
 
-      // Add to pre-fader chain by default
-      const updatedChannel = {
-        ...channel,
-        preDevices: [...channel.preDevices, node], // Store the actual node
-      };
+      // Update state atomically
+      useEngineStore.setState((state) => {
+        const updatedChannel = {
+          ...state.mix.channels[channelId],
+          preDevices: [...state.mix.channels[channelId].preDevices, node],
+        };
 
-      return {
-        mix: {
-          ...state.mix,
-          devices: {
-            ...state.mix.devices,
-            [id]: device, // Store complete device info
+        return {
+          mix: {
+            ...state.mix,
+            devices: {
+              ...state.mix.devices,
+              [id]: device,
+            },
+            channels: {
+              ...state.mix.channels,
+              [channelId]: updatedChannel,
+            },
           },
-          channels: {
-            ...state.mix.channels,
-            [channelId]: updatedChannel,
+        };
+      });
+
+      // Reconnect audio nodes after state is updated
+      try {
+        this.reconnectChannelNodes(
+          useEngineStore.getState().mix.channels[channelId],
+        );
+      } catch (reconnectError) {
+        // If reconnection fails, we need to clean up and rollback
+        this.handleDeviceAdditionFailure(id, node, channelId);
+        throw reconnectError;
+      }
+
+      return id;
+    } catch (error) {
+      // Clean up any created resources on failure
+      console.error("Failed to add device:", error);
+      throw error;
+    }
+  }
+
+  private handleDeviceAdditionFailure(
+    deviceId: string,
+    node: ToneEffectType,
+    channelId: string,
+  ): void {
+    try {
+      // Cleanup the created node
+      node.disconnect();
+      node.dispose();
+
+      // Rollback state
+      useEngineStore.setState((state) => {
+        const { [deviceId]: removed, ...remainingDevices } = state.mix.devices;
+        const channel = state.mix.channels[channelId];
+
+        return {
+          mix: {
+            ...state.mix,
+            devices: remainingDevices,
+            channels: {
+              ...state.mix.channels,
+              [channelId]: {
+                ...channel,
+                preDevices: channel.preDevices.filter((d) => d !== node),
+              },
+            },
           },
-        },
-      };
-    });
-
-    // Reconnect the audio nodes after state update
-    this.reconnectChannelNodes(
-      useEngineStore.getState().mix.channels[channelId],
-    );
-
-    return id;
+        };
+      });
+    } catch (cleanupError) {
+      console.error(
+        "Failed to cleanup after device addition failure:",
+        cleanupError,
+      );
+      // At this point, manual intervention might be needed
+      // Could emit an event for error handling system
+    }
   }
 
   removeDevice(channelId: string, deviceId: string): void {
@@ -298,32 +387,42 @@ export class MixEngineImpl implements MixEngine {
   createSend(fromId: string, toId: string): string {
     const id = uuidv4();
 
-    useEngineStore.setState((state) => {
-      const sourceChannel = state.mix.channels[fromId];
-      const targetChannel = state.mix.channels[toId];
+    // Validate channels and permissions first
+    const currentState = useEngineStore.getState();
+    const sourceChannel = currentState.mix.channels[fromId];
+    const targetChannel = currentState.mix.channels[toId];
 
-      // Validation
-      if (!sourceChannel || !targetChannel) {
-        throw new Error("Source or target channel not found");
-      }
+    if (!sourceChannel || !targetChannel) {
+      throw new Error("Source or target channel not found");
+    }
 
-      const isReturnTrack = state.arrangement.returnTracks.includes(toId);
-      if (!isReturnTrack && toId !== state.mix.masterChannelId) {
-        throw new Error("Can only send to return or master channels");
-      }
+    const isReturnTrack = currentState.arrangement.returnTracks.includes(toId);
+    if (!isReturnTrack && toId !== currentState.mix.masterChannelId) {
+      throw new Error("Can only send to return or master channels");
+    }
 
-      try {
-        // Create and connect audio nodes within setState to ensure atomic operation
-        const gain = new Tone.Gain(0);
-        gain.connect(targetChannel.input);
+    // Create audio nodes outside of setState
+    let gain: Tone.Gain | null = null;
+    try {
+      gain = new Tone.Gain(0);
+      gain.connect(targetChannel.input);
 
-        const send: Send = {
-          id,
-          name: `Send to ${targetChannel.name}`,
-          returnTrackId: toId,
-          preFader: false,
-          gain,
-        };
+      const send: Send = {
+        id,
+        name: `Send to ${targetChannel.name}`,
+        returnTrackId: toId,
+        preFader: false,
+        gain,
+      };
+
+      // Update state atomically
+      useEngineStore.setState((state) => {
+        const updatedSourceChannel = state.mix.channels[fromId];
+
+        // Double-check channel still exists
+        if (!updatedSourceChannel) {
+          throw new Error("Source channel no longer exists");
+        }
 
         return {
           mix: {
@@ -331,130 +430,79 @@ export class MixEngineImpl implements MixEngine {
             channels: {
               ...state.mix.channels,
               [fromId]: {
-                ...sourceChannel,
-                sends: [...sourceChannel.sends, send],
+                ...updatedSourceChannel,
+                sends: [...updatedSourceChannel.sends, send],
               },
             },
           },
         };
-      } catch (error) {
-        // Clean up if node creation/connection fails
-        console.error("Failed to create send:", error);
-        throw new Error("Failed to create send connection");
-      }
-    });
+      });
 
-    return id;
+      return id;
+    } catch (error) {
+      // Clean up on any error
+      if (gain) {
+        try {
+          gain.disconnect();
+          gain.dispose();
+        } catch (cleanupError) {
+          console.warn("Failed to cleanup gain node:", cleanupError);
+        }
+      }
+      console.error("Failed to create send:", error);
+      throw error;
+    }
   }
 
   updateSend(channelId: string, sendId: string, updates: Partial<Send>): void {
-    useEngineStore.setState((state) => {
-      const channel = state.mix.channels[channelId];
-      if (!channel) {
-        throw new Error("Channel not found");
+    // First get current state and validate
+    const currentState = useEngineStore.getState();
+    const channel = currentState.mix.channels[channelId];
+    if (!channel) {
+      throw new Error("Channel not found");
+    }
+
+    const currentSend = channel.sends.find((s) => s.id === sendId);
+    if (!currentSend) {
+      throw new Error("Send not found");
+    }
+
+    try {
+      // Handle audio routing changes outside setState
+      if (updates.returnTrackId) {
+        this.updateSendRouting(
+          currentSend,
+          updates.returnTrackId,
+          currentState,
+        );
       }
 
-      const sendIndex = channel.sends.findIndex((s) => s.id === sendId);
-      if (sendIndex === -1) {
-        throw new Error("Send not found");
+      // Handle pre/post fader changes outside setState
+      if (updates.preFader !== undefined) {
+        this.updateSendFaderRouting(
+          channel,
+          currentSend,
+          updates.preFader,
+          currentState,
+        );
       }
 
-      const currentSend = channel.sends[sendIndex];
-      const newSends = [...channel.sends];
-
-      // Handle audio routing updates
-      if (
-        updates.returnTrackId &&
-        updates.returnTrackId !== currentSend.returnTrackId
-      ) {
-        const newReturnChannel = state.mix.channels[updates.returnTrackId];
-
-        if (!newReturnChannel) {
-          throw new Error("Target return track not found");
-        }
-
-        if (newReturnChannel.type !== "return") {
-          throw new Error("Target channel must be a return track");
-        }
-
-        // Disconnect from old return track
-        currentSend.gain.disconnect();
-
-        // Connect to new return track
-        currentSend.gain.connect(newReturnChannel.input);
-      }
-
-      // Handle pre/post fader routing changes
-      if (
-        updates.preFader !== undefined &&
-        updates.preFader !== currentSend.preFader
-      ) {
-        const send = currentSend.gain;
-
-        // Disconnect current routing
-        send.disconnect();
-
-        if (updates.preFader) {
-          // Pre-fader: Connect from channel input
-          channel.input.connect(send);
-        } else {
-          // Post-fader: Connect after channel processing
-          channel.channel.connect(send);
-        }
-
-        // Reconnect to return track
-        const returnChannel = state.mix.channels[currentSend.returnTrackId];
-        send.connect(returnChannel.input);
-      }
-
-      // Handle gain changes
+      // Handle gain changes outside setState
       if (updates.gain?.gain.value !== undefined) {
         currentSend.gain.gain.value = updates.gain.gain.value;
       }
 
-      // Update send state
-      newSends[sendIndex] = {
-        ...currentSend,
-        ...updates,
-        // Preserve the Tone.js node instance
-        gain: updates.gain ?? currentSend.gain,
-      };
-
-      return {
-        mix: {
-          ...state.mix,
-          channels: {
-            ...state.mix.channels,
-            [channelId]: {
-              ...channel,
-              sends: newSends,
-            },
-          },
-        },
-      };
-    });
-  }
-
-  removeSend(channelId: string, sendId: string): void {
-    try {
+      // Finally, update state atomically
       useEngineStore.setState((state) => {
         const channel = state.mix.channels[channelId];
-        if (!channel) {
-          throw new Error("Channel not found");
-        }
+        const sendIndex = channel.sends.findIndex((s) => s.id === sendId);
+        const newSends = [...channel.sends];
 
-        const send = channel.sends.find((s) => s.id === sendId);
-        if (!send) {
-          throw new Error("Send not found");
-        }
-
-        // Dispose send gain node
-        try {
-          send.gain.dispose();
-        } catch (error) {
-          console.warn("Failed to dispose send gain node:", error);
-          // Continue with state update even if dispose fails
-        }
+        newSends[sendIndex] = {
+          ...currentSend,
+          ...updates,
+          gain: updates.gain ?? currentSend.gain,
+        };
 
         return {
           mix: {
@@ -463,37 +511,169 @@ export class MixEngineImpl implements MixEngine {
               ...state.mix.channels,
               [channelId]: {
                 ...channel,
-                sends: channel.sends.filter((s) => s.id !== sendId),
+                sends: newSends,
               },
             },
           },
         };
       });
     } catch (error) {
+      console.error("Failed to update send:", error);
+      // Attempt to restore original routing
+      this.restoreSendRouting(channel, currentSend, currentState);
+      throw error;
+    }
+  }
+
+  private updateSendRouting(
+    currentSend: Send,
+    newReturnTrackId: string,
+    state: EngineState,
+  ): void {
+    const newReturnChannel = state.mix.channels[newReturnTrackId];
+
+    if (!newReturnChannel) {
+      throw new Error("Target return track not found");
+    }
+
+    if (newReturnChannel.type !== "return") {
+      throw new Error("Target channel must be a return track");
+    }
+
+    try {
+      // Disconnect from old return track
+      currentSend.gain.disconnect();
+
+      // Connect to new return track
+      currentSend.gain.connect(newReturnChannel.input);
+    } catch (error) {
+      console.error("Failed to update send routing:", error);
+      throw error;
+    }
+  }
+
+  private updateSendFaderRouting(
+    channel: MixerChannel,
+    currentSend: Send,
+    preFader: boolean,
+    state: EngineState,
+  ): void {
+    try {
+      const send = currentSend.gain;
+      send.disconnect();
+
+      if (preFader) {
+        channel.input.connect(send);
+      } else {
+        channel.channel.connect(send);
+      }
+
+      const returnChannel = state.mix.channels[currentSend.returnTrackId];
+      send.connect(returnChannel.input);
+    } catch (error) {
+      console.error("Failed to update fader routing:", error);
+      throw error;
+    }
+  }
+
+  private restoreSendRouting(
+    channel: MixerChannel,
+    send: Send,
+    state: EngineState,
+  ): void {
+    try {
+      send.gain.disconnect();
+
+      if (send.preFader) {
+        channel.input.connect(send.gain);
+      } else {
+        channel.channel.connect(send.gain);
+      }
+
+      const returnChannel = state.mix.channels[send.returnTrackId];
+      if (returnChannel) {
+        send.gain.connect(returnChannel.input);
+      }
+    } catch (error) {
+      console.error("Failed to restore send routing:", error);
+      // At this point, manual intervention might be needed
+      throw new Error(
+        "Critical routing failure - manual reset may be required",
+      );
+    }
+  }
+
+  removeSend(channelId: string, sendId: string): void {
+    // First, validate and get current state outside setState
+    const currentState = useEngineStore.getState();
+    const channel = currentState.mix.channels[channelId];
+
+    if (!channel) {
+      throw new Error("Channel not found");
+    }
+
+    const send = channel.sends.find((s) => s.id === sendId);
+    if (!send) {
+      throw new Error("Send not found");
+    }
+
+    try {
+      // Clean up audio node outside setState
+      this.cleanupSendNode(send);
+
+      // Then update state atomically
+      useEngineStore.setState((state) => ({
+        mix: {
+          ...state.mix,
+          channels: {
+            ...state.mix.channels,
+            [channelId]: {
+              ...channel,
+              sends: channel.sends.filter((s) => s.id !== sendId),
+            },
+          },
+        },
+      }));
+    } catch (error) {
       console.error("Failed to remove send:", error);
-      throw error; // Re-throw to let caller handle
+      throw error;
+    }
+  }
+
+  private cleanupSendNode(send: Send): void {
+    try {
+      // Disconnect before disposal to prevent audio glitches
+      send.gain.disconnect();
+      send.gain.dispose();
+    } catch (error) {
+      console.warn("Failed to cleanup send node:", error);
+      throw error;
     }
   }
 
   setSendAmount(channelId: string, sendId: string, amount: number): void {
-    useEngineStore.setState((state) => {
-      const channel = state.mix.channels[channelId];
-      if (!channel) {
-        throw new Error("Channel not found");
-      }
+    // Validate and get data outside setState
+    const currentState = useEngineStore.getState();
+    const channel = currentState.mix.channels[channelId];
 
-      const send = channel.sends.find((s) => s.id === sendId);
-      if (!send) {
-        throw new Error("Send not found");
-      }
+    if (!channel) {
+      throw new Error("Channel not found");
+    }
 
-      // Clamp amount between 0 and 1
-      const clampedAmount = Math.max(0, Math.min(1, amount));
+    const send = channel.sends.find((s) => s.id === sendId);
+    if (!send) {
+      throw new Error("Send not found");
+    }
 
-      // Update the Tone.js gain node
+    // Clamp amount between 0 and 1
+    const clampedAmount = Math.max(0, Math.min(1, amount));
+
+    try {
+      // Update Tone.js node outside setState
       send.gain.gain.value = clampedAmount;
 
-      return {
+      // Then update state atomically
+      useEngineStore.setState((state) => ({
         mix: {
           ...state.mix,
           channels: {
@@ -501,13 +681,18 @@ export class MixEngineImpl implements MixEngine {
             [channelId]: {
               ...channel,
               sends: channel.sends.map((s) =>
-                s.id === sendId ? { ...s, gain: send.gain } : s,
+                s.id === sendId
+                  ? { ...s } // No need to update gain as it's a reference
+                  : s,
               ),
             },
           },
         },
-      };
-    });
+      }));
+    } catch (error) {
+      console.error("Failed to update send amount:", error);
+      throw error;
+    }
   }
 
   updateDevice<T extends EffectOptions>(
@@ -515,41 +700,21 @@ export class MixEngineImpl implements MixEngine {
     deviceId: string,
     updates: Partial<Device<T>>,
   ): void {
-    useEngineStore.setState((state) => {
-      const device = state.mix.devices[deviceId];
-      const channel = state.mix.channels[channelId];
+    // First validate and get current state
+    const currentState = useEngineStore.getState();
+    const device = currentState.mix.devices[deviceId];
+    const channel = currentState.mix.channels[channelId];
 
-      if (!device || !channel) {
-        throw new Error("Device or channel not found");
-      }
+    if (!device || !channel) {
+      throw new Error("Device or channel not found");
+    }
 
-      // Handle bypass separately as it's common to all effects
-      if (updates.bypass !== undefined) {
-        device.node.wet.value = updates.bypass ? 0 : 1;
-      }
+    try {
+      // Handle audio parameters outside setState
+      this.updateDeviceParameters(device, updates);
 
-      // Type-safe options update
-      if (updates.options) {
-        // Ensure we only access valid parameters for this effect type
-        const options = updates.options;
-
-        // Handle each parameter based on whether it's an AudioParam or direct value
-        (Object.keys(options) as (keyof T)[]).forEach((key) => {
-          const value = options[key];
-          if (value !== undefined) {
-            const param = device.node[key as keyof ToneEffectType];
-
-            if (param instanceof Tone.Param) {
-              param.value = value;
-            } else if (key in device.node) {
-              // Type assertion here is safer as we've checked the key exists
-              (device.node as Record<keyof T, unknown>)[key] = value;
-            }
-          }
-        });
-      }
-
-      return {
+      // Then update state atomically
+      useEngineStore.setState((state) => ({
         mix: {
           ...state.mix,
           devices: {
@@ -557,11 +722,57 @@ export class MixEngineImpl implements MixEngine {
             [deviceId]: {
               ...device,
               ...updates,
+              // Preserve the node reference
+              node: device.node,
             },
           },
         },
-      };
-    });
+      }));
+    } catch (error) {
+      console.error("Failed to update device parameters:", error);
+      throw error;
+    }
+  }
+
+  private updateDeviceParameters<T extends EffectOptions>(
+    device: Device,
+    updates: Partial<Device<T>>,
+  ): void {
+    try {
+      // Handle bypass
+      if (updates.bypass !== undefined) {
+        try {
+          device.node.wet.value = updates.bypass ? 0 : 1;
+        } catch (e) {
+          console.warn("Failed to update bypass state", e);
+        }
+      }
+
+      // Handle other parameters
+      if (updates.options) {
+        const options = updates.options;
+
+        (Object.keys(options) as (keyof T)[]).forEach((key) => {
+          const value = options[key];
+          if (value !== undefined) {
+            try {
+              const param = device.node[key as keyof ToneEffectType];
+
+              if (param instanceof Tone.Param) {
+                param.value = value;
+              } else if (key in device.node) {
+                (device.node as Record<keyof T, unknown>)[key] = value;
+              }
+            } catch (e) {
+              console.warn(`Failed to update parameter ${String(key)}:`, e);
+            }
+          }
+        });
+      }
+    } catch (error) {
+      console.error("Parameter update failed:", error);
+      throw error;
+    }
   }
 
   private reconnectChannelNodes(channel: MixerChannel): MixerChannel {
@@ -638,66 +849,97 @@ export class MixEngineImpl implements MixEngine {
   }
 
   dispose(): void {
-    useEngineStore.setState((state) => {
-      if (this.disposed) return state;
-      this.disposed = true;
+    // Check disposed state first
+    if (this.disposed) return;
+    this.disposed = true;
 
-      clearInterval(this.meterUpdateInterval);
+    // Stop meter updates immediately
+    clearInterval(this.meterUpdateInterval);
 
-      try {
-        // Dispose channels
-        Object.values(state.mix.channels).forEach((channel) => {
-          try {
-            channel.input.dispose();
-            channel.channel.dispose();
-            channel.meter.dispose();
-            channel.preDevices.forEach((device) => {
-              try {
-                device.dispose();
-              } catch (e) {
-                console.warn("Failed to dispose device:", e);
-              }
-            });
-            channel.postDevices.forEach((device) => {
-              try {
-                device.dispose();
-              } catch (e) {
-                console.warn("Failed to dispose device:", e);
-              }
-            });
-            channel.sends.forEach((send) => {
-              try {
-                send.gain.dispose();
-              } catch (e) {
-                console.warn("Failed to dispose send:", e);
-              }
-            });
-          } catch (e) {
-            console.warn("Failed to dispose channel:", e);
-          }
-        });
+    // Get current state once
+    const currentState = useEngineStore.getState();
 
-        // Dispose devices
-        Object.values(state.mix.devices).forEach((device) => {
-          try {
-            device.node.dispose();
-          } catch (e) {
-            console.warn("Failed to dispose device:", e);
-          }
-        });
-      } catch (e) {
-        console.error("Error during dispose:", e);
-      }
+    try {
+      // Cleanup all audio nodes outside setState
+      this.disposeAllAudioNodes(currentState.mix);
 
-      // Reset to initial state regardless of errors
-      return {
+      // Finally update state atomically
+      useEngineStore.setState({
         mix: {
           channels: {},
           devices: {},
           masterChannelId: "",
           meterData: {},
         },
-      };
+      });
+    } catch (error) {
+      console.error("Error during engine disposal:", error);
+      // Still attempt to reset state even if cleanup fails
+      useEngineStore.setState({
+        mix: {
+          channels: {},
+          devices: {},
+          masterChannelId: "",
+          meterData: {},
+        },
+      });
+      throw error; // Re-throw for upstream handling
+    }
+  }
+
+  private disposeAllAudioNodes(mixState: MixState): void {
+    // Dispose channels
+    this.disposeChannels(mixState.channels);
+
+    // Dispose devices
+    this.disposeDevices(mixState.devices);
+  }
+
+  private disposeChannels(channels: Record<string, MixerChannel>): void {
+    Object.values(channels).forEach((channel) => {
+      this.disposeChannel(channel);
     });
+  }
+
+  private disposeChannel(channel: MixerChannel): void {
+    // Dispose pre-devices
+    channel.preDevices.forEach((device) => {
+      this.safeDispose(device, "pre-device");
+    });
+
+    // Dispose post-devices
+    channel.postDevices.forEach((device) => {
+      this.safeDispose(device, "post-device");
+    });
+
+    // Dispose sends
+    channel.sends.forEach((send) => {
+      this.safeDispose(send.gain, "send gain");
+    });
+
+    // Dispose channel nodes
+    this.safeDispose(channel.input, "channel input");
+    this.safeDispose(channel.channel, "channel strip");
+    this.safeDispose(channel.meter, "channel meter");
+  }
+
+  private disposeDevices(devices: Record<string, Device>): void {
+    Object.values(devices).forEach((device) => {
+      this.safeDispose(device.node, `device ${device.name}`);
+    });
+  }
+
+  private safeDispose(
+    node: { dispose: () => void } | undefined,
+    context: string,
+  ): void {
+    if (!node) return;
+
+    try {
+      node.dispose();
+    } catch (error) {
+      console.warn(`Failed to dispose ${context}:`, error);
+      // Don't rethrow - we want to continue with other disposals
+    }
   }
 }

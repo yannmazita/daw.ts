@@ -9,10 +9,16 @@ import {
   MidiNote,
   MidiClipContent,
   ClipLoop,
+  MidiTrackData,
 } from "../types";
 import { useEngineStore } from "@/core/stores/useEngineStore";
 import { Time, Decibels } from "tone/build/esm/core/type/Units";
 import { v4 as uuidv4 } from "uuid";
+import {
+  isValidClipContent,
+  validateAudioBuffer,
+  validateMidiContent,
+} from "../utils/validation";
 
 export class ClipEngineImpl implements ClipEngine {
   private disposed = false;
@@ -110,29 +116,50 @@ export class ClipEngineImpl implements ClipEngine {
   }
 
   createMidiClip(midiData: MidiClipContent): string {
+    // Validate MIDI data before creating clip
+    validateMidiContent(midiData);
+
     const id = crypto.randomUUID();
     const content: ClipContent = {
       id,
       type: "midi",
-      name: midiData.name,
+      name: midiData.name || `MIDI Clip ${id.slice(0, 4)}`, // Ensure name exists
       midiData,
     };
 
-    useEngineStore.setState((state) => ({
-      clips: {
-        ...state.clips,
-        contents: {
-          ...state.clips.contents,
-          [id]: content,
+    try {
+      useEngineStore.setState((state) => ({
+        clips: {
+          ...state.clips,
+          contents: {
+            ...state.clips.contents,
+            [id]: content,
+          },
         },
-      },
-    }));
+      }));
 
-    return id;
+      return id;
+    } catch (error) {
+      console.error("Failed to create MIDI clip:", error);
+      throw error;
+    }
   }
 
   createAudioClip(buffer: Tone.ToneAudioBuffer): string {
+    // Validate buffer before any state changes
+    if (!buffer?.loaded) {
+      throw new Error("Invalid or unloaded audio buffer");
+    }
+
+    // Generate ID and prepare content outside setState
     const id = uuidv4();
+
+    // Validate buffer properties
+    const validationResult = validateAudioBuffer(buffer);
+    if (!validationResult.isValid) {
+      throw new Error(`Invalid audio buffer: ${validationResult.error}`);
+    }
+
     const content: ClipContent = {
       id,
       type: "audio",
@@ -140,17 +167,30 @@ export class ClipEngineImpl implements ClipEngine {
       buffer,
     };
 
-    useEngineStore.setState((state) => ({
-      clips: {
-        ...state.clips,
-        contents: {
-          ...state.clips.contents,
-          [id]: content,
-        },
-      },
-    }));
+    try {
+      // Atomic state update
+      useEngineStore.setState((state) => {
+        if (state.clips.contents[id]) {
+          throw new Error("Duplicate clip ID generated");
+        }
 
-    return id;
+        return {
+          clips: {
+            ...state.clips,
+            contents: {
+              ...state.clips.contents,
+              [id]: content,
+            },
+          },
+        };
+      });
+
+      return id;
+    } catch (error) {
+      // Log error and rethrow with context
+      console.error("Failed to create audio clip:", error);
+      throw error;
+    }
   }
 
   getClipContent(contentId: string): ClipContent {
@@ -158,137 +198,248 @@ export class ClipEngineImpl implements ClipEngine {
   }
 
   scheduleClip(clip: ArrangementClip): void {
-    useEngineStore.setState((state) => {
-      const content = state.clips.contents[clip.contentId];
-      if (!content) return state; // No changes if content not found
+    // Get current state outside setState
+    const state = useEngineStore.getState();
+    const content = state.clips.contents[clip.contentId];
 
+    if (!content) return;
+
+    try {
       if (content.type === "midi" && content.midiData) {
-        // Create new activeClips object to accumulate all track parts
-        const newActiveClips = { ...state.clips.activeClips };
+        const preparedTracks = this.prepareMidiTracks(content, clip);
 
-        // Create a Part for each MIDI track
-        content.midiData.tracks.forEach((track, trackIndex) => {
-          const synth = new Tone.PolySynth().toDestination();
-          // Set the instrument based on track.instrument
-
-          // Schedule notes
-          const part = new Tone.Part((time, note: MidiNote) => {
-            synth.triggerAttackRelease(
-              note.name,
-              note.duration,
-              time,
-              note.velocity,
-            );
-          }, track.notes).start(clip.startTime);
-
-          // Handle control changes
-          Object.values(track.controlChanges).forEach((changes) => {
-            changes.forEach((cc) => {
-              // Schedule control change events
-              Tone.getTransport().schedule(
-                (time) => {
-                  // todo: Handle control changes based on cc.number
-                  // example: handle modulation, expression, etc.
-                },
-                cc.time + Tone.Time(clip.startTime).toSeconds(),
-              );
-            });
-          });
-
-          if (clip.loop?.enabled) {
-            part.loop = true;
-            part.loopStart = clip.loop.start;
-            part.loopEnd =
-              Tone.Time(clip.loop.start).toSeconds() +
-              Tone.Time(clip.loop.duration).toSeconds();
-          }
-
-          // Use compound ID for multi-track MIDI clips
-          const clipInstanceId =
-            content.midiData.tracks.length > 1
-              ? `${clip.id}_${trackIndex}`
-              : clip.id;
-
-          newActiveClips[clipInstanceId] = { part, clip };
-        });
-
-        return {
-          clips: {
-            ...state.clips,
-            activeClips: newActiveClips,
-          },
-        };
-      } else if (content.type === "audio" && content.buffer) {
-        const player = new Tone.Player({
-          url: content.buffer,
-          loop: clip.loop?.enabled ?? false,
-          loopStart: clip.loop?.start ?? 0,
-          loopEnd:
-            (Tone.Time(clip.loop?.start).toSeconds() ?? 0) +
-            (Tone.Time(clip.loop?.duration).toSeconds() ?? 0),
-        }).toDestination();
-
-        player.start(clip.startTime);
-
-        return {
+        // Update state atomically with prepared tracks
+        useEngineStore.setState((state) => ({
           clips: {
             ...state.clips,
             activeClips: {
               ...state.clips.activeClips,
-              [clip.id]: { part: player, clip },
+              ...preparedTracks.activeClips,
             },
           },
-        };
-      }
+        }));
 
-      return state; // Return unchanged state if no conditions met
+        // Start all parts after state update
+        preparedTracks.parts.forEach((part) => part.start(clip.startTime));
+      } else if (content.type === "audio" && content.buffer) {
+        const preparedPlayer = this.prepareAudioPlayer(content, clip);
+
+        // Update state atomically
+        useEngineStore.setState((state) => ({
+          clips: {
+            ...state.clips,
+            activeClips: {
+              ...state.clips.activeClips,
+              [clip.id]: { part: preparedPlayer, clip },
+            },
+          },
+        }));
+
+        // Start playback after state update
+        preparedPlayer.start(clip.startTime);
+      }
+    } catch (error) {
+      console.error("Failed to schedule clip:", error);
+      this.cleanupFailedScheduling(clip.id);
+      throw error;
+    }
+  }
+
+  private prepareMidiTracks(content: ClipContent, clip: ArrangementClip) {
+    const preparedParts: Tone.Part[] = [];
+    const activeClips: Record<
+      string,
+      { part: Tone.Part; clip: ArrangementClip }
+    > = {};
+
+    content.midiData.tracks.forEach((track, trackIndex) => {
+      try {
+        const synth = new Tone.PolySynth().toDestination();
+        // Set the instrument based on track.instrument
+
+        const part = new Tone.Part((time, note: MidiNote) => {
+          synth.triggerAttackRelease(
+            note.name,
+            note.duration,
+            time,
+            note.velocity,
+          );
+        }, track.notes);
+
+        // Configure loop settings
+        if (clip.loop?.enabled) {
+          part.loop = true;
+          part.loopStart = clip.loop.start;
+          part.loopEnd =
+            Tone.Time(clip.loop.start).toSeconds() +
+            Tone.Time(clip.loop.duration).toSeconds();
+        }
+
+        // Handle control changes
+        this.setupControlChanges(track, clip.startTime);
+
+        // Store prepared part
+        preparedParts.push(part);
+
+        // Create clip instance ID
+        const clipInstanceId =
+          content.midiData.tracks.length > 1
+            ? `${clip.id}_${trackIndex}`
+            : clip.id;
+
+        activeClips[clipInstanceId] = { part, clip };
+      } catch (error) {
+        // Cleanup any successfully created parts before throwing
+        preparedParts.forEach((p) => p.dispose());
+        throw error;
+      }
+    });
+
+    return { parts: preparedParts, activeClips };
+  }
+
+  private prepareAudioPlayer(
+    content: ClipContent,
+    clip: ArrangementClip,
+  ): Tone.Player {
+    return new Tone.Player({
+      url: content.buffer,
+      loop: clip.loop?.enabled ?? false,
+      loopStart: clip.loop?.start ?? 0,
+      loopEnd:
+        (Tone.Time(clip.loop?.start).toSeconds() ?? 0) +
+        (Tone.Time(clip.loop?.duration).toSeconds() ?? 0),
+    }).toDestination();
+  }
+
+  private setupControlChanges(track: MidiTrackData, startTime: Time): void {
+    Object.values(track.controlChanges).forEach((changes) => {
+      changes.forEach((cc) => {
+        Tone.getTransport().schedule(
+          (time) => {
+            // todo: handle control changes based on cc.number
+            // example: handle modulation, expression, etc.
+          },
+          cc.time + Tone.Time(startTime).toSeconds(),
+        );
+      });
     });
   }
 
-  unscheduleClip(clipId: string): void {
-    useEngineStore.setState((state) => {
+  private cleanupFailedScheduling(clipId: string): void {
+    try {
+      // Clean up any partially created resources
+      const state = useEngineStore.getState();
       const activeClip = state.clips.activeClips[clipId];
 
-      if (activeClip) {
+      if (activeClip?.part) {
         if (activeClip.part instanceof Tone.Part) {
           activeClip.part.dispose();
         } else if (activeClip.part instanceof Tone.Player) {
-          activeClip.part.stop().dispose();
+          activeClip.part.dispose();
         }
+      }
+    } catch (error) {
+      console.warn("Cleanup after failed scheduling failed:", error);
+    }
+  }
 
+  unscheduleClip(clipId: string): void {
+    // Get current state and clip data outside setState
+    const state = useEngineStore.getState();
+    const activeClip = state.clips.activeClips[clipId];
+
+    if (!activeClip) return;
+
+    try {
+      // Cleanup audio nodes outside setState
+      this.disposeClipResources(activeClip);
+
+      // Then update state atomically
+      useEngineStore.setState((state) => {
         // Create new activeClips object without the specified clipId
         const { [clipId]: removed, ...remainingClips } =
           state.clips.activeClips;
 
-        return { clips: { ...state.clips, activeClips: remainingClips } };
+        return {
+          clips: {
+            ...state.clips,
+            activeClips: remainingClips,
+          },
+        };
+      });
+    } catch (error) {
+      console.error(`Failed to unschedule clip ${clipId}:`, error);
+      // Even if cleanup fails, we should still remove from state
+      // to prevent memory leaks and state inconsistencies
+      useEngineStore.setState((state) => {
+        const { [clipId]: removed, ...remainingClips } =
+          state.clips.activeClips;
+        return {
+          clips: {
+            ...state.clips,
+            activeClips: remainingClips,
+          },
+        };
+      });
+
+      // Rethrow the error after state cleanup
+      throw error;
+    }
+  }
+
+  private disposeClipResources(activeClip: {
+    part: Tone.Part | Tone.Player | null;
+    clip: ArrangementClip;
+  }): void {
+    if (!activeClip.part) return;
+
+    try {
+      if (activeClip.part instanceof Tone.Part) {
+        // Stop and cleanup MIDI part
+        activeClip.part.stop();
+        activeClip.part.dispose();
+      } else if (activeClip.part instanceof Tone.Player) {
+        // Stop and cleanup audio player
+        activeClip.part.stop();
+        activeClip.part.dispose();
       }
-      return state; // Return unchanged state if clip not found
-    });
+    } catch (error) {
+      console.warn("Error disposing clip resources:", error);
+      throw error; // Rethrow to handle in the main function
+    }
   }
 
   addClip(contentId: string, startTime: Time): string {
+    // Validate inputs and prepare clip data before any state changes
+    const currentState = useEngineStore.getState();
+    const content = currentState.clips.contents[contentId];
+
+    if (!content) {
+      throw new Error("Clip content not found");
+    }
+
+    // Validate content structure
+    if (!isValidClipContent(content)) {
+      throw new Error(`Invalid clip content for ${content.type} clip`);
+    }
+
     const id = uuidv4();
 
-    useEngineStore.setState((state) => {
-      const content = state.clips.contents[contentId];
-      if (!content) {
-        throw new Error("Clip content not found");
-      }
+    // Prepare clip data
+    const clip: ArrangementClip = {
+      id,
+      contentId,
+      startTime,
+      duration: this.calculateClipDuration(content),
+      gain: 0,
+      fadeIn: 0,
+      fadeOut: 0,
+    };
 
-      const clip: ArrangementClip = {
-        id,
-        contentId,
-        startTime,
-        duration:
-          content.type === "midi"
-            ? (content.midiData?.duration ?? 0)
-            : (content.buffer?.duration ?? 0),
-        gain: 0,
-        fadeIn: 0,
-        fadeOut: 0,
-      };
-
-      return {
+    try {
+      // First, update state atomically
+      useEngineStore.setState((state) => ({
         clips: {
           ...state.clips,
           activeClips: {
@@ -299,21 +450,51 @@ export class ClipEngineImpl implements ClipEngine {
             },
           },
         },
-      };
-    });
+      }));
 
-    // Schedule the clip - it will access state internally
-    this.scheduleClip({
-      id,
-      contentId,
-      startTime,
-      duration: 0, // scheduleClip will get the actual duration from state
-      gain: 0,
-      fadeIn: 0,
-      fadeOut: 0,
-    });
+      // Then schedule the clip
+      try {
+        this.scheduleClip(clip);
+      } catch (schedulingError) {
+        // If scheduling fails, clean up the state
+        this.removeClipFromState(id);
+        throw schedulingError;
+      }
 
-    return id;
+      return id;
+    } catch (error) {
+      console.error("Failed to add clip:", error);
+      // Clean up any partial state changes
+      this.removeClipFromState(id);
+      throw error;
+    }
+  }
+
+  private calculateClipDuration(content: ClipContent): number {
+    if (content.type === "midi") {
+      return content.midiData?.duration ?? 0;
+    } else if (content.type === "audio") {
+      return content.buffer?.duration ?? 0;
+    }
+    return 0;
+  }
+
+  private removeClipFromState(clipId: string): void {
+    try {
+      useEngineStore.setState((state) => {
+        const { [clipId]: removed, ...remainingClips } =
+          state.clips.activeClips;
+        return {
+          clips: {
+            ...state.clips,
+            activeClips: remainingClips,
+          },
+        };
+      });
+    } catch (error) {
+      console.error("Failed to clean up clip state:", error);
+      // Don't throw here as this is already error handling
+    }
   }
 
   removeClip(clipId: string): void {
@@ -341,25 +522,27 @@ export class ClipEngineImpl implements ClipEngine {
   }
 
   moveClip(clipId: string, newTime: Time): void {
-    useEngineStore.setState((state) => {
-      const activeClip = state.clips.activeClips[clipId];
+    // Get current state outside setState
+    const state = useEngineStore.getState();
+    const activeClip = state.clips.activeClips[clipId];
 
-      // If no active clip found, return state unchanged
-      if (!activeClip) {
-        return state;
-      }
+    // Early returns if invalid state
+    if (!activeClip) return;
+    if (
+      !(
+        activeClip.part instanceof Tone.Part ||
+        activeClip.part instanceof Tone.Player
+      )
+    ) {
+      return;
+    }
 
-      // Only proceed if clip has a valid part
-      if (
-        !(
-          activeClip.part instanceof Tone.Part ||
-          activeClip.part instanceof Tone.Player
-        )
-      ) {
-        return state;
-      }
+    try {
+      // Reschedule the audio/MIDI part outside setState
+      this.rescheduleClipTiming(activeClip.part, newTime, activeClip.clip);
 
-      return {
+      // Then update state atomically
+      useEngineStore.setState((state) => ({
         clips: {
           ...state.clips,
           activeClips: {
@@ -373,8 +556,63 @@ export class ClipEngineImpl implements ClipEngine {
             },
           },
         },
-      };
-    });
+      }));
+    } catch (error) {
+      console.error(`Failed to move clip ${clipId}:`, error);
+      // Attempt to restore original timing
+      try {
+        this.rescheduleClipTiming(
+          activeClip.part,
+          activeClip.clip.startTime,
+          activeClip.clip,
+        );
+      } catch (restoreError) {
+        console.error("Failed to restore clip timing:", restoreError);
+      }
+      throw error;
+    }
+  }
+
+  private rescheduleClipTiming(
+    part: Tone.Part | Tone.Player,
+    newTime: Time,
+    clip: ArrangementClip,
+  ): void {
+    try {
+      if (part instanceof Tone.Part) {
+        // Handle MIDI part rescheduling
+        part.stop();
+        part.start(newTime);
+
+        // Update loop points if needed
+        if (clip.loop?.enabled) {
+          const newLoopEnd =
+            Tone.Time(clip.loop.start).toSeconds() +
+            Tone.Time(clip.loop.duration).toSeconds();
+          part.loopStart = clip.loop.start;
+          part.loopEnd = newLoopEnd;
+        }
+      } else if (part instanceof Tone.Player) {
+        // Handle audio player rescheduling
+        const wasPlaying = part.state === "started";
+        part.stop();
+
+        if (wasPlaying) {
+          part.start(newTime);
+        }
+
+        // Update loop points if needed
+        if (clip.loop?.enabled) {
+          part.loopStart = clip.loop.start;
+          part.loopEnd =
+            Tone.Time(clip.loop.start).toSeconds() +
+            Tone.Time(clip.loop.duration).toSeconds();
+        }
+      }
+    } catch (error) {
+      console.warn("Error rescheduling clip:", error);
+      throw error;
+    }
   }
 
   setClipLoop(
@@ -430,51 +668,85 @@ export class ClipEngineImpl implements ClipEngine {
   }
 
   setClipGain(clipId: string, gain: Decibels): void {
-    useEngineStore.setState((state) => {
-      const activeClip = state.clips.activeClips[clipId];
+    // Get current state outside setState
+    const state = useEngineStore.getState();
+    const activeClip = state.clips.activeClips[clipId];
 
-      if (!activeClip) {
-        return state; // No change if clip not found
-      }
+    // Early return if no clip found
+    if (!activeClip) return;
 
-      if (activeClip.part instanceof Tone.Player) {
-        activeClip.part.volume.value = gain;
+    // Early return if not an audio clip
+    if (!(activeClip.part instanceof Tone.Player)) return;
 
-        return {
-          clips: {
-            ...state.clips,
-            activeClips: {
-              ...state.clips.activeClips,
-              [clipId]: {
-                ...activeClip,
-                clip: {
-                  ...activeClip.clip,
-                  gain,
-                },
+    try {
+      // Update audio node gain outside setState
+      this.updateClipVolume(activeClip.part, gain);
+
+      // Then update state atomically
+      useEngineStore.setState((state) => ({
+        clips: {
+          ...state.clips,
+          activeClips: {
+            ...state.clips.activeClips,
+            [clipId]: {
+              ...activeClip,
+              clip: {
+                ...activeClip.clip,
+                gain,
               },
             },
           },
-        };
+        },
+      }));
+    } catch (error) {
+      console.error(`Failed to set clip gain for ${clipId}:`, error);
+
+      // Attempt to restore original gain
+      try {
+        this.updateClipVolume(activeClip.part, activeClip.clip.gain);
+      } catch (restoreError) {
+        console.error("Failed to restore clip gain:", restoreError);
       }
 
-      return state; // No change if not an audio clip
-    });
+      throw error;
+    }
+  }
+
+  private updateClipVolume(player: Tone.Player, gain: Decibels): void {
+    try {
+      // Validate gain value
+      if (!Number.isFinite(gain)) {
+        throw new Error("Invalid gain value");
+      }
+
+      const now = Tone.now();
+      player.volume.cancelScheduledValues(now);
+      player.volume.rampTo(gain, 0.05); // 50ms fade to prevent clicks
+    } catch (error) {
+      console.warn("Error updating clip volume:", error);
+      throw error;
+    }
   }
 
   setClipFades(clipId: string, fadeIn: Time, fadeOut: Time): void {
-    useEngineStore.setState((state) => {
-      const activeClip = state.clips.activeClips[clipId];
+    // Get current state outside setState
+    const state = useEngineStore.getState();
+    const activeClip = state.clips.activeClips[clipId];
 
-      if (!activeClip || !(activeClip.part instanceof Tone.Player)) {
-        return state; // Return unchanged state if no valid clip found
-      }
+    // Early return if no valid clip
+    if (!activeClip || !(activeClip.part instanceof Tone.Player)) {
+      return;
+    }
 
-      // Update Tone.js Player
-      activeClip.part.fadeIn = Tone.Time(fadeIn).toSeconds();
-      activeClip.part.fadeOut = Tone.Time(fadeOut).toSeconds();
+    try {
+      // Validate fade times
+      this.validateFadeTimes(fadeIn, fadeOut, activeClip.clip.duration);
 
-      // Update state with new fade values
-      return {
+      // Update Tone.js Player outside setState
+      this.updatePlayerFades(activeClip.part, fadeIn, fadeOut);
+
+      // Then update state atomically
+      useEngineStore.setState((state) => ({
         clips: {
           ...state.clips,
           activeClips: {
@@ -489,39 +761,160 @@ export class ClipEngineImpl implements ClipEngine {
             },
           },
         },
-      };
-    });
+      }));
+    } catch (error) {
+      console.error(`Failed to set clip fades for ${clipId}:`, error);
+
+      // Attempt to restore original fades
+      try {
+        this.updatePlayerFades(
+          activeClip.part,
+          activeClip.clip.fadeIn,
+          activeClip.clip.fadeOut,
+        );
+      } catch (restoreError) {
+        console.error("Failed to restore original fades:", restoreError);
+      }
+
+      throw error;
+    }
+  }
+
+  private validateFadeTimes(
+    fadeIn: Time,
+    fadeOut: Time,
+    clipDuration: Time,
+  ): void {
+    const fadeInSeconds = Tone.Time(fadeIn).toSeconds();
+    const fadeOutSeconds = Tone.Time(fadeOut).toSeconds();
+    const durationSeconds = Tone.Time(clipDuration).toSeconds();
+
+    if (fadeInSeconds < 0) {
+      throw new Error("Fade in time cannot be negative");
+    }
+
+    if (fadeOutSeconds < 0) {
+      throw new Error("Fade out time cannot be negative");
+    }
+
+    if (fadeInSeconds + fadeOutSeconds > durationSeconds) {
+      throw new Error("Combined fade times cannot exceed clip duration");
+    }
+  }
+
+  private updatePlayerFades(
+    player: Tone.Player,
+    fadeIn: Time,
+    fadeOut: Time,
+  ): void {
+    try {
+      const fadeInSeconds = Tone.Time(fadeIn).toSeconds();
+      const fadeOutSeconds = Tone.Time(fadeOut).toSeconds();
+
+      // Store current playback state
+      const wasPlaying = player.state === "started";
+      const currentTime = Tone.getTransport().seconds;
+
+      // Apply new fade settings
+      player.fadeIn = fadeInSeconds;
+      player.fadeOut = fadeOutSeconds;
+
+      // Restore playback state if needed
+      if (wasPlaying) {
+        player.stop();
+        player.start(currentTime); // Resume from transport time
+      }
+    } catch (error) {
+      console.warn("Error updating player fades:", error);
+      throw error;
+    }
   }
 
   playClip(clipId: string, startTime?: Time): void {
-    useEngineStore.setState((state) => {
-      const activeClip = state.clips.activeClips[clipId];
-      if (!activeClip) return state;
+    const state = useEngineStore.getState();
+    const activeClip = state.clips.activeClips[clipId];
 
+    if (!activeClip) return;
+
+    try {
+      // Start playback outside setState
       if (activeClip.part instanceof Tone.Player) {
-        activeClip.part.start(startTime);
+        // For audio clips
+        this.startAudioClip(activeClip.part, startTime);
       } else if (activeClip.part instanceof Tone.Part) {
-        activeClip.part.start(startTime);
+        // For MIDI clips
+        this.startMidiClip(activeClip.part, startTime);
+      }
+    } catch (error) {
+      console.error(`Failed to play clip ${clipId}:`, error);
+      throw error;
+    }
+  }
+
+  private startAudioClip(player: Tone.Player, startTime?: Time): void {
+    try {
+      // Ensure audio context is running
+      if (Tone.getContext().state !== "running") {
+        throw new Error("Audio context is not running");
       }
 
-      return state; // no state update (for now)
-    });
+      // Handle different start time scenarios
+      if (startTime !== undefined) {
+        player.start(startTime);
+      } else {
+        player.start();
+      }
+    } catch (error) {
+      console.warn("Error starting audio clip:", error);
+      throw error;
+    }
+  }
+
+  private startMidiClip(part: Tone.Part, startTime?: Time): void {
+    try {
+      // Ensure transport is ready
+      if (!Tone.getTransport().state) {
+        throw new Error("Transport is not initialized");
+      }
+
+      // Handle different start time scenarios
+      if (startTime !== undefined) {
+        part.start(startTime);
+      } else {
+        part.start();
+      }
+    } catch (error) {
+      console.warn("Error starting MIDI clip:", error);
+      throw error;
+    }
   }
 
   stopClip(clipId: string): void {
-    useEngineStore.setState((state) => {
-      const activeClip = state.clips.activeClips[clipId];
+    // Get clip data outside setState
+    const activeClip = useEngineStore.getState().clips.activeClips[clipId];
+    if (!activeClip) return;
 
-      if (activeClip) {
-        if (activeClip.part instanceof Tone.Player) {
-          activeClip.part.stop();
-        } else if (activeClip.part instanceof Tone.Part) {
-          activeClip.part.stop();
-        }
+    try {
+      this.stopClipPlayback(activeClip.part);
+    } catch (error) {
+      console.error(`Failed to stop clip ${clipId}:`, error);
+      throw error;
+    }
+  }
+
+  private stopClipPlayback(part: Tone.Part | Tone.Player | null): void {
+    if (!part) return;
+
+    try {
+      if (part instanceof Tone.Player) {
+        part.stop();
+      } else if (part instanceof Tone.Part) {
+        part.stop();
       }
-
-      return state; // no state update (for now)
-    });
+    } catch (error) {
+      console.warn("Error stopping clip playback:", error);
+      throw error;
+    }
   }
 
   isClipPlaying(clipId: string): boolean {
