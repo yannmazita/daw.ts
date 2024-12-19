@@ -24,12 +24,6 @@ export interface EngineState {
   mix: MixState;
   automation: AutomationState;
   arrangement: ArrangementState;
-
-  updateTransport: (updates: Partial<TransportState>) => void;
-  updateClips: (updates: Partial<ClipState>) => void;
-  updateMix: (updates: Partial<MixState>) => void;
-  updateAutomation: (updates: Partial<AutomationState>) => void;
-  updateArrangement: (updates: Partial<ArrangementState>) => void;
 }
 
 // Type for persisted state
@@ -50,27 +44,6 @@ export const useEngineStore = create<EngineState>()(
         mix: initialMixState,
         automation: initialAutomationState,
         arrangement: initialArrangementState,
-
-        updateTransport: (updates) =>
-          set((state) => ({
-            transport: { ...state.transport, ...updates },
-          })),
-        updateClips: (updates) =>
-          set((state) => ({
-            clips: { ...state.clips, ...updates },
-          })),
-        updateMix: (updates) =>
-          set((state) => ({
-            mix: { ...state.mix, ...updates },
-          })),
-        updateAutomation: (updates) =>
-          set((state) => ({
-            automation: { ...state.automation, ...updates },
-          })),
-        updateArrangement: (updates) =>
-          set((state) => ({
-            arrangement: { ...state.arrangement, ...updates },
-          })),
       }),
       {
         name: "daw-engine-storage",
