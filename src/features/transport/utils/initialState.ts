@@ -4,7 +4,6 @@ import { TransportState } from "../types";
 export const initialTransportState: TransportState = {
   isPlaying: false,
   isRecording: false,
-  currentTime: 0,
   tempo: 120,
   timeSignature: [4, 4],
   loop: {

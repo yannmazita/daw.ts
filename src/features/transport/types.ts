@@ -9,7 +9,6 @@ import {
 export interface TransportState {
   isPlaying: boolean;
   isRecording: boolean;
-  currentTime: Time;
 
   tempo: BPM;
   timeSignature: TimeSignature;

@@ -50,12 +50,9 @@ export class TransportEngineImpl implements TransportEngine {
           end: state.loop.end,
         });
       }
-
-      // Set up time tracking with error handling
-      this.setupTimeTracking();
     } catch (error) {
       console.error("Transport initialization failed:", error);
-      throw new Error("Failed to initialize transport");
+      throw error;
     }
   }
 
@@ -84,33 +81,8 @@ export class TransportEngineImpl implements TransportEngine {
     }
   }
 
-  private setupTimeTracking(): void {
-    try {
-      this.transport.scheduleRepeat(() => {
-        if (!this.disposed) {
-          const currentTime = this.transport.seconds;
-          this.updateStateTime(currentTime);
-        }
-      }, "16n");
-    } catch (error) {
-      console.error("Failed to setup time tracking:", error);
-      throw error;
-    }
-  }
-
-  private updateStateTime(time: number): void {
-    useEngineStore.setState((state) => ({
-      transport: {
-        ...state.transport,
-        currentTime: time,
-      },
-    }));
-  }
-
   async play(time?: Time): Promise<void> {
-    if (this.disposed) {
-      throw new Error("Transport engine is disposed");
-    }
+    this.checkDisposed();
 
     try {
       await Tone.start();
@@ -136,7 +108,7 @@ export class TransportEngineImpl implements TransportEngine {
   }
 
   pause(): void {
-    if (this.disposed) return;
+    this.checkDisposed();
 
     try {
       this.transport.pause();
@@ -154,7 +126,7 @@ export class TransportEngineImpl implements TransportEngine {
   }
 
   stop(): void {
-    if (this.disposed) return;
+    this.checkDisposed();
 
     try {
       this.transport.stop();
@@ -164,7 +136,6 @@ export class TransportEngineImpl implements TransportEngine {
           ...state.transport,
           isPlaying: false,
           isRecording: false,
-          currentTime: 0,
         },
       }));
     } catch (error) {
@@ -174,7 +145,7 @@ export class TransportEngineImpl implements TransportEngine {
   }
 
   seekTo(time: Time): void {
-    if (this.disposed) return;
+    this.checkDisposed();
 
     if (typeof time === "number" && (time < 0 || !isFinite(time))) {
       throw new Error("Invalid seek time");
@@ -183,7 +154,6 @@ export class TransportEngineImpl implements TransportEngine {
     try {
       const seconds = Tone.Time(time).toSeconds();
       this.transport.seconds = seconds;
-      this.updateStateTime(seconds);
     } catch (error) {
       console.error("Failed to seek:", error);
       throw error;
@@ -191,7 +161,7 @@ export class TransportEngineImpl implements TransportEngine {
   }
 
   setTempo(tempo: BPM): void {
-    if (this.disposed) return;
+    this.checkDisposed();
 
     if (tempo < 20 || tempo > 999) {
       throw new Error("BPM must be between 20 and 999");
@@ -213,7 +183,7 @@ export class TransportEngineImpl implements TransportEngine {
   }
 
   setTimeSignature(numerator: number, denominator: number): void {
-    if (this.disposed) return;
+    this.checkDisposed();
 
     if (numerator < 1 || denominator < 1) {
       throw new Error("Invalid time signature values");
@@ -236,7 +206,7 @@ export class TransportEngineImpl implements TransportEngine {
   }
 
   setSwing(amount: number, subdivision?: Subdivision): void {
-    if (this.disposed) return;
+    this.checkDisposed();
 
     // Input validation
     if (typeof amount !== "number" || !isFinite(amount)) {
@@ -393,7 +363,7 @@ export class TransportEngineImpl implements TransportEngine {
   }
 
   setLoop(enabled: boolean): void {
-    if (this.disposed) return;
+    this.checkDisposed();
 
     try {
       this.updateLoopSettings({ enabled });
@@ -414,7 +384,7 @@ export class TransportEngineImpl implements TransportEngine {
   }
 
   setLoopPoints(start: Time, end: Time): void {
-    if (this.disposed) return;
+    this.checkDisposed();
 
     const startSeconds = Tone.Time(start).toSeconds();
     const endSeconds = Tone.Time(end).toSeconds();
@@ -447,7 +417,7 @@ export class TransportEngineImpl implements TransportEngine {
   }
 
   dispose(): void {
-    if (this.disposed) return;
+    this.checkDisposed();
 
     try {
       this.disposed = true;
@@ -455,6 +425,12 @@ export class TransportEngineImpl implements TransportEngine {
     } catch (error) {
       console.error("Failed to dispose transport engine:", error);
       throw error;
+    }
+  }
+
+  private checkDisposed(): void {
+    if (this.disposed) {
+      throw new Error("TransportEngine is disposed");
     }
   }
 }
