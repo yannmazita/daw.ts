@@ -160,6 +160,10 @@ export class TransportEngineImpl implements TransportEngine {
     }
   }
 
+  getTransportDuration(): Time {
+    return Tone.getTransport().seconds;
+  }
+
   setTempo(tempo: BPM): void {
     this.checkDisposed();
 

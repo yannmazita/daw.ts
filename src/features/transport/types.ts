@@ -29,6 +29,7 @@ export interface TransportEngine {
   pause(): void;
   stop(): void;
   seekTo(time: Time): void;
+  getTransportDuration(): Time;
 
   // Settings
   setTempo(tempo: BPM): void;
