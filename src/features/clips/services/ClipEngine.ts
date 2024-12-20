@@ -10,7 +10,6 @@ import {
 } from "../types";
 import { EngineState, useEngineStore } from "@/core/stores/useEngineStore";
 import { Time, Decibels } from "tone/build/esm/core/type/Units";
-import { v4 as uuidv4 } from "uuid";
 import {
   isValidClipContent,
   validateAudioBuffer,
@@ -95,7 +94,7 @@ export class ClipEngineImpl implements ClipEngine {
     }
 
     // Generate ID and prepare content outside setState
-    const id = uuidv4();
+    const id = crypto.randomUUID();
 
     // Validate buffer properties
     const validationResult = validateAudioBuffer(buffer);
@@ -321,7 +320,7 @@ export class ClipEngineImpl implements ClipEngine {
       throw new Error(`Invalid clip content for ${content.type} clip`);
     }
 
-    const id = uuidv4();
+    const id = crypto.randomUUID();
 
     // Prepare clip data
     const clip: ArrangementClip = {

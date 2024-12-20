@@ -1,6 +1,5 @@
 // src/features/mix/services/MixEngine.ts
 import * as Tone from "tone";
-import { v4 as uuidv4 } from "uuid";
 import { MixEngine, MixState, MixerChannel, Device, Send } from "../types";
 import {
   EffectName,
@@ -67,7 +66,7 @@ export class MixEngineImpl implements MixEngine {
   }
 
   createChannel(type: MixerChannel["type"]): string {
-    const id = uuidv4();
+    const id = crypto.randomUUID();
     // Create audio nodes
     const input = new Tone.Gain();
     const channel = this.createAudioNodes();
@@ -246,7 +245,7 @@ export class MixEngineImpl implements MixEngine {
   }
 
   addDevice(channelId: string, deviceType: EffectName): string {
-    const id = uuidv4();
+    const id = crypto.randomUUID();
 
     // Validate channel exists before any operations
     const currentState = useEngineStore.getState();
@@ -385,7 +384,7 @@ export class MixEngineImpl implements MixEngine {
   }
 
   createSend(fromId: string, toId: string): string {
-    const id = uuidv4();
+    const id = crypto.randomUUID();
 
     // Validate channels and permissions first
     const currentState = useEngineStore.getState();

@@ -1,5 +1,4 @@
 // src/features/arrangement/services/ArrangementEngine.ts
-import { v4 as uuidv4 } from "uuid";
 import { Time } from "tone/build/esm/core/type/Units";
 import { ArrangementEngine, ArrangementState, Track } from "../types";
 import { TransportEngine } from "../../transport/types";
@@ -44,7 +43,7 @@ export class ArrangementEngineImpl implements ArrangementEngine {
 
   createTrack(type: Track["type"], name: string): string {
     this.checkDisposed();
-    const id = uuidv4();
+    const id = crypto.randomUUID();
     let mixerChannelId: string | undefined;
 
     try {
