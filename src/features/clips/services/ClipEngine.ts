@@ -23,7 +23,11 @@ import {
   prepareMidiTracks,
   startMidiClip,
 } from "../utils/midiUtils";
-import { startAudioClip, updatePlayerFades } from "../utils/audioUtils";
+import {
+  startAudioClip,
+  updatePlayerFades,
+  updatePlayerVolume,
+} from "../utils/audioUtils";
 
 export class ClipEngineImpl implements ClipEngine {
   private disposed = false;
@@ -586,7 +590,7 @@ export class ClipEngineImpl implements ClipEngine {
 
     try {
       // Update audio node gain outside setState
-      this.updateClipVolume(activeClip.part, gain);
+      updatePlayerVolume(activeClip.part, gain);
 
       // Then update state atomically
       useEngineStore.setState((state) => ({
@@ -609,27 +613,11 @@ export class ClipEngineImpl implements ClipEngine {
 
       // Attempt to restore original gain
       try {
-        this.updateClipVolume(activeClip.part, activeClip.clip.gain);
+        updatePlayerVolume(activeClip.part, activeClip.clip.gain);
       } catch (restoreError) {
         console.error("Failed to restore clip gain:", restoreError);
       }
 
-      throw error;
-    }
-  }
-
-  private updateClipVolume(player: Tone.Player, gain: Decibels): void {
-    try {
-      // Validate gain value
-      if (!Number.isFinite(gain)) {
-        throw new Error("Invalid gain value");
-      }
-
-      const now = Tone.now();
-      player.volume.cancelScheduledValues(now);
-      player.volume.rampTo(gain, 0.05); // 50ms fade to prevent clicks
-    } catch (error) {
-      console.warn("Error updating clip volume:", error);
       throw error;
     }
   }
