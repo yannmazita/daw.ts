@@ -1,6 +1,5 @@
 // src/common/components/PlaybackControls/TempoTap.tsx
 
-import { useStore } from "@/common/slices/useStore";
 import { Button } from "@/common/shadcn/ui/button";
 import { useState, useEffect, useCallback } from "react";
 

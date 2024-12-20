@@ -1,5 +1,6 @@
 import * as Tone from "tone";
 import { ClipContent, ClipLoop, MidiClipContent } from "../types";
+import { Time } from "tone/build/esm/core/type/Units";
 
 export const validateMidiContent = (midiData: MidiClipContent): void => {
   if (!midiData) {
@@ -121,4 +122,26 @@ export const validateLoopState = (
       Tone.Time(loop.start).toSeconds() &&
     currentState.end === expectedEnd
   );
+};
+
+export const validateFadeTimes = (
+  fadeIn: Time,
+  fadeOut: Time,
+  clipDuration: Time,
+): void => {
+  const fadeInSeconds = Tone.Time(fadeIn).toSeconds();
+  const fadeOutSeconds = Tone.Time(fadeOut).toSeconds();
+  const durationSeconds = Tone.Time(clipDuration).toSeconds();
+
+  if (fadeInSeconds < 0) {
+    throw new Error("Fade in time cannot be negative");
+  }
+
+  if (fadeOutSeconds < 0) {
+    throw new Error("Fade out time cannot be negative");
+  }
+
+  if (fadeInSeconds + fadeOutSeconds > durationSeconds) {
+    throw new Error("Combined fade times cannot exceed clip duration");
+  }
 };

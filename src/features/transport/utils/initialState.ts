@@ -13,4 +13,5 @@ export const initialTransportState: TransportState = {
   },
   swing: 0,
   swingSubdivision: "8n",
+  duration: 0,
 };

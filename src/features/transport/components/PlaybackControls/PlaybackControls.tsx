@@ -1,17 +1,8 @@
 // src/common/components/PlaybackControls/PlaybackControls.tsx
-import { useStore } from "@/common/slices/useStore";
+import { useTransportEngine } from "@/core/engines/EngineManager";
 import { Button } from "@/common/shadcn/ui/button";
 import { Input } from "@/common/shadcn/ui/input";
-import { PlaybackMode } from "@/core/types/common";
-import {
-  Pause,
-  Play,
-  SkipBack,
-  SkipForward,
-  Square,
-  Music2,
-  ListMusic,
-} from "lucide-react";
+import { Pause, Play, SkipBack, SkipForward, Square } from "lucide-react";
 import { useState, useEffect } from "react";
 import { TimeSignatureControl } from "./TimeSignatureControl";
 import { LoopControls } from "./LoopControls";
@@ -21,55 +12,27 @@ import { TransportBar } from "./TransportBar";
 import { Label } from "@/common/shadcn/ui/label";
 
 export const PlaybackControls: React.FC = () => {
-  const { isPlaying, bpm, mode, play, stop, pause, setBpm, setMode } =
-    useStore();
-  const [localBpm, setLocalBpm] = useState(bpm.toString());
+  const { isPlaying, tempo, play, stop, pause, setTempo } =
+    useTransportEngine();
+  const [localBpm, setLocalBpm] = useState(tempo.toString());
 
   const handleBpmChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setLocalBpm(value);
     const numValue = parseInt(value);
     if (!isNaN(numValue) && numValue >= 20 && numValue <= 300) {
-      setBpm(numValue);
+      setTempo(numValue);
     }
   };
 
   useEffect(() => {
-    setLocalBpm(bpm.toString());
-  }, [bpm]);
+    setLocalBpm(tempo.toString());
+  }, [tempo]);
 
   return (
     <div className="flex flex-col space-y-2 rounded-lg bg-card p-4 text-card-foreground dark:bg-card dark:text-card-foreground">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          {/* Mode Selection */}
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setMode(PlaybackMode.PATTERN)}
-              className={
-                mode === PlaybackMode.PATTERN
-                  ? "border border-primary bg-accent dark:border-primary dark:bg-accent"
-                  : ""
-              }
-            >
-              <Music2 className="h-5 w-5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setMode(PlaybackMode.ARRANGEMENT)}
-              className={
-                mode === PlaybackMode.ARRANGEMENT
-                  ? "border border-primary bg-accent dark:border-primary dark:bg-accent"
-                  : ""
-              }
-            >
-              <ListMusic className="h-5 w-5" />
-            </Button>
-          </div>
-
           {/* Transport Controls */}
           <div className="flex items-center space-x-2">
             <Button variant="ghost" size="icon">

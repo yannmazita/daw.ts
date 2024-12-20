@@ -1,6 +1,5 @@
 // src/common/components/PlaybackControls/PositionDisplay.tsx
 import { useState, useEffect, useCallback } from "react";
-import { useStore } from "@/common/slices/useStore";
 import { Input } from "@/common/shadcn/ui/input";
 import { Label } from "@/common/shadcn/ui/label";
 import * as Tone from "tone";

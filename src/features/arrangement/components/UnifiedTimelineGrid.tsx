@@ -1,8 +1,8 @@
 // src/features/arrangement/components/UnifiedTimelineGrid.tsx
 import { useEffect, useMemo, useRef } from "react";
 import { GRID_CONSTANTS } from "../utils/constants";
-import { useStore } from "@/common/slices/useStore";
-import { useThemeStore } from "@/common/slices/useThemeStore";
+import { useThemeStore } from "@/core/stores/useThemeStore";
+import { useTransportEngine } from "@/core/engines/EngineManager";
 
 interface UnifiedTimelineGridProps {
   zoom: number;

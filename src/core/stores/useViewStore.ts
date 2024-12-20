@@ -11,7 +11,7 @@ interface ViewState {
 
 export const useViewStore = create<ViewState>()(
   devtools((set) => ({
-    currentView: ViewType.ARRANGEMENT,
+    currentView: ViewType.NOTHING,
     setView: (view) => set({ currentView: view }),
   })),
 );

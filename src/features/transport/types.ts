@@ -21,6 +21,8 @@ export interface TransportState {
 
   swing: number;
   swingSubdivision: Subdivision;
+
+  duration: Time;
 }
 
 export interface TransportEngine {
@@ -29,7 +31,6 @@ export interface TransportEngine {
   pause(): void;
   stop(): void;
   seekTo(time: Time): void;
-  getTransportDuration(): Time;
 
   // Settings
   setTempo(tempo: BPM): void;
@@ -43,6 +44,9 @@ export interface TransportEngine {
   // Loop
   setLoop(enabled: boolean): void;
   setLoopPoints(start: Time, end: Time): void;
+
+  // Duration
+  setDuration(duration: Time): void;
 
   // State
   getState(): TransportState;

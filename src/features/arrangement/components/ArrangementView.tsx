@@ -4,14 +4,12 @@ import { UnifiedTimelineGrid } from "./UnifiedTimelineGrid";
 import { TrackList } from "./TrackList";
 import { Playhead } from "./Playhead";
 import { GRID_CONSTANTS } from "../utils/constants";
-import { useStore } from "@/common/slices/useStore";
 import { useTimelineZoom } from "../hooks/useTimelineZoom";
 import { useZoomGestures } from "../hooks/useZoomGestures";
 import * as Tone from "tone";
 
 export const ArrangementView = () => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const { position } = useStore();
   const [scrollPosition, setScrollPosition] = useState({ x: 0, y: 0 });
   const { zoom, zoomToPoint } = useTimelineZoom(containerRef);
 
@@ -71,7 +69,7 @@ export const ArrangementView = () => {
           >
             <UnifiedTimelineGrid zoom={zoom} scrollPosition={scrollPosition} />
             <Playhead
-              position={Tone.Time(position).toSeconds()}
+              position={Tone.getTransport().seconds}
               zoom={zoom}
               scrollX={scrollPosition.x}
             />

@@ -72,7 +72,6 @@ export class EngineManager {
   }
 }
 
-// Convenience hooks for components
 export const useTransportEngine = () => {
   return EngineManager.getInstance().transport;
 };

@@ -7,7 +7,6 @@ import {
   SelectValue,
 } from "@/common/shadcn/ui/select";
 import { Label } from "@/common/shadcn/ui/label";
-import { useStore } from "@/common/slices/useStore";
 
 export const TimeSignatureControl: React.FC = () => {
   const { timeSignature, setTimeSignature } = useStore();

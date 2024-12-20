@@ -1,75 +1,49 @@
 // src/features/clips/services/ClipEngine.ts
 import * as Tone from "tone";
-import { Midi } from "@tonejs/midi";
 import {
   ClipEngine,
   ClipContent,
   ArrangementClip,
   ClipState,
-  MidiNote,
   MidiClipContent,
   ClipLoop,
-  MidiTrackData,
 } from "../types";
-import { useEngineStore } from "@/core/stores/useEngineStore";
+import { EngineState, useEngineStore } from "@/core/stores/useEngineStore";
 import { Time, Decibels } from "tone/build/esm/core/type/Units";
 import { v4 as uuidv4 } from "uuid";
 import {
   isValidClipContent,
   validateAudioBuffer,
+  validateFadeTimes,
   validateMidiContent,
 } from "../utils/validation";
+import {
+  createMidiContent,
+  createMidiExport,
+  prepareMidiTracks,
+  startMidiClip,
+} from "../utils/midiUtils";
+import { startAudioClip, updatePlayerFades } from "../utils/audioUtils";
 
 export class ClipEngineImpl implements ClipEngine {
   private disposed = false;
 
+  private calculateTotalDuration(state: EngineState): Time {
+    let maxEndTime = 0;
+
+    // Calculate max end time from all active clips
+    Object.values(state.clips.activeClips).forEach(({ clip }) => {
+      const clipEnd =
+        Tone.Time(clip.startTime).toSeconds() +
+        Tone.Time(clip.duration).toSeconds();
+      maxEndTime = Math.max(maxEndTime, clipEnd);
+    });
+
+    return maxEndTime;
+  }
+
   parseMidiFile(midiData: ArrayBuffer): string {
-    const midi = new Midi(midiData);
-
-    const midiContent: MidiClipContent = {
-      name: midi.name || "Imported MIDI",
-      duration: midi.duration,
-      tracks: midi.tracks.map((track) => ({
-        name: track.name,
-        notes: track.notes.map((note) => ({
-          midi: note.midi,
-          name: note.name,
-          pitch: note.pitch,
-          octave: note.octave,
-          velocity: note.velocity,
-          duration: note.duration,
-          time: note.time,
-          ticks: note.ticks,
-        })),
-        controlChanges: Object.fromEntries(
-          Object.entries(track.controlChanges).map(([ccNum, changes]) => [
-            ccNum,
-            changes.map((cc) => ({
-              number: cc.number,
-              value: cc.value,
-              time: cc.time ?? 0, // Default to 0 if undefined
-              ticks: cc.ticks,
-            })),
-          ]),
-        ),
-        instrument: {
-          number: track.instrument.number,
-          family: track.instrument.family,
-          name: track.instrument.name,
-          percussion: track.instrument.percussion,
-        },
-        channel: track.channel,
-      })),
-      tempos: midi.header.tempos.map((tempo) => ({
-        bpm: tempo.bpm,
-        time: tempo.time ?? 0, // Default to 0 if undefined
-      })),
-      timeSignatures: midi.header.timeSignatures.map((ts) => ({
-        timeSignature: [ts.timeSignature[0], ts.timeSignature[1]],
-        time: Tone.Time(ts.ticks).toSeconds() ?? 0, // Default to 0 if undefined
-      })),
-    };
-
+    const midiContent = createMidiContent(midiData);
     return this.createMidiClip(midiContent);
   }
 
@@ -78,52 +52,17 @@ export class ClipEngineImpl implements ClipEngine {
     if (!content?.midiData) {
       throw new Error("Not a MIDI clip");
     }
-
-    const midi = new Midi();
-    midi.name = content.midiData.name;
-
-    content.midiData.tracks.forEach((trackData) => {
-      const track = midi.addTrack();
-      track.name = trackData.name ?? "";
-      track.channel = trackData.channel;
-
-      // Add notes
-      trackData.notes.forEach((note) => {
-        track.addNote({
-          midi: note.midi,
-          time: note.time,
-          duration: note.duration,
-          velocity: note.velocity,
-        });
-      });
-
-      // Add control changes
-      Object.entries(trackData.controlChanges).forEach(([ccNum, changes]) => {
-        changes.forEach((cc) => {
-          track.addCC({
-            number: cc.number,
-            value: cc.value,
-            time: cc.time,
-          });
-        });
-      });
-
-      // Set instrument
-      track.instrument.number = trackData.instrument.number;
-    });
-
-    return midi.toArray();
+    return createMidiExport(content.midiData);
   }
 
   createMidiClip(midiData: MidiClipContent): string {
-    // Validate MIDI data before creating clip
     validateMidiContent(midiData);
 
     const id = crypto.randomUUID();
     const content: ClipContent = {
       id,
       type: "midi",
-      name: midiData.name || `MIDI Clip ${id.slice(0, 4)}`, // Ensure name exists
+      name: midiData.name || `MIDI Clip ${id.slice(0, 4)}`,
       midiData,
     };
 
@@ -206,16 +145,26 @@ export class ClipEngineImpl implements ClipEngine {
 
     try {
       if (content.type === "midi" && content.midiData) {
-        const preparedTracks = this.prepareMidiTracks(content, clip);
-
-        // Update state atomically with prepared tracks
-        useEngineStore.setState((state) => ({
+        const preparedTracks = prepareMidiTracks(content, clip);
+        const newState = {
+          ...state,
           clips: {
             ...state.clips,
             activeClips: {
               ...state.clips.activeClips,
               ...preparedTracks.activeClips,
             },
+          },
+        };
+
+        const newDuration = this.calculateTotalDuration(newState);
+
+        // Update state atomically
+        useEngineStore.setState((state) => ({
+          ...newState,
+          transport: {
+            ...state.transport,
+            duration: newDuration,
           },
         }));
 
@@ -245,59 +194,6 @@ export class ClipEngineImpl implements ClipEngine {
     }
   }
 
-  private prepareMidiTracks(content: ClipContent, clip: ArrangementClip) {
-    const preparedParts: Tone.Part[] = [];
-    const activeClips: Record<
-      string,
-      { part: Tone.Part; clip: ArrangementClip }
-    > = {};
-
-    content.midiData.tracks.forEach((track, trackIndex) => {
-      try {
-        const synth = new Tone.PolySynth().toDestination();
-        // Set the instrument based on track.instrument
-
-        const part = new Tone.Part((time, note: MidiNote) => {
-          synth.triggerAttackRelease(
-            note.name,
-            note.duration,
-            time,
-            note.velocity,
-          );
-        }, track.notes);
-
-        // Configure loop settings
-        if (clip.loop?.enabled) {
-          part.loop = true;
-          part.loopStart = clip.loop.start;
-          part.loopEnd =
-            Tone.Time(clip.loop.start).toSeconds() +
-            Tone.Time(clip.loop.duration).toSeconds();
-        }
-
-        // Handle control changes
-        this.setupControlChanges(track, clip.startTime);
-
-        // Store prepared part
-        preparedParts.push(part);
-
-        // Create clip instance ID
-        const clipInstanceId =
-          content.midiData.tracks.length > 1
-            ? `${clip.id}_${trackIndex}`
-            : clip.id;
-
-        activeClips[clipInstanceId] = { part, clip };
-      } catch (error) {
-        // Cleanup any successfully created parts before throwing
-        preparedParts.forEach((p) => p.dispose());
-        throw error;
-      }
-    });
-
-    return { parts: preparedParts, activeClips };
-  }
-
   private prepareAudioPlayer(
     content: ClipContent,
     clip: ArrangementClip,
@@ -310,20 +206,6 @@ export class ClipEngineImpl implements ClipEngine {
         (Tone.Time(clip.loop?.start).toSeconds() ?? 0) +
         (Tone.Time(clip.loop?.duration).toSeconds() ?? 0),
     }).toDestination();
-  }
-
-  private setupControlChanges(track: MidiTrackData, startTime: Time): void {
-    Object.values(track.controlChanges).forEach((changes) => {
-      changes.forEach((cc) => {
-        Tone.getTransport().schedule(
-          (time) => {
-            // todo: handle control changes based on cc.number
-            // example: handle modulation, expression, etc.
-          },
-          cc.time + Tone.Time(startTime).toSeconds(),
-        );
-      });
-    });
   }
 
   private cleanupFailedScheduling(clipId: string): void {
@@ -361,10 +243,21 @@ export class ClipEngineImpl implements ClipEngine {
         const { [clipId]: removed, ...remainingClips } =
           state.clips.activeClips;
 
-        return {
+        const newState = {
+          ...state,
           clips: {
             ...state.clips,
             activeClips: remainingClips,
+          },
+        };
+
+        const newDuration = this.calculateTotalDuration(newState);
+
+        return {
+          ...newState,
+          transport: {
+            ...state.transport,
+            duration: newDuration,
           },
         };
       });
@@ -542,21 +435,34 @@ export class ClipEngineImpl implements ClipEngine {
       this.rescheduleClipTiming(activeClip.part, newTime, activeClip.clip);
 
       // Then update state atomically
-      useEngineStore.setState((state) => ({
-        clips: {
-          ...state.clips,
-          activeClips: {
-            ...state.clips.activeClips,
-            [clipId]: {
-              ...activeClip,
-              clip: {
-                ...activeClip.clip,
-                startTime: newTime,
+      useEngineStore.setState((state) => {
+        const newState = {
+          ...state,
+          clips: {
+            ...state.clips,
+            activeClips: {
+              ...state.clips.activeClips,
+              [clipId]: {
+                ...activeClip,
+                clip: {
+                  ...activeClip.clip,
+                  startTime: newTime,
+                },
               },
             },
           },
-        },
-      }));
+        };
+
+        const newDuration = this.calculateTotalDuration(newState);
+
+        return {
+          ...newState,
+          transport: {
+            ...state.transport,
+            duration: newDuration,
+          },
+        };
+      });
     } catch (error) {
       console.error(`Failed to move clip ${clipId}:`, error);
       // Attempt to restore original timing
@@ -729,23 +635,17 @@ export class ClipEngineImpl implements ClipEngine {
   }
 
   setClipFades(clipId: string, fadeIn: Time, fadeOut: Time): void {
-    // Get current state outside setState
     const state = useEngineStore.getState();
     const activeClip = state.clips.activeClips[clipId];
 
-    // Early return if no valid clip
     if (!activeClip || !(activeClip.part instanceof Tone.Player)) {
       return;
     }
 
     try {
-      // Validate fade times
-      this.validateFadeTimes(fadeIn, fadeOut, activeClip.clip.duration);
+      validateFadeTimes(fadeIn, fadeOut, activeClip.clip.duration);
+      updatePlayerFades(activeClip.part, fadeIn, fadeOut);
 
-      // Update Tone.js Player outside setState
-      this.updatePlayerFades(activeClip.part, fadeIn, fadeOut);
-
-      // Then update state atomically
       useEngineStore.setState((state) => ({
         clips: {
           ...state.clips,
@@ -767,7 +667,7 @@ export class ClipEngineImpl implements ClipEngine {
 
       // Attempt to restore original fades
       try {
-        this.updatePlayerFades(
+        updatePlayerFades(
           activeClip.part,
           activeClip.clip.fadeIn,
           activeClip.clip.fadeOut,
@@ -780,56 +680,6 @@ export class ClipEngineImpl implements ClipEngine {
     }
   }
 
-  private validateFadeTimes(
-    fadeIn: Time,
-    fadeOut: Time,
-    clipDuration: Time,
-  ): void {
-    const fadeInSeconds = Tone.Time(fadeIn).toSeconds();
-    const fadeOutSeconds = Tone.Time(fadeOut).toSeconds();
-    const durationSeconds = Tone.Time(clipDuration).toSeconds();
-
-    if (fadeInSeconds < 0) {
-      throw new Error("Fade in time cannot be negative");
-    }
-
-    if (fadeOutSeconds < 0) {
-      throw new Error("Fade out time cannot be negative");
-    }
-
-    if (fadeInSeconds + fadeOutSeconds > durationSeconds) {
-      throw new Error("Combined fade times cannot exceed clip duration");
-    }
-  }
-
-  private updatePlayerFades(
-    player: Tone.Player,
-    fadeIn: Time,
-    fadeOut: Time,
-  ): void {
-    try {
-      const fadeInSeconds = Tone.Time(fadeIn).toSeconds();
-      const fadeOutSeconds = Tone.Time(fadeOut).toSeconds();
-
-      // Store current playback state
-      const wasPlaying = player.state === "started";
-      const currentTime = Tone.getTransport().seconds;
-
-      // Apply new fade settings
-      player.fadeIn = fadeInSeconds;
-      player.fadeOut = fadeOutSeconds;
-
-      // Restore playback state if needed
-      if (wasPlaying) {
-        player.stop();
-        player.start(currentTime); // Resume from transport time
-      }
-    } catch (error) {
-      console.warn("Error updating player fades:", error);
-      throw error;
-    }
-  }
-
   playClip(clipId: string, startTime?: Time): void {
     const state = useEngineStore.getState();
     const activeClip = state.clips.activeClips[clipId];
@@ -837,54 +687,13 @@ export class ClipEngineImpl implements ClipEngine {
     if (!activeClip) return;
 
     try {
-      // Start playback outside setState
       if (activeClip.part instanceof Tone.Player) {
-        // For audio clips
-        this.startAudioClip(activeClip.part, startTime);
+        startAudioClip(activeClip.part, startTime);
       } else if (activeClip.part instanceof Tone.Part) {
-        // For MIDI clips
-        this.startMidiClip(activeClip.part, startTime);
+        startMidiClip(activeClip.part, startTime);
       }
     } catch (error) {
       console.error(`Failed to play clip ${clipId}:`, error);
-      throw error;
-    }
-  }
-
-  private startAudioClip(player: Tone.Player, startTime?: Time): void {
-    try {
-      // Ensure audio context is running
-      if (Tone.getContext().state !== "running") {
-        throw new Error("Audio context is not running");
-      }
-
-      // Handle different start time scenarios
-      if (startTime !== undefined) {
-        player.start(startTime);
-      } else {
-        player.start();
-      }
-    } catch (error) {
-      console.warn("Error starting audio clip:", error);
-      throw error;
-    }
-  }
-
-  private startMidiClip(part: Tone.Part, startTime?: Time): void {
-    try {
-      // Ensure transport is ready
-      if (!Tone.getTransport().state) {
-        throw new Error("Transport is not initialized");
-      }
-
-      // Handle different start time scenarios
-      if (startTime !== undefined) {
-        part.start(startTime);
-      } else {
-        part.start();
-      }
-    } catch (error) {
-      console.warn("Error starting MIDI clip:", error);
       throw error;
     }
   }

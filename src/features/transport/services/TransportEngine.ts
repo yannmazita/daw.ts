@@ -61,6 +61,7 @@ export class TransportEngineImpl implements TransportEngine {
     timeSignature?: TimeSignature;
     swing?: number;
     swingSubdivision?: Subdivision;
+    duration?: Time;
   }): void {
     try {
       if (settings.bpm !== undefined) {
@@ -74,6 +75,9 @@ export class TransportEngineImpl implements TransportEngine {
       }
       if (settings.swingSubdivision !== undefined) {
         this.transport.swingSubdivision = settings.swingSubdivision;
+      }
+      if (settings.duration !== undefined) {
+        this.transport.seconds = Tone.Time(settings.duration).toSeconds();
       }
     } catch (error) {
       console.error("Failed to update transport settings:", error);
@@ -412,6 +416,31 @@ export class TransportEngineImpl implements TransportEngine {
       }));
     } catch (error) {
       console.error("Failed to set loop points:", error);
+      throw error;
+    }
+  }
+
+  setDuration(duration: Time): void {
+    this.checkDisposed();
+    const durationSeconds = Tone.Time(duration).toSeconds();
+
+    if (durationSeconds < 0) {
+      throw new Error("Duration cannot be negative");
+    }
+
+    try {
+      // Update audio engine first
+      this.updateTransportSettings({ duration: durationSeconds });
+
+      // Update state
+      useEngineStore.setState((state) => ({
+        transport: {
+          ...state.transport,
+          duration: durationSeconds,
+        },
+      }));
+    } catch (error) {
+      console.error("Failed to set duration:", error);
       throw error;
     }
   }
