@@ -45,7 +45,7 @@ export class MixEngineImpl implements MixEngine {
   }
 
   private updateMeters(): void {
-    const meterValues = new Map<string, number[]>();
+    const meterValues = new Map<string, number | number[]>();
     const state = useEngineStore.getState();
 
     // Gather meter values
