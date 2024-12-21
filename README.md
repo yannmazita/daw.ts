@@ -118,13 +118,13 @@ graph TB
     Engine interaction diagram
   </summary>
 
-This sequence diagram describes the current state of implementation, a lot is missing.
-
 Engines communicate through:
 
 - Direct method calls for immediate operations
 - State updates
 - Planned: event system?
+
+This sequence diagram describes the current state of implementation, a lot is missing.
 
 ```mermaid
 sequenceDiagram
