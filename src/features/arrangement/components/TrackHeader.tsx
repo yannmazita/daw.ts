@@ -1,64 +1,121 @@
 // src/features/arrangement/components/TrackHeader.tsx
-import { useState } from "react";
+import { useState, useCallback } from "react";
+import { useEngineStore } from "@/core/stores/useEngineStore";
+import { useArrangementEngine } from "@/core/engines/EngineManager";
 import { Button } from "@/common/shadcn/ui/button";
 import { Input } from "@/common/shadcn/ui/input";
 import { Slider } from "@/common/shadcn/ui/slider";
 import {
+  ChevronRight,
+  ChevronDown,
   Mic,
   Music2,
   Volume2,
-  VolumeX,
   Headphones,
-  MoreHorizontal,
+  Settings,
 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/common/shadcn/ui/dropdown-menu";
 import { TrackMeter } from "./TrackMeter";
-import { GRID_CONSTANTS } from "../utils/constants";
+import { DraggableTrackHeader } from "./DraggableTrackHeader";
+import { cn } from "@/common/shadcn/lib/utils";
 
 interface TrackHeaderProps {
-  track: {
-    id: string;
-    name: string;
-    type: "audio" | "instrument";
-    color?: string;
-    isMuted?: boolean;
-    isSoloed?: boolean;
-    volume: number;
-    pan: number;
-  };
-  onUpdate: (id: string, updates: Partial<TrackHeaderProps["track"]>) => void;
+  trackId: string;
 }
 
-export const TrackHeader: React.FC<TrackHeaderProps> = ({
-  track,
-  onUpdate,
-}) => {
+// Selector for track-specific state
+const useTrackState = (trackId: string) => {
+  return useEngineStore((state) => ({
+    track: state.arrangement.tracks[trackId],
+    isFolded: state.arrangement.foldedTracks.has(trackId),
+    isSelected: state.arrangement.selectedTracks.has(trackId),
+    height: state.arrangement.viewSettings.trackHeights[trackId],
+    automationLanes: state.arrangement.visibleAutomationLanes[trackId] || [],
+  }));
+};
+
+export const TrackHeader: React.FC<TrackHeaderProps> = ({ trackId }) => {
+  const { track, isFolded, isSelected, height } = useTrackState(trackId);
+  const arrangementEngine = useArrangementEngine();
   const [isEditing, setIsEditing] = useState(false);
   const [tempName, setTempName] = useState(track.name);
 
-  const handleNameSubmit = () => {
-    onUpdate(track.id, { name: tempName });
+  const handleNameSubmit = useCallback(() => {
+    // TODO: Implement name update through engine
     setIsEditing(false);
-  };
+  }, []);
+
+  const handleFoldToggle = useCallback(() => {
+    arrangementEngine.toggleTrackFold(trackId);
+  }, [arrangementEngine, trackId]);
+
+  const handleSelect = useCallback(
+    (event: React.MouseEvent) => {
+      let newSelection = new Set<string>();
+
+      if (event.shiftKey && isSelected) {
+        // Handle shift+click for range selection
+        // todo: Implement range selection
+      } else if (event.ctrlKey || event.metaKey) {
+        // Handle ctrl/cmd+click for multiple selection
+        const currentSelection =
+          useEngineStore.getState().arrangement.selectedTracks;
+        newSelection = new Set(currentSelection);
+        if (isSelected) {
+          newSelection.delete(trackId);
+        } else {
+          newSelection.add(trackId);
+        }
+      } else {
+        // Single selection
+        newSelection.add(trackId);
+      }
+
+      arrangementEngine.setSelection(newSelection);
+    },
+    [arrangementEngine, trackId, isSelected],
+  );
 
   return (
-    <div
-      className="flex h-full flex-col border-b border-border bg-card px-2 py-1"
-      style={{ height: GRID_CONSTANTS.TRACK_HEIGHT }}
-    >
-      <div className="flex items-center justify-between">
-        {/* Track Name */}
-        <div className="flex items-center gap-2">
+    <DraggableTrackHeader track={track} index={track.index}>
+      <div
+        className={cn(
+          "flex h-full flex-col border-b border-border bg-card px-2 py-1",
+          isSelected && "bg-accent",
+          "select-none",
+        )}
+        onClick={handleSelect}
+        style={{ height }}
+      >
+        <div className="flex items-center space-x-2">
+          {/* Fold Button */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 w-6 p-0"
+            onClick={handleFoldToggle}
+          >
+            {isFolded ? (
+              <ChevronRight className="h-4 w-4" />
+            ) : (
+              <ChevronDown className="h-4 w-4" />
+            )}
+          </Button>
+
+          {/* Track Type Icon */}
           {track.type === "audio" ? (
             <Mic className="h-4 w-4 text-muted-foreground" />
           ) : (
             <Music2 className="h-4 w-4 text-muted-foreground" />
           )}
+
+          {/* Track Name */}
           {isEditing ? (
             <Input
               value={tempName}
@@ -72,63 +129,72 @@ export const TrackHeader: React.FC<TrackHeaderProps> = ({
             <span
               className="cursor-pointer text-sm font-medium hover:text-primary"
               onClick={() => setIsEditing(true)}
+              style={{ color: track.color }}
             >
               {track.name}
             </span>
           )}
+
+          {/* Track Menu */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="ml-auto h-6 w-6 p-0">
+                <Settings className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onSelect={() => setIsEditing(true)}>
+                Rename Track
+              </DropdownMenuItem>
+              <DropdownMenuItem>Change Color</DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem>Insert Return Track</DropdownMenuItem>
+              <DropdownMenuItem>Group Track</DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem className="text-destructive">
+                Delete Track
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
-        {/* Track Menu */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem>Duplicate Track</DropdownMenuItem>
-            <DropdownMenuItem>Delete Track</DropdownMenuItem>
-            <DropdownMenuItem>Group Track</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
+        {!isFolded && (
+          <>
+            {/* Track Controls */}
+            <div className="mt-1 flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 w-6 p-0"
+                // todo: Implement mute (through MixEngine?)
+              >
+                <Volume2 className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 w-6 p-0"
+                // todo: Implement solo (through MixEngine?)
+              >
+                <Headphones className="h-4 w-4" />
+              </Button>
+            </div>
 
-      {/* Track Controls */}
-      <div className="mt-1 flex items-center gap-1">
-        <Button
-          variant={track.isMuted ? "default" : "ghost"}
-          size="sm"
-          className="h-6 w-6 p-0"
-          onClick={() => onUpdate(track.id, { isMuted: !track.isMuted })}
-        >
-          {track.isMuted ? (
-            <VolumeX className="h-4 w-4" />
-          ) : (
-            <Volume2 className="h-4 w-4" />
-          )}
-        </Button>
-        <Button
-          variant={track.isSoloed ? "default" : "ghost"}
-          size="sm"
-          className="h-6 w-6 p-0"
-          onClick={() => onUpdate(track.id, { isSoloed: !track.isSoloed })}
-        >
-          <Headphones className="h-4 w-4" />
-        </Button>
+            {/* Volume Slider and Meter */}
+            <div className="mt-2 flex items-center gap-2">
+              <Slider
+                value={[0]} // todo: Get (from MixEngine?)
+                max={0}
+                min={-70}
+                step={0.1}
+                className="w-24"
+                // todo: Implement volume (through MixEngine?)
+              />
+              {/*<TrackMeter trackId={track.mixerChannelId}/>*/}
+            </div>
+          </>
+        )}
       </div>
-
-      {/* Volume Slider and Meter */}
-      <div className="mt-2 flex items-center gap-2">
-        <Slider
-          value={[track.volume]}
-          max={0}
-          min={-70}
-          step={0.1}
-          className="w-24"
-          onValueChange={([value]) => onUpdate(track.id, { volume: value })}
-        />
-        <TrackMeter trackId={track.id} />
-      </div>
-    </div>
+    </DraggableTrackHeader>
   );
 };

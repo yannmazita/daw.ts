@@ -5,6 +5,14 @@ import { ClipEngine } from "../clips/types";
 import { MixEngine } from "../mix/types";
 import { AutomationEngine } from "../automation/types";
 
+export const DragTypes = {
+  TRACK: "track",
+  CLIP: "clip",
+  AUTOMATION_POINT: "automation-point",
+} as const;
+
+export type DragType = (typeof DragTypes)[keyof typeof DragTypes];
+
 export interface Track {
   id: string;
   type: "audio" | "midi" | "return" | "master";
