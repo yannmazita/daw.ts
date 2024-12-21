@@ -1,10 +1,9 @@
-//src/features/arrangement/utils/validation.ts
+// src/features/arrangement/utils/validation.ts
 import * as Tone from "tone";
-import { EngineState, useEngineStore } from "@/core/stores/useEngineStore";
 import { ArrangementState } from "../types";
 import { Time } from "tone/build/esm/core/type/Units";
 
-export const validateAndCalculateNewOrder = (
+export const validateTrackOrder = (
   currentOrder: string[],
   trackId: string,
   newIndex: number,
@@ -13,53 +12,26 @@ export const validateAndCalculateNewOrder = (
   error?: string;
   newOrder?: string[];
 } => {
-  // Basic validation
-  if (newIndex < 0) {
+  if (newIndex < 0 || newIndex >= currentOrder.length) {
     return {
       isValid: false,
-      error: "New index cannot be negative",
-    };
-  }
-
-  if (newIndex >= currentOrder.length) {
-    return {
-      isValid: false,
-      error: "New index exceeds track count",
-    };
-  }
-
-  const currentIndex = currentOrder.indexOf(trackId);
-  if (currentIndex === -1) {
-    return {
-      isValid: false,
-      error: "Track not found in current order",
-    };
-  }
-
-  // No change needed if moving to same position
-  if (currentIndex === newIndex) {
-    return {
-      isValid: false,
-      error: "Track already at specified index",
+      error: "Invalid track index",
     };
   }
 
   try {
-    // Create new order by removing and inserting at new position
-    const filteredOrder = currentOrder.filter((id) => id !== trackId);
-    const newOrder = [
-      ...filteredOrder.slice(0, newIndex),
-      trackId,
-      ...filteredOrder.slice(newIndex),
-    ];
+    const newOrder = [...currentOrder];
+    const currentIndex = currentOrder.indexOf(trackId);
 
-    // Validate new order
-    if (newOrder.length !== currentOrder.length) {
+    if (currentIndex === -1) {
       return {
         isValid: false,
-        error: "Track order corruption detected",
+        error: "Track not found",
       };
     }
+
+    newOrder.splice(currentIndex, 1);
+    newOrder.splice(newIndex, 0, trackId);
 
     return {
       isValid: true,
@@ -68,224 +40,119 @@ export const validateAndCalculateNewOrder = (
   } catch (error) {
     return {
       isValid: false,
-      error: `Failed to calculate new order: ${error.message}`,
+      error: `Order calculation failed: ${error.message}`,
     };
   }
 };
 
-export const validateSelection = (
-  selection: Partial<ArrangementState["selection"]>,
-  state: EngineState,
-): Partial<ArrangementState["selection"]> => {
-  const validatedSelection: Partial<ArrangementState["selection"]> = {};
-
-  // Track selection validation
-  if (selection.trackIds !== undefined) {
-    validatedSelection.trackIds = validateTrackSelection(
-      selection.trackIds,
-      state.arrangement,
-    );
-  }
-
-  // Clip selection validation
-  if (selection.clipIds !== undefined) {
-    validatedSelection.clipIds = validateClipSelection(
-      selection.clipIds,
-      state.arrangement,
-    );
-  }
-
-  // Automation point selection validation
-  if (selection.automationPoints !== undefined) {
-    validatedSelection.automationPoints = validateAutomationPointSelection(
-      selection.automationPoints,
-      state.arrangement,
-    );
-  }
-
-  return validatedSelection;
+export const validateTrackHeight = (
+  height: number,
+  viewSettings: ArrangementState["viewSettings"],
+): boolean => {
+  return (
+    height >= viewSettings.minimumHeight &&
+    height >= viewSettings.foldedHeight &&
+    isFinite(height)
+  );
 };
 
 export const validateTrackSelection = (
-  trackIds: string[],
-  arrangement: ArrangementState,
-): string[] => {
-  // Ensure array input
-  if (!Array.isArray(trackIds)) {
-    throw new Error("Track selection must be an array");
-  }
-
-  // Validate each track ID
-  const invalidTracks = trackIds.filter((id) => !arrangement.tracks[id]);
-  if (invalidTracks.length > 0) {
-    throw new Error(
-      `Invalid track IDs in selection: ${invalidTracks.join(", ")}`,
-    );
-  }
-
-  enforceTrackSelectionRules(trackIds, arrangement);
-
-  // Return validated and possibly filtered selection
-  return [...new Set(trackIds)]; // Ensure uniqueness
-};
-
-export const validateClipSelection = (
-  clipIds: string[],
-  arrangement: ArrangementState,
-): string[] => {
-  if (!Array.isArray(clipIds)) {
-    throw new Error("Clip selection must be an array");
-  }
-
-  // Check if clips exist in any track
-  const invalidClips = clipIds.filter(
-    (clipId) =>
-      !Object.values(arrangement.tracks).some((track) =>
-        track.clipIds.includes(clipId),
-      ),
+  selectedTracks: Set<string>,
+  state: ArrangementState,
+): boolean => {
+  return Array.from(selectedTracks).every(
+    (id) => state.tracks[id] !== undefined,
   );
-
-  if (invalidClips.length > 0) {
-    throw new Error(
-      `Invalid clip IDs in selection: ${invalidClips.join(", ")}`,
-    );
-  }
-
-  return [...new Set(clipIds)]; // Ensure uniqueness
 };
 
-export const validateAutomationPointSelection = (
-  points: { laneId: string; pointId: string }[],
-  arrangement: ArrangementState,
-): { laneId: string; pointId: string }[] => {
-  if (!Array.isArray(points)) {
-    throw new Error("Automation point selection must be an array");
-  }
-
-  // Validate each automation point
-  const invalidPoints = points.filter((point) => {
-    // Check if automation lane exists
-    const laneExists = Object.values(arrangement.tracks).some((track) =>
-      track.automationIds.includes(point.laneId),
+export const validateAutomationLanes = (
+  lanes: Record<string, string[]>,
+  state: ArrangementState,
+): boolean => {
+  return Object.entries(lanes).every(([trackId, laneIds]) => {
+    const track = state.tracks[trackId];
+    return (
+      track &&
+      Array.isArray(laneIds) &&
+      laneIds.every((id) => typeof id === "string")
     );
-
-    // Todo: additional point validation
-    return !laneExists;
-  });
-
-  if (invalidPoints.length > 0) {
-    throw new Error(
-      `Invalid automation points in selection: ${invalidPoints
-        .map((p) => `${p.laneId}:${p.pointId}`)
-        .join(", ")}`,
-    );
-  }
-
-  // Remove duplicates based on both laneId and pointId
-  return uniqueAutomationPoints(points);
-};
-
-export const enforceTrackSelectionRules = (
-  trackIds: string[],
-  arrangement: ArrangementState,
-): void => {
-  // Master track selection rules
-  if (trackIds.includes(arrangement.masterTrackId)) {
-    // Prevent master track selection with other tracks
-    if (trackIds.length > 1) {
-      throw new Error("Master track cannot be selected with other tracks");
-    }
-  }
-  // Return track selection rules
-  const selectedReturnTracks = trackIds.filter((id) =>
-    arrangement.returnTracks.includes(id),
-  );
-
-  // Limit return track selection
-  if (selectedReturnTracks.length > 0) {
-    // Todo: specific return track selection rules
-  }
-
-  // Todo: more rules
-};
-
-export const uniqueAutomationPoints = (
-  points: { laneId: string; pointId: string }[],
-): { laneId: string; pointId: string }[] => {
-  const seen = new Set<string>();
-  return points.filter((point) => {
-    const key = `${point.laneId}:${point.pointId}`;
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
   });
 };
 
-export const validateTimeRange = (
-  startTime: Time,
-  endTime: Time,
-): { validatedStart: Time; validatedEnd: Time } => {
-  // Convert to seconds for validation
-  const startSeconds = Tone.Time(startTime).toSeconds();
-  const endSeconds = Tone.Time(endTime).toSeconds();
+export const validateDragState = (
+  dragState: ArrangementState["dragState"],
+): boolean => {
+  if (!dragState) return true;
 
-  // Basic range validation
-  if (!isFinite(startSeconds) || !isFinite(endSeconds)) {
-    throw new Error("Invalid time values");
+  return (
+    ["clip", "automation", null].includes(dragState.type) &&
+    typeof dragState.sourceId === "string" &&
+    (dragState.targetId === null || typeof dragState.targetId === "string") &&
+    (dragState.position === null || typeof dragState.position === "number")
+  );
+};
+
+export const validateViewSettings = (
+  settings: ArrangementState["viewSettings"],
+): boolean => {
+  return (
+    settings.defaultHeight > settings.minimumHeight &&
+    settings.minimumHeight > 0 &&
+    settings.foldedHeight > 0 &&
+    settings.foldedHeight <= settings.minimumHeight &&
+    Object.values(settings.trackHeights).every((h) =>
+      validateTrackHeight(h, settings),
+    )
+  );
+};
+
+export const validateTimeRange = (time: Time): boolean => {
+  try {
+    const seconds = Tone.Time(time).toSeconds();
+    return isFinite(seconds) && seconds >= 0;
+  } catch {
+    return false;
+  }
+};
+
+// Helper function to validate entire arrangement state
+export const validateArrangementState = (
+  state: ArrangementState,
+): { valid: boolean; errors: string[] } => {
+  const errors: string[] = [];
+
+  // Validate track existence
+  if (!state.trackOrder.every((id) => state.tracks[id])) {
+    errors.push("Track order contains invalid track IDs");
   }
 
-  if (startSeconds < 0) {
-    throw new Error("Start time cannot be negative");
+  // Validate folded tracks
+  if (!Array.from(state.foldedTracks).every((id) => state.tracks[id])) {
+    errors.push("Folded tracks contains invalid track IDs");
   }
 
-  if (endSeconds <= startSeconds) {
-    throw new Error("End time must be greater than start time");
+  // Validate selected tracks
+  if (!Array.from(state.selectedTracks).every((id) => state.tracks[id])) {
+    errors.push("Selected tracks contains invalid track IDs");
   }
 
-  // Enforce minimum view range
-  const MIN_RANGE_SECONDS = 0.1; // 100ms minimum range
-  if (endSeconds - startSeconds < MIN_RANGE_SECONDS) {
-    throw new Error(`View range must be at least ${MIN_RANGE_SECONDS}s`);
+  // Validate automation lanes
+  if (!validateAutomationLanes(state.visibleAutomationLanes, state)) {
+    errors.push("Invalid automation lane configuration");
   }
 
-  // Enforce maximum view range
-  const MAX_RANGE_SECONDS = 3600; // 1 hour maximum range
-  if (endSeconds - startSeconds > MAX_RANGE_SECONDS) {
-    throw new Error(`View range cannot exceed ${MAX_RANGE_SECONDS}s`);
+  // Validate drag state
+  if (!validateDragState(state.dragState)) {
+    errors.push("Invalid drag state");
+  }
+
+  // Validate view settings
+  if (!validateViewSettings(state.viewSettings)) {
+    errors.push("Invalid view settings");
   }
 
   return {
-    validatedStart: startSeconds,
-    validatedEnd: endSeconds,
+    valid: errors.length === 0,
+    errors,
   };
-};
-
-export const validateViewRangeWithZoom = (
-  startSeconds: Time,
-  endSeconds: Time,
-): void => {
-  const state = useEngineStore.getState();
-  const currentZoom = state.arrangement.viewState.zoom;
-
-  // Calculate pixels per second at current zoom
-  const PIXELS_PER_BEAT = 100 * currentZoom; // Example base value
-  const currentTempo = state.transport.tempo;
-  const pixelsPerSecond = (PIXELS_PER_BEAT * currentTempo) / 60;
-
-  // Calculate view width in pixels
-  const rangeSeconds =
-    Tone.Time(endSeconds).toSeconds() - Tone.Time(startSeconds).toSeconds();
-  const viewWidthPixels = rangeSeconds * pixelsPerSecond;
-
-  // Check if view range is reasonable for current zoom
-  const MIN_VIEW_WIDTH_PIXELS = 100;
-  const MAX_VIEW_WIDTH_PIXELS = 50000; // Adjust based on performance requirements
-
-  if (viewWidthPixels < MIN_VIEW_WIDTH_PIXELS) {
-    throw new Error("View range too small for current zoom level");
-  }
-
-  if (viewWidthPixels > MAX_VIEW_WIDTH_PIXELS) {
-    throw new Error("View range too large for current zoom level");
-  }
 };

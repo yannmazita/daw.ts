@@ -27,24 +27,21 @@ export interface Track {
 
 export interface ArrangementState {
   tracks: Record<string, Track>;
-  returnTracks: string[];
-  masterTrackId: string;
   trackOrder: string[];
-
-  selection: {
-    trackIds: string[];
-    clipIds: string[];
-    automationPoints: {
-      laneId: string;
-      pointId: string;
-    }[];
-  };
-
-  viewState: {
-    startTime: Time;
-    endTime: Time;
-    verticalScroll: number;
-    zoom: number;
+  foldedTracks: Set<string>;
+  selectedTracks: Set<string>;
+  visibleAutomationLanes: Record<string, string[]>; // trackId -> laneIds
+  dragState: {
+    type: "clip" | "automation" | null;
+    sourceId: string;
+    targetId: string | null;
+    position: Time | null;
+  } | null;
+  viewSettings: {
+    trackHeights: Record<string, number>;
+    defaultHeight: number;
+    minimumHeight: number;
+    foldedHeight: number;
   };
 }
 
@@ -81,13 +78,17 @@ export interface ArrangementEngine {
   createTrack(type: Track["type"], name: string): string;
   deleteTrack(trackId: string): void;
   moveTrack(trackId: string, newIndex: number): void;
+  toggleTrackFold(trackId: string): void;
+  setTrackHeight(trackId: string, height: number): void;
+  getVisibleHeight(): number;
+  getTotalHeight(): number;
+  getTrackHeight(trackId: string): number;
 
   // Selection
-  setSelection(selection: Partial<ArrangementState["selection"]>): void;
+  setSelection(trackIds: Set<string>): void;
 
-  // View
-  setViewRange(startTime: Time, endTime: Time): void;
-  setZoom(zoom: number): void;
+  // Automation
+  toggleAutomationLane(trackId: string, laneId: string): void;
 
   // State
   getState(): ArrangementState;
