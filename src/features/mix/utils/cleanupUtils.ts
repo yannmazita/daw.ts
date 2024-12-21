@@ -1,4 +1,4 @@
-// src/features/mix/services/cleanupUtils.ts
+// src/features/mix/utils/cleanupUtils.ts
 import { MixerChannel, Device, Send } from "../types";
 
 export const disposeChannel = (channel: MixerChannel): void => {

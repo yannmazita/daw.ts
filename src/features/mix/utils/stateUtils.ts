@@ -1,4 +1,4 @@
-// src/features/mix/services/stateUtils.ts
+// src/features/mix/utils/stateUtils.ts
 import { MixState, MixerChannel, Device, Send } from "../types";
 
 export const updateChannel = (
