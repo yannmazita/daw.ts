@@ -19,7 +19,7 @@ export class MixEngineImpl implements MixEngine {
 
   constructor() {
     this.initializeMasterChannel();
-    this.startMeterUpdates();
+    //this.startMeterUpdates();
   }
 
   private initializeMasterChannel(): void {
