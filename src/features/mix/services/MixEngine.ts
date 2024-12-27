@@ -1,40 +1,35 @@
 // src/features/mix/services/MixEngine.ts
 import * as Tone from "tone";
-import { MixEngine, MixState, MixerChannel, Device, Send } from "../types";
+import { MixEngine, MixState, Device, Send, MixerTrack } from "../types";
 import { EffectName, EffectOptions } from "@/core/types/effect";
 import { useEngineStore } from "@/core/stores/useEngineStore";
 import { AudioMeterData } from "@/core/types/audio";
-import { createChannelNodes, createEffectNode } from "../utils/audioNodes";
-import { updateChannel, updateDevice, updateSend } from "../utils/stateUtils";
+import { createMixerTrackNodes, createEffectNode } from "../utils/audioNodes";
+import { updateDevice, updateMixerTrack, updateSend } from "../utils/stateUtils";
 import {
-  disposeChannel,
   disposeDevice,
+  disposeMixerTrack,
   disposeSend,
 } from "../utils/cleanupUtils";
-import { connectChannelChain, connectSend } from "../utils/routingUtils";
+import { connectMixerTrackChain, connectSend } from "../utils/routingUtils";
 
 export class MixEngineImpl implements MixEngine {
   private disposed = false;
   private meterUpdateInterval: number;
 
   constructor() {
-    this.initializeMasterChannel();
+    this.initializeMixerTracks();
     //this.startMeterUpdates();
   }
 
-  private initializeMasterChannel(): void {
-    useEngineStore.setState((state) => {
-      if (!state.mix.masterChannelId) {
-        const id = this.createChannel("master");
-        return {
-          mix: {
-            ...state.mix,
-            masterChannelId: id,
-          },
-        };
-      }
-      return state;
-    });
+  private initializeMixerTracks(): void {
+    const stateSnapshot = useEngineStore.getState();
+    const mixerTracks = stateSnapshot.mix.mixerTracks;
+      if (!mixerTracks) {
+        this.createMixerTrack("master");
+        this.createMixerTrack("return");
+        this.createMixerTrack("return");
+    };
   }
 
   private startMeterUpdates(): void {
@@ -49,8 +44,8 @@ export class MixEngineImpl implements MixEngine {
     const state = useEngineStore.getState();
 
     // Gather meter values
-    Object.values(state.mix.channels).forEach((channel) => {
-      meterValues.set(channel.id, channel.meter.getValue());
+    Object.values(state.mix.mixerTracks).forEach((mixerTrack) => {
+      meterValues.set(mixerTrack.id, mixerTrack.meter.getValue());
     });
 
     // Update state atomically
@@ -72,16 +67,17 @@ export class MixEngineImpl implements MixEngine {
     }));
   }
 
-  createChannel(type: MixerChannel["type"]): string {
-    const id = crypto.randomUUID();
-    const nodes = createChannelNodes();
+  createMixerTrack(type: MixerTrack["type"]): string {
+    let id = null;
+    type === "master" ? (id = "master") : (id = crypto.randomUUID());
+    const nodes = createMixerTrackNodes();
 
     try {
       // Connect nodes
       nodes.input.connect(nodes.meter);
       nodes.input.connect(nodes.channel);
 
-      const newChannel: MixerChannel = {
+      const newMixerTrack: MixerTrack = {
         id,
         name: `${type} ${id.slice(0, 4)}`,
         type,
@@ -89,13 +85,10 @@ export class MixEngineImpl implements MixEngine {
         preDevices: [],
         postDevices: [],
         sends: [],
-        output: {
-          type: type === "master" ? "master" : "master",
-        },
       };
 
       useEngineStore.setState((state) => ({
-        mix: updateChannel(state.mix, id, newChannel),
+        mix: updateMixerTrack(state.mix, id, newMixerTrack),
       }));
 
       return id;
@@ -106,128 +99,166 @@ export class MixEngineImpl implements MixEngine {
     }
   }
 
-  deleteChannel(id: string): void {
-    const state = useEngineStore.getState();
-    const channel = state.mix.channels[id];
+  deleteMixerTrack(id: string): void {
+    const stateSnapshot = useEngineStore.getState();
+    const mixerTrack = stateSnapshot.mix.mixerTracks[id];
 
-    if (!channel || id === state.mix.masterChannelId) {
-      throw new Error("Cannot delete channel");
+    if (!mixerTrack || id === "master") {
+      throw new Error("Could not delete mixer track");
     }
 
     try {
-      disposeChannel(channel);
+      disposeMixerTrack(mixerTrack);
 
       useEngineStore.setState((state) => {
-        const { [id]: _, ...remainingChannels } = state.mix.channels;
+        const { [id]: _, ...remainingMixerTracks } = state.mix.mixerTracks;
         return {
           mix: {
             ...state.mix,
-            channels: remainingChannels,
-          },
-          arrangement: {
-            ...state.arrangement,
-            returnTracks: state.arrangement.returnTracks.filter(
-              (trackId) => trackId !== id,
-            ),
+            mixerTracks: remainingMixerTracks,
           },
         };
       });
     } catch (error) {
-      console.error("Failed to delete channel:", error);
+      console.error("Failed to delete mixer track:", error);
       throw error;
     }
   }
 
-  addDevice(channelId: string, deviceType: EffectName): string {
-    const id = crypto.randomUUID();
-    const state = useEngineStore.getState();
-    const channel = state.mix.channels[channelId];
+addDevice(mixerTrackId: string, deviceType: EffectName): string {
+  const id = crypto.randomUUID();
+  const stateSnapshot = useEngineStore.getState();
+  const mixerTrack = stateSnapshot.mix.mixerTracks[mixerTrackId];
+  const masterTrack = stateSnapshot.mix.mixerTracks["master"];
 
-    if (!channel) throw new Error("Channel not found");
+  if (!mixerTrack) {
+    throw new Error(`Mixer track ${mixerTrackId} not found`);
+  }
 
-    try {
-      const node = createEffectNode(deviceType);
-      const device: Device = {
-        id,
-        type: deviceType,
-        name: deviceType,
-        bypass: false,
-        node,
+  if (!masterTrack) {
+    throw new Error("Master track not found");
+  }
+
+    const node = createEffectNode(deviceType);
+  try {
+    const device: Device = {
+      id,
+      type: deviceType,
+      name: deviceType,
+      bypass: false,
+      node,
+    };
+
+    useEngineStore.setState((state) => {
+      const updatedState = updateDevice(state.mix, id, device);
+      const newState = {
+        mix: updateMixerTrack(updatedState, mixerTrackId, {
+          preDevices: [...mixerTrack.preDevices, node],
+        }),
       };
 
-      useEngineStore.setState((state) => {
-        const updatedState = updateDevice(state.mix, id, device);
-        return {
-          mix: updateChannel(updatedState, channelId, {
-            preDevices: [...channel.preDevices, node],
-          }),
-        };
-      });
+      // Get updated track reference
+      const updatedTrack = newState.mix.mixerTracks[mixerTrackId];
+      
+      // Connect with master track reference
+      connectMixerTrackChain(updatedTrack, masterTrack);
 
-      // Reconnect channel chain
-      connectChannelChain(
-        useEngineStore.getState().mix.channels[channelId],
-        this.getTargetInput(channelId),
-      );
+      return newState;
+    });
 
-      return id;
-    } catch (error) {
-      console.error("Failed to add device:", error);
-      throw error;
+    return id;
+  } catch (error) {
+    console.error(`Failed to add ${deviceType} device to track ${mixerTrackId}:`, error);
+    try {
+      node.dispose();
+    } catch (cleanupError) {
+      console.warn("Failed to clean up device node:", cleanupError);
     }
+    throw error;
+  }
+}
+
+removeDevice(mixerTrackId: string, deviceId: string): void {
+  const stateSnapshot = useEngineStore.getState();
+  const device = stateSnapshot.mix.devices[deviceId];
+  const mixerTrack = stateSnapshot.mix.mixerTracks[mixerTrackId];
+  const masterTrack = stateSnapshot.mix.mixerTracks["master"];
+
+  if (!device) {
+    throw new Error(`Device ${deviceId} not found`);
+  }
+  if (!mixerTrack) {
+    throw new Error(`Mixer track ${mixerTrackId} not found`);
+  }
+  if (!masterTrack) {
+    throw new Error("Master track not found");
   }
 
-  removeDevice(channelId: string, deviceId: string): void {
-    const state = useEngineStore.getState();
-    const device = state.mix.devices[deviceId];
-    const channel = state.mix.channels[channelId];
+  try {
+    // Update state first to ensure consistency
+    useEngineStore.setState((state) => {
+      // Remove device from state
+      const { [deviceId]: removedDevice, ...remainingDevices } = state.mix.devices;
 
-    if (!device || !channel) return;
-
-    try {
-      disposeDevice(device);
-
-      useEngineStore.setState((state) => {
-        const { [deviceId]: _, ...remainingDevices } = state.mix.devices;
-        return {
-          mix: {
-            ...state.mix,
-            devices: remainingDevices,
-            channels: {
-              ...state.mix.channels,
-              [channelId]: {
-                ...channel,
-                preDevices: channel.preDevices.filter((d) => d !== device.node),
-                postDevices: channel.postDevices.filter(
-                  (d) => d !== device.node,
-                ),
-              },
+      // Create new state with updated track
+      const newState = {
+        mix: {
+          ...state.mix,
+          devices: remainingDevices,
+          mixerTracks: {
+            ...state.mix.mixerTracks,
+            [mixerTrackId]: {
+              ...mixerTrack,
+              preDevices: mixerTrack.preDevices.filter(
+                (d) => d !== device.node
+              ),
+              postDevices: mixerTrack.postDevices.filter(
+                (d) => d !== device.node
+              ),
             },
           },
-        };
-      });
+        },
+      };
 
-      connectChannelChain(
-        useEngineStore.getState().mix.channels[channelId],
-        this.getTargetInput(channelId),
-      );
-    } catch (error) {
-      console.error("Failed to remove device:", error);
-      throw error;
+      // Get updated track reference
+      const updatedTrack = newState.mix.mixerTracks[mixerTrackId];
+      
+      // Reconnect the chain within setState
+      connectMixerTrackChain(updatedTrack, masterTrack);
+
+      return newState;
+    });
+
+    // Dispose device after state update
+    try {
+      disposeDevice(device);
+    } catch (disposeError) {
+      console.warn(`Failed to dispose device ${deviceId}:`, disposeError);
+      // Continue execution as state is already updated
     }
+  } catch (error) {
+    console.error(`Failed to remove device ${deviceId} from track ${mixerTrackId}:`, error);
+    // Attempt to restore connection if state update failed
+    try {
+      connectMixerTrackChain(mixerTrack, masterTrack);
+    } catch (restoreError) {
+      console.error("Failed to restore track connection:", restoreError);
+    }
+    throw error;
   }
+}
 
   updateDevice<T extends EffectOptions>(
-    channelId: string,
+    mixerTrackId: string,
     deviceId: string,
     updates: Partial<Device<T>>,
   ): void {
-    const state = useEngineStore.getState();
-    const device = state.mix.devices[deviceId];
-    const channel = state.mix.channels[channelId];
+    const stateSnapshot = useEngineStore.getState();
+    const device = stateSnapshot.mix.devices[deviceId];
+    const mixerTrack = stateSnapshot.mix.mixerTracks[mixerTrackId];
 
-    if (!device || !channel) {
-      throw new Error("Device or channel not found");
+    if (!device || !mixerTrack) {
+      throw new Error("Device or mixer track not found");
     }
 
     try {
@@ -263,37 +294,29 @@ export class MixEngineImpl implements MixEngine {
 
   createSend(fromId: string, toId: string): string {
     const id = crypto.randomUUID();
-    const state = useEngineStore.getState();
-    const sourceChannel = state.mix.channels[fromId];
-    const targetChannel = state.mix.channels[toId];
+    const stateSnapshot = useEngineStore.getState();
+    const sourceMixerTrack = stateSnapshot.mix.mixerTracks[fromId];
+    const targetMixerTrack = stateSnapshot.mix.mixerTracks[toId];
 
-    if (!sourceChannel || !targetChannel) {
-      throw new Error("Source or target channel not found");
-    }
-
-    const isValidTarget =
-      state.arrangement.returnTracks.includes(toId) ||
-      toId === state.mix.masterChannelId;
-
-    if (!isValidTarget) {
-      throw new Error("Can only send to return or master channels");
+    if (!sourceMixerTrack || !targetMixerTrack) {
+      throw new Error("Source or target track not found");
     }
 
     try {
       const gain = new Tone.Gain(0);
-      gain.connect(targetChannel.input);
+      gain.connect(targetMixerTrack.input);
 
       const send: Send = {
         id,
-        name: `Send to ${targetChannel.name}`,
+        name: `Send to ${targetMixerTrack.name}`,
         returnTrackId: toId,
         preFader: false,
         gain,
       };
 
       useEngineStore.setState((state) => ({
-        mix: updateChannel(state.mix, fromId, {
-          sends: [...sourceChannel.sends, send],
+        mix: updateMixerTrack(state.mix, fromId, {
+          sends: [...sourceMixerTrack.sends, send],
         }),
       }));
 
@@ -304,59 +327,99 @@ export class MixEngineImpl implements MixEngine {
     }
   }
 
-  updateSend(channelId: string, sendId: string, updates: Partial<Send>): void {
-    const state = useEngineStore.getState();
-    const channel = state.mix.channels[channelId];
-    const send = channel?.sends.find((s) => s.id === sendId);
+updateSend(mixerTrackId: string, sendId: string, updates: Partial<Send>): void {
+  const state = useEngineStore.getState();
+  const mixerTrack = state.mix.mixerTracks[mixerTrackId];
+  const send = mixerTrack?.sends.find((s) => s.id === sendId);
+  const masterTrack = state.mix.mixerTracks["master"];
 
-    if (!channel || !send) {
-      throw new Error("Channel or send not found");
-    }
-
-    try {
-      if (updates.returnTrackId) {
-        const targetChannel = state.mix.channels[updates.returnTrackId];
-        if (!targetChannel) throw new Error("Target channel not found");
-
-        send.gain.disconnect();
-        send.gain.connect(targetChannel.input);
-      }
-
-      if (updates.preFader !== undefined) {
-        connectSend(
-          { ...send, preFader: updates.preFader },
-          channel,
-          state.mix.channels[send.returnTrackId].input,
-        );
-      }
-
-      if (updates.gain?.gain.value !== undefined) {
-        send.gain.gain.value = updates.gain.gain.value;
-      }
-
-      useEngineStore.setState((state) => ({
-        mix: updateSend(state.mix, channelId, sendId, updates),
-      }));
-    } catch (error) {
-      console.error("Failed to update send:", error);
-      throw error;
-    }
+  // Validate resources
+  if (!mixerTrack) {
+    throw new Error(`Mixer track ${mixerTrackId} not found`);
+  }
+  if (!send) {
+    throw new Error(`Send ${sendId} not found in track ${mixerTrackId}`);
+  }
+  if (!masterTrack) {
+    throw new Error("Master track not found");
   }
 
-  removeSend(channelId: string, sendId: string): void {
+  try {
+    // Validate return track if being updated
+    if (updates.returnTrackId) {
+      const targetTrack = state.mix.mixerTracks[updates.returnTrackId];
+      if (!targetTrack) {
+        throw new Error(`Target return track ${updates.returnTrackId} not found`);
+      }
+      if (targetTrack.type !== "return") {
+        throw new Error(`Track ${updates.returnTrackId} is not a return track`);
+      }
+    }
+
+    // Update state and audio atomically
+    useEngineStore.setState((state) => {
+      // Create updated send object
+      const updatedSend = {
+        ...send,
+        ...updates,
+        // Preserve gain node if not updating
+        gain: updates.gain || send.gain,
+      };
+
+      // Get target return track
+      const returnTrack = state.mix.mixerTracks[updatedSend.returnTrackId];
+      if (!returnTrack) {
+        throw new Error(`Return track ${updatedSend.returnTrackId} not found`);
+      }
+
+      try {
+        // Update audio routing
+        if (updates.returnTrackId || updates.preFader !== undefined) {
+          connectSend(updatedSend, mixerTrack, returnTrack);
+        }
+
+        // Update gain if specified
+        if (updates.gain?.gain.value !== undefined) {
+          updatedSend.gain.gain.value = updates.gain.gain.value;
+        }
+
+        // Update state
+        return {
+          mix: updateSend(state.mix, mixerTrackId, sendId, updatedSend),
+        };
+      } catch (audioError) {
+        // If audio update fails, try to restore original routing
+        try {
+          connectSend(send, mixerTrack, returnTrack);
+        } catch (restoreError) {
+          console.error("Failed to restore send routing:", restoreError);
+        }
+        throw audioError;
+      }
+    });
+  } catch (error) {
+    console.error(
+      `Failed to update send ${sendId} on track ${mixerTrackId}:`,
+      error
+    );
+    throw error;
+  }
+}
+
+  removeSend(mixerTrackId: string, sendId: string): void {
     const state = useEngineStore.getState();
-    const channel = state.mix.channels[channelId];
+    const channel = state.mix.mixerTracks[mixerTrackId];
     const send = channel?.sends.find((s) => s.id === sendId);
 
     if (!channel || !send) {
-      throw new Error("Channel or send not found");
+      throw new Error("Mixer track or send not found");
     }
 
     try {
       disposeSend(send);
 
       useEngineStore.setState((state) => ({
-        mix: updateChannel(state.mix, channelId, {
+        mix: updateMixerTrack(state.mix, mixerTrackId, {
           sends: channel.sends.filter((s) => s.id !== sendId),
         }),
       }));
@@ -366,9 +429,9 @@ export class MixEngineImpl implements MixEngine {
     }
   }
 
-  setSendAmount(channelId: string, sendId: string, amount: number): void {
+  setSendAmount(mixerTrackId: string, sendId: string, amount: number): void {
     const state = useEngineStore.getState();
-    const channel = state.mix.channels[channelId];
+    const channel = state.mix.mixerTracks[mixerTrackId];
     const send = channel?.sends.find((s) => s.id === sendId);
 
     if (!channel || !send) {
@@ -380,25 +443,12 @@ export class MixEngineImpl implements MixEngine {
       send.gain.gain.value = clampedAmount;
 
       useEngineStore.setState((state) => ({
-        mix: updateSend(state.mix, channelId, sendId, { gain: send.gain }),
+        mix: updateSend(state.mix, mixerTrackId, sendId, { gain: send.gain }),
       }));
     } catch (error) {
       console.error("Failed to set send amount:", error);
       throw error;
     }
-  }
-
-  private getTargetInput(channelId: string): Tone.ToneAudioNode | undefined {
-    const state = useEngineStore.getState().mix;
-    const channel = state.channels[channelId];
-
-    if (channel.type === "master") return undefined;
-
-    const targetChannel = channel.output.targetId
-      ? state.channels[channel.output.targetId]
-      : state.channels[state.masterChannelId];
-
-    return targetChannel?.input;
   }
 
   getMeterData(channelId: string): AudioMeterData {
@@ -418,17 +468,16 @@ export class MixEngineImpl implements MixEngine {
     const state = useEngineStore.getState();
 
     try {
-      // Dispose all channels and their devices
-      Object.values(state.mix.channels).forEach((channel) => {
-        disposeChannel(channel);
+      // Dispose all mixer tracks and their devices
+      Object.values(state.mix.mixerTracks).forEach((mixerTrack) => {
+        disposeMixerTrack(mixerTrack);
       });
 
       // Reset state
       useEngineStore.setState({
         mix: {
-          channels: {},
+          mixerTracks: {},
           devices: {},
-          masterChannelId: "",
           meterData: {},
         },
       });

@@ -9,7 +9,7 @@ import {
   ToneEffectType,
 } from "@/core/types/effect";
 
-export const createChannelNodes = () => {
+export const createMixerTrackNodes = () => {
   const input = new Tone.Gain();
   const channel = new Tone.Channel().toDestination();
   const meter = new Tone.Meter();

@@ -32,10 +32,10 @@ export interface Send {
   gain: Gain;
 }
 
-export interface MixerChannel {
+export interface MixerTrack {
   id: string;
   name: string;
-  type: "audio" | "midi" | "return" | "master";
+  type: "return" | "master";
 
   // Tone.js nodes
   input: Gain;
@@ -44,60 +44,48 @@ export interface MixerChannel {
   postDevices: ToneEffectType[];
   sends: Send[];
   meter: Meter;
-
-  // Routing
-  output: {
-    type: "master" | "track" | "return";
-    targetId?: string;
-  };
 }
 
 export interface PersistableMixerChannel {
   id: string;
   name: string;
-  type: "audio" | "midi" | "return" | "master";
-  output: {
-    type: "master" | "track" | "return";
-    targetId?: string;
-  };
+  type: "return" | "master";
 }
 
 export interface MixState {
-  channels: Record<string, MixerChannel>;
+  mixerTracks: Record<string, MixerTrack>;
   devices: Record<string, Device>;
-  masterChannelId: string;
 
   // Metering state
   meterData: Record<string, AudioMeterData>;
 }
 
 export interface PersistableMixState {
-  channels: Record<string, PersistableMixerChannel>;
+  mixerTracks: Record<string, PersistableMixerChannel>;
   devices: Record<string, PersistableDevice>;
-  masterChannelId: string;
 }
 
 export interface MixEngine {
-  createChannel(type: MixerChannel["type"]): string;
-  deleteChannel(id: string): void;
+  createMixerTrack(type: MixerTrack["type"]): string;
+  deleteMixerTrack(id: string): void;
 
   // Device management
-  addDevice(channelId: string, deviceType: EffectName): string;
+  addDevice(mixerTrackId: string, deviceType: EffectName): string;
   updateDevice<T extends EffectOptions>(
-    channelId: string,
+    mixerTrackId: string,
     deviceId: string,
     updates: Partial<Device<T>>,
   ): void;
-  removeDevice(channelId: string, deviceId: string): void;
+  removeDevice(mixerTrackId: string, deviceId: string): void;
 
   // Sends
   createSend(fromId: string, toId: string): string;
-  updateSend(channelId: string, sendId: string, updates: Partial<Send>): void;
-  removeSend(channelId: string, sendId: string): void;
-  setSendAmount(channelId: string, sendId: string, amount: number): void;
+  updateSend(mixerTrackId: string, sendId: string, updates: Partial<Send>): void;
+  removeSend(mixerTrackId: string, sendId: string): void;
+  setSendAmount(mixerTrackId: string, sendId: string, amount: number): void;
 
   // Metering
-  getMeterData(channelId: string): AudioMeterData;
+  getMeterData(mixerTrackId: string): AudioMeterData;
 
   // State
   getState(): MixState;

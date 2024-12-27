@@ -1,59 +1,62 @@
-// src/features/mix/utils/audioNodes.ts
+// src/features/mix/utils/routingUtils.ts
 import * as Tone from "tone";
-import { MixerChannel, Send } from "../types";
+import { MixerTrack, Send } from "../types";
 
-export const connectChannelChain = (
-  channel: MixerChannel,
-  targetInput?: Tone.ToneAudioNode,
-): void => {
+export const connectMixerTrackChain = (mixerTrack: MixerTrack, masterTrack: MixerTrack): void => {
   // Disconnect existing chain
-  channel.input.disconnect();
-  channel.preDevices.forEach((device) => device.disconnect());
-  channel.postDevices.forEach((device) => device.disconnect());
-  channel.channel.disconnect();
+  mixerTrack.input.disconnect();
+  mixerTrack.preDevices.forEach((device) => device.disconnect());
+  mixerTrack.postDevices.forEach((device) => device.disconnect());
+  mixerTrack.channel.disconnect();
 
   // Connect chain
-  let currentNode: Tone.ToneAudioNode = channel.input;
+  let currentNode: Tone.ToneAudioNode = mixerTrack.input;
 
   // Pre-fader chain
-  channel.preDevices.forEach((device) => {
+  mixerTrack.preDevices.forEach((device) => {
     currentNode.connect(device);
     currentNode = device;
   });
 
   // Connect to channel strip
-  currentNode.connect(channel.channel);
-  currentNode = channel.channel;
+  currentNode.connect(mixerTrack.channel);
+  currentNode = mixerTrack.channel;
 
   // Post-fader chain
-  channel.postDevices.forEach((device) => {
+  mixerTrack.postDevices.forEach((device) => {
     currentNode.connect(device);
     currentNode = device;
   });
 
   // Connect to meter
-  currentNode.connect(channel.meter);
+  currentNode.connect(mixerTrack.meter);
 
-  // Connect to target if provided
-  if (targetInput) {
-    currentNode.connect(targetInput);
-  } else if (channel.type === "master") {
+  // All tracks route to master except master track itself
+  if (mixerTrack.type === "master") {
     currentNode.toDestination();
+  } else {
+    currentNode.connect(masterTrack.input);
   }
 };
 
 export const connectSend = (
   send: Send,
-  sourceChannel: MixerChannel,
-  targetInput: Tone.ToneAudioNode,
+  sourceTrack: MixerTrack,
+  returnTrack: MixerTrack,
 ): void => {
-  send.gain.disconnect();
-
-  if (send.preFader) {
-    sourceChannel.input.connect(send.gain);
-  } else {
-    sourceChannel.channel.connect(send.gain);
+  if (returnTrack.type !== "return") {
+    throw new Error("Sends can only target return tracks");
   }
 
-  send.gain.connect(targetInput);
+  send.gain.disconnect();
+
+  // Connect from appropriate point in source track
+  if (send.preFader) {
+    sourceTrack.input.connect(send.gain);
+  } else {
+    sourceTrack.channel.connect(send.gain);
+  }
+
+  // Connect to return track input
+  send.gain.connect(returnTrack.input);
 };

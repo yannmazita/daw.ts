@@ -1,16 +1,16 @@
 // src/features/mix/utils/stateUtils.ts
-import { MixState, MixerChannel, Device, Send } from "../types";
+import { MixState, MixerTrack, Device, Send } from "../types";
 
-export const updateChannel = (
+export const updateMixerTrack = (
   state: MixState,
-  channelId: string,
-  updates: Partial<MixerChannel>,
+  mixerTrackId: string,
+  updates: Partial<MixerTrack>,
 ): MixState => ({
   ...state,
-  channels: {
-    ...state.channels,
-    [channelId]: {
-      ...state.channels[channelId],
+  mixerTracks: {
+    ...state.mixerTracks,
+    [mixerTrackId]: {
+      ...state.mixerTracks[mixerTrackId],
       ...updates,
     },
   },
@@ -33,13 +33,13 @@ export const updateDevice = (
 
 export const updateSend = (
   state: MixState,
-  channelId: string,
+  mixerTrackId: string,
   sendId: string,
   updates: Partial<Send>,
 ): MixState => {
-  const channel = state.channels[channelId];
-  return updateChannel(state, channelId, {
-    sends: channel.sends.map((send) =>
+  const mixerTrack = state.mixerTracks[mixerTrackId];
+  return updateMixerTrack(state, mixerTrackId, {
+    sends: mixerTrack.sends.map((send) =>
       send.id === sendId ? { ...send, ...updates } : send,
     ),
   });

@@ -1,21 +1,21 @@
 // src/features/mix/utils/cleanupUtils.ts
-import { MixerChannel, Device, Send } from "../types";
+import { MixerTrack, Device, Send } from "../types";
 
-export const disposeChannel = (channel: MixerChannel): void => {
+export const disposeMixerTrack = (mixerTrack: MixerTrack): void => {
   try {
     // Dispose devices
-    channel.preDevices.forEach((device) => device.dispose());
-    channel.postDevices.forEach((device) => device.dispose());
+    mixerTrack.preDevices.forEach((device) => device.dispose());
+    mixerTrack.postDevices.forEach((device) => device.dispose());
 
     // Dispose sends
-    channel.sends.forEach((send) => send.gain.dispose());
+    mixerTrack.sends.forEach((send) => send.gain.dispose());
 
-    // Dispose channel nodes
-    channel.input.dispose();
-    channel.channel.dispose();
-    channel.meter.dispose();
+    // Dispose mixer track nodes
+    mixerTrack.input.dispose();
+    mixerTrack.channel.dispose();
+    mixerTrack.meter.dispose();
   } catch (error) {
-    console.error("Error disposing channel:", error);
+    console.error("Error disposing mixer track:", error);
     throw error;
   }
 };

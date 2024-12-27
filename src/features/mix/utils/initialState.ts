@@ -2,9 +2,7 @@
 import { MixState } from "../types";
 
 export const initialMixState: MixState = {
-  channels: {},
+  mixerTracks: {},
   devices: {},
-  returnTracks: [],
-  masterChannelId: "",
   meterData: {},
 };
