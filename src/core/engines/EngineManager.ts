@@ -18,7 +18,7 @@ export class EngineManager {
   private constructor() {
     // Initialize engines in dependency order
     this._transport = new TransportEngineImpl();
-    //this._mix = new MixEngineImpl();
+    this._mix = new MixEngineImpl();
     this._clips = new ClipEngineImpl();
     this._automation = new AutomationEngineImpl();
     this._arrangement = new ArrangementEngineImpl(

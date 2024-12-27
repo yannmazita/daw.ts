@@ -55,7 +55,7 @@ export const useEngineStore = create<EngineState>()(
             contents: Object.fromEntries(
               Object.entries(state.clips.contents).map(([id, content]) => [
                 id,
-                { ...content, buffer: undefined },
+                { ...content, buffer: null },
               ]),
             ),
             activeClips: Object.fromEntries(
@@ -67,14 +67,13 @@ export const useEngineStore = create<EngineState>()(
           },
           mix: {
             ...state.mix,
-            channels: Object.fromEntries(
-              Object.entries(state.mix.channels).map(([id, channel]) => [
+            mixerTracks: Object.fromEntries(
+              Object.entries(state.mix.mixerTracks).map(([id, mixerTrack]) => [
                 id,
                 {
-                  id: channel.id,
-                  name: channel.name,
-                  type: channel.type,
-                  output: channel.output,
+                  id: mixerTrack.id,
+                  name: mixerTrack.name,
+                  type: mixerTrack.type,
                 },
               ]),
             ),
