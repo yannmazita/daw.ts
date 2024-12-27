@@ -10,7 +10,7 @@ export const App: React.FC = () => {
     EngineManager.getInstance();
 
     return () => {
-      EngineManager.getInstance().dispose();
+      //EngineManager.getInstance().dispose();
     };
   }, []);
   return (
