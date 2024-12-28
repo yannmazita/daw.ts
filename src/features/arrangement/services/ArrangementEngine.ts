@@ -31,45 +31,20 @@ export class ArrangementEngineImpl implements ArrangementEngine {
     public readonly mixEngine: MixEngine,
     public readonly automationEngine: AutomationEngine,
   ) {
-    this.initializeMasterTrack();
+    this.initializeDefaultTracks();
   }
 
-  private initializeMasterTrack(): void {
-    try {
-      const masterTrackId = crypto.randomUUID();
-      const mixerChannelId = this.mixEngine.createChannel("master");
-
-      const masterTrack = createTrackData(
-        masterTrackId,
-        "master",
-        "Master",
-        0,
-        initialArrangementState.viewSettings,
-      );
-
-      useEngineStore.setState((state) => ({
-        arrangement: {
-          ...initialArrangementState,
-          tracks: { [masterTrackId]: { ...masterTrack, mixerChannelId } },
-          trackOrder: [masterTrackId],
-          masterTrackId,
-        },
-      }));
-    } catch (error) {
-      console.error("Failed to initialize master track:", error);
-      throw new Error("DAW initialization failed");
-    }
+  private initializeDefaultTracks(): void {
+    this.createTrack("midi", "MIDI 1");
+    this.createTrack("midi", "MIDI 2");
+    this.createTrack("audio", "AUDIO 1");
+    this.createTrack("audio", "AUDIO 2");
   }
 
   createTrack(type: Track["type"], name: string): string {
     this.checkDisposed();
 
-    if (type === "master") {
-      throw new Error("Cannot create additional master tracks");
-    }
-
     const id = crypto.randomUUID();
-    const mixerChannelId = this.mixEngine.createChannel(type);
 
     try {
       const state = useEngineStore.getState().arrangement;
@@ -82,7 +57,7 @@ export class ArrangementEngineImpl implements ArrangementEngine {
             ...state.arrangement,
             tracks: {
               ...state.arrangement.tracks,
-              [id]: { ...track, mixerChannelId },
+              [id]: { ...track },
             },
             trackOrder: [...state.arrangement.trackOrder, id],
             visibleAutomationLanes: {
@@ -103,15 +78,16 @@ export class ArrangementEngineImpl implements ArrangementEngine {
         return newState;
       });
 
+      // Route all new tracks to master mixer track by default
+      try {
+        this.mixEngine.createSend(id, "master");
+      } catch (error) {
+        console.error("Failed to create send to master track:", error);
+      }
+
       return id;
     } catch (error) {
-      if (mixerChannelId) {
-        try {
-          this.mixEngine.deleteChannel(mixerChannelId);
-        } catch (cleanupError) {
-          console.error("Failed to cleanup mixer channel:", cleanupError);
-        }
-      }
+      console.error("Failed to create track:", error);
       throw error;
     }
   }
@@ -121,8 +97,8 @@ export class ArrangementEngineImpl implements ArrangementEngine {
     const state = useEngineStore.getState().arrangement;
     const track = state.tracks[trackId];
 
-    if (!track || track.type === "master") {
-      throw new Error("Cannot delete track");
+    if (!track) {
+      throw new Error("Track not found");
     }
 
     try {
@@ -190,15 +166,7 @@ export class ArrangementEngineImpl implements ArrangementEngine {
       }
     });
 
-    // Cleanup mixer channel
-    try {
-      this.mixEngine.deleteChannel(track.mixerChannelId);
-    } catch (e) {
-      console.warn(
-        `Failed to delete mixer channel ${track.mixerChannelId}:`,
-        e,
-      );
-    }
+    // Cleanup sends
   }
 
   moveTrack(trackId: string, newIndex: number): void {
@@ -206,7 +174,7 @@ export class ArrangementEngineImpl implements ArrangementEngine {
     const state = useEngineStore.getState().arrangement;
     const track = state.tracks[trackId];
 
-    if (!track || track.type === "master") {
+    if (!track) {
       throw new Error("Cannot move track");
     }
 
@@ -390,12 +358,10 @@ export class ArrangementEngineImpl implements ArrangementEngine {
     try {
       const state = useEngineStore.getState().arrangement;
 
-      // Cleanup all tracks except master
-      Object.values(state.tracks)
-        .filter((track) => track.type !== "master")
-        .forEach((track) => {
-          this.cleanupTrackResources(track);
-        });
+      // Cleanup all tracks
+      Object.values(state.tracks).forEach((track) => {
+        this.cleanupTrackResources(track);
+      });
 
       // Reset to initial state
       useEngineStore.setState({ arrangement: initialArrangementState });
