@@ -1,6 +1,6 @@
 // src/common/components/PlaybackControls/PlaybackControls.tsx
+import { useEngineStore } from "@/core/stores/useEngineStore";
 import { useTransportEngine } from "@/core/engines/EngineManager";
-import { Button } from "@/common/shadcn/ui/button";
 import { Input } from "@/common/shadcn/ui/input";
 import { Pause, Play, SkipBack, SkipForward, Square } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -10,10 +10,12 @@ import { TempoTap } from "./TempoTap";
 import { PositionDisplay } from "./PositionDisplay";
 import { TransportBar } from "./TransportBar";
 import { Label } from "@/common/shadcn/ui/label";
+import { Button } from "@/common/shadcn/ui/button";
 
 export const PlaybackControls: React.FC = () => {
-  const { isPlaying, tempo, play, stop, pause, setTempo } =
-    useTransportEngine();
+  const isPlaying = useEngineStore((state) => state.transport.isPlaying);
+  const tempo = useEngineStore((state) => state.transport.tempo);
+  const { play, pause, stop, setTempo } = useTransportEngine();
   const [localBpm, setLocalBpm] = useState(tempo.toString());
 
   const handleBpmChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -76,7 +78,7 @@ export const PlaybackControls: React.FC = () => {
               min={20}
               max={300}
             />
-            <TempoTap />
+            {/*<TempoTap />*/}
           </div>
 
           {/* Time Signature */}

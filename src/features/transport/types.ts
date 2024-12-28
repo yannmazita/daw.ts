@@ -3,7 +3,6 @@ import {
   BPM,
   Subdivision,
   Time,
-  TimeSignature,
 } from "tone/build/esm/core/type/Units";
 
 export interface TransportState {
@@ -11,7 +10,7 @@ export interface TransportState {
   isRecording: boolean;
 
   tempo: BPM;
-  timeSignature: TimeSignature;
+  timeSignature: number[];
 
   loop: {
     enabled: boolean;

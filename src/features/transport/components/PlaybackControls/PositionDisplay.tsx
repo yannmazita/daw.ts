@@ -1,11 +1,15 @@
-// src/common/components/PlaybackControls/PositionDisplay.tsx
 import { useState, useEffect, useCallback } from "react";
 import { Input } from "@/common/shadcn/ui/input";
 import { Label } from "@/common/shadcn/ui/label";
+import { useEngineStore } from "@/core/stores/useEngineStore";
+import { useTransportEngine } from "@/core/engines/EngineManager";
 import * as Tone from "tone";
 
 export const PositionDisplay: React.FC = () => {
-  const { position, length, isPlaying, seekTo } = useStore();
+  const duration = useEngineStore((state) => state.transport.duration);
+  const isPlaying = useEngineStore((state) => state.transport.isPlaying);
+  const seekTo = useTransportEngine().seekTo;
+  const getPosition = useTransportEngine().getTransportPosition;
   const [displayPosition, setDisplayPosition] = useState("0:0:0");
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState("0:0:0");
@@ -18,9 +22,9 @@ export const PositionDisplay: React.FC = () => {
   // Update display when position changes
   useEffect(() => {
     if (!isEditing) {
-      setDisplayPosition(formatPosition(position));
+      setDisplayPosition(formatPosition(Tone.Time(getPosition()).toSeconds()));
     }
-  }, [position, isEditing, formatPosition]);
+  }, [getPosition, isEditing, formatPosition]);
 
   // Handle manual position input
   const handlePositionClick = () => {
@@ -37,15 +41,21 @@ export const PositionDisplay: React.FC = () => {
   const handlePositionSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      // Validate and convert input to time
-      const newPosition = Tone.Time(editValue).toBarsBeatsSixteenths();
+      // Validate and convert input to seconds
+      const newPosition = Tone.Time(editValue).toSeconds();
       seekTo(newPosition);
-      setDisplayPosition(newPosition);
+      setDisplayPosition(formatPosition(newPosition));
     } catch (error) {
-      // Revert to current position on invalid input
-      setEditValue(displayPosition);
+      console.error("Invalid position format:", error);
+      setEditValue(displayPosition); // Revert on invalid input
+    } finally {
+      setIsEditing(false);
     }
+  };
+
+  const handleBlur = () => {
     setIsEditing(false);
+    setEditValue(displayPosition); // Revert any unsaved changes
   };
 
   return (
@@ -59,7 +69,7 @@ export const PositionDisplay: React.FC = () => {
             onChange={handlePositionChange}
             className="w-24 font-mono"
             autoFocus
-            onBlur={() => setIsEditing(false)}
+            onBlur={handleBlur}
             pattern="[0-9]+:[0-9]+:[0-9]+"
             title="Format: bars:beats:sixteenths"
           />
@@ -76,7 +86,7 @@ export const PositionDisplay: React.FC = () => {
       )}
       <span className="text-sm text-muted-foreground">/</span>
       <div className="w-24 font-mono text-muted-foreground">
-        {formatPosition(length)}
+        {formatPosition(Tone.Time(duration).toSeconds())}
       </div>
     </div>
   );

@@ -58,7 +58,7 @@ export class TransportEngineImpl implements TransportEngine {
 
   private updateTransportSettings(settings: {
     bpm?: BPM;
-    timeSignature?: TimeSignature;
+    timeSignature?: number[];
     swing?: number;
     swingSubdivision?: Subdivision;
     duration?: Time;
@@ -167,6 +167,10 @@ export class TransportEngineImpl implements TransportEngine {
   getTransportDuration(): Time {
     return Tone.getTransport().seconds;
   }
+
+  getTransportPosition(): Time {
+    return Tone.getTransport().position;
+      }
 
   setTempo(tempo: BPM): void {
     this.checkDisposed();
