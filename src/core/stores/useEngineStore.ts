@@ -89,6 +89,8 @@ export const useEngineStore = create<EngineState>()(
                 },
               ]),
             ),
+            sends: state.mix.sends,
+            trackSends: state.mix.trackSends,
           },
           automation: {
             ...state.automation,
