@@ -35,10 +35,31 @@ export class ArrangementEngineImpl implements ArrangementEngine {
   }
 
   private initializeDefaultTracks(): void {
-    this.createTrack("midi", "MIDI 1");
-    this.createTrack("midi", "MIDI 2");
-    this.createTrack("audio", "AUDIO 1");
-    this.createTrack("audio", "AUDIO 2");
+    const state = useEngineStore.getState();
+    const persistedTracks = state.arrangement.trackOrder;
+
+    try {
+      if (persistedTracks.length > 0) {
+        // Reinitialize persisted tracks
+        console.log("Reinitializing persisted tracks");
+        persistedTracks.forEach((trackId) => {
+          const persistedTrack = state.arrangement.tracks[trackId];
+          if (persistedTrack) {
+            this.createTrack(persistedTrack.type, persistedTrack.name);
+          }
+        });
+      } else {
+        // Create default tracks
+        console.log("Creating default tracks");
+        this.createTrack("midi", "MIDI 1");
+        this.createTrack("midi", "MIDI 2");
+        this.createTrack("audio", "AUDIO 1");
+        this.createTrack("audio", "AUDIO 2");
+      }
+    } catch (error) {
+      console.error("Failed to initialize tracks:", error);
+      throw error;
+    }
   }
 
   createTrack(type: Track["type"], name: string): string {
@@ -167,6 +188,7 @@ export class ArrangementEngineImpl implements ArrangementEngine {
     });
 
     // Cleanup sends
+    //
   }
 
   moveTrack(trackId: string, newIndex: number): void {

@@ -1,4 +1,5 @@
 // src/features/arrangement/utils/trackUtils.ts
+import { createMixerTrackNodes } from "@/features/mix/utils/audioNodes";
 import { Track, ArrangementState } from "../types";
 
 export const createTrackData = (
@@ -7,19 +8,33 @@ export const createTrackData = (
   name: string,
   index: number,
   viewSettings: ArrangementState["viewSettings"],
-): Track => ({
-  id,
-  type,
-  name,
-  index,
-  color: generateTrackColor(),
-  height: viewSettings.defaultHeight,
-  isVisible: true,
-  isFolded: false,
-  mixerChannelId: "", // Will be set by engine
-  clipIds: [],
-  automationIds: [],
-});
+): Track => {
+  const nodes = createMixerTrackNodes();
+
+  // Validate nodes
+  if (!nodes.input || !nodes.channel || !nodes.meter) {
+    console.error("Failed to create audio nodes:", nodes);
+    throw new Error("Failed to create audio nodes for track");
+  }
+
+  // Connect nodes internally
+  nodes.input.connect(nodes.channel);
+  nodes.channel.connect(nodes.meter);
+
+  return {
+    id,
+    type,
+    name,
+    color: generateTrackColor(),
+    index,
+    height: viewSettings.defaultHeight,
+    isVisible: true,
+    isFolded: false,
+    clipIds: [],
+    automationIds: [],
+    ...nodes,
+  };
+};
 
 export const generateTrackColor = (): string => {
   const hue = Math.floor(Math.random() * 360);
@@ -31,7 +46,8 @@ export const isTrackFoldable = (
   state: ArrangementState,
 ): boolean => {
   const nextTrackId = state.trackOrder[track.index + 1];
-  return nextTrackId && state.tracks[nextTrackId].type !== "master";
+  if (!nextTrackId) return false;
+  return true;
 };
 
 export const getTrackChildren = (
@@ -46,9 +62,6 @@ export const getTrackChildren = (
 
   while (currentIndex < state.trackOrder.length) {
     const currentId = state.trackOrder[currentIndex];
-    const currentTrack = state.tracks[currentId];
-
-    if (currentTrack.type === "master") break;
     children.push(currentId);
     currentIndex++;
   }
