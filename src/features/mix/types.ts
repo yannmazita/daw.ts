@@ -42,11 +42,10 @@ export interface MixerTrack {
   channel: Channel;
   preDevices: ToneEffectType[];
   postDevices: ToneEffectType[];
-  sends: Send[];
   meter: Meter;
 }
 
-export interface PersistableMixerChannel {
+export interface PersistableMixerTrack {
   id: string;
   name: string;
   type: "return" | "master";
@@ -55,14 +54,18 @@ export interface PersistableMixerChannel {
 export interface MixState {
   mixerTracks: Record<string, MixerTrack>;
   devices: Record<string, Device>;
+  sends: Record<string, Send>;
+  trackSends: Record<string, string[]>; // track id -> send IDs mapping
 
   // Metering state
   meterData: Record<string, AudioMeterData>;
 }
 
 export interface PersistableMixState {
-  mixerTracks: Record<string, PersistableMixerChannel>;
+  mixerTracks: Record<string, PersistableMixerTrack>;
   devices: Record<string, PersistableDevice>;
+  sends: Record<string, Send>;
+  trackSends: Record<string, string[]>;
 }
 
 export interface MixEngine {
@@ -80,9 +83,15 @@ export interface MixEngine {
 
   // Sends
   createSend(fromId: string, toId: string): string;
-  updateSend(mixerTrackId: string, sendId: string, updates: Partial<Send>): void;
+  updateSend(
+    mixerTrackId: string,
+    sendId: string,
+    updates: Partial<Send>,
+  ): void;
   removeSend(mixerTrackId: string, sendId: string): void;
   setSendAmount(mixerTrackId: string, sendId: string, amount: number): void;
+  getTrackSends(trackId: string): Send[];
+  disconnectTrackSends(trackId: string): void;
 
   // Metering
   getMeterData(mixerTrackId: string): AudioMeterData;
