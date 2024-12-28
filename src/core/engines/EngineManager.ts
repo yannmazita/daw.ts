@@ -18,16 +18,22 @@ export class EngineManager {
   private constructor() {
     // Initialize engines in dependency order
     this._transport = new TransportEngineImpl();
+    console.log("Transport Engine initialized");
     this._mix = new MixEngineImpl();
+    console.log("Mix Engine initialized");
     this._clips = new ClipEngineImpl();
+    console.log("Clip Engine initialized");
     this._automation = new AutomationEngineImpl();
+    console.log("Automation Engine initialized");
     this._arrangement = new ArrangementEngineImpl(
       this._transport,
       this._clips,
       this._mix,
       this._automation,
     );
+    console.log("Arrangement Engine initialized");
     this._initialized = true;
+    console.log("Engine Manager initialized");
   }
 
   public static getInstance(): EngineManager {
