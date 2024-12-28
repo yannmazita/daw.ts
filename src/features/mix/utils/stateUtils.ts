@@ -31,16 +31,39 @@ export const updateDevice = (
   },
 });
 
-export const updateSend = (
+export const addSendToState = (state: MixState, send: Send): MixState => {
+  return {
+    ...state,
+    sends: {
+      ...state.sends,
+      [send.id]: send,
+    },
+    trackSends: {
+      ...state.trackSends,
+      [send.sourceTrackId]: [
+        ...(state.trackSends[send.sourceTrackId] || []),
+        send.id,
+      ],
+    },
+  };
+};
+
+export const removeSendFromState = (
   state: MixState,
-  mixerTrackId: string,
   sendId: string,
-  updates: Partial<Send>,
 ): MixState => {
-  const mixerTrack = state.mixerTracks[mixerTrackId];
-  return updateMixerTrack(state, mixerTrackId, {
-    sends: mixerTrack.sends.map((send) =>
-      send.id === sendId ? { ...send, ...updates } : send,
-    ),
-  });
+  const send = state.sends[sendId];
+  if (!send) return state;
+
+  const { [sendId]: _, ...remainingSends } = state.sends;
+  const sourceTrackSends = state.trackSends[send.sourceTrackId] || [];
+
+  return {
+    ...state,
+    sends: remainingSends,
+    trackSends: {
+      ...state.trackSends,
+      [send.sourceTrackId]: sourceTrackSends.filter((id) => id !== sendId),
+    },
+  };
 };

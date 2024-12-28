@@ -7,9 +7,6 @@ export const disposeMixerTrack = (mixerTrack: MixerTrack): void => {
     mixerTrack.preDevices.forEach((device) => device.dispose());
     mixerTrack.postDevices.forEach((device) => device.dispose());
 
-    // Dispose sends
-    mixerTrack.sends.forEach((send) => send.gain.dispose());
-
     // Dispose mixer track nodes
     mixerTrack.input.dispose();
     mixerTrack.channel.dispose();
