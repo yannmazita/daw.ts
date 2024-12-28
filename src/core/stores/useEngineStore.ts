@@ -103,8 +103,88 @@ export const useEngineStore = create<EngineState>()(
           },
           arrangement: {
             ...state.arrangement,
+            tracks: Object.fromEntries(
+              Object.entries(state.arrangement.tracks).map(([id, track]) => [
+                id,
+                {
+                  id: track.id,
+                  name: track.name,
+                  color: track.color,
+                  index: track.index,
+                  height: track.height,
+                  isVisible: track.isVisible,
+                  isFolded: track.isFolded,
+                  clipIds: track.clipIds,
+                  automationIds: track.automationIds,
+                  type: track.type,
+                },
+              ]),
+            ),
           },
         }),
+        merge: (
+          persistedState: unknown,
+          currentState: EngineState,
+        ): EngineState => {
+          // Type guard to ensure persisted state matches our expected structure
+          const isPersistableEngineState = (
+            state: unknown,
+          ): state is PersistableEngineState => {
+            const s = state as PersistableEngineState;
+            return (
+              s !== null &&
+              typeof s === "object" &&
+              "transport" in s &&
+              "clips" in s &&
+              "mix" in s &&
+              "automation" in s &&
+              "arrangement" in s
+            );
+          };
+
+          // If persisted state doesn't match our type, return current state
+          if (!isPersistableEngineState(persistedState)) {
+            console.warn(
+              "Invalid persisted state structure, using initial state",
+            );
+            return currentState;
+          }
+
+          // Now TypeScript knows persistedState is PersistableEngineState
+          return {
+            ...currentState,
+            transport: persistedState.transport,
+            clips: {
+              ...currentState.clips,
+              ...persistedState.clips,
+              activeClips: {}, // Reset active clips
+            },
+            mix: {
+              ...currentState.mix, // Start with current state to get proper types
+              mixerTracks: {}, // Empty to force reinitialization
+              meterData: {}, // Reset meter data
+              devices: {}, // Empty to force device reinitialization
+              sends: persistedState.mix.sends,
+              trackSends: persistedState.mix.trackSends,
+            },
+            automation: {
+              ...currentState.automation,
+              lanes: persistedState.automation.lanes,
+              activeAutomation: {}, // Reset active automation
+            },
+            arrangement: {
+              ...currentState.arrangement, // Start with current state to get proper types
+              tracks: {}, // Empty to force track reinitialization
+              trackOrder: persistedState.arrangement.trackOrder,
+              foldedTracks: persistedState.arrangement.foldedTracks,
+              selectedTracks: persistedState.arrangement.selectedTracks,
+              visibleAutomationLanes:
+                persistedState.arrangement.visibleAutomationLanes,
+              dragState: null, // Reset drag state
+              viewSettings: persistedState.arrangement.viewSettings,
+            },
+          };
+        },
       },
     ),
   ),
