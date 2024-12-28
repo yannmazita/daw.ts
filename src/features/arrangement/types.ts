@@ -11,11 +11,19 @@ export const DragTypes = {
   AUTOMATION_POINT: "automation-point",
 } as const;
 
+export interface ClipDragItem {
+  type: typeof DragTypes.CLIP;
+  id: string;
+  trackId: string;
+  contentId: string;
+  startTime: number;
+  duration: number;
+}
+
 export type DragType = (typeof DragTypes)[keyof typeof DragTypes];
 
-export interface Track {
+export interface BaseTrack {
   id: string;
-  type: "audio" | "midi" | "return" | "master";
   name: string;
   color?: string;
   index: number;
@@ -25,13 +33,20 @@ export interface Track {
   isVisible: boolean;
   isFolded: boolean;
 
-  // Audio
-  mixerChannelId: string;
-
   // Content
   clipIds: string[];
   automationIds: string[];
 }
+
+export interface AudioTrack extends BaseTrack {
+  type: "audio";
+}
+
+export interface MidiTrack extends BaseTrack {
+  type: "midi";
+}
+
+export type Track = AudioTrack | MidiTrack;
 
 export interface ArrangementState {
   tracks: Record<string, Track>;
@@ -55,24 +70,21 @@ export interface ArrangementState {
 
 export interface PersistableArrangementState {
   tracks: Record<string, Track>;
-  returnTracks: string[];
-  masterTrackId: string;
   trackOrder: string[];
-
-  selection: {
-    trackIds: string[];
-    clipIds: string[];
-    automationPoints: {
-      laneId: string;
-      pointId: string;
-    }[];
-  };
-
-  viewState: {
-    startTime: Time;
-    endTime: Time;
-    verticalScroll: number;
-    zoom: number;
+  foldedTracks: Set<string>;
+  selectedTracks: Set<string>;
+  visibleAutomationLanes: Record<string, string[]>;
+  dragState: {
+    type: "clip" | "automation" | null;
+    sourceId: string;
+    targetId: string | null;
+    position: Time | null;
+  } | null;
+  viewSettings: {
+    trackHeights: Record<string, number>;
+    defaultHeight: number;
+    minimumHeight: number;
+    foldedHeight: number;
   };
 }
 
