@@ -1,6 +1,7 @@
 // src/features/mix/utils/routingUtils.ts
 import * as Tone from "tone";
 import { MixerTrack, Send } from "../types";
+import { Track } from "@/features/arrangement/types";
 
 export interface SendRoutingState {
   returnTrackId: string;
@@ -51,24 +52,59 @@ export const connectMixerTrackChain = (
 
 export const connectSend = (
   send: Send,
-  sourceTrack: MixerTrack,
+  sourceTrack: Track,
   returnTrack: MixerTrack,
 ): void => {
-  if (returnTrack.type !== "return") {
-    throw new Error(`Track ${returnTrack.id} is not a return track`);
+  console.log("Connecting send:", {
+    sendId: send.id,
+    sourceTrackId: sourceTrack.id,
+    returnTrackId: returnTrack.id,
+    sourceHasInput: !!sourceTrack.input,
+    sourceHasChannel: !!sourceTrack.channel,
+    returnHasInput: !!returnTrack.input,
+    sendHasGain: !!send.gain,
+  });
+
+  // Validate nodes
+  if (!sourceTrack.input || !sourceTrack.channel) {
+    console.error("Source track nodes:", sourceTrack);
+    throw new Error(`Source track ${sourceTrack.id} missing audio nodes`);
   }
 
-  send.gain.disconnect();
-
-  // Connect from appropriate point in source track
-  if (send.preFader) {
-    sourceTrack.input.connect(send.gain);
-  } else {
-    sourceTrack.channel.connect(send.gain);
+  if (!returnTrack.input) {
+    console.error("Return track nodes:", returnTrack);
+    throw new Error(`Return track ${returnTrack.id} missing input node`);
   }
 
-  // Connect to return track input
-  send.gain.connect(returnTrack.input);
+  if (!send.gain) {
+    console.error("Send node:", send);
+    throw new Error(`Send ${send.id} missing gain node`);
+  }
+
+  try {
+    // Disconnect existing connections
+    send.gain.disconnect();
+
+    // Connect from appropriate point in source track
+    if (send.preFader) {
+      console.log(
+        `Connecting pre-fader: ${sourceTrack.id} -> ${returnTrack.id}`,
+      );
+      sourceTrack.input.connect(send.gain);
+    } else {
+      console.log(
+        `Connecting post-fader: ${sourceTrack.id} -> ${returnTrack.id}`,
+      );
+      sourceTrack.channel.connect(send.gain);
+    }
+
+    // Connect to return track input
+    console.log(`Connecting send gain to return: ${returnTrack.id}`);
+    send.gain.connect(returnTrack.input);
+  } catch (error) {
+    console.error("Connection error:", error);
+    throw new Error("Failed to connect send");
+  }
 };
 
 export const calculateMasterLevel = (
@@ -83,7 +119,7 @@ export const calculateMasterLevel = (
 
 export const captureRoutingState = (
   send: Send,
-  sourceTrack: MixerTrack,
+  sourceTrack: Track,
 ): SendRoutingState => ({
   returnTrackId: send.returnTrackId,
   preFader: send.preFader,
@@ -93,7 +129,7 @@ export const captureRoutingState = (
 
 export const restoreSendRouting = (
   send: Send,
-  sourceTrack: MixerTrack,
+  sourceTrack: Track,
   returnTrack: MixerTrack,
   originalState: SendRoutingState,
 ): void => {

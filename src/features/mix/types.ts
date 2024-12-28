@@ -27,7 +27,8 @@ export interface PersistableDevice<T extends EffectOptions = EffectOptions> {
 export interface Send {
   id: string;
   name: string;
-  returnTrackId: string;
+  sourceTrackId: string; // arrangement Track id
+  returnTrackId: string; // MixerTrack id
   preFader: boolean;
   gain: Gain;
 }
@@ -83,15 +84,11 @@ export interface MixEngine {
 
   // Sends
   createSend(fromId: string, toId: string): string;
-  updateSend(
-    mixerTrackId: string,
-    sendId: string,
-    updates: Partial<Send>,
-  ): void;
-  removeSend(mixerTrackId: string, sendId: string): void;
-  setSendAmount(mixerTrackId: string, sendId: string, amount: number): void;
-  getTrackSends(trackId: string): Send[];
-  disconnectTrackSends(trackId: string): void;
+  updateSend(baseTrackId: string, sendId: string, updates: Partial<Send>): void;
+  removeSend(baseTrackId: string, sendId: string): void;
+  setSendAmount(baseTrackId: string, sendId: string, amount: number): void;
+  getTrackSends(baseTrackId: string): Send[];
+  disconnectTrackSends(baseTrackId: string): void;
 
   // Metering
   getMeterData(mixerTrackId: string): AudioMeterData;

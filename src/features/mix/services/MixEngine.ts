@@ -33,16 +33,53 @@ export class MixEngineImpl implements MixEngine {
   }
 
   private initializeMixerTracks(): void {
-    const stateSnapshot = useEngineStore.getState();
-    const mixerTracks = stateSnapshot.mix.mixerTracks;
-    if (!mixerTracks) {
-      this.createMixerTrack("master");
-      this.createMixerTrack("return");
-      this.createMixerTrack("return");
+    const stateSnapshot = useEngineStore.getState().mix;
+    console.log("Initializing mixer tracks:", stateSnapshot.mixerTracks);
+
+    try {
+      if (stateSnapshot.mixerTracks.master) {
+        // We have a persisted master track, reinitialize its nodes
+        console.log("Reinitializing persisted master track");
+        const nodes = createMixerTrackNodes();
+
+        // Connect nodes
+        nodes.input.connect(nodes.meter);
+        nodes.input.connect(nodes.channel);
+
+        // Update state with new nodes
+        useEngineStore.setState((state) => ({
+          mix: {
+            ...state.mix,
+            mixerTracks: {
+              ...state.mix.mixerTracks,
+              master: {
+                ...state.mix.mixerTracks.master,
+                ...nodes,
+                preDevices: [],
+                postDevices: [],
+              },
+            },
+          },
+        }));
+      } else {
+        // No persisted master track, create new one
+        console.log("Creating new master track");
+        this.createMixerTrack("master");
+      }
+
+      // Verify master track is now properly initialized
+      const masterTrack = useEngineStore.getState().mix.mixerTracks.master;
+      if (!masterTrack?.input) {
+        throw new Error("Master track initialization failed");
+      }
+    } catch (error) {
+      console.error("Failed to initialize mixer tracks:", error);
+      throw error;
     }
   }
 
   createMixerTrack(type: MixerTrack["type"]): string {
+    console.log("Creating mixer track:", type);
     let id = null;
     if (type === "master") {
       id = "master";
@@ -71,6 +108,7 @@ export class MixEngineImpl implements MixEngine {
 
       return id;
     } catch (error) {
+      console.error("Failed to create mixer track:", error);
       // Clean up on error
       Object.values(nodes).forEach((node) => node?.dispose());
       throw error;
@@ -278,20 +316,24 @@ export class MixEngineImpl implements MixEngine {
 
   createSend(fromId: string, toId: string): string {
     const id = crypto.randomUUID();
-    const stateSnapshot = useEngineStore.getState().mix;
-    const sourceTrack = stateSnapshot.mixerTracks[fromId];
-    const returnTrack = stateSnapshot.mixerTracks[toId];
+    const mixStateSnapshot = useEngineStore.getState().mix;
+    const arrangementStateSnapshot = useEngineStore.getState().arrangement;
+    const sourceTrack = arrangementStateSnapshot.tracks[fromId];
+    const returnTrack = mixStateSnapshot.mixerTracks[toId];
 
-    if (!sourceTrack || !returnTrack) {
-      throw new Error("Source or target track not found");
+    if (!sourceTrack) {
+      throw new Error(`Source track ${fromId} not found`);
+    } else if (!returnTrack) {
+      throw new Error(`Return track ${toId} not found`);
     }
 
     const validation = validateSendRouting(
       fromId,
       toId,
-      stateSnapshot.mixerTracks,
-      stateSnapshot.sends,
-      stateSnapshot.trackSends,
+      arrangementStateSnapshot.tracks,
+      mixStateSnapshot.mixerTracks,
+      mixStateSnapshot.sends,
+      mixStateSnapshot.trackSends,
     );
 
     if (!validation.isValid) {
@@ -323,14 +365,15 @@ export class MixEngineImpl implements MixEngine {
   }
 
   updateSend(
-    mixerTrackId: string,
+    baseTrackId: string,
     sendId: string,
     updates: Partial<Send>,
   ): void {
-    const stateSnapshot = useEngineStore.getState().mix;
-    const send = stateSnapshot.sends[sendId];
-    const sourceTrack = stateSnapshot.mixerTracks[mixerTrackId];
-    const masterTrack = stateSnapshot.mixerTracks.master;
+    const mixStateSnapshot = useEngineStore.getState().mix;
+    const arrangementStateSnapshot = useEngineStore.getState().arrangement;
+    const send = mixStateSnapshot.sends[sendId];
+    const sourceTrack = arrangementStateSnapshot.tracks[baseTrackId];
+    const masterTrack = mixStateSnapshot.mixerTracks.master;
 
     if (!send || !sourceTrack || !masterTrack) {
       throw new Error("Send, source track, or master track not found");
@@ -339,7 +382,7 @@ export class MixEngineImpl implements MixEngine {
     const validation = validateSendUpdate(
       send,
       sourceTrack,
-      stateSnapshot.mixerTracks,
+      mixStateSnapshot.mixerTracks,
       updates,
     );
     if (!validation.isValid) {
@@ -356,7 +399,7 @@ export class MixEngineImpl implements MixEngine {
           gain: updates.gain ?? send.gain,
         };
         const returnTrack =
-          stateSnapshot.mixerTracks[updatedSend.returnTrackId];
+          mixStateSnapshot.mixerTracks[updatedSend.returnTrackId];
 
         try {
           // Handle any routing changes
@@ -392,16 +435,16 @@ export class MixEngineImpl implements MixEngine {
     }
   }
 
-  removeSend(mixerTrackId: string, sendId: string): void {
-    const state = useEngineStore.getState().mix;
-    const send = state.sends[sendId];
-    const sourceTrack = state.mixerTracks[mixerTrackId];
+  removeSend(baseTrackId: string, sendId: string): void {
+    const stateSnapshot = useEngineStore.getState().mix;
+    const send = stateSnapshot.sends[sendId];
+    const sourceTrack = stateSnapshot.mixerTracks[baseTrackId];
 
     if (!send || !sourceTrack) {
       throw new Error("Send or source track not found");
     }
 
-    if (send.sourceTrackId !== mixerTrackId) {
+    if (send.sourceTrackId !== baseTrackId) {
       throw new Error("Send doesn't belong to specified track");
     }
 
@@ -424,11 +467,12 @@ export class MixEngineImpl implements MixEngine {
     }
   }
 
-  setSendAmount(mixerTrackId: string, sendId: string, amount: number): void {
-    const state = useEngineStore.getState().mix;
-    const send = state.sends[sendId];
-    const sourceTrack = state.mixerTracks[mixerTrackId];
-    const masterTrack = state.mixerTracks.master;
+  setSendAmount(baseTrackId: string, sendId: string, amount: number): void {
+    const mixStateSnapshot = useEngineStore.getState().mix;
+    const arrangementStateSnapshot = useEngineStore.getState().arrangement;
+    const send = mixStateSnapshot.sends[sendId];
+    const sourceTrack = arrangementStateSnapshot.tracks[baseTrackId];
+    const masterTrack = mixStateSnapshot.mixerTracks.master;
 
     if (!send || !sourceTrack || !masterTrack) {
       throw new Error("Send, source track, or master track not found");
@@ -457,14 +501,14 @@ export class MixEngineImpl implements MixEngine {
     }
   }
 
-  getTrackSends(trackId: string): Send[] {
-    const state = useEngineStore.getState().mix;
-    const sendIds = state.trackSends[trackId] || [];
-    return sendIds.map((id) => state.sends[id]).filter(Boolean);
+  getTrackSends(baseTrackId: string): Send[] {
+    const stateSnapshot = useEngineStore.getState().mix;
+    const sendIds = stateSnapshot.trackSends[baseTrackId] || [];
+    return sendIds.map((id) => stateSnapshot.sends[id]).filter(Boolean);
   }
 
-  disconnectTrackSends(trackId: string): void {
-    const sends = this.getTrackSends(trackId);
+  disconnectTrackSends(baseTrackId: string): void {
+    const sends = this.getTrackSends(baseTrackId);
 
     sends.forEach((send) => {
       try {

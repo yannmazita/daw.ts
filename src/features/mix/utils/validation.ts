@@ -1,4 +1,5 @@
 // src/features/mix/utils/validationUtils.ts
+import { Track } from "@/features/arrangement/types";
 import { MixerTrack, Send } from "../types";
 
 export interface SendValidationResult {
@@ -8,7 +9,7 @@ export interface SendValidationResult {
 
 export const validateSendUpdate = (
   send: Send,
-  sourceTrack: MixerTrack,
+  sourceTrack: Track,
   mixerTracks: Record<string, MixerTrack>,
   updates: Partial<Send>,
 ): SendValidationResult => {
@@ -27,10 +28,10 @@ export const validateSendUpdate = (
         error: `Target return track ${updates.returnTrackId} not found`,
       };
     }
-    if (targetTrack.type !== "return") {
+    if (targetTrack.type !== "return" && targetTrack.type !== "master") {
       return {
         isValid: false,
-        error: `Track ${updates.returnTrackId} is not a return track`,
+        error: `Track ${updates.returnTrackId} is not a return track or master track`,
       };
     }
   }
@@ -41,12 +42,13 @@ export const validateSendUpdate = (
 export const validateSendRouting = (
   fromId: string,
   toId: string,
+  arrangementTracks: Record<string, Track>,
   mixerTracks: Record<string, MixerTrack>,
   sends: Record<string, Send>,
   trackSends: Record<string, string[]>,
 ): SendValidationResult => {
   const targetTrack = mixerTracks[toId];
-  const sourceTrack = mixerTracks[fromId];
+  const sourceTrack = arrangementTracks[fromId];
 
   // Check tracks exist
   if (!sourceTrack) {
@@ -56,11 +58,11 @@ export const validateSendRouting = (
     return { isValid: false, error: `Target track ${toId} not found` };
   }
 
-  // Can only send to return tracks
-  if (targetTrack.type !== "return") {
+  // Can only send to return tracks or master track
+  if (targetTrack.type !== "return" && targetTrack.type !== "master") {
     return {
       isValid: false,
-      error: `Cannot send to non-return track ${toId}`,
+      error: "Can only send to return track or master track",
     };
   }
 
@@ -73,7 +75,12 @@ export const validateSendRouting = (
   }
 
   // Check for existing sends from this track
-  const existingSendIds = trackSends[fromId] || [];
+  let existingSendIds: string[] = [];
+  try {
+    existingSendIds = trackSends[fromId];
+  } catch (error) {
+    existingSendIds = [];
+  }
   const existingSends = existingSendIds.map((id) => sends[id]);
 
   // Prevent duplicate sends to same return track

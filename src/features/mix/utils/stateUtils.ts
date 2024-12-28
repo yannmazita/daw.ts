@@ -5,16 +5,21 @@ export const updateMixerTrack = (
   state: MixState,
   mixerTrackId: string,
   updates: Partial<MixerTrack>,
-): MixState => ({
-  ...state,
-  mixerTracks: {
-    ...state.mixerTracks,
-    [mixerTrackId]: {
-      ...state.mixerTracks[mixerTrackId],
-      ...updates,
+): MixState => {
+  // Ensure mixerTracks exists
+  const mixerTracks = state.mixerTracks || {};
+  const existingTrack = mixerTracks[mixerTrackId];
+
+  return {
+    ...state,
+    mixerTracks: {
+      ...mixerTracks,
+      [mixerTrackId]: existingTrack
+        ? { ...existingTrack, ...updates }
+        : (updates as MixerTrack),
     },
-  },
-});
+  };
+};
 
 export const updateDevice = (
   state: MixState,
