@@ -109,11 +109,7 @@ export const useEngineStore = create<EngineState>()(
                 {
                   id: track.id,
                   name: track.name,
-                  color: track.color,
                   index: track.index,
-                  height: track.height,
-                  isVisible: track.isVisible,
-                  isFolded: track.isFolded,
                   clipIds: track.clipIds,
                   automationIds: track.automationIds,
                   type: track.type,
@@ -151,6 +147,7 @@ export const useEngineStore = create<EngineState>()(
           }
 
           // Now TypeScript knows persistedState is PersistableEngineState
+          // Most getting empty state for now
           return {
             ...currentState,
             transport: persistedState.transport,
@@ -175,13 +172,7 @@ export const useEngineStore = create<EngineState>()(
             arrangement: {
               ...currentState.arrangement, // Start with current state to get proper types
               tracks: {}, // Empty to force track reinitialization
-              trackOrder: persistedState.arrangement.trackOrder,
-              foldedTracks: persistedState.arrangement.foldedTracks,
-              selectedTracks: persistedState.arrangement.selectedTracks,
-              visibleAutomationLanes:
-                persistedState.arrangement.visibleAutomationLanes,
-              dragState: null, // Reset drag state
-              viewSettings: persistedState.arrangement.viewSettings,
+              trackOrder: [], // Reset track order
             },
           };
         },

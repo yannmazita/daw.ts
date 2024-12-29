@@ -40,29 +40,9 @@ export const validateTrackOrder = (
   } catch (error) {
     return {
       isValid: false,
-      error: `Order calculation failed: ${error.message}`,
+      error: "Order calculation failed",
     };
   }
-};
-
-export const validateTrackHeight = (
-  height: number,
-  viewSettings: ArrangementState["viewSettings"],
-): boolean => {
-  return (
-    height >= viewSettings.minimumHeight &&
-    height >= viewSettings.foldedHeight &&
-    isFinite(height)
-  );
-};
-
-export const validateTrackSelection = (
-  selectedTracks: Set<string>,
-  state: ArrangementState,
-): boolean => {
-  return Array.from(selectedTracks).every(
-    (id) => state.tracks[id] !== undefined,
-  );
 };
 
 export const validateAutomationLanes = (
@@ -77,33 +57,6 @@ export const validateAutomationLanes = (
       laneIds.every((id) => typeof id === "string")
     );
   });
-};
-
-export const validateDragState = (
-  dragState: ArrangementState["dragState"],
-): boolean => {
-  if (!dragState) return true;
-
-  return (
-    ["clip", "automation", null].includes(dragState.type) &&
-    typeof dragState.sourceId === "string" &&
-    (dragState.targetId === null || typeof dragState.targetId === "string") &&
-    (dragState.position === null || typeof dragState.position === "number")
-  );
-};
-
-export const validateViewSettings = (
-  settings: ArrangementState["viewSettings"],
-): boolean => {
-  return (
-    settings.defaultHeight > settings.minimumHeight &&
-    settings.minimumHeight > 0 &&
-    settings.foldedHeight > 0 &&
-    settings.foldedHeight <= settings.minimumHeight &&
-    Object.values(settings.trackHeights).every((h) =>
-      validateTrackHeight(h, settings),
-    )
-  );
 };
 
 export const validateTimeRange = (time: Time): boolean => {
@@ -124,31 +77,6 @@ export const validateArrangementState = (
   // Validate track existence
   if (!state.trackOrder.every((id) => state.tracks[id])) {
     errors.push("Track order contains invalid track IDs");
-  }
-
-  // Validate folded tracks
-  if (!Array.from(state.foldedTracks).every((id) => state.tracks[id])) {
-    errors.push("Folded tracks contains invalid track IDs");
-  }
-
-  // Validate selected tracks
-  if (!Array.from(state.selectedTracks).every((id) => state.tracks[id])) {
-    errors.push("Selected tracks contains invalid track IDs");
-  }
-
-  // Validate automation lanes
-  if (!validateAutomationLanes(state.visibleAutomationLanes, state)) {
-    errors.push("Invalid automation lane configuration");
-  }
-
-  // Validate drag state
-  if (!validateDragState(state.dragState)) {
-    errors.push("Invalid drag state");
-  }
-
-  // Validate view settings
-  if (!validateViewSettings(state.viewSettings)) {
-    errors.push("Invalid view settings");
   }
 
   return {

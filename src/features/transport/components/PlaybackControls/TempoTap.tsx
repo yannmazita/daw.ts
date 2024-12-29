@@ -19,7 +19,6 @@ export const TempoTap: React.FC = () => {
     setIsActive(true);
     setTapCount((prev) => prev + 1);
     const updatedTempo = startTapTempo(); // Start tap and get updated BPM
-    console.log("Updated Tempo:", updatedTempo);
   }, [startTapTempo]);
 
   // Reset visual state after inactivity

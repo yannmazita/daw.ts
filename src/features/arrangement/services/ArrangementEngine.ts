@@ -6,21 +6,10 @@ import { MixEngine } from "../../mix/types";
 import { AutomationEngine } from "../../automation/types";
 import { useEngineStore } from "@/core/stores/useEngineStore";
 import { initialArrangementState } from "../utils/initialState";
-import {
-  createTrackData,
-  getTrackChildren,
-  isTrackFoldable,
-} from "../utils/trackUtils";
-import {
-  calculateTrackHeight,
-  calculateTotalHeight,
-} from "../utils/heightUtils";
+import { createTrackData } from "../utils/trackUtils";
 import { moveTrackInOrder, reorderTracks } from "../utils/orderUtils";
 import { toggleAutomationLane } from "../utils/automationUtils";
-import {
-  validateArrangementState,
-  validateTrackHeight,
-} from "../utils/validation";
+import { validateArrangementState } from "../utils/validation";
 
 export class ArrangementEngineImpl implements ArrangementEngine {
   private disposed = false;
@@ -70,7 +59,7 @@ export class ArrangementEngineImpl implements ArrangementEngine {
     try {
       const state = useEngineStore.getState().arrangement;
       const index = state.trackOrder.length;
-      const track = createTrackData(id, type, name, index, state.viewSettings);
+      const track = createTrackData(id, type, name, index);
 
       useEngineStore.setState((state) => {
         const newState = {
@@ -81,10 +70,6 @@ export class ArrangementEngineImpl implements ArrangementEngine {
               [id]: { ...track },
             },
             trackOrder: [...state.arrangement.trackOrder, id],
-            visibleAutomationLanes: {
-              ...state.arrangement.visibleAutomationLanes,
-              [id]: [],
-            },
           },
         };
 
@@ -139,26 +124,11 @@ export class ArrangementEngineImpl implements ArrangementEngine {
           ...state.arrangement,
           tracks: remainingTracks,
           trackOrder: newTrackOrder,
-          foldedTracks: new Set(
-            Array.from(state.arrangement.foldedTracks).filter(
-              (id) => id !== trackId,
-            ),
-          ),
-          selectedTracks: new Set(
-            Array.from(state.arrangement.selectedTracks).filter(
-              (id) => id !== trackId,
-            ),
-          ),
         };
-
-        // Remove from visible automation lanes
-        const { [trackId]: removedLanes, ...remainingLanes } =
-          state.arrangement.visibleAutomationLanes;
 
         return {
           arrangement: {
             ...newState,
-            visibleAutomationLanes: remainingLanes,
           },
         };
       });
@@ -189,6 +159,39 @@ export class ArrangementEngineImpl implements ArrangementEngine {
 
     // Cleanup sends
     //
+  }
+
+  updateTrack(trackId: string, updates: Partial<Track>): void {
+    this.checkDisposed();
+    const state = useEngineStore.getState().arrangement;
+    const track = state.tracks[trackId];
+    if (!track) {
+      throw new Error("Track not found");
+    }
+    try {
+      useEngineStore.setState((state) => {
+        const newState = {
+          arrangement: {
+            ...state.arrangement,
+            tracks: {
+              ...state.arrangement.tracks,
+              [trackId]: { ...track, ...updates },
+            },
+          },
+        };
+        // Validate new state
+        const validation = validateArrangementState(newState.arrangement);
+        if (!validation.valid) {
+          throw new Error(
+            `Invalid state after track update: ${validation.errors.join(", ")}`,
+          );
+        }
+        return newState;
+      });
+    } catch (error) {
+      console.error("Failed to update track:", error);
+      throw error;
+    }
   }
 
   moveTrack(trackId: string, newIndex: number): void {
@@ -230,101 +233,6 @@ export class ArrangementEngineImpl implements ArrangementEngine {
       });
     } catch (error) {
       console.error("Failed to move track:", error);
-      throw error;
-    }
-  }
-
-  getTotalHeight(): number {
-    return calculateTotalHeight(this.getState());
-  }
-
-  // Add method for getting track height
-  getTrackHeight(trackId: string): number {
-    return calculateTrackHeight(trackId, this.getState());
-  }
-
-  getVisibleHeight(): number {
-    const state = this.getState();
-    return state.trackOrder.reduce((total, trackId) => {
-      const track = state.tracks[trackId];
-      if (!track.isVisible) return total;
-
-      return total + calculateTrackHeight(trackId, state);
-    }, 0);
-  }
-
-  toggleTrackFold(trackId: string): void {
-    this.checkDisposed();
-    const state = useEngineStore.getState().arrangement;
-    const track = state.tracks[trackId];
-
-    if (!track || !isTrackFoldable(track, state)) {
-      return;
-    }
-
-    try {
-      // Get children before state update
-      const children = getTrackChildren(trackId, state);
-
-      useEngineStore.setState((state) => {
-        const newFoldedTracks = new Set(state.arrangement.foldedTracks);
-        const isFolding = !newFoldedTracks.has(trackId);
-
-        if (isFolding) {
-          // When folding, add track and all children
-          newFoldedTracks.add(trackId);
-          children.forEach((childId) => newFoldedTracks.add(childId));
-        } else {
-          // When unfolding, remove track and all children
-          newFoldedTracks.delete(trackId);
-          children.forEach((childId) => newFoldedTracks.delete(childId));
-        }
-
-        const newState = {
-          arrangement: {
-            ...state.arrangement,
-            foldedTracks: newFoldedTracks,
-          },
-        };
-
-        // Validate state after modification
-        const validation = validateArrangementState(newState.arrangement);
-        if (!validation.valid) {
-          console.error("State validation failed:", validation.errors);
-          throw new Error("Invalid state after folding operation");
-        }
-
-        return newState;
-      });
-    } catch (error) {
-      console.error("Failed to toggle track fold:", error);
-      throw error;
-    }
-  }
-
-  setTrackHeight(trackId: string, height: number): void {
-    this.checkDisposed();
-    const state = useEngineStore.getState().arrangement;
-
-    if (!validateTrackHeight(height, state.viewSettings)) {
-      throw new Error("Invalid track height");
-    }
-
-    try {
-      useEngineStore.setState((state) => ({
-        arrangement: {
-          ...state.arrangement,
-          viewSettings: {
-            ...state.arrangement.viewSettings,
-            trackHeights: {
-              ...state.arrangement.viewSettings.trackHeights,
-              [trackId]: height,
-            },
-          },
-        },
-      }));
-    } catch (error) {
-      console.error("Failed to set track height:", error);
       throw error;
     }
   }

@@ -8,8 +8,14 @@ import * as Tone from "tone";
 export const PositionDisplay: React.FC = () => {
   const duration = useEngineStore((state) => state.transport.duration);
   const isPlaying = useEngineStore((state) => state.transport.isPlaying);
-  const seekTo = useTransportEngine().seekTo;
-  const getPosition = useTransportEngine().getTransportPosition;
+  const seekTo = useCallback(
+    useTransportEngine().seekTo.bind(useTransportEngine()),
+    [useTransportEngine()],
+  );
+  const getPosition = useCallback(
+    useTransportEngine().getTransportPosition.bind(useTransportEngine()),
+    [useTransportEngine()],
+  );
   const [displayPosition, setDisplayPosition] = useState("0:0:0");
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState("0:0:0");

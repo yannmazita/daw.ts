@@ -1,5 +1,4 @@
 // src/features/arrangement/types.ts
-import { Time } from "tone/build/esm/core/type/Units";
 import { TransportEngine } from "../transport/types";
 import { ClipEngine } from "../clips/types";
 import { MixEngine } from "../mix/types";
@@ -26,13 +25,7 @@ export type DragType = (typeof DragTypes)[keyof typeof DragTypes];
 export interface BaseTrack {
   id: string;
   name: string;
-  color?: string;
   index: number;
-
-  // Visual
-  height: number;
-  isVisible: boolean;
-  isFolded: boolean;
 
   // Content
   clipIds: string[];
@@ -47,11 +40,7 @@ export interface BaseTrack {
 export interface PersistableBaseTrack {
   id: string;
   name: string;
-  color?: string;
   index: number;
-  height: number;
-  isVisible: boolean;
-  isFolded: boolean;
   clipIds: string[];
   automationIds: string[];
 }
@@ -79,41 +68,11 @@ export type PersistableTrack = PersistableAudioTrack | PersistableMidiTrack;
 export interface ArrangementState {
   tracks: Record<string, Track>;
   trackOrder: string[];
-  foldedTracks: Set<string>;
-  selectedTracks: Set<string>;
-  visibleAutomationLanes: Record<string, string[]>; // trackId -> laneIds
-  dragState: {
-    type: "clip" | "automation" | null;
-    sourceId: string;
-    targetId: string | null;
-    position: Time | null;
-  } | null;
-  viewSettings: {
-    trackHeights: Record<string, number>;
-    defaultHeight: number;
-    minimumHeight: number;
-    foldedHeight: number;
-  };
 }
 
 export interface PersistableArrangementState {
   tracks: Record<string, PersistableTrack>;
   trackOrder: string[];
-  foldedTracks: Set<string>;
-  selectedTracks: Set<string>;
-  visibleAutomationLanes: Record<string, string[]>;
-  dragState: {
-    type: "clip" | "automation" | null;
-    sourceId: string;
-    targetId: string | null;
-    position: Time | null;
-  } | null;
-  viewSettings: {
-    trackHeights: Record<string, number>;
-    defaultHeight: number;
-    minimumHeight: number;
-    foldedHeight: number;
-  };
 }
 
 export interface ArrangementEngine {
@@ -124,16 +83,9 @@ export interface ArrangementEngine {
 
   // Track operations
   createTrack(type: Track["type"], name: string): string;
+  updateTrack(trackId: string, updates: Partial<Track>): void;
   deleteTrack(trackId: string): void;
   moveTrack(trackId: string, newIndex: number): void;
-  toggleTrackFold(trackId: string): void;
-  setTrackHeight(trackId: string, height: number): void;
-  getVisibleHeight(): number;
-  getTotalHeight(): number;
-  getTrackHeight(trackId: string): number;
-
-  // Selection
-  setSelection(trackIds: Set<string>): void;
 
   // Automation
   toggleAutomationLane(trackId: string, laneId: string): void;

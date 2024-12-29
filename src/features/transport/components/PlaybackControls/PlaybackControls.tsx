@@ -3,7 +3,7 @@ import { useEngineStore } from "@/core/stores/useEngineStore";
 import { useTransportEngine } from "@/core/engines/EngineManager";
 import { Input } from "@/common/shadcn/ui/input";
 import { Pause, Play, SkipBack, SkipForward, Square } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { TimeSignatureControl } from "./TimeSignatureControl";
 import { LoopControls } from "./LoopControls";
 import { TempoTap } from "./TempoTap";
@@ -15,7 +15,22 @@ import { Button } from "@/common/shadcn/ui/button";
 export const PlaybackControls: React.FC = () => {
   const isPlaying = useEngineStore((state) => state.transport.isPlaying);
   const tempo = useEngineStore((state) => state.transport.tempo);
-  const { play, pause, stop, setTempo } = useTransportEngine();
+  const play = useCallback(
+    useTransportEngine().play.bind(useTransportEngine()),
+    [useTransportEngine()],
+  );
+  const pause = useCallback(
+    useTransportEngine().pause.bind(useTransportEngine()),
+    [useTransportEngine()],
+  );
+  const stop = useCallback(
+    useTransportEngine().stop.bind(useTransportEngine()),
+    [useTransportEngine()],
+  );
+  const setTempo = useCallback(
+    useTransportEngine().setTempo.bind(useTransportEngine()),
+    [useTransportEngine()],
+  );
   const [localBpm, setLocalBpm] = useState(tempo.toString());
 
   const handleBpmChange = (e: React.ChangeEvent<HTMLInputElement>) => {

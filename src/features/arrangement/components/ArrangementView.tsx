@@ -1,6 +1,7 @@
 // src/features/arrangement/components/ArrangementView.tsx
 import { useRef, useState } from "react";
 import { UnifiedTimelineGrid } from "./UnifiedTimelineGrid";
+import { CustomDragLayer } from './CustomDragLayer';
 import { TrackList } from "./TrackList";
 import { Playhead } from "./Playhead";
 import { GRID_CONSTANTS } from "../utils/constants";
@@ -86,6 +87,7 @@ export const ArrangementView = () => {
             </div>
           </div>
         </div>
+        <CustomDragLayer zoom={zoom} />
       </div>
     </DndProvider>
   );

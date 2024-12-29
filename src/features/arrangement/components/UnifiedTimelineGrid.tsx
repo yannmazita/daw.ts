@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import { GRID_CONSTANTS } from "../utils/constants";
 import { useThemeStore } from "@/core/stores/useThemeStore";
-import { useTransportEngine } from "@/core/engines/EngineManager";
+import { useEngineStore } from "@/core/stores/useEngineStore";
 
 interface UnifiedTimelineGridProps {
   zoom: number;
@@ -30,9 +30,9 @@ export const UnifiedTimelineGrid = ({
   scrollPosition,
 }: UnifiedTimelineGridProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const { timeSignature } = useStore();
+  const timeSignature  = useEngineStore((state) => state.transport.timeSignature);
   const theme = useThemeStore((state) => state.theme);
-  const [beatsPerBar] = timeSignature;
+  const beatsPerBar = timeSignature[0]
 
   // Memoize colors to prevent recalculation
   const colors = useMemo(

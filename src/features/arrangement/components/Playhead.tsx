@@ -5,7 +5,7 @@ interface PlayheadProps {
   scrollX: number;
 }
 
-export const Playhead = ({ position, zoom, scrollX }: PlayheadProps) => {
+export const Playhead: React.FC<PlayheadProps> = ({ position, zoom, scrollX }) => {
   const pixelPosition = position * zoom - scrollX;
 
   return (
