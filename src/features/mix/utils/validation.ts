@@ -78,7 +78,9 @@ export const validateSendRouting = (
   let existingSendIds: string[] = [];
   try {
     existingSendIds = trackSends[fromId];
+    console.log("Existing sends:", existingSendIds);
   } catch (error) {
+    console.warn("Failed to get existing sends:", error);
     existingSendIds = [];
   }
   const existingSends = existingSendIds.map((id) => sends[id]);

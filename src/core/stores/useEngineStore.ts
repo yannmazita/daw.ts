@@ -89,7 +89,19 @@ export const useEngineStore = create<EngineState>()(
                 },
               ]),
             ),
-            sends: state.mix.sends,
+            sends: Object.fromEntries(
+              Object.entries(state.mix.sends).map(([id, send]) => [
+                id,
+                {
+                  id: send.id,
+                  name: send.name,
+                  sourceTrackId: send.sourceTrackId,
+                  returnTrackId: send.returnTrackId,
+                  preFader: send.preFader,
+                  gainValue: send.gain.gain.value,
+                },
+              ]),
+            ),
             trackSends: state.mix.trackSends,
           },
           automation: {
@@ -122,59 +134,10 @@ export const useEngineStore = create<EngineState>()(
           persistedState: unknown,
           currentState: EngineState,
         ): EngineState => {
-          // Type guard to ensure persisted state matches our expected structure
-          const isPersistableEngineState = (
-            state: unknown,
-          ): state is PersistableEngineState => {
-            const s = state as PersistableEngineState;
-            return (
-              s !== null &&
-              typeof s === "object" &&
-              "transport" in s &&
-              "clips" in s &&
-              "mix" in s &&
-              "automation" in s &&
-              "arrangement" in s
-            );
-          };
-
-          // If persisted state doesn't match our type, return current state
-          if (!isPersistableEngineState(persistedState)) {
-            console.warn(
-              "Invalid persisted state structure, using initial state",
-            );
-            return currentState;
-          }
-
-          // Now TypeScript knows persistedState is PersistableEngineState
-          // Most getting empty state for now
-          return {
-            ...currentState,
-            transport: persistedState.transport,
-            clips: {
-              ...currentState.clips,
-              ...persistedState.clips,
-              activeClips: {}, // Reset active clips
-            },
-            mix: {
-              ...currentState.mix, // Start with current state to get proper types
-              mixerTracks: {}, // Empty to force reinitialization
-              meterData: {}, // Reset meter data
-              devices: {}, // Empty to force device reinitialization
-              sends: persistedState.mix.sends,
-              trackSends: persistedState.mix.trackSends,
-            },
-            automation: {
-              ...currentState.automation,
-              lanes: persistedState.automation.lanes,
-              activeAutomation: {}, // Reset active automation
-            },
-            arrangement: {
-              ...currentState.arrangement, // Start with current state to get proper types
-              tracks: {}, // Empty to force track reinitialization
-              trackOrder: [], // Reset track order
-            },
-          };
+          console.warn(
+            "Persisted state loading is deactivated, using initial state",
+          );
+          return currentState; // Always return the initial state
         },
       },
     ),

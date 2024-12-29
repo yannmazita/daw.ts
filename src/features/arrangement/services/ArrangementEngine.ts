@@ -4,7 +4,7 @@ import { TransportEngine } from "../../transport/types";
 import { ClipEngine } from "../../clips/types";
 import { MixEngine } from "../../mix/types";
 import { AutomationEngine } from "../../automation/types";
-import { useEngineStore } from "@/core/stores/useEngineStore";
+import { EngineState, useEngineStore } from "@/core/stores/useEngineStore";
 import { initialArrangementState } from "../utils/initialState";
 import { createTrackData } from "../utils/trackUtils";
 import { moveTrackInOrder, reorderTracks } from "../utils/orderUtils";
@@ -57,8 +57,8 @@ export class ArrangementEngineImpl implements ArrangementEngine {
     const id = crypto.randomUUID();
 
     try {
-      const state = useEngineStore.getState().arrangement;
-      const index = state.trackOrder.length;
+      const stateSnapshot = useEngineStore.getState().arrangement;
+      const index = stateSnapshot.trackOrder.length;
       const track = createTrackData(id, type, name, index);
 
       useEngineStore.setState((state) => {
@@ -70,6 +70,13 @@ export class ArrangementEngineImpl implements ArrangementEngine {
               [id]: { ...track },
             },
             trackOrder: [...state.arrangement.trackOrder, id],
+          },
+          mix: {
+            ...state.mix,
+            trackSends: {
+              ...state.mix.trackSends,
+              [id]: [],
+            },
           },
         };
 

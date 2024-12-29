@@ -33,6 +33,15 @@ export interface Send {
   gain: Gain;
 }
 
+export interface PersistableSend {
+  id: string;
+  name: string;
+  sourceTrackId: string;
+  returnTrackId: string;
+  preFader: boolean;
+  gainValue: number; // Serializable gain value
+}
+
 export interface MixerTrack {
   id: string;
   name: string;
@@ -65,7 +74,7 @@ export interface MixState {
 export interface PersistableMixState {
   mixerTracks: Record<string, PersistableMixerTrack>;
   devices: Record<string, PersistableDevice>;
-  sends: Record<string, Send>;
+  sends: Record<string, PersistableSend>;
   trackSends: Record<string, string[]>;
 }
 
