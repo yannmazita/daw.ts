@@ -14,6 +14,7 @@ export type ToneEffectType =
   | Tone.Chebyshev
   | Tone.Chorus
   | Tone.Distortion
+  | Tone.EQ3
   | Tone.FeedbackDelay
   | Tone.Freeverb
   | Tone.FrequencyShifter
@@ -55,6 +56,14 @@ export interface ReverbOptions extends Tone.ToneAudioNodeOptions {
   wet?: number;
 }
 
+export interface EQ3Options extends BaseEffectOptions {
+  low: number;
+  mid: number;
+  high: number;
+  lowFrequency: number;
+  highFrequency: number;
+}
+
 export interface BaseEffectOptions {
   wet: NormalRange;
 }
@@ -67,6 +76,7 @@ export type EffectOptions =
   | (Tone.ChebyshevOptions & BaseEffectOptions)
   | (Tone.ChorusOptions & BaseEffectOptions)
   | (Tone.DistortionOptions & BaseEffectOptions)
+  | (EQ3Options & BaseEffectOptions)
   | (FeedbackDelayOptions & BaseEffectOptions)
   | (Tone.FreeverbOptions & BaseEffectOptions)
   | (FrequencyShifterOptions & BaseEffectOptions)
@@ -99,6 +109,9 @@ export enum EffectName {
 
   /** A distortion effect that adds harmonic distortion to the signal. */
   Distortion = "Distortion",
+
+  /** A three-band EQ with low, mid, and high controls. */
+  EQ3 = "EQ3",
 
   /** A feedback delay effect that adds echoes with feedback control. */
   FeedbackDelay = "Feedback Delay",

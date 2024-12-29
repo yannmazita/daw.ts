@@ -3,6 +3,7 @@ import * as Tone from "tone";
 import {
   EffectName,
   EffectOptions,
+  EQ3Options,
   FeedbackDelayOptions,
   FrequencyShifterOptions,
   ReverbOptions,
@@ -37,6 +38,8 @@ export const createEffectNode = (
       return new Tone.Chorus(defaultOptions as Tone.ChorusOptions);
     case EffectName.Distortion:
       return new Tone.Distortion(defaultOptions as Tone.DistortionOptions);
+    case EffectName.EQ3:
+      return new Tone.EQ3(defaultOptions as EQ3Options);
     case EffectName.FeedbackDelay:
       return new Tone.FeedbackDelay(defaultOptions as FeedbackDelayOptions);
     case EffectName.Freeverb:
