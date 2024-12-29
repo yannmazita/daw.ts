@@ -25,7 +25,6 @@ interface LayoutState {
   scrollX: number;
   scrollY: number;
 
-  // Add methods for track layout management
   initializeTrackLayout: (trackId: string) => void;
   setTrackHeight: (trackId: string, height: number) => void;
   setTrackFolded: (trackId: string, isFolded: boolean) => void;
