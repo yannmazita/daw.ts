@@ -36,6 +36,8 @@ export const createEffectNode = (
       return new Tone.Chebyshev(defaultOptions as Tone.ChebyshevOptions);
     case EffectName.Chorus:
       return new Tone.Chorus(defaultOptions as Tone.ChorusOptions);
+    case EffectName.Compressor:
+      return new Tone.Compressor(defaultOptions as Tone.CompressorOptions);
     case EffectName.Distortion:
       return new Tone.Distortion(defaultOptions as Tone.DistortionOptions);
     case EffectName.EQ3:
@@ -48,6 +50,8 @@ export const createEffectNode = (
       return new Tone.FrequencyShifter(
         defaultOptions as FrequencyShifterOptions,
       );
+    case EffectName.Gate:
+      return new Tone.Gate(defaultOptions as Tone.GateOptions);
     case EffectName.JCReverb:
       return new Tone.JCReverb(defaultOptions as Tone.JCReverbOptions);
     case EffectName.Phaser:

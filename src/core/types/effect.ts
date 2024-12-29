@@ -1,7 +1,12 @@
 // src/core/types/effect.ts
 
 import * as Tone from "tone";
-import { Frequency, NormalRange, Time } from "tone/build/esm/core/type/Units";
+import {
+  Decibels,
+  Frequency,
+  NormalRange,
+  Time,
+} from "tone/build/esm/core/type/Units";
 
 /**
  * Represents the types of audio effects available, as defined by the Tone.js library.
@@ -13,11 +18,13 @@ export type ToneEffectType =
   | Tone.BitCrusher
   | Tone.Chebyshev
   | Tone.Chorus
+  | Tone.Compressor
   | Tone.Distortion
   | Tone.EQ3
   | Tone.FeedbackDelay
   | Tone.Freeverb
   | Tone.FrequencyShifter
+  | Tone.Gate
   | Tone.JCReverb
   | Tone.Phaser
   | Tone.PingPongDelay
@@ -47,7 +54,7 @@ export interface FrequencyShifterOptions extends Tone.ToneAudioNodeOptions {
 }
 
 /**
- * Effect options for Tone.ReverbOptions.
+ * Effect options for Tone.Reverb.
  * Not exported by tonejs.
  */
 export interface ReverbOptions extends Tone.ToneAudioNodeOptions {
@@ -56,12 +63,16 @@ export interface ReverbOptions extends Tone.ToneAudioNodeOptions {
   wet?: number;
 }
 
-export interface EQ3Options extends BaseEffectOptions {
-  low: number;
-  mid: number;
-  high: number;
-  lowFrequency: number;
-  highFrequency: number;
+/**
+ * Effect options for Tone.EQ3.
+ * Not exported by tonejs.
+ */
+export interface EQ3Options extends Tone.ToneAudioNodeOptions {
+  low: Decibels;
+  mid: Decibels;
+  high: Decibels;
+  lowFrequency: Frequency;
+  highFrequency: Frequency;
 }
 
 export interface BaseEffectOptions {
@@ -75,11 +86,13 @@ export type EffectOptions =
   | (Tone.BitCrusherOptions & BaseEffectOptions)
   | (Tone.ChebyshevOptions & BaseEffectOptions)
   | (Tone.ChorusOptions & BaseEffectOptions)
+  | (Tone.CompressorOptions & BaseEffectOptions)
   | (Tone.DistortionOptions & BaseEffectOptions)
   | (EQ3Options & BaseEffectOptions)
   | (FeedbackDelayOptions & BaseEffectOptions)
   | (Tone.FreeverbOptions & BaseEffectOptions)
   | (FrequencyShifterOptions & BaseEffectOptions)
+  | (Tone.GateOptions & BaseEffectOptions)
   | (Tone.JCReverbOptions & BaseEffectOptions)
   | (Tone.PhaserOptions & BaseEffectOptions)
   | (Tone.PingPongDelayOptions & BaseEffectOptions)
@@ -107,6 +120,9 @@ export enum EffectName {
   /** A chorus effect that thickens the sound by adding delayed copies of the signal. */
   Chorus = "Chorus",
 
+  /** A compressor effect that reduces the dynamic range of the signal. */
+  Compressor = "Compressor",
+
   /** A distortion effect that adds harmonic distortion to the signal. */
   Distortion = "Distortion",
 
@@ -121,6 +137,9 @@ export enum EffectName {
 
   /** A frequency shifter effect that shifts the frequency of the input signal. */
   FrequencyShifter = "Frequency Shifter",
+
+  /** A gate effect that cuts off the signal when it falls below a threshold. */
+  Gate = "Gate",
 
   /** A reverb effect inspired by the JC reverb units. */
   JCReverb = "John Chowning Reverb",

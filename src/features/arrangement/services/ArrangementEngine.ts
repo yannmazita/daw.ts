@@ -4,11 +4,10 @@ import { TransportEngine } from "../../transport/types";
 import { ClipEngine } from "../../clips/types";
 import { MixEngine } from "../../mix/types";
 import { AutomationEngine } from "../../automation/types";
-import { EngineState, useEngineStore } from "@/core/stores/useEngineStore";
+import { useEngineStore } from "@/core/stores/useEngineStore";
 import { initialArrangementState } from "../utils/initialState";
 import { createTrackData } from "../utils/trackUtils";
 import { moveTrackInOrder, reorderTracks } from "../utils/orderUtils";
-import { toggleAutomationLane } from "../utils/automationUtils";
 import { validateArrangementState } from "../utils/validation";
 
 export class ArrangementEngineImpl implements ArrangementEngine {
@@ -240,25 +239,6 @@ export class ArrangementEngineImpl implements ArrangementEngine {
       });
     } catch (error) {
       console.error("Failed to move track:", error);
-      throw error;
-    }
-  }
-
-  toggleAutomationLane(trackId: string, laneId: string): void {
-    this.checkDisposed();
-    const state = useEngineStore.getState().arrangement;
-
-    try {
-      const newLanes = toggleAutomationLane(trackId, laneId, state);
-
-      useEngineStore.setState((state) => ({
-        arrangement: {
-          ...state.arrangement,
-          visibleAutomationLanes: newLanes,
-        },
-      }));
-    } catch (error) {
-      console.error("Failed to toggle automation lane:", error);
       throw error;
     }
   }

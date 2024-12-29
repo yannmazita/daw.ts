@@ -87,9 +87,6 @@ export interface ArrangementEngine {
   deleteTrack(trackId: string): void;
   moveTrack(trackId: string, newIndex: number): void;
 
-  // Automation
-  toggleAutomationLane(trackId: string, laneId: string): void;
-
   // State
   getState(): ArrangementState;
   dispose(): void;
