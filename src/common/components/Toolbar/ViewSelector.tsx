@@ -1,7 +1,7 @@
 // src/common/components/Toolbar/ViewSelector.tsx
 import { Button } from "@/common/shadcn/ui/button";
 import { ViewType } from "@/core/types/common";
-import { useViewStore } from "@/common/slices/useViewStore";
+import { useViewStore } from "@/core/stores/useViewStore";
 import { Grid, Layout } from "lucide-react";
 
 export const ViewSelector = () => {
@@ -10,8 +10,7 @@ export const ViewSelector = () => {
   return (
     <div className="flex gap-1">
       <Button
-        variant={currentView === ViewType.ARRANGEMENT ? "default" : "ghost"}
-        size="sm"
+        variant={currentView === ViewType.ARRANGEMENT ? "default" : "ghost"} size="sm"
         onClick={() => setView(ViewType.ARRANGEMENT)}
       >
         <Layout className="mr-2 h-4 w-4" />

@@ -1,5 +1,5 @@
 // src/common/components/Layout.tsx
-import { useThemeStore } from "@/common/slices/useThemeStore";
+import { useThemeStore } from "@/core/stores/useThemeStore";
 import { Button } from "@/common/shadcn/ui/button";
 import { Moon, Sun } from "lucide-react";
 import { SidebarInset, SidebarProvider } from "@/common/shadcn/ui/sidebar";

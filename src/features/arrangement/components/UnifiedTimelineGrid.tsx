@@ -1,8 +1,8 @@
 // src/features/arrangement/components/UnifiedTimelineGrid.tsx
 import { useEffect, useMemo, useRef } from "react";
 import { GRID_CONSTANTS } from "../utils/constants";
-import { useStore } from "@/common/slices/useStore";
-import { useThemeStore } from "@/common/slices/useThemeStore";
+import { useThemeStore } from "@/core/stores/useThemeStore";
+import { useEngineStore } from "@/core/stores/useEngineStore";
 
 interface UnifiedTimelineGridProps {
   zoom: number;
@@ -30,9 +30,9 @@ export const UnifiedTimelineGrid = ({
   scrollPosition,
 }: UnifiedTimelineGridProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const { timeSignature } = useStore();
+  const timeSignature  = useEngineStore((state) => state.transport.timeSignature);
   const theme = useThemeStore((state) => state.theme);
-  const [beatsPerBar] = timeSignature;
+  const beatsPerBar = timeSignature[0]
 
   // Memoize colors to prevent recalculation
   const colors = useMemo(

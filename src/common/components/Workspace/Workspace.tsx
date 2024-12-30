@@ -1,6 +1,6 @@
 // src/common/components/Workspace/Workspace.tsx
 import { ViewType } from "@/core/types/common";
-import { useViewStore } from "@/common/slices/useViewStore";
+import { useViewStore } from "@/core/stores/useViewStore";
 import { ArrangementView } from "@/features/arrangement/components/ArrangementView";
 
 export const Workspace: React.FC = () => {

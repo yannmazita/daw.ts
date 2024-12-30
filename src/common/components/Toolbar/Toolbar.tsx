@@ -1,6 +1,6 @@
 // src/common/components/Toolbar/Toolbar.tsx
 import { ViewSelector } from "./ViewSelector";
-import { PlaybackControls } from "./PlaybackControls/PlaybackControls";
+import { PlaybackControls } from "@/features/transport/components/PlaybackControls/PlaybackControls";
 
 export const Toolbar = () => {
   return (
