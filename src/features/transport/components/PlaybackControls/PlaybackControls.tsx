@@ -93,7 +93,7 @@ export const PlaybackControls: React.FC = () => {
               min={20}
               max={300}
             />
-            {/*<TempoTap />*/}
+            <TempoTap />
           </div>
 
           {/* Time Signature */}

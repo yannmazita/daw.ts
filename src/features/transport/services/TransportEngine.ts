@@ -16,13 +16,7 @@ export class TransportEngineImpl implements TransportEngine {
   private static readonly MIN_TAP_INTERVAL = 200; // ms
   private static readonly MAX_TAP_INTERVAL = 3000; // ms
   private static readonly TAP_TIMEOUT = 3000; // ms
-  private tapTempoState: {
-    times: number[];
-    timeoutId?: number;
-    lastTapTime?: number;
-  } = {
-    times: [],
-  };
+  private tapTimeoutId: number | null = null;
 
   constructor() {
     this.transport = Tone.getTransport();
@@ -170,7 +164,7 @@ export class TransportEngineImpl implements TransportEngine {
 
   getTransportPosition(): Time {
     return Tone.getTransport().position;
-      }
+  }
 
   setTempo(tempo: BPM): void {
     this.checkDisposed();
@@ -262,95 +256,86 @@ export class TransportEngineImpl implements TransportEngine {
 
   startTapTempo(): BPM {
     const now = performance.now();
+    const state = useEngineStore.getState().transport;
 
-    // Clear existing timeout
-    if (this.tapTempoState.timeoutId) {
-      window.clearTimeout(this.tapTempoState.timeoutId);
+    // Reset timeout
+    if (this.tapTimeoutId) {
+      clearTimeout(this.tapTimeoutId);
     }
 
-    // Set new timeout to clear tap history
-    this.tapTempoState.timeoutId = window.setTimeout(() => {
+    this.tapTimeoutId = window.setTimeout(() => {
       this.endTapTempo();
     }, TransportEngineImpl.TAP_TIMEOUT);
 
-    // Validate interval from last tap
-    if (this.tapTempoState.lastTapTime) {
-      const interval = now - this.tapTempoState.lastTapTime;
-
-      // Ignore taps that are too fast or too slow
+    // Handle invalid intervals
+    if (state.tapTimes.length > 0) {
+      const interval = now - state.tapTimes[state.tapTimes.length - 1];
       if (
         interval < TransportEngineImpl.MIN_TAP_INTERVAL ||
         interval > TransportEngineImpl.MAX_TAP_INTERVAL
       ) {
         this.endTapTempo();
-        this.tapTempoState.times = [now];
-        this.tapTempoState.lastTapTime = now;
-        return useEngineStore.getState().transport.tempo;
+        useEngineStore.setState((currentState) => ({
+          transport: {
+            ...currentState.transport,
+            tapTimes: [now],
+          },
+        }));
+        return state.tempo;
       }
     }
 
-    // Update tap history
-    this.tapTempoState.times.push(now);
-    this.tapTempoState.lastTapTime = now;
+    // Update tap times in state
+    useEngineStore.setState((currentState) => ({
+      transport: {
+        ...currentState.transport,
+        tapTimes: [...currentState.transport.tapTimes, now].slice(
+          -TransportEngineImpl.MAX_TAP_HISTORY,
+        ),
+      },
+    }));
 
-    // Keep only recent taps
-    if (this.tapTempoState.times.length > TransportEngineImpl.MAX_TAP_HISTORY) {
-      this.tapTempoState.times.shift();
-    }
-
-    // Calculate BPM if we have enough taps
-    if (this.tapTempoState.times.length >= 2) {
-      try {
-        const bpm = this.calculateTapTempo();
-        if (bpm) {
-          this.setTempo(bpm);
-          return bpm;
-        }
-      } catch (error) {
-        console.warn("Tap tempo calculation failed:", error);
-        this.endTapTempo();
+    // Calculate BPM if possible
+    const newState = useEngineStore.getState().transport;
+    if (newState.tapTimes.length >= 2) {
+      const bpm = this.calculateTapTempo(newState.tapTimes);
+      if (bpm) {
+        this.setTempo(bpm);
+        return bpm;
       }
     }
 
-    return useEngineStore.getState().transport.tempo;
+    return state.tempo;
   }
 
-  private calculateTapTempo(): BPM | null {
+  private calculateTapTempo(times: number[]): BPM | null {
     const intervals = [];
-    const times = [...this.tapTempoState.times]; // Create copy for safety
-
-    // Calculate intervals between consecutive taps
     for (let i = 1; i < times.length; i++) {
-      const interval = times[i] - times[i - 1];
-      intervals.push(interval);
+      intervals.push(times[i] - times[i - 1]);
     }
 
-    // Calculate median interval for better stability
-    const sortedIntervals = [...intervals].sort((a, b) => a - b);
-    const medianInterval =
-      sortedIntervals[Math.floor(sortedIntervals.length / 2)];
+    if (intervals.length === 0) return null;
 
-    // Convert to BPM
+    const medianInterval = intervals.sort((a, b) => a - b)[
+      Math.floor(intervals.length / 2)
+    ];
     const bpm = Math.round(60000 / medianInterval);
 
-    // Validate BPM range
-    if (bpm >= 20 && bpm <= 999) {
-      return bpm;
-    }
-
-    return null;
+    return bpm >= 20 && bpm <= 999 ? bpm : null;
   }
 
   endTapTempo(): void {
-    // Clear timeout if exists
-    if (this.tapTempoState.timeoutId) {
-      window.clearTimeout(this.tapTempoState.timeoutId);
+    if (this.tapTimeoutId) {
+      clearTimeout(this.tapTimeoutId);
+      this.tapTimeoutId = null;
     }
 
-    // Reset tap tempo state
-    this.tapTempoState = {
-      times: [],
-    };
+    useEngineStore.setState((currentState) => ({
+      transport: {
+        ...currentState.transport,
+        tapTimes: [],
+      },
+    }));
   }
 
   private updateLoopSettings(settings: {

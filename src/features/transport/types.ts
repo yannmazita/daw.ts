@@ -1,9 +1,5 @@
 // src/features/transport/types.ts
-import {
-  BPM,
-  Subdivision,
-  Time,
-} from "tone/build/esm/core/type/Units";
+import { BPM, Subdivision, Time } from "tone/build/esm/core/type/Units";
 
 export interface TransportState {
   isPlaying: boolean;
@@ -11,6 +7,7 @@ export interface TransportState {
 
   tempo: BPM;
   timeSignature: number[];
+  tapTimes: number[];
 
   loop: {
     enabled: boolean;

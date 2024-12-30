@@ -6,6 +6,7 @@ export const initialTransportState: TransportState = {
   isRecording: false,
   tempo: 120,
   timeSignature: [4, 4],
+  tapTimes: [],
   loop: {
     enabled: false,
     start: 0,
