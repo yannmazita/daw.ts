@@ -1,4 +1,4 @@
-// src/features/arrangement/components/TrackHeader.tsx
+// src/features/arrangement/components/TrackHeader/TrackHeader.tsx
 import { useState, useCallback, useEffect } from "react";
 import { Input } from "@/common/shadcn/ui/input";
 import { useTrackOperations } from "../../hooks/useTrackOperations";

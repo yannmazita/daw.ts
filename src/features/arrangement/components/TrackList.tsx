@@ -1,9 +1,23 @@
+// src/features/arrangement/components/TrackList.tsx
 import { useMemo } from "react";
 import { useEngineStore } from "@/core/stores/useEngineStore";
 import { useTrackOperations } from "../hooks/useTrackOperations";
 import { useLayoutStore } from "@/core/stores/useLayoutStore";
 import { TrackHeader } from "./TrackHeader/TrackHeader";
-import { useDrop } from "react-dnd";
+import {
+  DndContext,
+  closestCenter,
+  DragEndEvent,
+  DragOverEvent,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
 import { DragTypes } from "../types";
 import { GRID_CONSTANTS } from "../utils/constants";
 
@@ -11,10 +25,6 @@ interface TrackDragItem {
   type: typeof DragTypes.TRACK;
   id: string;
   index: number;
-}
-
-interface DropCollectedProps {
-  isOver: boolean;
 }
 
 export const TrackList: React.FC = () => {
@@ -67,28 +77,60 @@ export const TrackList: React.FC = () => {
     return (returnTracks.length + 1) * layoutSettings.defaultTrackHeight;
   }, [returnTracks, layoutSettings]);
 
-  // Handle dropping tracks for reordering
-  const [{ isOver }, drop] = useDrop<TrackDragItem, never, DropCollectedProps>(
-    () => ({
-      accept: DragTypes.TRACK,
-      collect: (monitor) => ({
-        isOver: monitor.isOver(),
-      }),
-      hover(item: TrackDragItem, monitor) {
-        if (!monitor.isOver({ shallow: true })) return;
-
-        const dragIndex = item.index;
-        const hoverIndex = trackOrder.length - 1;
-
-        if (dragIndex === hoverIndex) return;
-
-        moveTrack(item.id, hoverIndex);
-        item.index = hoverIndex;
-      },
-      canDrop: (_item) => true,
-    }),
-    [trackOrder, moveTrack],
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor),
   );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (!over || active.id === over.id) {
+      return;
+    }
+
+    const activeItem = active.data?.current as TrackDragItem;
+    const overItem = over.data?.current as TrackDragItem;
+
+    if (
+      activeItem &&
+      overItem &&
+      activeItem.type === DragTypes.TRACK &&
+      overItem.type === DragTypes.TRACK
+    ) {
+      const oldIndex = trackOrder.indexOf(activeItem.id);
+      const newIndex = trackOrder.indexOf(overItem.id);
+
+      if (oldIndex !== -1 && newIndex !== -1) {
+        moveTrack(activeItem.id, newIndex);
+      }
+    }
+  };
+
+  const handleDragOver = (event: DragOverEvent) => {
+    const { active, over } = event;
+
+    if (!over || active.id === over.id) {
+      return;
+    }
+
+    const activeItem = active.data?.current as TrackDragItem;
+    const overItem = over.data?.current as TrackDragItem;
+
+    if (
+      activeItem &&
+      overItem &&
+      activeItem.type === DragTypes.TRACK &&
+      overItem.type === DragTypes.TRACK
+    ) {
+      const oldIndex = trackOrder.indexOf(activeItem.id);
+      const newIndex = trackOrder.indexOf(overItem.id);
+
+      if (oldIndex !== -1 && newIndex !== -1) {
+        moveTrack(activeItem.id, newIndex);
+      }
+    }
+  };
 
   // Memoize the rendered lists
   const arrangementTracks = useMemo(
@@ -114,30 +156,41 @@ export const TrackList: React.FC = () => {
   );
 
   return (
-    <div className="flex flex-col" style={{ height: "100%" }}>
-      {/* Arrangement Tracks (Scrollable) */}
-      <div
-        ref={drop}
-        className="flex-1 overflow-y-auto"
-        style={{
-          minHeight: GRID_CONSTANTS.MIN_TOTAL_HEIGHT,
-        }}
-      >
+    <DndContext
+      collisionDetection={closestCenter}
+      onDragEnd={handleDragEnd}
+      onDragOver={handleDragOver}
+      sensors={sensors}
+    >
+      <div className="flex flex-col" style={{ height: "100%" }}>
+        {/* Arrangement Tracks (Scrollable) */}
         <div
-          className={`relative flex flex-col ${isOver ? "after:absolute after:inset-0 after:bg-accent/20" : ""}`}
-          style={{ height: calculateArrangementHeight }}
+          className="flex-1 overflow-y-auto"
+          style={{
+            minHeight: GRID_CONSTANTS.MIN_TOTAL_HEIGHT,
+          }}
         >
-          {arrangementTracks}
+          <SortableContext
+            items={trackOrder}
+            strategy={verticalListSortingStrategy}
+          >
+            <div
+              className="relative flex flex-col"
+              style={{ height: calculateArrangementHeight }}
+            >
+              {arrangementTracks}
+            </div>
+          </SortableContext>
+        </div>
+
+        {/* Mixer Tracks (Fixed at bottom) */}
+        <div
+          className="flex-none border-t border-border bg-background/50"
+          style={{ height: calculateMixerHeight }}
+        >
+          {mixerTracksList}
         </div>
       </div>
-
-      {/* Mixer Tracks (Fixed at bottom) */}
-      <div
-        className="flex-none border-t border-border bg-background/50"
-        style={{ height: calculateMixerHeight }}
-      >
-        {mixerTracksList}
-      </div>
-    </div>
+    </DndContext>
   );
 };

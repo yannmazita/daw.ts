@@ -1,30 +1,40 @@
 // src/features/arrangement/components/ArrangementView.tsx
 import { useRef, useState } from "react";
 import { UnifiedTimelineGrid } from "./UnifiedTimelineGrid";
-import { CustomDragLayer } from './CustomDragLayer';
+import { CustomDragLayer } from "./CustomDragLayer";
 import { TrackList } from "./TrackList";
 import { Playhead } from "./Playhead";
 import { GRID_CONSTANTS } from "../utils/constants";
 import { useTimelineZoom } from "../hooks/useTimelineZoom";
 import { useZoomGestures } from "../hooks/useZoomGestures";
-import { DndProvider } from "react-dnd";
-import { HTML5Backend } from "react-dnd-html5-backend";
-import { TouchBackend } from "react-dnd-touch-backend";
-import { useIsMobile } from "@/common/shadcn/hooks/use-mobile";
 import * as Tone from "tone";
+import { useEngineStore } from "@/core/stores/useEngineStore";
+import { TrackContent } from "./TrackContent";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
 
 export const ArrangementView = () => {
-  const isMobile = useIsMobile();
-  const backend = isMobile ? TouchBackend : HTML5Backend;
   const containerRef = useRef<HTMLDivElement>(null);
   const [scrollPosition, setScrollPosition] = useState({ x: 0, y: 0 });
   const { zoom, zoomToPoint } = useTimelineZoom(containerRef);
+  const trackOrder = useEngineStore((state) => state.arrangement.trackOrder);
 
   // Handle zoom gestures
   useZoomGestures(containerRef, {
     onZoom: zoomToPoint,
     scrollPosition,
   });
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor),
+  );
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const target = e.target as HTMLDivElement;
@@ -40,7 +50,7 @@ export const ArrangementView = () => {
   };
 
   return (
-    <DndProvider backend={backend}>
+    <DndContext collisionDetection={closestCenter} sensors={sensors}>
       <div className="relative flex">
         {/* Fixed Left Panel */}
         <div
@@ -79,6 +89,22 @@ export const ArrangementView = () => {
                 zoom={zoom}
                 scrollPosition={scrollPosition}
               />
+              {trackOrder.map((trackId) => (
+                <div
+                  key={trackId}
+                  className="absolute left-0 top-0 h-full w-full"
+                  style={{
+                    transform: `translateY(${
+                      GRID_CONSTANTS.RULER_HEIGHT +
+                      (useEngineStore.getState().arrangement.tracks[trackId]
+                        ?.index ?? 0) *
+                        GRID_CONSTANTS.TRACK_HEIGHT
+                    }px)`,
+                  }}
+                >
+                  <TrackContent trackId={trackId} zoom={zoom} />
+                </div>
+              ))}
               <Playhead
                 position={Tone.getTransport().seconds}
                 zoom={zoom}
@@ -89,6 +115,6 @@ export const ArrangementView = () => {
         </div>
         <CustomDragLayer zoom={zoom} />
       </div>
-    </DndProvider>
+    </DndContext>
   );
 };

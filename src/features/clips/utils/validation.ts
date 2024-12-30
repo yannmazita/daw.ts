@@ -1,3 +1,4 @@
+// src/features/clips/utils/validation.ts
 import * as Tone from "tone";
 import { ClipContent, ClipLoop, MidiClipContent } from "../types";
 import { Time } from "tone/build/esm/core/type/Units";
@@ -13,9 +14,11 @@ export const validateMidiContent = (midiData: MidiClipContent): void => {
   }
 
   // Validate tracks
+  /*
   if (!Array.isArray(midiData.tracks) || midiData.tracks.length === 0) {
     throw new Error("MIDI clip must have at least one track");
   }
+  */
 
   // Validate each track
   midiData.tracks.forEach((track, index) => {

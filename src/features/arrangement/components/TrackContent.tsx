@@ -1,12 +1,25 @@
 // src/features/arrangement/components/TrackContent.tsx
-import { useDrop } from 'react-dnd';
-import { useCallback } from 'react';
-import { useEngineStore } from '@/core/stores/useEngineStore';
-import { useArrangementEngine } from '@/core/engines/EngineManager';
-import { ClipView } from './ClipView';
-import * as Tone from 'tone';
-import { cn } from '@/common/shadcn/lib/utils';
-import { ClipDragItem, DragTypes } from '@/features/arrangement/types';
+import { useCallback, useRef } from "react";
+import { useEngineStore } from "@/core/stores/useEngineStore";
+import {
+  useArrangementEngine,
+  useClipEngine,
+} from "@/core/engines/EngineManager";
+import { ClipView } from "./ClipView";
+import * as Tone from "tone";
+import { cn } from "@/common/shadcn/lib/utils";
+import { ClipDragItem, DragTypes } from "@/features/arrangement/types";
+import {
+  useDroppable,
+  DndContext,
+  DragOverEvent,
+  DragEndEvent,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
 
 interface TrackContentProps {
   trackId: string;
@@ -25,83 +38,97 @@ const useTrackClips = (trackId: string) => {
   });
 };
 
-export const TrackContent: React.FC<TrackContentProps> = ({ trackId, zoom }) => {
+export const TrackContent: React.FC<TrackContentProps> = ({
+  trackId,
+  zoom,
+}) => {
   const clipIds = useTrackClips(trackId);
   const arrangementEngine = useArrangementEngine();
+  const clipEngine = useClipEngine();
+  const dropRef = useRef<HTMLDivElement>(null);
 
   const snapToGrid = useCallback((time: number): number => {
     // todo: Get grid settings from state
-    const gridSize = Tone.Time('16n').toSeconds(); // Default to 16th notes
+    const gridSize = Tone.Time("16n").toSeconds(); // Default to 16th notes
     return Math.round(time / gridSize) * gridSize;
   }, []);
 
-  const [{ isOver, canDrop }, drop] = useDrop<
-    ClipDragItem,
-    void,
-    DropCollectedProps
-  >(() => ({
-    accept: DragTypes.CLIP,
-    collect: (monitor) => ({
-      isOver: monitor.isOver(),
-      canDrop: monitor.canDrop(),
-    }),
-    canDrop: (item) => {
-      // todo: Add validation based on track and clip types
-      return true;
-    },
-    hover: (item, monitor) => {
-      if (!monitor.isOver({ shallow: true })) return;
+  const { setNodeRef, isOver } = useDroppable({
+    id: trackId,
+  });
 
-      const dropOffset = monitor.getClientOffset();
-      if (!dropOffset) return;
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor),
+  );
 
-      // Convert client coordinates to time
-      const element = monitor.getTargetRect();
-      if (!element) return;
+  const handleDragOver = (event: DragOverEvent) => {
+    const { active, over } = event;
 
-      const relativeX = dropOffset.x - element.left;
+    if (!over || active.id === over.id) return;
+
+    const activeItem = active.data?.current as ClipDragItem;
+
+    if (activeItem && activeItem.type === DragTypes.CLIP) {
+      const dropOffset = event.pointerPosition;
+      if (!dropOffset || !dropRef.current) return;
+
+      const targetRect = dropRef.current.getBoundingClientRect();
+      const relativeX = dropOffset.x - targetRect.left;
+
+      const newTime = snapToGrid(relativeX / zoom);
+      activeItem.startTime = newTime;
+    }
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (!over || active.id === over.id) return;
+
+    const activeItem = active.data?.current as ClipDragItem;
+
+    if (activeItem && activeItem.type === DragTypes.CLIP) {
+      const dropOffset = event.pointerPosition;
+      if (!dropOffset || !dropRef.current) return;
+
+      const targetRect = dropRef.current.getBoundingClientRect();
+      const relativeX = dropOffset.x - targetRect.left;
       const newTime = snapToGrid(relativeX / zoom);
 
-      // Update drag preview position
-      item.startTime = newTime;
-    },
-    drop: (item, monitor) => {
-      const dropOffset = monitor.getClientOffset();
-      if (!dropOffset) return;
-
-      const element = monitor.getTargetRect();
-      if (!element) return;
-
-      const relativeX = dropOffset.x - element.left;
-      const newTime = snapToGrid(relativeX / zoom);
-
-      if (item.trackId === trackId) {
+      if (activeItem.trackId === trackId) {
         // Move clip within same track
-        arrangementEngine.moveClip(item.id, newTime);
+        clipEngine.moveClip(activeItem.id, newTime);
       } else {
         // Move clip to different track
-        // todo: Implement cross-track movement
+        clipEngine.removeClip(activeItem.id);
+        clipEngine.addClip(activeItem.contentId, newTime);
       }
-    },
-  }), [trackId, zoom, snapToGrid]);
+    }
+  };
 
   return (
-    <div
-      ref={drop}
-      className={cn(
-        "relative h-full w-full",
-        isOver && canDrop && "bg-primary/10",
-        isOver && !canDrop && "bg-destructive/10"
-      )}
+    <DndContext
+      collisionDetection={closestCenter}
+      onDragOver={handleDragOver}
+      onDragEnd={handleDragEnd}
+      sensors={sensors}
     >
-      {clipIds.map((clipId) => (
-        <ClipView
-          key={clipId}
-          clipId={clipId}
-          trackId={trackId}
-          zoom={zoom}
-        />
-      ))}
-    </div>
+      <div
+        ref={setNodeRef}
+        className={cn("relative h-full w-full", isOver && "bg-primary/10")}
+      >
+        <div ref={dropRef} className="relative h-full w-full">
+          {clipIds.map((clipId) => (
+            <ClipView
+              key={clipId}
+              clipId={clipId}
+              trackId={trackId}
+              zoom={zoom}
+            />
+          ))}
+        </div>
+      </div>
+    </DndContext>
   );
 };

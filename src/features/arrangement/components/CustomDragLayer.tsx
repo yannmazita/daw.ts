@@ -1,28 +1,24 @@
 // src/features/arrangement/components/CustomDragLayer.tsx
-import { ClipDragItem, DragTypes } from '@/features/arrangement/types';
-import { useDragLayer } from 'react-dnd';
-import * as Tone from 'tone';
+import { ClipDragItem, DragTypes } from "@/features/arrangement/types";
+import { useDndContext } from "@dnd-kit/core";
+import * as Tone from "tone";
 
-export const CustomDragLayer: React.FC<{ zoom: number }> = ({ zoom }) => {
-  const { itemType, isDragging, item, currentOffset } = useDragLayer((monitor) => ({
-    item: monitor.getItem() as ClipDragItem,
-    itemType: monitor.getItemType(),
-    currentOffset: monitor.getSourceClientOffset(),
-    isDragging: monitor.isDragging(),
-  }));
+interface CustomDragLayerProps {
+  zoom: number;
+}
 
-  if (!isDragging || !currentOffset) {
+export const CustomDragLayer: React.FC<CustomDragLayerProps> = ({ zoom }) => {
+  const { active } = useDndContext();
+
+  if (!active?.data) {
     return null;
   }
 
-  return (
-    <div
-      className="pointer-events-none fixed left-0 top-0 z-50"
-      style={{
-        transform: `translate(${currentOffset.x}px, ${currentOffset.y}px)`,
-      }}
-    >
-      {itemType === DragTypes.CLIP && (
+  const { type, ...item } = active.data.current as ClipDragItem;
+
+  if (type === DragTypes.CLIP) {
+    return (
+      <div className="pointer-events-none fixed left-0 top-0 z-50">
         <div
           className="rounded-sm border border-primary bg-accent/80 p-1"
           style={{
@@ -31,7 +27,9 @@ export const CustomDragLayer: React.FC<{ zoom: number }> = ({ zoom }) => {
         >
           {/* todo: Add clip preview content */}
         </div>
-      )}
-    </div>
-  );
+      </div>
+    );
+  }
+
+  return null;
 };

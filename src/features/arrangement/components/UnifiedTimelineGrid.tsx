@@ -30,9 +30,11 @@ export const UnifiedTimelineGrid = ({
   scrollPosition,
 }: UnifiedTimelineGridProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const timeSignature  = useEngineStore((state) => state.transport.timeSignature);
+  const timeSignature = useEngineStore(
+    (state) => state.transport.timeSignature,
+  );
   const theme = useThemeStore((state) => state.theme);
-  const beatsPerBar = timeSignature[0]
+  const beatsPerBar = timeSignature[0];
 
   // Memoize colors to prevent recalculation
   const colors = useMemo(
