@@ -1,235 +1,266 @@
-# daw.ts
+# daw.ts - A TypeScript DAW
 
-Work in progress! Very early stage.
+`daw.ts` is a Digital Audio Workstation (DAW) application built with TypeScript, [React](https://react.dev/), [Zustand](https://github.com/pmndrs/zustand), and [Tone.js](https://tonejs.github.io/). Work in progress! Very early stage.
 
-Digital Audio Workstation built with [React](https://react.dev/), [tonejs](https://tonejs.github.io/) and [electron](https://www.electronjs.org/)
+## Features
 
-![image](https://github.com/user-attachments/assets/5d798ab2-17f1-4c88-9834-e2952439a62b)
-
-## Running
-
-- Install dependencies :
-
-```commandline
-npm install
-```
-
-- Start the UI with :
-
-```commandline
-npm run dev
-```
-
-The `vite` development server is now accessible `@localhost:5173`.
-
-<details>
-  <summary>Electron</summary>
-  
-  - Start the `electron` development app with :
-
-```commandline
-npm run app:dev
-```
-
-- Build the electron app with:
-
-```commandline
-npm run app electron:build
-```
-
-- Clean build files with:
-
-```commandline
-npm run clean
-```
-
-More building commands are defined in `package.json`.
-Currently the electron window needs to have the development server running `@localhost:5173`.
-
-</details>
+- A timeline-based view for arranging audio and MIDI clips.
+- Real-time audio processing and synthesis with Tone.js
+- Drag and drop clips (planned)
+- Support for parameter automation (planned), effects, and routing
 
 ## Architecture
 
-As the source code is fast moving, the documentation may lag behind a bit.
+The application follows a modular architecture with the following key components:
+
+### UI
+
+- Built with React and TypeScript.
+- Uses Shadcn UI for styling and layout.
+- Includes reusable components for the main application layout, toolbar, and workspace.
+
+### Core
+
+- **Engines:** Manages the different functional engines of the DAW.
+  - `EngineManager`: Responsible for instantiating and managing the different engines.
+  - `TransportEngine`: Manages transport state (playback, tempo, time signature).
+  - `ClipEngine`: Manages clip content and playback state.
+  - `MixEngine`: Manages mixer track configuration, device chains, and routing.
+  - `AutomationEngine`: Manages automation lanes and parameter connections.
+  - `ArrangementEngine`: Manages track organization and timeline state.
+- **Stores:** Uses Zustand for state management.
+  - `useEngineStore`: Manages the central engine state.
+  - `useLayoutStore`: Manages layout-related state (track heights, zoom).
+  - `useThemeStore`: Manages the application's theme.
+  - `useViewStore`: Manages the current view (arrangement, etc.).
+- **Types:** Defines TypeScript types for audio, common, instrument, and parameter data.
+
+### Features
+
+- **Transport:** Includes components and services for transport control.
+- **Clips:** Includes components and services for managing audio and MIDI clips.
+- **Mix:** Includes components and services for mixer functionality.
+- **Automation:** Includes components and services for automation (planned).
+- **Arrangement:** Includes components, and services for the arrangement view.
+
+## Data Flow
+
+The application follows a unidirectional data flow:
+
+1.  **User Input:** User interactions in the UI trigger actions.
+2.  **Engine Methods:** UI components call methods on the appropriate engine services.
+3.  **Tone.js API:** Engine services interact with the Tone.js API for audio processing.
+4.  **State Update:** Engine services update the application state using Zustand stores.
+5.  **UI Update:** UI components re-render based on the updated state.
+
+## Audio Signal Flow
+
+The audio signal flow within the application can be described as follows:
+
+- **Mixer Track:**
+  - `Input Gain` -> `Pre-Fader Devices` -> `Channel Strip` -> `Post-Fader Devices` -> `Meter` -> `Output`
+- **Send Routing:**
+  - `Source Track Input` -> `Pre/Post-Fader Send` -> `Send Gain` -> `Return Track Input`
+- **Track:**
+  - `Track Input` -> `Panner` -> `Channel Strip` -> `Meter`
+- **Master Track:**
+  - `Master Track Input` -> `Pre-Fader Devices` -> `Channel Strip` -> `Post-Fader Devices` -> `Meter` -> `Destination`
+
+## Diagrams (A Thousand Words)
+
+### Engine Interaction
 
 <details>
-  <summary>
-    High-level components
-  </summary>
-
-The DAW application is built with a layered architecture consisting of:
-
-- User Interface Layer: React components and UI logic
-- Engine Layer: Core DAW functionality
-- Audio Processing Layer: Audio handling via Tone.js
-- State Management Layer: Zustand-based state management
-
-The engine layer consists of five main engines:
-
-1. **Transport Engine**: Handles playback, timing, and tempo
-2. **Clip Engine**: Manages audio and MIDI clip content
-3. **Mix Engine**: Controls audio routing and processing
-4. **Automation Engine**: Handles parameter automation
-5. **Arrangement Engine**: Coordinates track organization and timeline
-
-```mermaid
-graph TB
-    UI[User Interface Layer]
-    ENG[Engine Layer]
-    AUDIO[Audio Processing Layer]
-    STATE[State Management Layer]
-
-    UI --> ENG
-    ENG --> AUDIO
-    ENG --> STATE
-
-    subgraph "Engine Layer"
-        TE[Transport Engine]
-        CE[Clip Engine]
-        ME[Mix Engine]
-        AE[Automation Engine]
-        ARE[Arrangement Engine]
-
-        ARE --> TE
-        ARE --> CE
-        ARE --> ME
-        ARE --> AE
-    end
-
-    subgraph "Audio Processing Layer"
-        ToneJS[Tone.js]
-        WebAudio[Web Audio API]
-
-        ToneJS --> WebAudio
-    end
-
-    subgraph "State Management Layer"
-        ZS[Zustand Store]
-        PS[Persistent Storage]
-
-        ZS --> PS
-    end
-```
-
+    <summary>
+    Transport Control Interaction
+    </summary>
+    ```mermaid
+    sequenceDiagram
+        participant UI
+        participant TransportEngine
+        
+        UI->>TransportEngine: play()
+        TransportEngine->>Tone.js: start()
+        TransportEngine-->>UI: isPlaying = true
+        
+        UI->>TransportEngine: pause()
+        TransportEngine->>Tone.js: pause()
+        TransportEngine-->>UI: isPlaying = false
+        
+        UI->>TransportEngine: stop()
+        TransportEngine->>Tone.js: stop()
+        TransportEngine-->>UI: isPlaying = false, isRecording = false
+        
+        UI->>TransportEngine: setTempo(tempo)
+        TransportEngine->>Tone.js: setBpm(tempo)
+        TransportEngine-->>UI: tempo
+    ```
 </details>
 
 <details>
-  <summary>
-    Engine interaction diagram
-  </summary>
-
-Engines communicate through:
-
-- Direct method calls for immediate operations
-- State updates
-- Planned: event system?
-
-This sequence diagram describes the current state of implementation, a lot is missing.
-
-```mermaid
-sequenceDiagram
-    participant UI as User Interface
-    participant AE as Arrangement Engine
-    participant TE as Transport Engine
-    participant CE as Clip Engine
-    participant ME as Mix Engine
-    participant Store as Engine Store
-
-    UI->>AE: Create Track
-    AE->>ME: Create Mixer Channel
-    ME->>Store: Update Mix State
-    AE->>Store: Update Arrangement State
-
-    UI->>AE: Add Clip
-    AE->>CE: Schedule Clip
-    CE->>TE: Get Transport Time
-    CE->>Store: Update Clip State
-    AE->>Store: Update Track State
-```
-
+    <summary>
+    Mixer Device Interaction
+    </summary>
+    ```mermaid
+    sequenceDiagram
+        participant UI
+        participant MixEngine
+        
+        UI->>MixEngine: addDevice(trackId, deviceType)
+        MixEngine->>Tone.js: createEffectNode(deviceType)
+        MixEngine-->>UI: deviceId
+        
+        UI->>MixEngine: updateDevice(trackId, deviceId, updates)
+        MixEngine->>Tone.js: updateNode(updates)
+        MixEngine-->>UI: updated device
+    ```
 </details>
 
 <details>
-  <summary>
-    State management flow
-  </summary>
-
-Work in progress:
-
-- Uses Zustand for centralized state management
-- Separates persistent and non-persistent state
-- Maintains atomic updates for consistency
-- Handles audio buffer and node references separately
-
-```mermaid
-graph LR
-    subgraph "Engine State"
-        TS[Transport State]
-        CS[Clip State]
-        MS[Mix State]
-        AS[Automation State]
-        ARS[Arrangement State]
-    end
-
-    subgraph "Persistence Layer"
-        PS[Persistent State]
-        subgraph "Non-Persistable"
-            AB[Audio Buffers]
-            AN[Audio Nodes]
-        end
-    end
-
-    TS --> PS
-    CS --> PS
-    MS --> PS
-    AS --> PS
-    ARS --> PS
-
-    CS -.-> AB
-    MS -.-> AN
-```
-
+    <summary>
+    Clip Scheduling Interaction
+    </summary>
+    ```mermaid
+    sequenceDiagram
+        participant UI
+        participant ArrangementEngine
+        participant ClipEngine
+        
+        UI->>ArrangementEngine: addClip(contentId, startTime)
+        ArrangementEngine->>ClipEngine: scheduleClip(clip)
+        ClipEngine->>Tone.js: start(time)
+        ClipEngine-->>ArrangementEngine: clipId
+        ArrangementEngine-->>UI: clipId
+    ```
 </details>
 
 <details>
-  <summary>
-    Audio signal flow
-  </summary>
+    <summary>
+    Automation Scheduling Interaction
+    </summary>
+    ```mermaid
+    sequenceDiagram
+        participant UI
+        participant ArrangementEngine
+        participant AutomationEngine
+    
+        UI->>AutomationEngine: createLane(targetType, targetId, parameterId)
+        UI->>AutomationEngine: addPoint(laneId, time, value)
+        UI->>ArrangementEngine: scheduleLane(laneId)
+        ArrangementEngine->>AutomationEngine: scheduleLane(laneId)
+        AutomationEngine->>Tone.js: schedule(time, value)
+        AutomationEngine-->>ArrangementEngine: laneId
+        ArrangementEngine-->>UI: laneId
+    ```
+</details>
 
-```mermaid
-graph LR
-    subgraph "Track Chain"
-        Input[Track Input]
-        PreFX[Pre-FX Chain]
-        Channel[Channel Strip]
-        PostFX[Post-FX Chain]
-        Output[Track Output]
+<details>
+    <summary>
+    Track Creation Interaction
+    </summary>
+    ```mermaid
+    sequenceDiagram
+        participant UI
+        participant ArrangementEngine
+        participant MixEngine
+        
+        UI->>ArrangementEngine: createTrack(type, name)
+        ArrangementEngine->>MixEngine: createSend(trackId, masterId)
+        MixEngine-->>ArrangementEngine: sendId
+        ArrangementEngine-->>UI: trackId
+    ```
+</details>
 
-        Input --> PreFX
-        PreFX --> Channel
-        Channel --> PostFX
-        PostFX --> Output
-    end
+### Audio Signal Flow
 
-    subgraph "Sends"
-        PreS[Pre-Fader Send]
-        PostS[Post-Fader Send]
+<details>
+    <summary>
+    Mixer Track Signal Flow
+    </summary>
+    graph LR
+        A[Input Gain] --> B(Pre-Fader Devices);
+        B --> C(Channel Strip);
+        C --> D(Post-Fader Devices);
+        D --> E[Meter];
+        E --> F[Output];
+        style A fill:#ccf,stroke:#333,stroke-width:2px
+        style B fill:#eee,stroke:#333,stroke-width:1px
+        style C fill:#eee,stroke:#333,stroke-width:1px
+        style D fill:#eee,stroke:#333,stroke-width:1px
+        style E fill:#eee,stroke:#333,stroke-width:1px
+</details>
 
-        Channel --> PreS
-        PostFX --> PostS
-    end
+<details>
+    <summary>
+    Send Routing Signal Flow
+    </summary>
+    graph LR
+        A[Source Track Input] --> B{Pre-Fader Send};
+        A --> C[Source Track Channel];
+        C --> D{Post-Fader Send};
+        B --> E[Send Gain];
+        D --> E;
+        E --> F[Return Track Input];
+        style A fill:#ccf,stroke:#333,stroke-width:2px
+        style C fill:#ccf,stroke:#333,stroke-width:2px
+        style B fill:#eee,stroke:#333,stroke-width:1px
+        style D fill:#eee,stroke:#333,stroke-width:1px
+        style E fill:#eee,stroke:#333,stroke-width:1px
+        style F fill:#eee,stroke:#333,stroke-width:1px
+</details>
 
-    subgraph "Master Section"
-        Master[Master Channel]
-        MFX[Master FX]
-        Out[Main Output]
+<details>
+    <summary>
+    Track Signal Flow
+    </summary>
+    graph LR
+        A[Track Input] --> B(Panner);
+        B --> C(Channel Strip);
+        C --> D[Meter];
+        style A fill:#ccf,stroke:#333,stroke-width:2px
+        style B fill:#eee,stroke:#333,stroke-width:1px
+        style C fill:#eee,stroke:#333,stroke-width:1px
+        style D fill:#eee,stroke:#333,stroke-width:1px
+</details>
 
-        Output --> Master
-        PreS --> Master
-        PostS --> Master
-        Master --> MFX
-        MFX --> Out
-    end
+<details>
+    <summary>
+    Master Track Signal Flow
+    </summary>
+    graph LR
+        A[Master Track Input] --> B(Pre-Fader Devices);
+        B --> C(Channel Strip);
+        C --> D(Post-Fader Devices);
+        D --> E[Meter];
+        E --> F[Destination];
+        style A fill:#ccf,stroke:#333,stroke-width:2px
+        style B fill:#eee,stroke:#333,stroke-width:1px
+        style C fill:#eee,stroke:#333,stroke-width:1px
+        style D fill:#eee,stroke:#333,stroke-width:1px
+        style E fill:#eee,stroke:#333,stroke-width:1px
+        style F fill:#eee,stroke:#333,stroke-width:1px
+</details>
+
+## Contributing
+
+Contributions are welcome!
+
+## Getting Started
+
+1. Clone the repository:
+
+```bash
+git clone https://github.com/yannmazita/daw.ts.git
 ```
 
-</details>
+2. Install dependencies:
+
+```bash
+npm install
+```
+
+3. Start the application (development server)
+
+```bash
+npm run dev
+```
