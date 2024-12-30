@@ -7,7 +7,7 @@ interface TrackIconProps {
 }
 
 export const TrackIcon: React.FC<TrackIconProps> = ({ trackState }) => {
-  if (trackState.type === "mixer") {
+  if (trackState.isMixer) {
     if (trackState.isMaster) return <Waves className="h-4 w-4 text-primary" />;
     if (trackState.isReturn)
       return <ArrowDownToLine className="h-4 w-4 text-muted-foreground" />;

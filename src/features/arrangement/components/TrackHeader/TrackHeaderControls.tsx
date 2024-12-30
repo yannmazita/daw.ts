@@ -2,7 +2,7 @@
 import { Button } from "@/common/shadcn/ui/button";
 import { Slider } from "@/common/shadcn/ui/slider";
 import { Volume2, VolumeX, Headphones } from "lucide-react";
-import { useMixerTrackControls } from "../../hooks/useMixerTrackControls";
+import { useTrackControls } from "../../hooks/useTrackControls";
 
 interface TrackHeaderControlsProps {
   trackId: string;
@@ -12,7 +12,7 @@ export const TrackHeaderControls: React.FC<TrackHeaderControlsProps> = ({
   trackId,
 }) => {
   const { volume, muted, soloed, setVolume, toggleMute, toggleSolo } =
-    useMixerTrackControls(trackId);
+    useTrackControls(trackId);
 
   const handleVolumeChange = (values: number[]) => {
     setVolume(values[0]);

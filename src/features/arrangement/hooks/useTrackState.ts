@@ -1,3 +1,4 @@
+// src/features/arrangement/hooks/useTrackState.ts
 import { useEngineStore } from "@/core/stores/useEngineStore";
 import { Track } from "../types";
 import { MixerTrack } from "@/features/mix/types";
@@ -14,6 +15,7 @@ export interface TrackState {
   track: Track | MixerTrack;
   isMaster: boolean;
   isReturn: boolean;
+  isMixer: boolean;
 }
 
 export const useTrackState = (trackId: string): TrackState | null => {
@@ -36,6 +38,7 @@ export const useTrackState = (trackId: string): TrackState | null => {
         track,
         isMaster: false,
         isReturn: false,
+        isMixer: false,
       }),
       [trackId, name, index, track],
     );
@@ -52,6 +55,7 @@ export const useTrackState = (trackId: string): TrackState | null => {
         track,
         isMaster: type === "master",
         isReturn: type === "return",
+        isMixer: true,
       }),
       [trackId, name, type, track],
     );
