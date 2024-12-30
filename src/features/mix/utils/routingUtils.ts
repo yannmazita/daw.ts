@@ -1,6 +1,6 @@
 // src/features/mix/utils/routingUtils.ts
 import * as Tone from "tone";
-import { MixerTrack, Send } from "../types";
+import { Device, MixerTrack, Send } from "../types";
 import { Track } from "@/features/arrangement/types";
 
 export interface SendRoutingState {
@@ -13,20 +13,26 @@ export interface SendRoutingState {
 export const connectMixerTrackChain = (
   mixerTrack: MixerTrack,
   masterTrack: MixerTrack,
+  devices: Record<string, Device>,
 ): void => {
   // Disconnect existing chain
   mixerTrack.input.disconnect();
-  mixerTrack.preDevices.forEach((device) => device.disconnect());
-  mixerTrack.postDevices.forEach((device) => device.disconnect());
+  mixerTrack.deviceIds.pre.forEach((deviceId) =>
+    devices[deviceId].node.disconnect(),
+  );
+  mixerTrack.deviceIds.post.forEach((deviceId) =>
+    devices[deviceId].node.disconnect(),
+  );
+
   mixerTrack.channel.disconnect();
 
   // Connect chain
   let currentNode: Tone.ToneAudioNode = mixerTrack.input;
 
   // Pre-fader chain
-  mixerTrack.preDevices.forEach((device) => {
-    currentNode.connect(device);
-    currentNode = device;
+  mixerTrack.deviceIds.pre.forEach((deviceId) => {
+    currentNode.connect(devices[deviceId].node);
+    currentNode = devices[deviceId].node;
   });
 
   // Connect to channel strip
@@ -34,9 +40,9 @@ export const connectMixerTrackChain = (
   currentNode = mixerTrack.channel;
 
   // Post-fader chain
-  mixerTrack.postDevices.forEach((device) => {
-    currentNode.connect(device);
-    currentNode = device;
+  mixerTrack.deviceIds.post.forEach((deviceId) => {
+    currentNode.connect(devices[deviceId].node);
+    currentNode = devices[deviceId].node;
   });
 
   // Connect to meter

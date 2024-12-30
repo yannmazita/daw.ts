@@ -4,7 +4,6 @@ import { MixState } from "../types";
 export const initialMixState: MixState = {
   mixerTracks: {},
   devices: {},
-  meterData: {},
   sends: {},
   trackSends: {},
 };

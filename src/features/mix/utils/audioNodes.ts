@@ -8,11 +8,16 @@ import {
   FrequencyShifterOptions,
   ReverbOptions,
   ToneEffectType,
-} from "@/core/types/effect";
+} from "@/core/types/audio";
+import {
+  ProcessorName,
+  ProcessorOptions,
+  ToneProcessorType,
+} from "@/core/types/audio";
 
 export const createMixerTrackNodes = () => {
   const input = new Tone.Gain();
-  const channel = new Tone.Channel().toDestination();
+  const channel = new Tone.Channel();
   const meter = new Tone.Meter();
 
   return { input, channel, meter };
@@ -36,12 +41,8 @@ export const createEffectNode = (
       return new Tone.Chebyshev(defaultOptions as Tone.ChebyshevOptions);
     case EffectName.Chorus:
       return new Tone.Chorus(defaultOptions as Tone.ChorusOptions);
-    case EffectName.Compressor:
-      return new Tone.Compressor(defaultOptions as Tone.CompressorOptions);
     case EffectName.Distortion:
       return new Tone.Distortion(defaultOptions as Tone.DistortionOptions);
-    case EffectName.EQ3:
-      return new Tone.EQ3(defaultOptions as EQ3Options);
     case EffectName.FeedbackDelay:
       return new Tone.FeedbackDelay(defaultOptions as FeedbackDelayOptions);
     case EffectName.Freeverb:
@@ -50,8 +51,6 @@ export const createEffectNode = (
       return new Tone.FrequencyShifter(
         defaultOptions as FrequencyShifterOptions,
       );
-    case EffectName.Gate:
-      return new Tone.Gate(defaultOptions as Tone.GateOptions);
     case EffectName.JCReverb:
       return new Tone.JCReverb(defaultOptions as Tone.JCReverbOptions);
     case EffectName.Phaser:
@@ -72,5 +71,22 @@ export const createEffectNode = (
       return new Tone.Tremolo(defaultOptions as Tone.TremoloOptions);
     default:
       throw new Error("Unknown effect type");
+  }
+};
+
+export const createProcessorNode = (
+  type: ProcessorName,
+  options?: ProcessorOptions,
+): ToneProcessorType => {
+  const defaultOptions = { ...options };
+  switch (type) {
+    case ProcessorName.EQ3:
+      return new Tone.EQ3(defaultOptions as EQ3Options);
+    case ProcessorName.Compressor:
+      return new Tone.Compressor(defaultOptions as Tone.CompressorOptions);
+    case ProcessorName.Gate:
+      return new Tone.Gate(defaultOptions as Tone.GateOptions);
+    default:
+      throw new Error("Unknown processor type");
   }
 };

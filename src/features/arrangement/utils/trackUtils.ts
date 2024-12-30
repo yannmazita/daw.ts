@@ -1,6 +1,8 @@
 // src/features/arrangement/utils/trackUtils.ts
-import { createMixerTrackNodes } from "@/features/mix/utils/audioNodes";
+
+import * as Tone from "tone";
 import { Track } from "../types";
+import { initialTrackControlState } from "./initialState";
 
 export const createTrackData = (
   id: string,
@@ -8,25 +10,28 @@ export const createTrackData = (
   name: string,
   index: number,
 ): Track => {
-  const nodes = createMixerTrackNodes();
+  // Create track processing nodes
+  const input = new Tone.Gain();
+  const panner = new Tone.Panner(0);
+  const channel = new Tone.Channel();
+  const meter = new Tone.Meter();
 
-  // Validate nodes
-  if (!nodes.input || !nodes.channel || !nodes.meter) {
-    console.error("Failed to create audio nodes:", nodes);
-    throw new Error("Failed to create audio nodes for track");
-  }
+  // Connect track processing chain
+  input.connect(panner).connect(channel);
 
-  // Connect nodes internally
-  nodes.input.connect(nodes.channel);
-  nodes.channel.connect(nodes.meter);
+  channel.connect(meter);
 
   return {
     id,
     type,
     name,
     index,
+    controls: { ...initialTrackControlState },
     clipIds: [],
     automationIds: [],
-    ...nodes,
+    input,
+    panner,
+    channel,
+    meter,
   };
 };

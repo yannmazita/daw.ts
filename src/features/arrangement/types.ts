@@ -3,7 +3,7 @@ import { TransportEngine } from "../transport/types";
 import { ClipEngine } from "../clips/types";
 import { MixEngine } from "../mix/types";
 import { AutomationEngine } from "../automation/types";
-import { Channel, Gain, Meter } from "tone";
+import { Channel, Gain, Meter, Panner } from "tone";
 
 export const DragTypes = {
   TRACK: "track",
@@ -20,12 +20,28 @@ export interface ClipDragItem {
   duration: number;
 }
 
-export type DragType = (typeof DragTypes)[keyof typeof DragTypes];
+export interface TrackControlState {
+  solo: boolean;
+  mute: boolean;
+  armed: boolean;
+  pan: number;
+  peakLevel: [number, number];
+  clipWarning: boolean;
+  lastClipTime: number | null;
+}
+
+export interface PersistableTrackControlState {
+  solo: boolean;
+  mute: boolean;
+  armed: boolean;
+  pan: number;
+}
 
 export interface BaseTrack {
   id: string;
   name: string;
   index: number;
+  controls: TrackControlState;
 
   // Content
   clipIds: string[];
@@ -35,12 +51,14 @@ export interface BaseTrack {
   input: Gain;
   channel: Channel;
   meter: Meter;
+  panner: Panner;
 }
 
 export interface PersistableBaseTrack {
   id: string;
   name: string;
   index: number;
+  controls: PersistableTrackControlState;
   clipIds: string[];
   automationIds: string[];
 }
@@ -86,6 +104,13 @@ export interface ArrangementEngine {
   updateTrack(trackId: string, updates: Partial<Track>): void;
   deleteTrack(trackId: string): void;
   moveTrack(trackId: string, newIndex: number): void;
+
+  // Track controls
+  setSolo(trackId: string, solo: boolean): void;
+  setMute(trackId: string, mute: boolean): void;
+  setArmed(trackId: string, armed: boolean): void;
+  setPan(trackId: string, pan: number): void;
+  getTrackControls(trackId: string): TrackControlState;
 
   // State
   getState(): ArrangementState;

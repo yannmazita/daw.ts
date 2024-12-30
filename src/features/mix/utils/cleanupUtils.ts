@@ -1,11 +1,18 @@
 // src/features/mix/utils/cleanupUtils.ts
 import { MixerTrack, Device, Send } from "../types";
 
-export const disposeMixerTrack = (mixerTrack: MixerTrack): void => {
+export const disposeMixerTrack = (
+  mixerTrack: MixerTrack,
+  devices: Record<string, Device>,
+): void => {
   try {
     // Dispose devices
-    mixerTrack.preDevices.forEach((device) => device.dispose());
-    mixerTrack.postDevices.forEach((device) => device.dispose());
+    mixerTrack.deviceIds.pre.forEach((deviceId) =>
+      devices[deviceId].node.dispose(),
+    );
+    mixerTrack.deviceIds.post.forEach((deviceId) =>
+      devices[deviceId].node.dispose(),
+    );
 
     // Dispose mixer track nodes
     mixerTrack.input.dispose();

@@ -9,6 +9,7 @@ import { initialArrangementState } from "../utils/initialState";
 import { createTrackData } from "../utils/trackUtils";
 import { moveTrackInOrder, reorderTracks } from "../utils/orderUtils";
 import { validateArrangementState } from "../utils/validation";
+import { calculateSoloState, updateTrackSoloStates } from "../utils/stateUtils";
 
 export class ArrangementEngineImpl implements ArrangementEngine {
   private disposed = false;
@@ -243,24 +244,93 @@ export class ArrangementEngineImpl implements ArrangementEngine {
     }
   }
 
-  setSelection(trackIds: Set<string>): void {
-    this.checkDisposed();
-    const state = useEngineStore.getState().arrangement;
+  setSolo(trackId: string, solo: boolean): void {
+    const stateSnapshot = useEngineStore.getState().arrangement;
+    const track = stateSnapshot.tracks[trackId];
 
-    // Validate all track IDs exist
-    if (!Array.from(trackIds).every((id) => state.tracks[id])) {
-      throw new Error("Invalid track selection");
-    }
+    if (!track) throw new Error("Track not found");
 
     try {
+      const soloUpdate = calculateSoloState(
+        trackId,
+        solo,
+        stateSnapshot.tracks,
+      );
+
+      // Apply mute states to audio nodes
+      Object.entries(soloUpdate.muteStates).forEach(([id, mute]) => {
+        const track = stateSnapshot.tracks[id];
+        if (track) {
+          track.channel.mute = mute;
+        }
+      });
+
+      // Update state
+      useEngineStore.setState((state) => ({
+        arrangement: updateTrackSoloStates(state.arrangement, soloUpdate),
+      }));
+    } catch (error) {
+      console.error("Failed to set solo state:", error);
+      throw error;
+    }
+  }
+
+  setMute(trackId: string, mute: boolean): void {
+    const stateSnapshot = useEngineStore.getState().arrangement;
+    const track = stateSnapshot.tracks[trackId];
+    if (!track) throw new Error("Track not found");
+
+    try {
+      // Only apply mute if track is not affected by solo
+      const anySolo = Object.values(stateSnapshot.tracks).some(
+        (t) => t.controls.solo,
+      );
+      if (!anySolo || track.controls.solo) {
+        track.channel.mute = mute;
+      }
+
       useEngineStore.setState((state) => ({
         arrangement: {
           ...state.arrangement,
-          selectedTracks: new Set(trackIds),
+          tracks: {
+            ...state.arrangement.tracks,
+            [trackId]: {
+              ...track,
+              controls: { ...track.controls, mute },
+            },
+          },
         },
       }));
     } catch (error) {
-      console.error("Failed to set selection:", error);
+      console.error("Failed to set mute state:", error);
+      throw error;
+    }
+  }
+
+  setPan(trackId: string, pan: number): void {
+    const stateSnapshot = useEngineStore.getState().arrangement;
+    const track = stateSnapshot.tracks[trackId];
+    if (!track) throw new Error("Track not found");
+
+    const clampedPan = Math.max(-1, Math.min(1, pan));
+
+    try {
+      track.panner.pan.value = clampedPan;
+
+      useEngineStore.setState((state) => ({
+        arrangement: {
+          ...state.arrangement,
+          tracks: {
+            ...state.arrangement.tracks,
+            [trackId]: {
+              ...track,
+              controls: { ...track.controls, pan: clampedPan },
+            },
+          },
+        },
+      }));
+    } catch (error) {
+      console.error("Failed to set pan value:", error);
       throw error;
     }
   }

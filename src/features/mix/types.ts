@@ -3,9 +3,8 @@ import {
   EffectName,
   EffectOptions,
   ToneEffectType,
-} from "../../core/types/effect";
+} from "../../core/types/audio";
 import { Channel, Gain, Meter } from "tone";
-import { AudioMeterData } from "../../core/types/audio";
 
 export interface Device<T extends EffectOptions = EffectOptions> {
   id: string;
@@ -46,12 +45,14 @@ export interface MixerTrack {
   id: string;
   name: string;
   type: "return" | "master";
+  deviceIds: {
+    pre: string[];
+    post: string[];
+  };
 
   // Tone.js nodes
   input: Gain;
   channel: Channel;
-  preDevices: ToneEffectType[];
-  postDevices: ToneEffectType[];
   meter: Meter;
 }
 
@@ -66,9 +67,6 @@ export interface MixState {
   devices: Record<string, Device>;
   sends: Record<string, Send>;
   trackSends: Record<string, string[]>; // track id -> send IDs mapping
-
-  // Metering state
-  meterData: Record<string, AudioMeterData>;
 }
 
 export interface PersistableMixState {
@@ -98,9 +96,6 @@ export interface MixEngine {
   setSendAmount(baseTrackId: string, sendId: string, amount: number): void;
   getTrackSends(baseTrackId: string): Send[];
   disconnectTrackSends(baseTrackId: string): void;
-
-  // Metering
-  getMeterData(mixerTrackId: string): AudioMeterData;
 
   // State
   getState(): MixState;
