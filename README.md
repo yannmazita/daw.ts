@@ -187,11 +187,6 @@ graph LR
     C --> D(Post-Fader Devices);
     D --> E[Meter];
     E --> F[Output];
-    style A fill:#ccf,stroke:#333,stroke-width:2px
-    style B fill:#eee,stroke:#333,stroke-width:1px
-    style C fill:#eee,stroke:#333,stroke-width:1px
-    style D fill:#eee,stroke:#333,stroke-width:1px
-    style E fill:#eee,stroke:#333,stroke-width:1px
 ```
 
 </details>
@@ -209,12 +204,6 @@ graph LR
     B --> E[Send Gain];
     D --> E;
     E --> F[Return Track Input];
-    style A fill:#ccf,stroke:#333,stroke-width:2px
-    style C fill:#ccf,stroke:#333,stroke-width:2px
-    style B fill:#eee,stroke:#333,stroke-width:1px
-    style D fill:#eee,stroke:#333,stroke-width:1px
-    style E fill:#eee,stroke:#333,stroke-width:1px
-    style F fill:#eee,stroke:#333,stroke-width:1px
 ```
 
 </details>
@@ -229,10 +218,6 @@ graph LR
         A[Track Input] --> B(Panner);
         B --> C(Channel Strip);
         C --> D[Meter];
-        style A fill:#ccf,stroke:#333,stroke-width:2px
-        style B fill:#eee,stroke:#333,stroke-width:1px
-        style C fill:#eee,stroke:#333,stroke-width:1px
-        style D fill:#eee,stroke:#333,stroke-width:1px
 ```
 
 </details>
@@ -249,12 +234,6 @@ graph LR
         C --> D(Post-Fader Devices);
         D --> E[Meter];
         E --> F[Destination];
-        style A fill:#ccf,stroke:#333,stroke-width:2px
-        style B fill:#eee,stroke:#333,stroke-width:1px
-        style C fill:#eee,stroke:#333,stroke-width:1px
-        style D fill:#eee,stroke:#333,stroke-width:1px
-        style E fill:#eee,stroke:#333,stroke-width:1px
-        style F fill:#eee,stroke:#333,stroke-width:1px
 ```
 
 </details>
