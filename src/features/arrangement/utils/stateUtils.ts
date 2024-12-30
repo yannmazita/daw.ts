@@ -26,16 +26,7 @@ export const calculateSoloState = (
   if (solo) {
     // When soloing a track
     Object.entries(tracks).forEach(([id, track]) => {
-      if (id === trackId) {
-        // Never mute the track being soloed
-        muteStates[id] = false;
-      } else if (track.controls.solo) {
-        // Keep other soloed tracks unmuted
-        muteStates[id] = false;
-      } else {
-        // Mute all non-soloed tracks
-        muteStates[id] = true;
-      }
+      muteStates[id] = id !== trackId && !track.controls.solo;
     });
   } else {
     // When un-soloing a track
@@ -46,18 +37,12 @@ export const calculateSoloState = (
     if (otherSoloedTracks) {
       // If other tracks are still soloed
       Object.entries(tracks).forEach(([id, track]) => {
-        if (id === trackId) {
-          // Mute this track as it's no longer soloed
-          muteStates[id] = true;
-        } else {
-          // Keep other tracks' states based on their solo status
-          muteStates[id] = !track.controls.solo;
-        }
+        muteStates[id] = !track.controls.solo;
       });
     } else {
-      // If no tracks are soloed anymore, restore original mute states
-      Object.entries(tracks).forEach(([id, track]) => {
-        muteStates[id] = track.controls.mute;
+      // If no tracks are soloed anymore, unmute all tracks
+      Object.entries(tracks).forEach(([id, _]) => {
+        muteStates[id] = false; // Unmute all tracks
       });
     }
   }
