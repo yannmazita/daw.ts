@@ -1,6 +1,11 @@
-# daw.ts - A TypeScript DAW
+# daw.ts
 
-`daw.ts` is a Digital Audio Workstation (DAW) application built with TypeScript, [React](https://react.dev/), [Zustand](https://github.com/pmndrs/zustand), and [Tone.js](https://tonejs.github.io/). Work in progress! Very early stage.
+Work in progress! Very early stage.
+
+`daw.ts` is a Digital Audio Workstation (DAW) application built with TypeScript, [React](https://react.dev/), [Zustand](https://github.com/pmndrs/zustand), and [Tone.js](https://tonejs.github.io/). 
+
+![capture](https://github.com/user-attachments/assets/33bc290b-5492-4704-993b-ba4edaf85193)
+
 
 ## Features
 
