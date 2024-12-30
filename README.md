@@ -74,101 +74,111 @@ The audio signal flow within the application can be described as follows:
     <summary>
     Transport Control Interaction
     </summary>
-    ```mermaid
-    sequenceDiagram
-        participant UI
-        participant TransportEngine
-        
-        UI->>TransportEngine: play()
-        TransportEngine->>Tone.js: start()
-        TransportEngine-->>UI: isPlaying = true
-        
-        UI->>TransportEngine: pause()
-        TransportEngine->>Tone.js: pause()
-        TransportEngine-->>UI: isPlaying = false
-        
-        UI->>TransportEngine: stop()
-        TransportEngine->>Tone.js: stop()
-        TransportEngine-->>UI: isPlaying = false, isRecording = false
-        
-        UI->>TransportEngine: setTempo(tempo)
-        TransportEngine->>Tone.js: setBpm(tempo)
-        TransportEngine-->>UI: tempo
-    ```
+
+```mermaid
+sequenceDiagram
+    participant UI
+    participant TransportEngine
+
+    UI->>TransportEngine: play()
+    TransportEngine->>Tone.js: start()
+    TransportEngine-->>UI: isPlaying = true
+
+    UI->>TransportEngine: pause()
+    TransportEngine->>Tone.js: pause()
+    TransportEngine-->>UI: isPlaying = false
+
+    UI->>TransportEngine: stop()
+    TransportEngine->>Tone.js: stop()
+    TransportEngine-->>UI: isPlaying = false, isRecording = false
+
+    UI->>TransportEngine: setTempo(tempo)
+    TransportEngine->>Tone.js: setBpm(tempo)
+    TransportEngine-->>UI: tempo
+```
+
 </details>
 
 <details>
     <summary>
     Mixer Device Interaction
     </summary>
-    ```mermaid
-    sequenceDiagram
-        participant UI
-        participant MixEngine
-        
-        UI->>MixEngine: addDevice(trackId, deviceType)
-        MixEngine->>Tone.js: createEffectNode(deviceType)
-        MixEngine-->>UI: deviceId
-        
-        UI->>MixEngine: updateDevice(trackId, deviceId, updates)
-        MixEngine->>Tone.js: updateNode(updates)
-        MixEngine-->>UI: updated device
-    ```
+
+```mermaid
+sequenceDiagram
+    participant UI
+    participant MixEngine
+
+    UI->>MixEngine: addDevice(trackId, deviceType)
+    MixEngine->>Tone.js: createEffectNode(deviceType)
+    MixEngine-->>UI: deviceId
+
+    UI->>MixEngine: updateDevice(trackId, deviceId, updates)
+    MixEngine->>Tone.js: updateNode(updates)
+    MixEngine-->>UI: updated device
+```
+
 </details>
 
 <details>
     <summary>
     Clip Scheduling Interaction
     </summary>
-    ```mermaid
-    sequenceDiagram
-        participant UI
-        participant ArrangementEngine
-        participant ClipEngine
-        
-        UI->>ArrangementEngine: addClip(contentId, startTime)
-        ArrangementEngine->>ClipEngine: scheduleClip(clip)
-        ClipEngine->>Tone.js: start(time)
-        ClipEngine-->>ArrangementEngine: clipId
-        ArrangementEngine-->>UI: clipId
-    ```
+
+```mermaid
+sequenceDiagram
+    participant UI
+    participant ArrangementEngine
+    participant ClipEngine
+
+    UI->>ArrangementEngine: addClip(contentId, startTime)
+    ArrangementEngine->>ClipEngine: scheduleClip(clip)
+    ClipEngine->>Tone.js: start(time)
+    ClipEngine-->>ArrangementEngine: clipId
+    ArrangementEngine-->>UI: clipId
+```
+
 </details>
 
 <details>
     <summary>
     Automation Scheduling Interaction
     </summary>
-    ```mermaid
-    sequenceDiagram
-        participant UI
-        participant ArrangementEngine
-        participant AutomationEngine
-    
-        UI->>AutomationEngine: createLane(targetType, targetId, parameterId)
-        UI->>AutomationEngine: addPoint(laneId, time, value)
-        UI->>ArrangementEngine: scheduleLane(laneId)
-        ArrangementEngine->>AutomationEngine: scheduleLane(laneId)
-        AutomationEngine->>Tone.js: schedule(time, value)
-        AutomationEngine-->>ArrangementEngine: laneId
-        ArrangementEngine-->>UI: laneId
-    ```
+
+```mermaid
+sequenceDiagram
+    participant UI
+    participant ArrangementEngine
+    participant AutomationEngine
+
+    UI->>AutomationEngine: createLane(targetType, targetId, parameterId)
+    UI->>AutomationEngine: addPoint(laneId, time, value)
+    UI->>ArrangementEngine: scheduleLane(laneId)
+    ArrangementEngine->>AutomationEngine: scheduleLane(laneId)
+    AutomationEngine->>Tone.js: schedule(time, value)
+    AutomationEngine-->>ArrangementEngine: laneId
+    ArrangementEngine-->>UI: laneId
+```
+
 </details>
 
 <details>
     <summary>
     Track Creation Interaction
     </summary>
-    ```mermaid
-    sequenceDiagram
-        participant UI
-        participant ArrangementEngine
-        participant MixEngine
-        
-        UI->>ArrangementEngine: createTrack(type, name)
-        ArrangementEngine->>MixEngine: createSend(trackId, masterId)
-        MixEngine-->>ArrangementEngine: sendId
-        ArrangementEngine-->>UI: trackId
-    ```
+
+```mermaid
+sequenceDiagram
+    participant UI
+    participant ArrangementEngine
+    participant MixEngine
+
+    UI->>ArrangementEngine: createTrack(type, name)
+    ArrangementEngine->>MixEngine: createSend(trackId, masterId)
+    MixEngine-->>ArrangementEngine: sendId
+    ArrangementEngine-->>UI: trackId
+```
+
 </details>
 
 ### Audio Signal Flow
@@ -177,42 +187,52 @@ The audio signal flow within the application can be described as follows:
     <summary>
     Mixer Track Signal Flow
     </summary>
-    graph LR
-        A[Input Gain] --> B(Pre-Fader Devices);
-        B --> C(Channel Strip);
-        C --> D(Post-Fader Devices);
-        D --> E[Meter];
-        E --> F[Output];
-        style A fill:#ccf,stroke:#333,stroke-width:2px
-        style B fill:#eee,stroke:#333,stroke-width:1px
-        style C fill:#eee,stroke:#333,stroke-width:1px
-        style D fill:#eee,stroke:#333,stroke-width:1px
-        style E fill:#eee,stroke:#333,stroke-width:1px
+
+```mermaid
+graph LR
+    A[Input Gain] --> B(Pre-Fader Devices);
+    B --> C(Channel Strip);
+    C --> D(Post-Fader Devices);
+    D --> E[Meter];
+    E --> F[Output];
+    style A fill:#ccf,stroke:#333,stroke-width:2px
+    style B fill:#eee,stroke:#333,stroke-width:1px
+    style C fill:#eee,stroke:#333,stroke-width:1px
+    style D fill:#eee,stroke:#333,stroke-width:1px
+    style E fill:#eee,stroke:#333,stroke-width:1px
+```
+
 </details>
 
 <details>
     <summary>
     Send Routing Signal Flow
     </summary>
-    graph LR
-        A[Source Track Input] --> B{Pre-Fader Send};
-        A --> C[Source Track Channel];
-        C --> D{Post-Fader Send};
-        B --> E[Send Gain];
-        D --> E;
-        E --> F[Return Track Input];
-        style A fill:#ccf,stroke:#333,stroke-width:2px
-        style C fill:#ccf,stroke:#333,stroke-width:2px
-        style B fill:#eee,stroke:#333,stroke-width:1px
-        style D fill:#eee,stroke:#333,stroke-width:1px
-        style E fill:#eee,stroke:#333,stroke-width:1px
-        style F fill:#eee,stroke:#333,stroke-width:1px
+
+```mermaid
+graph LR
+    A[Source Track Input] --> B{Pre-Fader Send};
+    A --> C[Source Track Channel];
+    C --> D{Post-Fader Send};
+    B --> E[Send Gain];
+    D --> E;
+    E --> F[Return Track Input];
+    style A fill:#ccf,stroke:#333,stroke-width:2px
+    style C fill:#ccf,stroke:#333,stroke-width:2px
+    style B fill:#eee,stroke:#333,stroke-width:1px
+    style D fill:#eee,stroke:#333,stroke-width:1px
+    style E fill:#eee,stroke:#333,stroke-width:1px
+    style F fill:#eee,stroke:#333,stroke-width:1px
+```
+
 </details>
 
 <details>
     <summary>
     Track Signal Flow
     </summary>
+
+```mermaid
     graph LR
         A[Track Input] --> B(Panner);
         B --> C(Channel Strip);
@@ -221,12 +241,16 @@ The audio signal flow within the application can be described as follows:
         style B fill:#eee,stroke:#333,stroke-width:1px
         style C fill:#eee,stroke:#333,stroke-width:1px
         style D fill:#eee,stroke:#333,stroke-width:1px
+```
+
 </details>
 
 <details>
     <summary>
     Master Track Signal Flow
     </summary>
+
+```mermaid
     graph LR
         A[Master Track Input] --> B(Pre-Fader Devices);
         B --> C(Channel Strip);
@@ -239,6 +263,8 @@ The audio signal flow within the application can be described as follows:
         style D fill:#eee,stroke:#333,stroke-width:1px
         style E fill:#eee,stroke:#333,stroke-width:1px
         style F fill:#eee,stroke:#333,stroke-width:1px
+```
+
 </details>
 
 ## Contributing
