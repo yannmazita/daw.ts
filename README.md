@@ -53,19 +53,6 @@ The application follows a unidirectional data flow:
 4.  **State Update:** Engine services update the application state using Zustand stores.
 5.  **UI Update:** UI components re-render based on the updated state.
 
-## Audio Signal Flow
-
-The audio signal flow within the application can be described as follows:
-
-- **Mixer Track:**
-  - `Input Gain` -> `Pre-Fader Devices` -> `Channel Strip` -> `Post-Fader Devices` -> `Meter` -> `Output`
-- **Send Routing:**
-  - `Source Track Input` -> `Pre/Post-Fader Send` -> `Send Gain` -> `Return Track Input`
-- **Track:**
-  - `Track Input` -> `Panner` -> `Channel Strip` -> `Meter`
-- **Master Track:**
-  - `Master Track Input` -> `Pre-Fader Devices` -> `Channel Strip` -> `Post-Fader Devices` -> `Meter` -> `Destination`
-
 ## Diagrams (A Thousand Words)
 
 ### Engine Interaction
