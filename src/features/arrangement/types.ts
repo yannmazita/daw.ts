@@ -5,21 +5,6 @@ import { MixEngine } from "../mix/types";
 import { AutomationEngine } from "../automation/types";
 import { Channel, Gain, Meter, Panner } from "tone";
 
-export const DragTypes = {
-  TRACK: "track",
-  CLIP: "clip",
-  AUTOMATION_POINT: "automation-point",
-} as const;
-
-export interface ClipDragItem {
-  type: typeof DragTypes.CLIP;
-  id: string;
-  trackId: string;
-  contentId: string;
-  startTime: number;
-  duration: number;
-}
-
 export interface TrackControlState {
   solo: boolean;
   mute: boolean;
@@ -40,7 +25,6 @@ export interface PersistableTrackControlState {
 export interface BaseTrack {
   id: string;
   name: string;
-  index: number;
   controls: TrackControlState;
 
   // Content
@@ -57,7 +41,6 @@ export interface BaseTrack {
 export interface PersistableBaseTrack {
   id: string;
   name: string;
-  index: number;
   controls: PersistableTrackControlState;
   clipIds: string[];
   automationIds: string[];

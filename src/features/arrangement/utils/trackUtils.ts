@@ -8,7 +8,6 @@ export const createTrackData = (
   id: string,
   type: Track["type"],
   name: string,
-  index: number,
 ): Track => {
   // Create track processing nodes
   const input = new Tone.Gain();
@@ -25,7 +24,6 @@ export const createTrackData = (
     id,
     type,
     name,
-    index,
     controls: { ...initialTrackControlState },
     clipIds: [],
     automationIds: [],

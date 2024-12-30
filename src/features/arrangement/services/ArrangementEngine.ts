@@ -7,7 +7,7 @@ import { AutomationEngine } from "../../automation/types";
 import { useEngineStore } from "@/core/stores/useEngineStore";
 import { initialArrangementState } from "../utils/initialState";
 import { createTrackData } from "../utils/trackUtils";
-import { moveTrackInOrder, reorderTracks } from "../utils/orderUtils";
+import { moveTrackInOrder } from "../utils/orderUtils";
 import { validateArrangementState } from "../utils/validation";
 import { calculateSoloState, updateTrackSoloStates } from "../utils/stateUtils";
 
@@ -57,9 +57,7 @@ export class ArrangementEngineImpl implements ArrangementEngine {
     const id = crypto.randomUUID();
 
     try {
-      const stateSnapshot = useEngineStore.getState().arrangement;
-      const index = stateSnapshot.trackOrder.length;
-      const track = createTrackData(id, type, name, index);
+      const track = createTrackData(id, type, name);
 
       useEngineStore.setState((state) => {
         const newState = {
@@ -212,19 +210,12 @@ export class ArrangementEngineImpl implements ArrangementEngine {
 
     try {
       const newOrder = moveTrackInOrder(trackId, newIndex, state);
-      const newIndices = reorderTracks(newOrder, state);
 
       useEngineStore.setState((state) => {
         const newState = {
           arrangement: {
             ...state.arrangement,
             trackOrder: newOrder,
-            tracks: Object.fromEntries(
-              Object.entries(state.arrangement.tracks).map(([id, track]) => [
-                id,
-                { ...track, index: newIndices[id] || track.index },
-              ]),
-            ),
           },
         };
 
