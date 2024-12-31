@@ -11,7 +11,6 @@ export interface TrackState {
   type: TrackType;
   id: string;
   name: string;
-  index: number;
   track: Track | MixerTrack;
   isMaster: boolean;
   isReturn: boolean;
@@ -28,19 +27,18 @@ export const useTrackState = (trackId: string): TrackState | null => {
   );
 
   if (arrangementTrack) {
-    const { name, index, ...track } = arrangementTrack;
+    const { name, ...track } = arrangementTrack;
     return useMemo(
       () => ({
         type: "arrangement",
         id: trackId,
         name,
-        index,
         track,
         isMaster: false,
         isReturn: false,
         isMixer: false,
       }),
-      [trackId, name, index, track],
+      [trackId, name, track],
     );
   }
 
@@ -51,7 +49,6 @@ export const useTrackState = (trackId: string): TrackState | null => {
         type: "mixer",
         id: trackId,
         name,
-        index: -1,
         track,
         isMaster: type === "master",
         isReturn: type === "return",

@@ -6,7 +6,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/common/shadcn/ui/select";
-import { Label } from "@/common/shadcn/ui/label";
 import { useTransportEngine } from "@/core/engines/EngineManager";
 import { useEngineStore } from "@/core/stores/useEngineStore";
 import { useState } from "react";
@@ -15,8 +14,12 @@ export const TimeSignatureControl: React.FC = () => {
   const transportEngine = useTransportEngine();
   const { timeSignature } = useEngineStore((state) => state.transport);
 
-  const [localNumerator, setLocalNumerator] = useState<number>(timeSignature[0]);
-  const [localDenominator, setLocalDenominator] = useState<number>(timeSignature[1]);
+  const [localNumerator, setLocalNumerator] = useState<number>(
+    timeSignature[0],
+  );
+  const [localDenominator, setLocalDenominator] = useState<number>(
+    timeSignature[1],
+  );
 
   const numerators = [2, 3, 4, 5, 6, 7, 8, 9, 12];
   const denominators = [2, 4, 8, 16];
@@ -35,18 +38,18 @@ export const TimeSignatureControl: React.FC = () => {
 
   return (
     <div className="flex items-center space-x-2">
-      <Label htmlFor="time-signature" className="text-sm text-muted-foreground">
-        Time Signature
-      </Label>
       <div className="flex items-center space-x-1">
         <Select
           value={localNumerator.toString()}
           onValueChange={handleNumeratorChange}
         >
-          <SelectTrigger className="w-[60px]" aria-label="Numerator">
+          <SelectTrigger
+            className="h-5 w-14 rounded-none py-1 text-center"
+            aria-label="Numerator"
+          >
             <SelectValue placeholder={localNumerator.toString()} />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="rounded-none">
             {numerators.map((n) => (
               <SelectItem key={n} value={n.toString()}>
                 {n}
@@ -59,10 +62,13 @@ export const TimeSignatureControl: React.FC = () => {
           value={localDenominator.toString()}
           onValueChange={handleDenominatorChange}
         >
-          <SelectTrigger className="w-[60px]" aria-label="Denominator">
+          <SelectTrigger
+            className="h-5 w-14 rounded-none py-1 text-center"
+            aria-label="Denominator"
+          >
             <SelectValue placeholder={localDenominator.toString()} />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="rounded-none">
             {denominators.map((d) => (
               <SelectItem key={d} value={d.toString()}>
                 {d}

@@ -102,7 +102,6 @@ export class MixEngineImpl implements MixEngine {
       useEngineStore.setState((state) => ({
         mix: updateMixerTrack(state.mix, id, newMixerTrack),
       }));
-
       return id;
     } catch (error) {
       console.error("Failed to create mixer track:", error);

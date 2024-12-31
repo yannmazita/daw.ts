@@ -1,8 +1,7 @@
 // src/App.tsx
 import { Layout } from "@/common/components/Layout";
-import { Toolbar } from "@/common/components/Toolbar/Toolbar";
-import { Workspace } from "@/common/components/Workspace/Workspace";
 import { EngineManager } from "./core/engines/EngineManager";
+import { TimelineGrid } from "./features/arrangement/components/TimelineGrid";
 import { useEffect } from "react";
 
 export const App: React.FC = () => {
@@ -16,8 +15,7 @@ export const App: React.FC = () => {
   return (
     <Layout>
       <div className="flex h-full flex-col">
-        <Toolbar />
-        <Workspace />
+        <TimelineGrid />
       </div>
     </Layout>
   );

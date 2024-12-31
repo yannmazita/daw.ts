@@ -36,7 +36,7 @@ const TimeInput: React.FC<TimeInputProps> = ({
     value={value}
     onChange={(e) => onChange(e.target.value)}
     onBlur={onBlur}
-    className={`w-24 ${error ? "border-red-500" : ""}`}
+    className={`input-no-wheel h-5 w-16 rounded-none py-1 text-center ${error ? "border-red-500" : ""}`}
     placeholder={placeholder}
     aria-label={label}
     title={label}

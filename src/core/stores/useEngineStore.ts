@@ -121,7 +121,6 @@ export const useEngineStore = create<EngineState>()(
                 {
                   id: track.id,
                   name: track.name,
-                  index: track.index,
                   controls: track.controls,
                   clipIds: track.clipIds,
                   automationIds: track.automationIds,

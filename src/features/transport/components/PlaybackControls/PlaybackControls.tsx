@@ -7,9 +7,7 @@ import { useState, useEffect, useCallback } from "react";
 import { TimeSignatureControl } from "./TimeSignatureControl";
 import { LoopControls } from "./LoopControls";
 import { TempoTap } from "./TempoTap";
-import { PositionDisplay } from "./PositionDisplay";
 import { TransportBar } from "./TransportBar";
-import { Label } from "@/common/shadcn/ui/label";
 import { Button } from "@/common/shadcn/ui/button";
 
 export const PlaybackControls: React.FC = () => {
@@ -47,60 +45,60 @@ export const PlaybackControls: React.FC = () => {
   }, [tempo]);
 
   return (
-    <div className="flex flex-col space-y-2 rounded-lg bg-card p-4 text-card-foreground dark:bg-card dark:text-card-foreground">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          {/* Transport Controls */}
-          <div className="flex items-center space-x-2">
-            <Button variant="ghost" size="icon">
-              <SkipBack className="h-5 w-5" />
-            </Button>
-            {isPlaying ? (
-              <Button variant="ghost" size="icon" onClick={() => pause()}>
-                <Pause className="h-5 w-5" />
-              </Button>
-            ) : (
-              <Button variant="ghost" size="icon" onClick={() => play()}>
-                <Play className="h-5 w-5" />
-              </Button>
-            )}
-            <Button variant="ghost" size="icon" onClick={() => stop()}>
-              <Square className="h-5 w-5" />
-            </Button>
-            <Button variant="ghost" size="icon">
-              <SkipForward className="h-5 w-5" />
-            </Button>
-          </div>
-        </div>
-
-        {/* Loop Controls */}
-        <LoopControls />
-      </div>
-      <TransportBar />
-
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-6">
+    <div className="flexjflex-col">
+      <div className="flex space-x-4">
+        <div className="flex items-center space-x-2">
           {/* Tempo Controls */}
           <div className="flex items-center space-x-2">
-            <Label className="text-sm text-muted-foreground dark:text-muted-foreground">
-              BPM
-            </Label>
             <Input
               type="number"
               value={localBpm}
               onChange={handleBpmChange}
-              className="w-20"
+              className="input-no-wheel h-5 w-14 rounded-none py-1 text-center"
               min={20}
               max={300}
             />
             <TempoTap />
           </div>
 
-          {/* Time Signature */}
           <TimeSignatureControl />
+        </div>
 
-          {/* Position Display */}
-          <PositionDisplay />
+        {/* Transport Controls */}
+        <div className="flex items-center space-x-1">
+          <Button className="size-5 py-1" variant="ghost" size="icon">
+            <SkipBack />
+          </Button>
+          {isPlaying ? (
+            <Button
+              className="size-5 py-1"
+              variant="ghost"
+              size="icon"
+              onClick={() => pause()}
+            >
+              <Pause />
+            </Button>
+          ) : (
+            <Button
+              className="size-5 py-1"
+              variant="ghost"
+              size="icon"
+              onClick={() => play()}
+            >
+              <Play />
+            </Button>
+          )}
+          <Button
+            className="size-5 py-1"
+            variant="ghost"
+            size="icon"
+            onClick={() => stop()}
+          >
+            <Square />
+          </Button>
+          <Button className="size-5 py-1" variant="ghost" size="icon">
+            <SkipForward />
+          </Button>
         </div>
       </div>
     </div>

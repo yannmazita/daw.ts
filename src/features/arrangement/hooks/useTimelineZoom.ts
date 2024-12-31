@@ -12,7 +12,7 @@ export const useTimelineZoom = (
   containerRef: React.RefObject<HTMLDivElement>,
   onScroll?: (scrollLeft: number) => void,
 ): ZoomState => {
-  const [zoom, setZoomInternal] = useState(GRID_CONSTANTS.DEFAULT_ZOOM);
+  const [zoom, setZoomInternal] = useState<number>(GRID_CONSTANTS.DEFAULT_ZOOM);
 
   const zoomToPoint = useCallback(
     (delta: number, point: { x: number; scrollX: number }) => {
