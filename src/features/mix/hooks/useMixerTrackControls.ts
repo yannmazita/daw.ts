@@ -13,11 +13,11 @@ export const useMixerTrackControls = (trackId: string) => {
   );
 
   const pan = useEngineStore(
-    (state) => state.mix.mixerTracks[trackId]?.channel.pan.value ?? 0,
+    (state) => state.mix.mixerTracks[trackId]?.controls.pan ?? 0,
   );
 
   const muted = useEngineStore(
-    (state) => state.mix.mixerTracks[trackId]?.channel.muted ?? false,
+    (state) => state.mix.mixerTracks[trackId]?.controls.mute ?? false,
   );
 
   const soloed = useEngineStore(

@@ -16,7 +16,7 @@ export const useTrackControls = (trackId: string) => {
   );
 
   const volume = useEngineStore(
-    (state) => state.arrangement.tracks[trackId]?.channel.volume.value ?? 0,
+    (state) => state.arrangement.tracks[trackId]?.controls.volume ?? 0,
   );
 
   const muted = useEngineStore(
