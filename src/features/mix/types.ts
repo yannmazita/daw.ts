@@ -6,6 +6,20 @@ import {
 } from "../../core/types/audio";
 import { Channel, Gain, Meter } from "tone";
 
+export interface MixerTrackControlState {
+  solo: boolean;
+  mute: boolean;
+  pan: number;
+  volume: number;
+}
+
+export interface PersistableMixerTrackControlState {
+  solo: boolean;
+  mute: boolean;
+  pan: number;
+  volume: number;
+}
+
 export interface Device<T extends EffectOptions = EffectOptions> {
   id: string;
   type: EffectName;
@@ -49,6 +63,7 @@ export interface MixerTrack {
     pre: string[];
     post: string[];
   };
+  controls: MixerTrackControlState;
 
   // Tone.js nodes
   input: Gain;
@@ -60,10 +75,12 @@ export interface PersistableMixerTrack {
   id: string;
   name: string;
   type: "return" | "master";
+  controls: PersistableMixerTrackControlState;
 }
 
 export interface MixState {
   mixerTracks: Record<string, MixerTrack>;
+  mixerTrackOrder: string[];
   devices: Record<string, Device>;
   sends: Record<string, Send>;
   trackSends: Record<string, string[]>; // track id -> send IDs mapping
@@ -71,14 +88,23 @@ export interface MixState {
 
 export interface PersistableMixState {
   mixerTracks: Record<string, PersistableMixerTrack>;
+  mixerTrackOrder: string[];
   devices: Record<string, PersistableDevice>;
   sends: Record<string, PersistableSend>;
   trackSends: Record<string, string[]>;
 }
 
 export interface MixEngine {
-  createMixerTrack(type: MixerTrack["type"]): string;
+  // Mixer track operations
+  createMixerTrack(type: MixerTrack["type"], name?: string): string;
   deleteMixerTrack(id: string): void;
+  moveMixerTrack(id: string, newIndex: number): void;
+
+  // Mixer track controls
+  setSolo(mixerTrackId: string, solo: boolean): void;
+  setMute(mixerTrackId: string, mute: boolean): void;
+  setVolume(mixerTrackId: string, volume: number): void;
+  setPan(mixerTrackId: string, pan: number): void;
 
   // Device management
   addDevice(mixerTrackId: string, deviceType: EffectName): string;

@@ -37,8 +37,8 @@ export const TimeSignatureControl: React.FC = () => {
   };
 
   return (
-    <div className="flex items-center space-x-2">
-      <div className="flex items-center space-x-1">
+    <div className="flex items-center gap-x-2">
+      <div className="flex items-center gap-x-1">
         <Select
           value={localNumerator.toString()}
           onValueChange={handleNumeratorChange}

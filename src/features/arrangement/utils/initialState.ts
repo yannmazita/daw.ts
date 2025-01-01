@@ -6,6 +6,7 @@ export const initialTrackControlState: TrackControlState = {
   mute: false,
   armed: false,
   pan: 0,
+  volume: 0,
   peakLevel: [-Infinity, -Infinity],
   clipWarning: false,
   lastClipTime: null,

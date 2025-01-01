@@ -10,6 +10,8 @@ export interface TrackControlState {
   mute: boolean;
   armed: boolean;
   pan: number;
+  volume: number;
+
   peakLevel: [number, number];
   clipWarning: boolean;
   lastClipTime: number | null;
@@ -20,6 +22,7 @@ export interface PersistableTrackControlState {
   mute: boolean;
   armed: boolean;
   pan: number;
+  volume: number;
 }
 
 export interface BaseTrack {
@@ -83,7 +86,7 @@ export interface ArrangementEngine {
   automationEngine: AutomationEngine;
 
   // Track operations
-  createTrack(type: Track["type"], name: string): string;
+  createTrack(type: Track["type"], name?: string): string;
   updateTrack(trackId: string, updates: Partial<Track>): void;
   deleteTrack(trackId: string): void;
   moveTrack(trackId: string, newIndex: number): void;
@@ -93,7 +96,7 @@ export interface ArrangementEngine {
   setMute(trackId: string, mute: boolean): void;
   setArmed(trackId: string, armed: boolean): void;
   setPan(trackId: string, pan: number): void;
-  getTrackControls(trackId: string): TrackControlState;
+  setVolume(trackId: string, volume: number): void;
 
   // State
   getState(): ArrangementState;

@@ -7,7 +7,7 @@ import { initialTrackControlState } from "./initialState";
 export const createTrackData = (
   id: string,
   type: Track["type"],
-  name: string,
+  name?: string,
 ): Track => {
   // Create track processing nodes
   const input = new Tone.Gain();
@@ -23,7 +23,7 @@ export const createTrackData = (
   return {
     id,
     type,
-    name,
+    name: name ?? `${type} ${id.slice(0, 6)}`,
     controls: { ...initialTrackControlState },
     clipIds: [],
     automationIds: [],

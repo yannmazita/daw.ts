@@ -5,9 +5,7 @@ import { Input } from "@/common/shadcn/ui/input";
 import { Pause, Play, SkipBack, SkipForward, Square } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
 import { TimeSignatureControl } from "./TimeSignatureControl";
-import { LoopControls } from "./LoopControls";
 import { TempoTap } from "./TempoTap";
-import { TransportBar } from "./TransportBar";
 import { Button } from "@/common/shadcn/ui/button";
 
 export const PlaybackControls: React.FC = () => {
@@ -46,10 +44,10 @@ export const PlaybackControls: React.FC = () => {
 
   return (
     <div className="flexjflex-col">
-      <div className="flex space-x-4">
-        <div className="flex items-center space-x-2">
+      <div className="flex gap-x-4">
+        <div className="flex items-center gap-x-2">
           {/* Tempo Controls */}
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center gap-x-2">
             <Input
               type="number"
               value={localBpm}
@@ -65,7 +63,7 @@ export const PlaybackControls: React.FC = () => {
         </div>
 
         {/* Transport Controls */}
-        <div className="flex items-center space-x-1">
+        <div className="flex items-center gap-x-1">
           <Button className="size-5 py-1" variant="ghost" size="icon">
             <SkipBack />
           </Button>

@@ -23,6 +23,8 @@ import {
   restoreSendRouting,
 } from "../utils/routingUtils";
 import { validateSendRouting, validateSendUpdate } from "../utils/validation";
+import { moveMixerTrackInOrder } from "../utils/orderUtils";
+import { initialMixerTrackControlState } from "../utils/initialState";
 
 export class MixEngineImpl implements MixEngine {
   private disposed = false;
@@ -55,6 +57,7 @@ export class MixEngineImpl implements MixEngine {
                 ...state.mix.mixerTracks.master,
                 ...nodes,
                 deviceIds: state.mix.mixerTracks.master.deviceIds,
+                controls: state.mix.mixerTracks.master.controls,
               },
             },
           },
@@ -62,7 +65,7 @@ export class MixEngineImpl implements MixEngine {
       } else {
         // No persisted master track, create new one
         console.log("Creating new master track");
-        this.createMixerTrack("master");
+        this.createMixerTrack("master", "Master Track");
       }
 
       // Verify master track is now properly initialized
@@ -76,7 +79,7 @@ export class MixEngineImpl implements MixEngine {
     }
   }
 
-  createMixerTrack(type: MixerTrack["type"]): string {
+  createMixerTrack(type: MixerTrack["type"] = "return", name?: string): string {
     console.log("Creating mixer track:", type);
     let id = null;
     if (type === "master") {
@@ -93,14 +96,19 @@ export class MixEngineImpl implements MixEngine {
 
       const newMixerTrack: MixerTrack = {
         id,
-        name: `${type} ${id.slice(0, 6)}`,
+        name: name ?? `${type} ${id.slice(0, 6)}`,
         type,
         ...nodes,
         deviceIds: { pre: [], post: [] },
+        controls: { ...initialMixerTrackControlState },
       };
 
       useEngineStore.setState((state) => ({
         mix: updateMixerTrack(state.mix, id, newMixerTrack),
+        mixerTrackOrder:
+          type === "master"
+            ? state.mix.mixerTrackOrder
+            : [...state.mix.mixerTrackOrder, id],
       }));
       return id;
     } catch (error) {
@@ -129,11 +137,143 @@ export class MixEngineImpl implements MixEngine {
           mix: {
             ...state.mix,
             mixerTracks: remainingMixerTracks,
+            mixerTrackOrder: state.mix.mixerTrackOrder.filter(
+              (trackId) => trackId !== id,
+            ),
           },
         };
       });
     } catch (error) {
       console.error("Failed to delete mixer track:", error);
+      throw error;
+    }
+  }
+
+  moveMixerTrack(trackId: string, newIndex: number): void {
+    const stateSnapshot = useEngineStore.getState().mix;
+    const mixerTrack = stateSnapshot.mixerTracks[trackId];
+
+    if (!mixerTrack) {
+      throw new Error("Mixer track not found");
+    }
+
+    try {
+      const newOrder = moveMixerTrackInOrder(trackId, newIndex, stateSnapshot);
+      useEngineStore.setState((state) => ({
+        mix: {
+          ...state.mix,
+          mixerTrackOrder: newOrder,
+        },
+      }));
+    } catch (error) {
+      console.error(`Failed to move mixer track ${trackId}:`, error);
+      throw error;
+    }
+  }
+
+  setSolo(mixerTrackId: string, solo: boolean): void {}
+
+  setMute(mixerTrackId: string, mute: boolean): void {
+    const stateSnapshot = useEngineStore.getState().mix;
+    const mixerTrack = stateSnapshot.mixerTracks[mixerTrackId];
+
+    if (!mixerTrack) {
+      throw new Error(`Mixer track ${mixerTrackId} not found`);
+    }
+
+    try {
+      mixerTrack.channel.mute = mute;
+
+      useEngineStore.setState((state) => ({
+        mix: {
+          ...state.mix,
+          mixerTracks: {
+            ...state.mix.mixerTracks,
+            [mixerTrackId]: {
+              ...mixerTrack,
+              controls: {
+                ...mixerTrack.controls,
+                mute,
+              },
+            },
+          },
+        },
+      }));
+    } catch (error) {
+      console.error(
+        `Failed to set mute state for mixer track ${mixerTrackId}:`,
+        error,
+      );
+      throw error;
+    }
+  }
+
+  setPan(mixerTrackId: string, pan: number): void {
+    const stateSnapshot = useEngineStore.getState().mix;
+    const mixerTrack = stateSnapshot.mixerTracks[mixerTrackId];
+
+    if (!mixerTrack) {
+      throw new Error(`Mixer track ${mixerTrackId} not found`);
+    }
+
+    const clampedPan = Math.max(-1, Math.min(1, pan));
+
+    try {
+      mixerTrack.channel.pan.value = clampedPan;
+
+      useEngineStore.setState((state) => ({
+        mix: {
+          ...state.mix,
+          mixerTracks: {
+            ...state.mix.mixerTracks,
+            [mixerTrackId]: {
+              ...mixerTrack,
+              controls: {
+                ...mixerTrack.controls,
+                pan: clampedPan,
+              },
+            },
+          },
+        },
+      }));
+    } catch (error) {
+      console.error(
+        `Failed to set pan for mixer track ${mixerTrackId}:`,
+        error,
+      );
+      throw error;
+    }
+  }
+
+  setVolume(mixerTrackId: string, volume: number): void {
+    const stateSnapshot = useEngineStore.getState().mix;
+    const mixerTrack = stateSnapshot.mixerTracks[mixerTrackId];
+    if (!mixerTrack) {
+      throw new Error(`Mixer track ${mixerTrackId} not found`);
+    }
+    const clampedVolume = Math.max(-100, Math.min(6, volume));
+    try {
+      mixerTrack.channel.volume.value = clampedVolume;
+      useEngineStore.setState((state) => ({
+        mix: {
+          ...state.mix,
+          mixerTracks: {
+            ...state.mix.mixerTracks,
+            [mixerTrackId]: {
+              ...mixerTrack,
+              controls: {
+                ...mixerTrack.controls,
+                volume: clampedVolume,
+              },
+            },
+          },
+        },
+      }));
+    } catch (error) {
+      console.error(
+        `Failed to set volume for mixer track ${mixerTrackId}:`,
+        error,
+      );
       throw error;
     }
   }
@@ -543,6 +683,7 @@ export class MixEngineImpl implements MixEngine {
       useEngineStore.setState({
         mix: {
           mixerTracks: {},
+          mixerTrackOrder: ["master"],
           devices: {},
           sends: {},
           trackSends: {},

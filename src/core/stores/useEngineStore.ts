@@ -74,6 +74,12 @@ export const useEngineStore = create<EngineState>()(
                   id: mixerTrack.id,
                   name: mixerTrack.name,
                   type: mixerTrack.type,
+                  controls: {
+                    solo: mixerTrack.controls.solo,
+                    mute: mixerTrack.controls.mute,
+                    pan: mixerTrack.controls.pan,
+                    volume: mixerTrack.controls.volume,
+                  },
                 },
               ]),
             ),
@@ -103,6 +109,7 @@ export const useEngineStore = create<EngineState>()(
               ]),
             ),
             trackSends: state.mix.trackSends,
+            mixerTrackOrder: state.mix.mixerTrackOrder,
           },
           automation: {
             ...state.automation,

@@ -24,7 +24,7 @@ export const TempoTap: React.FC = () => {
   }, [handleTap]);
 
   return (
-    <div className="flex items-center space-x-2">
+    <div className="flex items-center gap-x-2">
       <Button
         variant="outline"
         size="sm"

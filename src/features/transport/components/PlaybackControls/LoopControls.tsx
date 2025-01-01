@@ -121,12 +121,12 @@ export const LoopControls: React.FC = () => {
 
   return (
     <div
-      className="flex items-center space-x-4"
+      className="flex items-center gap-x-4"
       role="group"
       aria-label="Loop controls"
     >
       {transport.loop.enabled && (
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center gap-x-2">
           <TimeInput
             value={localStart}
             onChange={setLocalStart}
@@ -150,7 +150,7 @@ export const LoopControls: React.FC = () => {
           />
         </div>
       )}
-      <div className="flex items-center space-x-2">
+      <div className="flex items-center gap-x-2">
         <Switch
           checked={transport.loop.enabled}
           onCheckedChange={handleLoopToggle}

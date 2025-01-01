@@ -13,7 +13,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   return (
     <div className="flex h-screen w-full flex-col bg-background">
-      <header className="border-b border-border px-4">
+      <header className="border-b border-border px-4 py-3">
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold text-primary">daw.ts</h1>
           <PlaybackControls />
