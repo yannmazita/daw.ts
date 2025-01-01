@@ -58,6 +58,11 @@ export const useTrackControls = (trackId: string) => {
     arrangementEngine.setSolo(trackId, !soloed);
   }, [arrangementEngine, trackId, soloed, track]);
 
+  const getMeterValues = useCallback(() => {
+    if (!track) return;
+    return arrangementEngine.getMeterValues(trackId);
+  }, [arrangementEngine, trackId, track]);
+
   return {
     armed,
     pan,
@@ -69,5 +74,6 @@ export const useTrackControls = (trackId: string) => {
     toggleArmed,
     toggleMute,
     toggleSolo,
+    getMeterValues,
   };
 };

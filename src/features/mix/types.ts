@@ -105,6 +105,7 @@ export interface MixEngine {
   setMute(mixerTrackId: string, mute: boolean): void;
   setVolume(mixerTrackId: string, volume: number): void;
   setPan(mixerTrackId: string, pan: number): void;
+  getMeterValues(mixerTrackId: string): number | number[];
 
   // Device management
   addDevice(mixerTrackId: string, deviceType: EffectName): string;

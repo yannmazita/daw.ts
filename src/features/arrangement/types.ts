@@ -97,6 +97,7 @@ export interface ArrangementEngine {
   setArmed(trackId: string, armed: boolean): void;
   setPan(trackId: string, pan: number): void;
   setVolume(trackId: string, volume: number): void;
+  getMeterValues(trackId: string): number | number[];
 
   // State
   getState(): ArrangementState;

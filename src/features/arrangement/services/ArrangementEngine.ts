@@ -396,6 +396,13 @@ export class ArrangementEngineImpl implements ArrangementEngine {
     }
   }
 
+  getMeterValues(trackId: string): number | number[] {
+    const stateSnapshot = useEngineStore.getState().arrangement;
+    const track = stateSnapshot.tracks[trackId];
+    if (!track) throw new Error("Track not found");
+    return track.meter.getValue();
+  }
+
   getState(): ArrangementState {
     return useEngineStore.getState().arrangement;
   }

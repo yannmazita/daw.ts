@@ -278,6 +278,15 @@ export class MixEngineImpl implements MixEngine {
     }
   }
 
+  getMeterValues(mixerTrackId: string): number | number[] {
+    const stateSnapshot = useEngineStore.getState().mix;
+    const mixerTrack = stateSnapshot.mixerTracks[mixerTrackId];
+    if (!mixerTrack) {
+      throw new Error(`Mixer track ${mixerTrackId} not found`);
+    }
+    return mixerTrack.meter.getValue();
+  }
+
   addDevice(mixerTrackId: string, deviceType: EffectName): string {
     const id = crypto.randomUUID();
     const stateSnapshot = useEngineStore.getState();

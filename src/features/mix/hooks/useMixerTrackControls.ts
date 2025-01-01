@@ -49,6 +49,11 @@ export const useMixerTrackControls = (trackId: string) => {
     mixEngine.setSolo(trackId, !soloed);
   }, [mixEngine, mixerTrack, trackId]);
 
+  const getMeterValues = useCallback(() => {
+    if (!mixerTrack) return;
+    return mixEngine.getMeterValues(trackId);
+  }, [mixEngine, mixerTrack, trackId]);
+
   return {
     pan,
     volume,
@@ -59,5 +64,6 @@ export const useMixerTrackControls = (trackId: string) => {
     setVolume,
     toggleMute,
     toggleSolo,
+    getMeterValues,
   };
 };

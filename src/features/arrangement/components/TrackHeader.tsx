@@ -36,7 +36,7 @@ export const TrackHeader: React.FC<TrackHeaderProps> = ({
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const value = e.target.value;
       setLocalVolume(value);
-      const numValue = parseInt(value);
+      const numValue = parseFloat(value);
       if (!isNaN(numValue)) {
         setVolume(numValue);
       }
@@ -48,7 +48,7 @@ export const TrackHeader: React.FC<TrackHeaderProps> = ({
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const value = e.target.value;
       setLocalPan(value);
-      const numValue = parseInt(value);
+      const numValue = parseFloat(value);
       if (!isNaN(numValue)) {
         setPan(numValue);
       }
@@ -118,18 +118,20 @@ export const TrackHeader: React.FC<TrackHeaderProps> = ({
             type="number"
             value={localVolume}
             onChange={handleVolumeChange}
-            className="input-no-wheel h-5 w-14 rounded-none bg-background py-1 text-center"
-            step={0.1}
+            className="input-no-wheel h-5 w-14 rounded-none bg-background px-0 py-1 text-center"
+            step={0.01}
+            min={0}
           />
         </div>
       </div>
       <Input
-        id="this-input"
         type="number"
         value={localPan}
         onChange={handlePanChange}
-        className="input-no-wheel h-5 w-14 self-center rounded-none bg-background py-1 text-center"
-        step={0.1}
+        className="input-no-wheel h-5 w-14 self-center rounded-none bg-background px-0 py-1 text-center"
+        step={0.01}
+        min={-1}
+        max={1}
       />
     </div>
   );
