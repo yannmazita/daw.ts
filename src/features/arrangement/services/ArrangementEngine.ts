@@ -3,6 +3,7 @@ import { ArrangementEngine, ArrangementState, Track } from "../types";
 import { TransportEngine } from "../../transport/types";
 import { ClipEngine } from "../../clips/types";
 import { MixEngine } from "../../mix/types";
+import { InstrumentEngine } from "@/features/instruments/types";
 import { AutomationEngine } from "../../automation/types";
 import { useEngineStore } from "@/core/stores/useEngineStore";
 import { initialArrangementState } from "../utils/initialState";
@@ -16,8 +17,9 @@ export class ArrangementEngineImpl implements ArrangementEngine {
 
   constructor(
     public readonly transportEngine: TransportEngine,
-    public readonly clipEngine: ClipEngine,
     public readonly mixEngine: MixEngine,
+    public readonly clipEngine: ClipEngine,
+    public readonly instrumentEngine: InstrumentEngine,
     public readonly automationEngine: AutomationEngine,
   ) {
     this.initializeDefaultTracks();
