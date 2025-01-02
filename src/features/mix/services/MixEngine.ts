@@ -466,8 +466,8 @@ export class MixEngineImpl implements MixEngine {
   createSend(fromId: string, toId: string): string {
     const id = crypto.randomUUID();
     const mixStateSnapshot = useEngineStore.getState().mix;
-    const arrangementStateSnapshot = useEngineStore.getState().arrangement;
-    const sourceTrack = arrangementStateSnapshot.tracks[fromId];
+    const compositionStateSnapshot = useEngineStore.getState().composition;
+    const sourceTrack = compositionStateSnapshot.tracks[fromId];
     const returnTrack = mixStateSnapshot.mixerTracks[toId];
 
     if (!sourceTrack) {
@@ -479,7 +479,7 @@ export class MixEngineImpl implements MixEngine {
     const validation = validateSendRouting(
       fromId,
       toId,
-      arrangementStateSnapshot.tracks,
+      compositionStateSnapshot.tracks,
       mixStateSnapshot.mixerTracks,
       mixStateSnapshot.sends,
       mixStateSnapshot.trackSends,
@@ -519,9 +519,9 @@ export class MixEngineImpl implements MixEngine {
     updates: Partial<Send>,
   ): void {
     const mixStateSnapshot = useEngineStore.getState().mix;
-    const arrangementStateSnapshot = useEngineStore.getState().arrangement;
+    const compositionStateSnapshot = useEngineStore.getState().composition;
     const send = mixStateSnapshot.sends[sendId];
-    const sourceTrack = arrangementStateSnapshot.tracks[baseTrackId];
+    const sourceTrack = compositionStateSnapshot.tracks[baseTrackId];
     const masterTrack = mixStateSnapshot.mixerTracks.master;
 
     if (!send || !sourceTrack || !masterTrack) {
@@ -618,9 +618,9 @@ export class MixEngineImpl implements MixEngine {
 
   setSendAmount(baseTrackId: string, sendId: string, amount: number): void {
     const mixStateSnapshot = useEngineStore.getState().mix;
-    const arrangementStateSnapshot = useEngineStore.getState().arrangement;
+    const compositionStateSnapshot = useEngineStore.getState().composition;
     const send = mixStateSnapshot.sends[sendId];
-    const sourceTrack = arrangementStateSnapshot.tracks[baseTrackId];
+    const sourceTrack = compositionStateSnapshot.tracks[baseTrackId];
     const masterTrack = mixStateSnapshot.mixerTracks.master;
 
     if (!send || !sourceTrack || !masterTrack) {

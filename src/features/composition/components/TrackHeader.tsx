@@ -1,6 +1,6 @@
-// src/features/arrangement/components/TrackHeader.tsx
-import { useTrackState } from "@/features/arrangement/hooks/useTrackState";
-import { useTrackControls } from "@/features/arrangement/hooks/useTrackControls";
+// src/features/composition/components/TrackHeader.tsx
+import { useTrackState } from "@/features/composition/hooks/useTrackState";
+import { useTrackControls } from "@/features/composition/hooks/useTrackControls";
 import { cn } from "@/common/shadcn/lib/utils";
 import { CassetteTape, Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/common/shadcn/ui/button";

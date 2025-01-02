@@ -1,7 +1,7 @@
 // src/features/mix/utils/routingUtils.ts
 import * as Tone from "tone";
 import { Device, MixerTrack, Send } from "../types";
-import { Track } from "@/features/arrangement/types";
+import { Track } from "@/features/composition/types";
 
 export interface SendRoutingState {
   returnTrackId: string;

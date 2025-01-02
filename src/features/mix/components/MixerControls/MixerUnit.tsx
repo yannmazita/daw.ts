@@ -1,6 +1,6 @@
 // src/features/mix/components/MixerControls/MixerUnit.tsx
 import { useCallback, useEffect, useState, useRef } from "react";
-import { useTrackState } from "@/features/arrangement/hooks/useTrackState";
+import { useTrackState } from "@/features/composition/hooks/useTrackState";
 import { useMixerTrackControls } from "../../hooks/useMixerTrackControls";
 import { cn } from "@/common/shadcn/lib/utils";
 import { Volume2, VolumeX } from "lucide-react";

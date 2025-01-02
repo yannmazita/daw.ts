@@ -14,22 +14,22 @@ import {
   PersistableAutomationState,
 } from "@/features/automation/types";
 import {
-  ArrangementState,
-  PersistableArrangementState,
-} from "@/features/arrangement/types";
+  CompositionState,
+  PersistableCompositionState,
+} from "@/features/composition/types";
 import { initialTransportState } from "@/features/transport/utils/initialState";
 import { initialClipState } from "@/features/clips/utils/initialState";
 import { initialMixState } from "@/features/mix/utils/initialState";
 import { initialInstrumentState } from "@/features/instruments/utils/initialState";
 import { initialAutomationState } from "@/features/automation/utils/initialState";
-import { initialArrangementState } from "@/features/arrangement/utils/initialState";
+import { initialCompositionState } from "@/features/composition/utils/initialState";
 export interface EngineState {
   transport: TransportState;
   clips: ClipState;
   mix: MixState;
   instruments: InstrumentState;
   automation: AutomationState;
-  arrangement: ArrangementState;
+  composition: CompositionState;
 }
 
 // Type for persisted state
@@ -39,7 +39,7 @@ interface PersistableEngineState {
   mix: PersistableMixState;
   instruments: PersistableInstrumentState;
   automation: PersistableAutomationState;
-  arrangement: PersistableArrangementState;
+  composition: PersistableCompositionState;
 }
 
 export const useEngineStore = create<EngineState>()(
@@ -51,7 +51,7 @@ export const useEngineStore = create<EngineState>()(
         mix: initialMixState,
         instruments: initialInstrumentState,
         automation: initialAutomationState,
-        arrangement: initialArrangementState,
+        composition: initialCompositionState,
       }),
       {
         name: "daw-engine-storage",
@@ -144,10 +144,10 @@ export const useEngineStore = create<EngineState>()(
               ),
             ),
           },
-          arrangement: {
-            ...state.arrangement,
+          composition: {
+            ...state.composition,
             tracks: Object.fromEntries(
-              Object.entries(state.arrangement.tracks).map(([id, track]) => [
+              Object.entries(state.composition.tracks).map(([id, track]) => [
                 id,
                 {
                   id: track.id,
@@ -184,5 +184,5 @@ export const useInstrumentsState = () =>
   useEngineStore((state) => state.instruments);
 export const useAutomationState = () =>
   useEngineStore((state) => state.automation);
-export const useArrangementState = () =>
-  useEngineStore((state) => state.arrangement);
+export const useCompositionState = () =>
+  useEngineStore((state) => state.composition);

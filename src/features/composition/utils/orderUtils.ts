@@ -1,10 +1,10 @@
-// src/features/arrangement/utils/orderUtils.ts
-import { ArrangementState } from "../types";
+// src/features/composition/utils/orderUtils.ts
+import { CompositionState } from "../types";
 
 export const moveTrackInOrder = (
   trackId: string,
   newIndex: number,
-  state: ArrangementState,
+  state: CompositionState,
 ): string[] => {
   const currentIndex = state.trackOrder.indexOf(trackId);
   if (currentIndex === -1) return state.trackOrder;

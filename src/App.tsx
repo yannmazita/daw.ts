@@ -1,7 +1,7 @@
 // src/App.tsx
 import { Layout } from "@/common/components/Layout";
 import { EngineManager } from "./core/engines/EngineManager";
-import { TimelineGrid } from "./features/arrangement/components/TimelineGrid";
+import { TimelineGrid } from "./features/composition/components/TimelineGrid";
 import { useEffect } from "react";
 import { Browser } from "./features/browser/components/Browser";
 import { BottomSection } from "./common/components/BottomSection";

@@ -1,33 +1,33 @@
-// src/features/arrangement/hooks/useTrackOperations.ts
+// src/features/composition/hooks/useTrackOperations.ts
 import { useCallback } from "react";
-import { useArrangementEngine } from "@/core/engines/EngineManager";
+import { useCompositionEngine } from "@/core/engines/EngineManager";
 import { Track } from "../types";
 import { useEngineStore } from "@/core/stores/useEngineStore";
 
 export const useTrackOperations = () => {
-  const arrangementEngine = useArrangementEngine();
-  const tracks = useEngineStore((state) => state.arrangement.tracks);
-  const trackOrder = useEngineStore((state) => state.arrangement.trackOrder);
+  const compositionEngine = useCompositionEngine();
+  const tracks = useEngineStore((state) => state.composition.tracks);
+  const trackOrder = useEngineStore((state) => state.composition.trackOrder);
 
   const createTrack = useCallback(
     (type: Track["type"], name: string) => {
-      return arrangementEngine.createTrack(type, name);
+      return compositionEngine.createTrack(type, name);
     },
-    [arrangementEngine],
+    [compositionEngine],
   );
 
   const deleteTrack = useCallback(
     (trackId: string) => {
-      arrangementEngine.deleteTrack(trackId);
+      compositionEngine.deleteTrack(trackId);
     },
-    [arrangementEngine],
+    [compositionEngine],
   );
 
   const moveTrack = useCallback(
     (trackId: string, newIndex: number) => {
-      arrangementEngine.moveTrack(trackId, newIndex);
+      compositionEngine.moveTrack(trackId, newIndex);
     },
-    [arrangementEngine],
+    [compositionEngine],
   );
 
   const renameTrack = useCallback(
@@ -36,9 +36,9 @@ export const useTrackOperations = () => {
       if (!track) return;
 
       // Update track through engine
-      arrangementEngine.updateTrack(trackId, { name: newName });
+      compositionEngine.updateTrack(trackId, { name: newName });
     },
-    [arrangementEngine, tracks],
+    [compositionEngine, tracks],
   );
 
   return {

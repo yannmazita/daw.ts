@@ -1,5 +1,5 @@
 // src/features/mix/components/MixerControls/MixerControls.tsx
-import { useTrackOperations } from "@/features/arrangement/hooks/useTrackOperations";
+import { useTrackOperations } from "@/features/composition/hooks/useTrackOperations";
 import { useMixerTrackOperations } from "../../hooks/useMixerTrackOperations";
 import { TrackUnit } from "./TrackUnit";
 import { MixerUnit } from "./MixerUnit";

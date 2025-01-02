@@ -1,8 +1,8 @@
 // src/features/mix/components/MixerControls/TrackUnit.tsx
-import { useTrackState } from "@/features/arrangement/hooks/useTrackState";
+import { useTrackState } from "@/features/composition/hooks/useTrackState";
 import { cn } from "@/common/shadcn/lib/utils";
 import { Knob } from "@/common/components/Knob/Knob";
-import { useTrackControls } from "@/features/arrangement/hooks/useTrackControls";
+import { useTrackControls } from "@/features/composition/hooks/useTrackControls";
 import { useCallback, useEffect, useState, useRef } from "react";
 import { CassetteTape, Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/common/shadcn/ui/button";

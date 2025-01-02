@@ -1,4 +1,4 @@
-// src/features/arrangement/types.ts
+// src/features/composition/types.ts
 import { TransportEngine } from "../transport/types";
 import { ClipEngine } from "../clips/types";
 import { MixEngine } from "../mix/types";
@@ -70,17 +70,17 @@ export type Track = AudioTrack | MidiTrack;
 
 export type PersistableTrack = PersistableAudioTrack | PersistableMidiTrack;
 
-export interface ArrangementState {
+export interface CompositionState {
   tracks: Record<string, Track>;
   trackOrder: string[];
 }
 
-export interface PersistableArrangementState {
+export interface PersistableCompositionState {
   tracks: Record<string, PersistableTrack>;
   trackOrder: string[];
 }
 
-export interface ArrangementEngine {
+export interface CompositionEngine {
   transportEngine: TransportEngine;
   mixEngine: MixEngine;
   clipEngine: ClipEngine;
@@ -102,6 +102,6 @@ export interface ArrangementEngine {
   getMeterValues(trackId: string): number | number[];
 
   // State
-  getState(): ArrangementState;
+  getState(): CompositionState;
   dispose(): void;
 }

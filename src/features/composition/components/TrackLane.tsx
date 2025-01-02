@@ -1,4 +1,4 @@
-// src/features/arrangement/components/TrackLane.tsx
+// src/features/composition/components/TrackLane.tsx
 import { cn } from "@/common/shadcn/lib/utils";
 import { useEngineStore } from "@/core/stores/useEngineStore";
 import { Clip } from "@/features/clips/components/Clip";
@@ -10,7 +10,7 @@ interface TrackLaneProps {
 
 export const TrackLane: React.FC<TrackLaneProps> = ({ trackId, className }) => {
   const clipIds = useEngineStore(
-    (state) => state.arrangement.tracks[trackId].clipIds,
+    (state) => state.composition.tracks[trackId].clipIds,
   );
 
   return (
