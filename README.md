@@ -233,7 +233,7 @@ graph LR
 
 <details>
     <summary>
-    Still maybe a few words on the architecture...
+    **Still maybe a few words on the architecture...**
     </summary>
 
 The application logic is made of engines (modules) that allow the application to grow with new features. Each engine has its own logic and state and is initialized by `EngineManager`.
@@ -259,7 +259,7 @@ This engine manages mixing, sends, routing etc. Audio processing is done through
 
 This engine manages playback transport, tempo (and tempo tap), time signature, loop settings. Interacts with Tone.js ot control transport state.
 
-</details
+</details>
 
 ## Contributing
 
