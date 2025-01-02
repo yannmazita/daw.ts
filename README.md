@@ -237,7 +237,7 @@ graph LR
     </summary>
 
 The application logic is made of engines (modules) that allow the application to grow with new features. Each engine has its own logic and state and is initialized by `EngineManager`.
-Currently there are 5 engines.
+Currently there are 6 engines.
 
 ### Composition Engine
 
@@ -246,6 +246,10 @@ This engine manages track and clip composition in the timeline. It interacts wit
 ### Automation Engine
 
 _Not implemented yet._ This engine manages automation lanes and paramater connections.
+
+### Instrument Engine
+
+_Not implemented yet._ This engine manages instruments, their devices and effects.
 
 ### Clip Engine
 
