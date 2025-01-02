@@ -8,7 +8,7 @@ Work in progress! Very early stage.
 
 ## Introduction
 
-`daw.ts` is a Digital Audio Workstation (DAW) application designed to be easy to use and accessible. It is built with a focus on performance to allow for live editing capabilities. The application is currently in an early stage of development, with several features still under construction.
+`daw.ts` is a Digital Audio Workstation (DAW) application designed to be easy to use and accessible. It is built with a (hopeful) focus on performance to allow for live editing capabilities. The application is currently in an early stage of development, with several features still under construction.
 
 This documentation is intended for developers and contributors who want to understand the project's architecture, components, and functionality.
 
@@ -133,7 +133,8 @@ The application state is managed using [Zustand](https://github.com/pmndrs/zusta
 - **`useThemeStore`**: Manages the application's theme (light/dark).
 
 The `persist` middleware is used to persist the state to local storage. The `partialize` option is used to only persist the necessary data and avoid storing large objects like audio buffers.
-Persisted state saving/loading needs a deeper focus to ensure meaningful data is saved/loaded. The application currently doesn't load persisted state.
+
+However, persisted state saving/loading needs a deeper focus.
 
 ## File Structure
 
