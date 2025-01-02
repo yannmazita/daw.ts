@@ -239,23 +239,23 @@ graph LR
 The application logic is made of engines (modules) that allow the application to grow with new features. Each engine has its own logic and state and is initialized by `EngineManager`.
 Currently there are 5 engines.
 
-## Arrangement Engine
+### Arrangement Engine
 
 This engine manages track and clip arrangement in the timeline. It interacts with `MixEngine` and `ClipEngine` to handle sends or playback.
 
-## Automation Engine
+### Automation Engine
 
 _Not implemented yet._ This engine manages automation lanes and paramater connections.
 
-## Clip Engine
+### Clip Engine
 
 This engine manages clips (MIDI clips and audio clips), MIDI file parsing, audio buffers etc.
 
-## Mix Engine
+### Mix Engine
 
 This engine manages mixing, sends, routing etc. Audio processing is done through Tone.js and is extended when needed.
 
-## Transport Engine
+### Transport Engine
 
 This engine manages playback transport, tempo (and tempo tap), time signature, loop settings. Interacts with Tone.js ot control transport state.
 
@@ -264,4 +264,5 @@ This engine manages playback transport, tempo (and tempo tap), time signature, l
 ## Contributing
 
 Contributions are welcome (and needed)! Features, business logic, UI, tests, optimization, Electron integration etc... there is a lot to do!
+
 Just look at these plain grey rectangles (they are meant to be meters), and empty spaces (they are meant to be features).
