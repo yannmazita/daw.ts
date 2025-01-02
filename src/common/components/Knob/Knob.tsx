@@ -46,14 +46,14 @@ export const Knob: React.FC<KnobProps> = ({
     if (!sensitivity.auto) {
       return {
         mouse: sensitivity.mouse ?? 1,
-        wheel: sensitivity.wheel ?? 0.03,
+        wheel: sensitivity.wheel ?? 0.015,
       };
     }
 
     const BASE_RANGE = 100;
     const BASE_STEP = 1;
     const BASE_MOUSE_SENSITIVITY = 1;
-    const BASE_WHEEL_SENSITIVITY = 0.03;
+    const BASE_WHEEL_SENSITIVITY = 0.005;
     const MIN_SCALE_FACTOR = 0.15;
 
     const valueRange = max - min;
