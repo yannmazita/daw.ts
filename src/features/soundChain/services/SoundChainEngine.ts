@@ -1,5 +1,9 @@
 // src/features/soundChain/services/SoundChainEngine.ts
-import { InstrumentName, InstrumentOptions } from "@/core/types/instrument";
+import {
+  InstrumentName,
+  InstrumentOptions,
+  ToneInstrumentType,
+} from "@/core/types/instrument";
 import { createInstrumentNode } from "../utils/instrumentNodes";
 import { EngineState, useEngineStore } from "@/core/stores/useEngineStore";
 import { SoundChainEngine, SoundChain } from "../types";
@@ -40,7 +44,7 @@ export class SoundChainEngineImpl implements SoundChainEngine {
       }));
       return id;
     } catch (error) {
-      console.error("Failed to create sound chain:", error);
+      console.error("Failed to create sound chain");
       throw error;
     }
   }
@@ -66,7 +70,7 @@ export class SoundChainEngineImpl implements SoundChainEngine {
         },
       }));
     } catch (error) {
-      console.error("Failed to update sound chain:", error);
+      console.error("Failed to update sound chain");
       throw error;
     }
   }
@@ -89,7 +93,7 @@ export class SoundChainEngineImpl implements SoundChainEngine {
         };
       });
     } catch (error) {
-      console.error("Failed to delete sound chain:", error);
+      console.error("Failed to delete sound chain");
       throw error;
     }
   }
@@ -113,34 +117,55 @@ export class SoundChainEngineImpl implements SoundChainEngine {
           type as InstrumentName,
           options as InstrumentOptions,
         );
+        const newDevice: SoundChainDevice = {
+          id,
+          type: type as InstrumentName,
+          name: type as string,
+          bypass: false,
+          node: node,
+          options,
+        };
+        useEngineStore.setState((state) => ({
+          soundChain: {
+            ...state.soundChain,
+            soundChains: {
+              ...state.soundChain.soundChains,
+              [soundChainId]: {
+                ...soundChain,
+                devices: [...soundChain.devices, newDevice],
+              },
+            },
+          },
+        }));
+        return id;
       } else if (Object.values(EffectName).includes(type as EffectName)) {
         node = createEffectNode(type as EffectName, options as EffectOptions);
+        const newDevice: SoundChainEffect = {
+          id,
+          type: type as EffectName,
+          name: type as string,
+          bypass: false,
+          node: node,
+          options,
+        };
+        useEngineStore.setState((state) => ({
+          soundChain: {
+            ...state.soundChain,
+            soundChains: {
+              ...state.soundChain.soundChains,
+              [soundChainId]: {
+                ...soundChain,
+                devices: [...soundChain.devices, newDevice],
+              },
+            },
+          },
+        }));
+        return id;
       } else {
         throw new Error(`Invalid device type: ${type}`);
       }
-      const newDevice: SoundChainDevice | SoundChainEffect = {
-        id,
-        type,
-        name: type as string,
-        bypass: false,
-        node: node as ToneEffectType,
-        options,
-      };
-      useEngineStore.setState((state) => ({
-        soundChain: {
-          ...state.soundChain,
-          soundChains: {
-            ...state.soundChain.soundChains,
-            [soundChainId]: {
-              ...soundChain,
-              devices: [...soundChain.devices, newDevice],
-            },
-          },
-        },
-      }));
-      return id;
     } catch (error) {
-      console.error("Failed to add device to sound chain:", error);
+      console.error("Failed to add device to sound chain");
       throw error;
     }
   }
@@ -168,15 +193,15 @@ export class SoundChainEngineImpl implements SoundChainEngine {
         },
       }));
     } catch (error) {
-      console.error("Failed to remove device from sound chain:", error);
+      console.error("Failed to remove device from sound chain");
       throw error;
     }
   }
 
-  updateDevice<T extends InstrumentOptions | EffectOptions>(
+  updateDevice<I extends InstrumentOptions, E extends EffectOptions>(
     soundChainId: string,
     deviceId: string,
-    updates: Partial<SoundChainDevice<T> | SoundChainEffect<T>>,
+    updates: Partial<SoundChainDevice<I> | SoundChainEffect<E>>,
   ): void {
     this.checkDisposed();
     const stateSnapshot = useEngineStore.getState().soundChain;
@@ -194,10 +219,29 @@ export class SoundChainEngineImpl implements SoundChainEngine {
               ...soundChain,
               devices: soundChain.devices.map((device) => {
                 if (device.id === deviceId) {
-                  return {
-                    ...device,
-                    ...updates,
-                  };
+                  if (
+                    Object.values(InstrumentName).includes(
+                      device.type as InstrumentName,
+                    )
+                  ) {
+                    return {
+                      ...device,
+                      ...updates,
+                      type: device.type as InstrumentName,
+                      node: device.node as ToneInstrumentType,
+                    } as SoundChainDevice<I>;
+                  } else if (
+                    Object.values(EffectName).includes(
+                      device.type as EffectName,
+                    )
+                  ) {
+                    return {
+                      ...device,
+                      ...updates,
+                      type: device.type as EffectName,
+                      node: device.node as ToneEffectType,
+                    } as SoundChainEffect<E>;
+                  }
                 }
                 return device;
               }),

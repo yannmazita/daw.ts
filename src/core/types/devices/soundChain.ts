@@ -14,9 +14,21 @@ export interface SoundChainDevice<T extends InstrumentOptions = any>
   options?: T;
 }
 
+export interface PersistableSoundChainDevice<T extends InstrumentOptions = any>
+  extends Device {
+  type: InstrumentName;
+  options?: T;
+}
+
 export interface SoundChainEffect<T extends EffectOptions = any>
   extends Device {
   type: EffectName;
   node: ToneEffectType;
+  options?: T;
+}
+
+export interface PersistableSoundChainEffect<T extends EffectOptions = any>
+  extends Device {
+  type: EffectName;
   options?: T;
 }

@@ -1,19 +1,19 @@
 // src/features/mix/utils/audioNodes.ts
-import * as Tone from "tone";
 import {
   EffectName,
-  EffectOptions,
-  EQ3Options,
   FeedbackDelayOptions,
   FrequencyShifterOptions,
   ReverbOptions,
   ToneEffectType,
-} from "@/core/types/audio";
+} from "@/core/types/devices/effects";
 import {
+  EQ3Options,
   ProcessorName,
   ProcessorOptions,
   ToneProcessorType,
-} from "@/core/types/audio";
+} from "@/core/types/devices/processors";
+import * as Tone from "tone";
+import { EffectOptions } from "tone/build/esm/effect/Effect";
 
 export const createMixerTrackNodes = () => {
   const input = new Tone.Gain();

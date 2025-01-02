@@ -17,7 +17,7 @@ export interface SoundChain {
   id: string;
   name: string;
   devices: (SoundChainDevice | SoundChainEffect)[];
-  parameters: Record<string, any>; // TODO: define parameter type
+  parameters: Record<string, any>; // todo: define parameter type
 }
 
 export interface SoundChainState {
@@ -41,10 +41,10 @@ export interface SoundChainEngine {
     options?: InstrumentOptions | EffectOptions,
   ): string;
   removeDevice(soundChainId: string, deviceId: string): void;
-  updateDevice<T extends InstrumentOptions | EffectOptions>(
+  updateDevice<I extends InstrumentOptions, E extends EffectOptions>(
     soundChainId: string,
     deviceId: string,
-    updates: Partial<SoundChainDevice<T> | SoundChainEffect<T>>,
+    updates: Partial<SoundChainDevice<I> | SoundChainEffect<E>>,
   ): void;
 
   // State
