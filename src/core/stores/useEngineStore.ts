@@ -119,7 +119,22 @@ export const useEngineStore = create<EngineState>()(
             trackSends: state.mix.trackSends,
             mixerTrackOrder: state.mix.mixerTrackOrder,
           },
-          instruments: state.instruments,
+          instruments: {
+            ...state.instruments,
+            instruments: Object.fromEntries(
+              Object.entries(state.instruments.instruments).map(
+                ([id, instrument]) => [
+                  id,
+                  {
+                    id: instrument.id,
+                    name: instrument.name,
+                    type: instrument.type,
+                    options: instrument.options,
+                  },
+                ],
+              ),
+            ),
+          },
           automation: {
             ...state.automation,
             lanes: state.automation.lanes,
