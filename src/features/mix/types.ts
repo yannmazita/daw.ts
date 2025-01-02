@@ -3,8 +3,9 @@ import {
   EffectName,
   EffectOptions,
   ToneEffectType,
-} from "../../core/types/audio";
+} from "@/core/types/devices/effects";
 import { Channel, Gain, Meter } from "tone";
+import { Device as BaseDevice } from "@/core/types/devices/base";
 
 export interface MixerTrackControlState {
   solo: boolean;
@@ -20,13 +21,9 @@ export interface PersistableMixerTrackControlState {
   volume: number;
 }
 
-export interface Device<T extends EffectOptions = EffectOptions> {
-  id: string;
-  type: EffectName;
-  name: string;
-  bypass: boolean;
+export interface Device<T extends EffectOptions = EffectOptions>
+  extends BaseDevice<T> {
   node: ToneEffectType;
-  options?: T;
 }
 
 export interface PersistableDevice<T extends EffectOptions = EffectOptions> {
@@ -40,7 +37,7 @@ export interface PersistableDevice<T extends EffectOptions = EffectOptions> {
 export interface Send {
   id: string;
   name: string;
-  sourceTrackId: string; // composition Track id
+  sourceTrackId: string; // arrangement Track id
   returnTrackId: string; // MixerTrack id
   preFader: boolean;
   gain: Gain;

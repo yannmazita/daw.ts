@@ -5,9 +5,9 @@ import { TransportState } from "@/features/transport/types";
 import { ClipState, PersistableClipState } from "@/features/clips/types";
 import { MixState, PersistableMixState } from "@/features/mix/types";
 import {
-  InstrumentState,
-  PersistableInstrumentState,
-} from "@/features/instruments/types";
+  SoundChainState,
+  PersistableSoundChainState,
+} from "@/features/soundChain/types";
 
 import {
   AutomationState,
@@ -20,14 +20,14 @@ import {
 import { initialTransportState } from "@/features/transport/utils/initialState";
 import { initialClipState } from "@/features/clips/utils/initialState";
 import { initialMixState } from "@/features/mix/utils/initialState";
-import { initialInstrumentState } from "@/features/instruments/utils/initialState";
+import { initialSoundChainState } from "@/features/soundChain/utils/initialState";
 import { initialAutomationState } from "@/features/automation/utils/initialState";
 import { initialCompositionState } from "@/features/composition/utils/initialState";
 export interface EngineState {
   transport: TransportState;
   clips: ClipState;
   mix: MixState;
-  instruments: InstrumentState;
+  soundChain: SoundChainState;
   automation: AutomationState;
   composition: CompositionState;
 }
@@ -37,7 +37,7 @@ interface PersistableEngineState {
   transport: TransportState;
   clips: PersistableClipState;
   mix: PersistableMixState;
-  instruments: PersistableInstrumentState;
+  soundChain: PersistableSoundChainState;
   automation: PersistableAutomationState;
   composition: PersistableCompositionState;
 }
@@ -49,7 +49,7 @@ export const useEngineStore = create<EngineState>()(
         transport: initialTransportState,
         clips: initialClipState,
         mix: initialMixState,
-        instruments: initialInstrumentState,
+        soundChain: initialSoundChainState,
         automation: initialAutomationState,
         composition: initialCompositionState,
       }),
@@ -119,10 +119,10 @@ export const useEngineStore = create<EngineState>()(
             trackSends: state.mix.trackSends,
             mixerTrackOrder: state.mix.mixerTrackOrder,
           },
-          instruments: {
-            ...state.instruments,
+          soundChain: {
+            ...state.soundChain,
             instruments: Object.fromEntries(
-              Object.entries(state.instruments.instruments).map(
+              Object.entries(state.soundChain.instruments).map(
                 ([id, instrument]) => [
                   id,
                   {
@@ -180,8 +180,8 @@ export const useTransportState = () =>
   useEngineStore((state) => state.transport);
 export const useClipsState = () => useEngineStore((state) => state.clips);
 export const useMixState = () => useEngineStore((state) => state.mix);
-export const useInstrumentsState = () =>
-  useEngineStore((state) => state.instruments);
+export const useSoundChainState = () =>
+  useEngineStore((state) => state.soundChain);
 export const useAutomationState = () =>
   useEngineStore((state) => state.automation);
 export const useCompositionState = () =>

@@ -1,7 +1,7 @@
 // src/features/mix/services/MixEngine.ts
 import * as Tone from "tone";
-import { MixEngine, MixState, Device, Send, MixerTrack } from "../types";
-import { EffectName, EffectOptions } from "@/core/types/audio";
+import { MixEngine, MixState, Send, MixerTrack } from "../types";
+import { EffectName, EffectOptions } from "@/core/types/devices/effects";
 import { useEngineStore } from "@/core/stores/useEngineStore";
 import { createMixerTrackNodes, createEffectNode } from "../utils/audioNodes";
 import {
@@ -25,6 +25,7 @@ import {
 import { validateSendRouting, validateSendUpdate } from "../utils/validation";
 import { moveMixerTrackInOrder } from "../utils/orderUtils";
 import { initialMixerTrackControlState } from "../utils/initialState";
+import { Device } from "../types";
 
 export class MixEngineImpl implements MixEngine {
   private disposed = false;

@@ -1,11 +1,6 @@
-// src/core/types/audio.ts
+// src/core/types/devices/effects.ts
 import * as Tone from "tone";
-import {
-  Time,
-  Frequency,
-  NormalRange,
-  Decibels,
-} from "tone/build/esm/core/type/Units";
+import { Time, Frequency, NormalRange } from "tone/build/esm/core/type/Units";
 
 /**
  * Effect options for Tone.Feedbackdelay.
@@ -37,18 +32,6 @@ export interface ReverbOptions extends Tone.ToneAudioNodeOptions {
   wet?: number;
 }
 
-/**
- * Effect options for Tone.EQ3.
- * Not exported by tonejs.
- */
-export interface EQ3Options extends Tone.ToneAudioNodeOptions {
-  low: Decibels;
-  mid: Decibels;
-  high: Decibels;
-  lowFrequency: Frequency;
-  highFrequency: Frequency;
-}
-
 export interface BaseEffectOptions {
   wet: NormalRange;
 }
@@ -72,11 +55,6 @@ export type EffectOptions =
   | (Tone.StereoWidenerOptions & BaseEffectOptions)
   | (Tone.TremoloOptions & BaseEffectOptions);
 
-export type ProcessorOptions =
-  | Tone.CompressorOptions
-  | EQ3Options
-  | Tone.GateOptions;
-
 /**
  * Represents the types of audio effects available, as defined by the Tone.js library.
  */
@@ -98,11 +76,6 @@ export type ToneEffectType =
   | Tone.Reverb
   | Tone.StereoWidener
   | Tone.Tremolo;
-
-/**
- *  Represents the types of audio processors available, as defined by the Tone.js library.
- */
-export type ToneProcessorType = Tone.Compressor | Tone.EQ3 | Tone.Gate;
 
 export enum EffectName {
   /** An auto-filter effect that sweeps a frequency band with an LFO. */
@@ -155,15 +128,4 @@ export enum EffectName {
 
   /** A tremolo effect that modulates the amplitude of the signal. */
   Tremolo = "Tremolo",
-}
-
-export enum ProcessorName {
-  /** A compressor effect that reduces the dynamic range of the signal. */
-  Compressor = "Compressor",
-
-  /** A three-band EQ with low, mid, and high controls. */
-  EQ3 = "EQ3",
-
-  /** A gate effect that cuts off the signal when it falls below a threshold. */
-  Gate = "Gate",
 }

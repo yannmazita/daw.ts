@@ -1,4 +1,4 @@
-// src/features/instruments/utils/instrumentNodes.ts
+// src/features/soundChain/utils/instrumentNodes.ts
 import * as Tone from "tone";
 import {
   InstrumentName,

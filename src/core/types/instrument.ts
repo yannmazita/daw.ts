@@ -1,5 +1,4 @@
-// src/core/types/intrument.ts
-
+// src/core/types/instrument.ts
 import * as Tone from "tone";
 
 /**
