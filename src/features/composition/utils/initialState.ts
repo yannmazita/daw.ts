@@ -1,5 +1,5 @@
-// src/features/arrangement/utils/intialState.ts
-import { ArrangementState, TrackControlState } from "../types";
+// src/features/composition/utils/intialState.ts
+import { CompositionState, TrackControlState } from "../types";
 
 export const initialTrackControlState: TrackControlState = {
   solo: false,
@@ -12,7 +12,7 @@ export const initialTrackControlState: TrackControlState = {
   lastClipTime: null,
 };
 
-export const initialArrangementState: ArrangementState = {
+export const initialCompositionState: CompositionState = {
   tracks: {},
   trackOrder: [],
 };

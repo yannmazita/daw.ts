@@ -1,5 +1,5 @@
 // src/features/mix/utils/validationUtils.ts
-import { Track } from "@/features/arrangement/types";
+import { Track } from "@/features/composition/types";
 import { MixerTrack, Send } from "../types";
 
 export interface SendValidationResult {
@@ -42,13 +42,13 @@ export const validateSendUpdate = (
 export const validateSendRouting = (
   fromId: string,
   toId: string,
-  arrangementTracks: Record<string, Track>,
+  compositionTracks: Record<string, Track>,
   mixerTracks: Record<string, MixerTrack>,
   sends: Record<string, Send>,
   trackSends: Record<string, string[]>,
 ): SendValidationResult => {
   const targetTrack = mixerTracks[toId];
-  const sourceTrack = arrangementTracks[fromId];
+  const sourceTrack = compositionTracks[fromId];
 
   // Check tracks exist
   if (!sourceTrack) {

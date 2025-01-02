@@ -2,17 +2,19 @@
 import { TransportEngineImpl } from "@/features/transport/services/TransportEngine";
 import { ClipEngineImpl } from "@/features/clips/services/ClipEngine";
 import { MixEngineImpl } from "@/features/mix/services/MixEngine";
+import { InstrumentEngineImpl } from "@/features/instruments/services/InstrumentsEngine";
 import { AutomationEngineImpl } from "@/features/automation/services/AutomationEngine";
-import { ArrangementEngineImpl } from "@/features/arrangement/services/ArrangementEngine";
+import { CompositionEngineImpl } from "@/features/composition/services/CompositionEngine";
 
 export class EngineManager {
   private static instance: EngineManager | null;
 
   private _transport: TransportEngineImpl;
-  private _clips: ClipEngineImpl;
   private _mix: MixEngineImpl;
+  private _clips: ClipEngineImpl;
+  private _instruments: InstrumentEngineImpl;
   private _automation: AutomationEngineImpl;
-  private _arrangement: ArrangementEngineImpl;
+  private _composition: CompositionEngineImpl;
   private _initialized = false;
 
   private constructor() {
@@ -23,15 +25,18 @@ export class EngineManager {
     console.log("Mix Engine initialized");
     this._clips = new ClipEngineImpl();
     console.log("Clip Engine initialized");
+    this._instruments = new InstrumentEngineImpl();
+    console.log("Instrument Engine initialized");
     this._automation = new AutomationEngineImpl();
     console.log("Automation Engine initialized");
-    this._arrangement = new ArrangementEngineImpl(
+    this._composition = new CompositionEngineImpl(
       this._transport,
-      this._clips,
       this._mix,
+      this._clips,
+      this._instruments,
       this._automation,
     );
-    console.log("Arrangement Engine initialized");
+    console.log("Composition Engine initialized");
     this._initialized = true;
     console.log("Engine Manager initialized");
   }
@@ -47,28 +52,33 @@ export class EngineManager {
     return this._transport;
   }
 
+  public get mix() {
+    return this._mix;
+  }
+
   public get clips() {
     return this._clips;
   }
 
-  public get mix() {
-    return this._mix;
+  public get instruments() {
+    return this._instruments;
   }
 
   public get automation() {
     return this._automation;
   }
 
-  public get arrangement() {
-    return this._arrangement;
+  public get composition() {
+    return this._composition;
   }
 
   public dispose(): void {
     if (!this._initialized) return;
 
     // Dispose in reverse order of initialization
-    this._arrangement.dispose();
+    this._composition.dispose();
     this._automation.dispose();
+    this._instruments.dispose();
     this._clips.dispose();
     this._mix.dispose();
     this._transport.dispose();
@@ -82,18 +92,22 @@ export const useTransportEngine = () => {
   return EngineManager.getInstance().transport;
 };
 
+export const useMixEngine = () => {
+  return EngineManager.getInstance().mix;
+};
+
 export const useClipEngine = () => {
   return EngineManager.getInstance().clips;
 };
 
-export const useMixEngine = () => {
-  return EngineManager.getInstance().mix;
+export const useInstrumentEngine = () => {
+  return EngineManager.getInstance().instruments;
 };
 
 export const useAutomationEngine = () => {
   return EngineManager.getInstance().automation;
 };
 
-export const useArrangementEngine = () => {
-  return EngineManager.getInstance().arrangement;
+export const useCompositionEngine = () => {
+  return EngineManager.getInstance().composition;
 };

@@ -1,6 +1,6 @@
-// src/features/arrangement/utils/validation.ts
+// src/features/composition/utils/validation.ts
 import * as Tone from "tone";
-import { ArrangementState } from "../types";
+import { CompositionState } from "../types";
 import { Time } from "tone/build/esm/core/type/Units";
 
 export const validateTrackOrder = (
@@ -47,7 +47,7 @@ export const validateTrackOrder = (
 
 export const validateAutomationLanes = (
   lanes: Record<string, string[]>,
-  state: ArrangementState,
+  state: CompositionState,
 ): boolean => {
   return Object.entries(lanes).every(([trackId, laneIds]) => {
     const track = state.tracks[trackId];
@@ -68,9 +68,9 @@ export const validateTimeRange = (time: Time): boolean => {
   }
 };
 
-// Helper function to validate entire arrangement state
-export const validateArrangementState = (
-  state: ArrangementState,
+// Helper function to validate entire composition state
+export const validateCompositionState = (
+  state: CompositionState,
 ): { valid: boolean; errors: string[] } => {
   const errors: string[] = [];
 

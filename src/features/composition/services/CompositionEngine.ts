@@ -1,23 +1,25 @@
-// src/features/arrangement/services/ArrangementEngine.ts
-import { ArrangementEngine, ArrangementState, Track } from "../types";
+// src/features/composition/services/CompositionEngine.ts
+import { CompositionEngine, CompositionState, Track } from "../types";
 import { TransportEngine } from "../../transport/types";
 import { ClipEngine } from "../../clips/types";
 import { MixEngine } from "../../mix/types";
+import { InstrumentEngine } from "@/features/instruments/types";
 import { AutomationEngine } from "../../automation/types";
 import { useEngineStore } from "@/core/stores/useEngineStore";
-import { initialArrangementState } from "../utils/initialState";
+import { initialCompositionState } from "../utils/initialState";
 import { createTrackData } from "../utils/trackUtils";
 import { moveTrackInOrder } from "../utils/orderUtils";
-import { validateArrangementState } from "../utils/validation";
+import { validateCompositionState } from "../utils/validation";
 import { calculateSoloState, updateTrackSoloStates } from "../utils/stateUtils";
 
-export class ArrangementEngineImpl implements ArrangementEngine {
+export class CompositionEngineImpl implements CompositionEngine {
   private disposed = false;
 
   constructor(
     public readonly transportEngine: TransportEngine,
-    public readonly clipEngine: ClipEngine,
     public readonly mixEngine: MixEngine,
+    public readonly clipEngine: ClipEngine,
+    public readonly instrumentEngine: InstrumentEngine,
     public readonly automationEngine: AutomationEngine,
   ) {
     this.initializeDefaultTracks();
@@ -26,14 +28,14 @@ export class ArrangementEngineImpl implements ArrangementEngine {
 
   private initializeDefaultTracks(): void {
     const state = useEngineStore.getState();
-    const persistedTracks = state.arrangement.trackOrder;
+    const persistedTracks = state.composition.trackOrder;
 
     try {
       if (persistedTracks.length > 0) {
         // Reinitialize persisted tracks
         console.log("Reinitializing persisted tracks");
         persistedTracks.forEach((trackId) => {
-          const persistedTrack = state.arrangement.tracks[trackId];
+          const persistedTrack = state.composition.tracks[trackId];
           if (persistedTrack) {
             this.createTrack(persistedTrack.type, persistedTrack.name);
           }
@@ -56,7 +58,7 @@ export class ArrangementEngineImpl implements ArrangementEngine {
   }
 
   private initializeDummyMidiClips(): void {
-    const stateSNapshot = useEngineStore.getState().arrangement;
+    const stateSNapshot = useEngineStore.getState().composition;
     const trackOrder = stateSNapshot.trackOrder;
 
     trackOrder.forEach((trackId, index) => {
@@ -83,13 +85,13 @@ export class ArrangementEngineImpl implements ArrangementEngine {
 
       useEngineStore.setState((state) => {
         const newState = {
-          arrangement: {
-            ...state.arrangement,
+          composition: {
+            ...state.composition,
             tracks: {
-              ...state.arrangement.tracks,
+              ...state.composition.tracks,
               [id]: { ...track },
             },
-            trackOrder: [...state.arrangement.trackOrder, id],
+            trackOrder: [...state.composition.trackOrder, id],
           },
           mix: {
             ...state.mix,
@@ -101,7 +103,7 @@ export class ArrangementEngineImpl implements ArrangementEngine {
         };
 
         // Validate new state
-        const validation = validateArrangementState(newState.arrangement);
+        const validation = validateCompositionState(newState.composition);
         if (!validation.valid) {
           throw new Error(
             `Invalid state after track creation: ${validation.errors.join(", ")}`,
@@ -127,7 +129,7 @@ export class ArrangementEngineImpl implements ArrangementEngine {
 
   deleteTrack(trackId: string): void {
     this.checkDisposed();
-    const state = useEngineStore.getState().arrangement;
+    const state = useEngineStore.getState().composition;
     const track = state.tracks[trackId];
 
     if (!track) {
@@ -141,20 +143,20 @@ export class ArrangementEngineImpl implements ArrangementEngine {
       // Update state atomically
       useEngineStore.setState((state) => {
         const { [trackId]: removed, ...remainingTracks } =
-          state.arrangement.tracks;
-        const newTrackOrder = state.arrangement.trackOrder.filter(
+          state.composition.tracks;
+        const newTrackOrder = state.composition.trackOrder.filter(
           (id) => id !== trackId,
         );
 
         // Create new state
         const newState = {
-          ...state.arrangement,
+          ...state.composition,
           tracks: remainingTracks,
           trackOrder: newTrackOrder,
         };
 
         return {
-          arrangement: {
+          composition: {
             ...newState,
           },
         };
@@ -190,7 +192,7 @@ export class ArrangementEngineImpl implements ArrangementEngine {
 
   updateTrack(trackId: string, updates: Partial<Track>): void {
     this.checkDisposed();
-    const state = useEngineStore.getState().arrangement;
+    const state = useEngineStore.getState().composition;
     const track = state.tracks[trackId];
     if (!track) {
       throw new Error("Track not found");
@@ -198,16 +200,16 @@ export class ArrangementEngineImpl implements ArrangementEngine {
     try {
       useEngineStore.setState((state) => {
         const newState = {
-          arrangement: {
-            ...state.arrangement,
+          composition: {
+            ...state.composition,
             tracks: {
-              ...state.arrangement.tracks,
+              ...state.composition.tracks,
               [trackId]: { ...track, ...updates },
             },
           },
         };
         // Validate new state
-        const validation = validateArrangementState(newState.arrangement);
+        const validation = validateCompositionState(newState.composition);
         if (!validation.valid) {
           throw new Error(
             `Invalid state after track update: ${validation.errors.join(", ")}`,
@@ -223,7 +225,7 @@ export class ArrangementEngineImpl implements ArrangementEngine {
 
   moveTrack(trackId: string, newIndex: number): void {
     this.checkDisposed();
-    const state = useEngineStore.getState().arrangement;
+    const state = useEngineStore.getState().composition;
     const track = state.tracks[trackId];
 
     if (!track) {
@@ -235,14 +237,14 @@ export class ArrangementEngineImpl implements ArrangementEngine {
 
       useEngineStore.setState((state) => {
         const newState = {
-          arrangement: {
-            ...state.arrangement,
+          composition: {
+            ...state.composition,
             trackOrder: newOrder,
           },
         };
 
         // Validate new state
-        const validation = validateArrangementState(newState.arrangement);
+        const validation = validateCompositionState(newState.composition);
         if (!validation.valid) {
           throw new Error(
             `Invalid state after track move: ${validation.errors.join(", ")}`,
@@ -258,7 +260,7 @@ export class ArrangementEngineImpl implements ArrangementEngine {
   }
 
   setSolo(trackId: string, solo: boolean): void {
-    const stateSnapshot = useEngineStore.getState().arrangement;
+    const stateSnapshot = useEngineStore.getState().composition;
     const track = stateSnapshot.tracks[trackId];
 
     if (!track) throw new Error("Track not found");
@@ -280,7 +282,7 @@ export class ArrangementEngineImpl implements ArrangementEngine {
 
       // Update state
       useEngineStore.setState((state) => ({
-        arrangement: updateTrackSoloStates(state.arrangement, soloUpdate),
+        composition: updateTrackSoloStates(state.composition, soloUpdate),
       }));
     } catch (error) {
       console.error("Failed to set solo state:", error);
@@ -289,7 +291,7 @@ export class ArrangementEngineImpl implements ArrangementEngine {
   }
 
   setMute(trackId: string, mute: boolean): void {
-    const stateSnapshot = useEngineStore.getState().arrangement;
+    const stateSnapshot = useEngineStore.getState().composition;
     const track = stateSnapshot.tracks[trackId];
     if (!track) throw new Error("Track not found");
 
@@ -303,10 +305,10 @@ export class ArrangementEngineImpl implements ArrangementEngine {
       }
 
       useEngineStore.setState((state) => ({
-        arrangement: {
-          ...state.arrangement,
+        composition: {
+          ...state.composition,
           tracks: {
-            ...state.arrangement.tracks,
+            ...state.composition.tracks,
             [trackId]: {
               ...track,
               controls: { ...track.controls, mute },
@@ -321,15 +323,15 @@ export class ArrangementEngineImpl implements ArrangementEngine {
   }
 
   setArmed(trackId: string, armed: boolean): void {
-    const stateSnapshot = useEngineStore.getState().arrangement;
+    const stateSnapshot = useEngineStore.getState().composition;
     const track = stateSnapshot.tracks[trackId];
     if (!track) throw new Error("Track not found");
     try {
       useEngineStore.setState((state) => ({
-        arrangement: {
-          ...state.arrangement,
+        composition: {
+          ...state.composition,
           tracks: {
-            ...state.arrangement.tracks,
+            ...state.composition.tracks,
             [trackId]: {
               ...track,
               controls: { ...track.controls, armed },
@@ -344,7 +346,7 @@ export class ArrangementEngineImpl implements ArrangementEngine {
   }
 
   setPan(trackId: string, pan: number): void {
-    const stateSnapshot = useEngineStore.getState().arrangement;
+    const stateSnapshot = useEngineStore.getState().composition;
     const track = stateSnapshot.tracks[trackId];
     if (!track) throw new Error("Track not found");
 
@@ -354,10 +356,10 @@ export class ArrangementEngineImpl implements ArrangementEngine {
       track.panner.pan.value = clampedPan;
 
       useEngineStore.setState((state) => ({
-        arrangement: {
-          ...state.arrangement,
+        composition: {
+          ...state.composition,
           tracks: {
-            ...state.arrangement.tracks,
+            ...state.composition.tracks,
             [trackId]: {
               ...track,
               controls: { ...track.controls, pan: clampedPan },
@@ -372,17 +374,17 @@ export class ArrangementEngineImpl implements ArrangementEngine {
   }
 
   setVolume(trackId: string, volume: number): void {
-    const stateSnapshot = useEngineStore.getState().arrangement;
+    const stateSnapshot = useEngineStore.getState().composition;
     const track = stateSnapshot.tracks[trackId];
     if (!track) throw new Error("Track not found");
     const clampedVolume = Math.max(0, Math.min(1, volume));
     try {
       track.channel.volume.value = clampedVolume;
       useEngineStore.setState((state) => ({
-        arrangement: {
-          ...state.arrangement,
+        composition: {
+          ...state.composition,
           tracks: {
-            ...state.arrangement.tracks,
+            ...state.composition.tracks,
             [trackId]: {
               ...track,
               controls: { ...track.controls, volume: clampedVolume },
@@ -397,21 +399,21 @@ export class ArrangementEngineImpl implements ArrangementEngine {
   }
 
   getMeterValues(trackId: string): number | number[] {
-    const stateSnapshot = useEngineStore.getState().arrangement;
+    const stateSnapshot = useEngineStore.getState().composition;
     const track = stateSnapshot.tracks[trackId];
     if (!track) throw new Error("Track not found");
     return track.meter.getValue();
   }
 
-  getState(): ArrangementState {
-    return useEngineStore.getState().arrangement;
+  getState(): CompositionState {
+    return useEngineStore.getState().composition;
   }
 
   dispose(): void {
     if (this.disposed) return;
 
     try {
-      const state = useEngineStore.getState().arrangement;
+      const state = useEngineStore.getState().composition;
 
       // Cleanup all tracks
       Object.values(state.tracks).forEach((track) => {
@@ -419,18 +421,18 @@ export class ArrangementEngineImpl implements ArrangementEngine {
       });
 
       // Reset to initial state
-      useEngineStore.setState({ arrangement: initialArrangementState });
+      useEngineStore.setState({ composition: initialCompositionState });
 
       this.disposed = true;
     } catch (error) {
-      console.error("Failed to dispose arrangement engine:", error);
+      console.error("Failed to dispose composition engine:", error);
       throw error;
     }
   }
 
   private checkDisposed(): void {
     if (this.disposed) {
-      throw new Error("ArrangementEngine is disposed");
+      throw new Error("CompositionEngine is disposed");
     }
   }
 }

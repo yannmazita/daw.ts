@@ -40,7 +40,7 @@ export interface PersistableDevice<T extends EffectOptions = EffectOptions> {
 export interface Send {
   id: string;
   name: string;
-  sourceTrackId: string; // arrangement Track id
+  sourceTrackId: string; // composition Track id
   returnTrackId: string; // MixerTrack id
   preFader: boolean;
   gain: Gain;

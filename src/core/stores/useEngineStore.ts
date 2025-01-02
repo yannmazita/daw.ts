@@ -5,25 +5,31 @@ import { TransportState } from "@/features/transport/types";
 import { ClipState, PersistableClipState } from "@/features/clips/types";
 import { MixState, PersistableMixState } from "@/features/mix/types";
 import {
+  InstrumentState,
+  PersistableInstrumentState,
+} from "@/features/instruments/types";
+
+import {
   AutomationState,
   PersistableAutomationState,
 } from "@/features/automation/types";
 import {
-  ArrangementState,
-  PersistableArrangementState,
-} from "@/features/arrangement/types";
+  CompositionState,
+  PersistableCompositionState,
+} from "@/features/composition/types";
 import { initialTransportState } from "@/features/transport/utils/initialState";
 import { initialClipState } from "@/features/clips/utils/initialState";
 import { initialMixState } from "@/features/mix/utils/initialState";
+import { initialInstrumentState } from "@/features/instruments/utils/initialState";
 import { initialAutomationState } from "@/features/automation/utils/initialState";
-import { initialArrangementState } from "@/features/arrangement/utils/initialState";
-
+import { initialCompositionState } from "@/features/composition/utils/initialState";
 export interface EngineState {
   transport: TransportState;
   clips: ClipState;
   mix: MixState;
+  instruments: InstrumentState;
   automation: AutomationState;
-  arrangement: ArrangementState;
+  composition: CompositionState;
 }
 
 // Type for persisted state
@@ -31,8 +37,9 @@ interface PersistableEngineState {
   transport: TransportState;
   clips: PersistableClipState;
   mix: PersistableMixState;
+  instruments: PersistableInstrumentState;
   automation: PersistableAutomationState;
-  arrangement: PersistableArrangementState;
+  composition: PersistableCompositionState;
 }
 
 export const useEngineStore = create<EngineState>()(
@@ -42,8 +49,9 @@ export const useEngineStore = create<EngineState>()(
         transport: initialTransportState,
         clips: initialClipState,
         mix: initialMixState,
+        instruments: initialInstrumentState,
         automation: initialAutomationState,
-        arrangement: initialArrangementState,
+        composition: initialCompositionState,
       }),
       {
         name: "daw-engine-storage",
@@ -111,6 +119,22 @@ export const useEngineStore = create<EngineState>()(
             trackSends: state.mix.trackSends,
             mixerTrackOrder: state.mix.mixerTrackOrder,
           },
+          instruments: {
+            ...state.instruments,
+            instruments: Object.fromEntries(
+              Object.entries(state.instruments.instruments).map(
+                ([id, instrument]) => [
+                  id,
+                  {
+                    id: instrument.id,
+                    name: instrument.name,
+                    type: instrument.type,
+                    options: instrument.options,
+                  },
+                ],
+              ),
+            ),
+          },
           automation: {
             ...state.automation,
             lanes: state.automation.lanes,
@@ -120,10 +144,10 @@ export const useEngineStore = create<EngineState>()(
               ),
             ),
           },
-          arrangement: {
-            ...state.arrangement,
+          composition: {
+            ...state.composition,
             tracks: Object.fromEntries(
-              Object.entries(state.arrangement.tracks).map(([id, track]) => [
+              Object.entries(state.composition.tracks).map(([id, track]) => [
                 id,
                 {
                   id: track.id,
@@ -154,13 +178,11 @@ export const useEngineStore = create<EngineState>()(
 // Selectors
 export const useTransportState = () =>
   useEngineStore((state) => state.transport);
-
 export const useClipsState = () => useEngineStore((state) => state.clips);
-
 export const useMixState = () => useEngineStore((state) => state.mix);
-
+export const useInstrumentsState = () =>
+  useEngineStore((state) => state.instruments);
 export const useAutomationState = () =>
   useEngineStore((state) => state.automation);
-
-export const useArrangementState = () =>
-  useEngineStore((state) => state.arrangement);
+export const useCompositionState = () =>
+  useEngineStore((state) => state.composition);

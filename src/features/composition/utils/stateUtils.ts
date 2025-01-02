@@ -1,6 +1,6 @@
-// src/features/arrangement/utils/stateUtils.ts
+// src/features/composition/utils/stateUtils.ts
 
-import { Track, ArrangementState } from "../types";
+import { Track, CompositionState } from "../types";
 
 interface SoloStateUpdate {
   trackId: string;
@@ -58,9 +58,9 @@ export const calculateSoloState = (
  * Updates track states with new solo and mute values
  */
 export const updateTrackSoloStates = (
-  state: ArrangementState,
+  state: CompositionState,
   soloUpdate: SoloStateUpdate,
-): ArrangementState => {
+): CompositionState => {
   const newTracks = { ...state.tracks };
 
   // Update the soloed track

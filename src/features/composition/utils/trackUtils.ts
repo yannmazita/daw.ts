@@ -1,4 +1,4 @@
-// src/features/arrangement/utils/trackUtils.ts
+// src/features/composition/utils/trackUtils.ts
 
 import * as Tone from "tone";
 import { Track } from "../types";

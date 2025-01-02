@@ -5,7 +5,7 @@ import {
   MidiClipContent,
   MidiNote,
   MidiTrackData,
-  ArrangementClip,
+  CompositionClip,
   ClipContent,
 } from "../types";
 import { Time } from "tone/build/esm/core/type/Units";
@@ -94,12 +94,12 @@ export const createMidiExport = (content: MidiClipContent): Uint8Array => {
 
 export const prepareMidiTracks = (
   content: ClipContent,
-  clip: ArrangementClip,
+  clip: CompositionClip,
 ) => {
   const preparedParts: Tone.Part[] = [];
   const activeClips: Record<
     string,
-    { part: Tone.Part; clip: ArrangementClip }
+    { part: Tone.Part; clip: CompositionClip }
   > = {};
 
   content.midiData.tracks.forEach((track, trackIndex) => {

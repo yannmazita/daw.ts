@@ -3,7 +3,7 @@ import * as Tone from "tone";
 import {
   ClipEngine,
   ClipContent,
-  ArrangementClip,
+  CompositionClip,
   ClipState,
   MidiClipContent,
   ClipLoop,
@@ -140,7 +140,7 @@ export class ClipEngineImpl implements ClipEngine {
     return useEngineStore.getState().clips.contents[contentId];
   }
 
-  scheduleClip(clip: ArrangementClip): void {
+  scheduleClip(clip: CompositionClip): void {
     // Get current state outside setState
     const state = useEngineStore.getState();
     const content = state.clips.contents[clip.contentId];
@@ -200,7 +200,7 @@ export class ClipEngineImpl implements ClipEngine {
 
   private prepareAudioPlayer(
     content: ClipContent,
-    clip: ArrangementClip,
+    clip: CompositionClip,
   ): Tone.Player {
     return new Tone.Player({
       url: content.buffer,
@@ -287,7 +287,7 @@ export class ClipEngineImpl implements ClipEngine {
 
   private disposeClipResources(activeClip: {
     part: Tone.Part | Tone.Player | null;
-    clip: ArrangementClip;
+    clip: CompositionClip;
   }): void {
     if (!activeClip.part) return;
 
@@ -324,7 +324,7 @@ export class ClipEngineImpl implements ClipEngine {
     const id = crypto.randomUUID();
 
     // Prepare clip data
-    const clip: ArrangementClip = {
+    const clip: CompositionClip = {
       id,
       contentId,
       startTime,
@@ -486,7 +486,7 @@ export class ClipEngineImpl implements ClipEngine {
   private rescheduleClipTiming(
     part: Tone.Part | Tone.Player,
     newTime: Time,
-    clip: ArrangementClip,
+    clip: CompositionClip,
   ): void {
     try {
       if (part instanceof Tone.Part) {

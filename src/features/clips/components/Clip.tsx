@@ -1,4 +1,4 @@
-// src/features/arrangement/components/Clip.tsx
+// src/features/composition/components/Clip.tsx
 import { useEngineStore } from "@/core/stores/useEngineStore";
 import { cn } from "@/common/shadcn/lib/utils";
 import * as Tone from "tone";

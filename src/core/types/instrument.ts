@@ -3,9 +3,9 @@
 import * as Tone from "tone";
 
 /**
- * Represents the types of synthesizer instruments available, as defined by the Tone.js library.
+ * Represents the types of instrument available, as defined by the Tone.js library.
  */
-export type InstrumentType =
+export type ToneInstrumentType =
   | Tone.AMSynth
   | Tone.DuoSynth
   | Tone.FMSynth

@@ -1,5 +1,5 @@
-// src/features/arrangement/components/TimelineGrid.tsx
-import { useTrackOperations } from "@/features/arrangement/hooks/useTrackOperations";
+// src/features/composition/components/TimelineGrid.tsx
+import { useTrackOperations } from "@/features/composition/hooks/useTrackOperations";
 import { TrackLane } from "./TrackLane";
 import { TrackHeader } from "./TrackHeader";
 import { cn } from "@/common/shadcn/lib/utils";

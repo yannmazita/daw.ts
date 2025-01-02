@@ -7,14 +7,14 @@ export class AutomationEngineImpl implements AutomationEngine {
 
   dispose(): void {
     if (this.disposed) {
-      console.warn("ArrangementEngine already disposed");
+      console.warn("CompositionEngine already disposed");
       return;
     }
   }
 
   private checkDisposed(): void {
     if (this.disposed) {
-      throw new Error("ArrangementEngine is disposed");
+      throw new Error("CompositionEngine is disposed");
     }
   }
 }

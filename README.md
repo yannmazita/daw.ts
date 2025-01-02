@@ -105,15 +105,15 @@ sequenceDiagram
 sequenceDiagram
     participant UI
     participant useTrackOperations
-    participant ArrangementEngine
+    participant CompositionEngine
     participant ClipEngine
 
     UI->>useTrackOperations: addClip(contentId, startTime)
-    useTrackOperations->>ArrangementEngine: addClip(contentId, startTime)
-    ArrangementEngine->>ClipEngine: scheduleClip(clip)
+    useTrackOperations->>CompositionEngine: addClip(contentId, startTime)
+    CompositionEngine->>ClipEngine: scheduleClip(clip)
     ClipEngine->>Tone.js: start(time)
-    ClipEngine-->>ArrangementEngine: clipId
-    ArrangementEngine-->>useTrackOperations: clipId
+    ClipEngine-->>CompositionEngine: clipId
+    CompositionEngine-->>useTrackOperations: clipId
     useTrackOperations-->>UI: clipId
 ```
 
@@ -127,15 +127,15 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     participant UI
-    participant ArrangementEngine
+    participant CompositionEngine
     participant AutomationEngine
 
     UI->>AutomationEngine: createLane(targetType, targetId, parameterId)
     UI->>AutomationEngine: addPoint(laneId, time, value)
-    UI->>ArrangementEngine: scheduleLane(laneId)
-    ArrangementEngine->>AutomationEngine: scheduleLane(laneId)
-    AutomationEngine-->>ArrangementEngine: laneId
-    ArrangementEngine-->>UI: laneId
+    UI->>CompositionEngine: scheduleLane(laneId)
+    CompositionEngine->>AutomationEngine: scheduleLane(laneId)
+    AutomationEngine-->>CompositionEngine: laneId
+    CompositionEngine-->>UI: laneId
     Note over AutomationEngine: Placeholder, no Tone.js interaction
 ```
 
@@ -150,15 +150,15 @@ sequenceDiagram
 sequenceDiagram
     participant UI
     participant useTrackOperations
-    participant ArrangementEngine
+    participant CompositionEngine
     participant MixEngine
 
     UI->>useTrackOperations: createTrack(type, name)
-    useTrackOperations->>ArrangementEngine: createTrack(type, name)
-    ArrangementEngine->>Tone.js: createAudioNodes()
-    ArrangementEngine->>MixEngine: createSend(trackId, masterId)
-    MixEngine-->>ArrangementEngine: sendId
-    ArrangementEngine-->>useTrackOperations: trackId
+    useTrackOperations->>CompositionEngine: createTrack(type, name)
+    CompositionEngine->>Tone.js: createAudioNodes()
+    CompositionEngine->>MixEngine: createSend(trackId, masterId)
+    MixEngine-->>CompositionEngine: sendId
+    CompositionEngine-->>useTrackOperations: trackId
     useTrackOperations-->>UI: trackId
 ```
 
@@ -237,15 +237,19 @@ graph LR
     </summary>
 
 The application logic is made of engines (modules) that allow the application to grow with new features. Each engine has its own logic and state and is initialized by `EngineManager`.
-Currently there are 5 engines.
+Currently there are 6 engines.
 
-### Arrangement Engine
+### Composition Engine
 
-This engine manages track and clip arrangement in the timeline. It interacts with `MixEngine` and `ClipEngine` to handle sends or playback.
+This engine manages track and clip composition in the timeline. It interacts with `MixEngine` and `ClipEngine` to handle sends or playback.
 
 ### Automation Engine
 
 _Not implemented yet._ This engine manages automation lanes and paramater connections.
+
+### Instrument Engine
+
+_Not implemented yet._ This engine manages instruments, their devices and effects.
 
 ### Clip Engine
 

@@ -86,7 +86,7 @@ export interface ClipLoop {
   duration: Time;
 }
 
-export interface ArrangementClip {
+export interface CompositionClip {
   id: string;
   contentId: string;
 
@@ -106,7 +106,7 @@ export interface ClipState {
     string,
     {
       part: Part | Player | null;
-      clip: ArrangementClip;
+      clip: CompositionClip;
     }
   >;
   isRecording: boolean;
@@ -123,7 +123,7 @@ export interface PersistableClipState {
   activeClips: Record<
     string,
     {
-      clip: ArrangementClip;
+      clip: CompositionClip;
     }
   >;
   isRecording: boolean;
@@ -146,7 +146,7 @@ export interface ClipEngine {
   getClipContent(contentId: string): ClipContent;
 
   // Clip instance management
-  scheduleClip(clip: ArrangementClip): void;
+  scheduleClip(clip: CompositionClip): void;
   unscheduleClip(clipId: string): void;
 
   // Clip operations
