@@ -87,3 +87,22 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer utilities {
+  .input-no-wheel {
+    /* Standard property */
+    appearance: textfield;
+
+    /* Chrome, Safari, Edge, Opera */
+    &::-webkit-outer-spin-button,
+    &::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    /* Firefox */
+    &[type="number"] {
+      -moz-appearance: textfield;
+    }
+  }
+}

@@ -80,3 +80,12 @@ export const startAudioClip = (player: Tone.Player, startTime?: Time): void => {
     throw error;
   }
 };
+
+export const stopAudioClip = (player: Tone.Player): void => {
+  try {
+    player.stop();
+  } catch (error) {
+    console.warn("Error stopping audio clip:", error);
+    throw error;
+  }
+};

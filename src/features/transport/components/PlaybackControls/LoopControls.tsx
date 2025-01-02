@@ -36,7 +36,7 @@ const TimeInput: React.FC<TimeInputProps> = ({
     value={value}
     onChange={(e) => onChange(e.target.value)}
     onBlur={onBlur}
-    className={`w-24 ${error ? "border-red-500" : ""}`}
+    className={`input-no-wheel h-5 w-16 rounded-none py-1 text-center ${error ? "border-red-500" : ""}`}
     placeholder={placeholder}
     aria-label={label}
     title={label}
@@ -121,12 +121,12 @@ export const LoopControls: React.FC = () => {
 
   return (
     <div
-      className="flex items-center space-x-4"
+      className="flex items-center gap-x-4"
       role="group"
       aria-label="Loop controls"
     >
       {transport.loop.enabled && (
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center gap-x-2">
           <TimeInput
             value={localStart}
             onChange={setLocalStart}
@@ -150,7 +150,7 @@ export const LoopControls: React.FC = () => {
           />
         </div>
       )}
-      <div className="flex items-center space-x-2">
+      <div className="flex items-center gap-x-2">
         <Switch
           checked={transport.loop.enabled}
           onCheckedChange={handleLoopToggle}

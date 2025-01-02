@@ -7,7 +7,7 @@ import { AutomationEngine } from "../../automation/types";
 import { useEngineStore } from "@/core/stores/useEngineStore";
 import { initialArrangementState } from "../utils/initialState";
 import { createTrackData } from "../utils/trackUtils";
-import { moveTrackInOrder, reorderTracks } from "../utils/orderUtils";
+import { moveTrackInOrder } from "../utils/orderUtils";
 import { validateArrangementState } from "../utils/validation";
 import { calculateSoloState, updateTrackSoloStates } from "../utils/stateUtils";
 
@@ -21,6 +21,7 @@ export class ArrangementEngineImpl implements ArrangementEngine {
     public readonly automationEngine: AutomationEngine,
   ) {
     this.initializeDefaultTracks();
+    this.initializeDummyMidiClips();
   }
 
   private initializeDefaultTracks(): void {
@@ -39,11 +40,14 @@ export class ArrangementEngineImpl implements ArrangementEngine {
         });
       } else {
         // Create default tracks
+        // 2 MIDI, 2 Audio but using more for debugging purposes
         console.log("Creating default tracks");
-        this.createTrack("midi", "MIDI 1");
-        this.createTrack("midi", "MIDI 2");
-        this.createTrack("audio", "AUDIO 1");
-        this.createTrack("audio", "AUDIO 2");
+        for (let i = 0; i < 5; i++) {
+          this.createTrack("midi", `Test MIDI ${i + 1}`);
+        }
+        for (let i = 0; i < 5; i++) {
+          this.createTrack("audio", `Test Audio ${i + 1}`);
+        }
       }
     } catch (error) {
       console.error("Failed to initialize tracks:", error);
@@ -51,15 +55,31 @@ export class ArrangementEngineImpl implements ArrangementEngine {
     }
   }
 
-  createTrack(type: Track["type"], name: string): string {
+  private initializeDummyMidiClips(): void {
+    const stateSNapshot = useEngineStore.getState().arrangement;
+    const trackOrder = stateSNapshot.trackOrder;
+
+    trackOrder.forEach((trackId, index) => {
+      const track = stateSNapshot.tracks[trackId];
+      if (track.type === "midi") {
+        const contentId = this.clipEngine.createMidiClip({
+          name: `Test MIDI Clip ${index + 1}`,
+          duration: 4,
+          tracks: [],
+        });
+        const clipId = this.clipEngine.addClip(contentId, 0);
+        this.updateTrack(trackId, { clipIds: [clipId] });
+      }
+    });
+  }
+
+  createTrack(type: Track["type"], name?: string): string {
     this.checkDisposed();
 
     const id = crypto.randomUUID();
 
     try {
-      const stateSnapshot = useEngineStore.getState().arrangement;
-      const index = stateSnapshot.trackOrder.length;
-      const track = createTrackData(id, type, name, index);
+      const track = createTrackData(id, type, name);
 
       useEngineStore.setState((state) => {
         const newState = {
@@ -212,19 +232,12 @@ export class ArrangementEngineImpl implements ArrangementEngine {
 
     try {
       const newOrder = moveTrackInOrder(trackId, newIndex, state);
-      const newIndices = reorderTracks(newOrder, state);
 
       useEngineStore.setState((state) => {
         const newState = {
           arrangement: {
             ...state.arrangement,
             trackOrder: newOrder,
-            tracks: Object.fromEntries(
-              Object.entries(state.arrangement.tracks).map(([id, track]) => [
-                id,
-                { ...track, index: newIndices[id] || track.index },
-              ]),
-            ),
           },
         };
 
@@ -307,6 +320,29 @@ export class ArrangementEngineImpl implements ArrangementEngine {
     }
   }
 
+  setArmed(trackId: string, armed: boolean): void {
+    const stateSnapshot = useEngineStore.getState().arrangement;
+    const track = stateSnapshot.tracks[trackId];
+    if (!track) throw new Error("Track not found");
+    try {
+      useEngineStore.setState((state) => ({
+        arrangement: {
+          ...state.arrangement,
+          tracks: {
+            ...state.arrangement.tracks,
+            [trackId]: {
+              ...track,
+              controls: { ...track.controls, armed },
+            },
+          },
+        },
+      }));
+    } catch (error) {
+      console.error("Failed to set armed state:", error);
+      throw error;
+    }
+  }
+
   setPan(trackId: string, pan: number): void {
     const stateSnapshot = useEngineStore.getState().arrangement;
     const track = stateSnapshot.tracks[trackId];
@@ -333,6 +369,38 @@ export class ArrangementEngineImpl implements ArrangementEngine {
       console.error("Failed to set pan value:", error);
       throw error;
     }
+  }
+
+  setVolume(trackId: string, volume: number): void {
+    const stateSnapshot = useEngineStore.getState().arrangement;
+    const track = stateSnapshot.tracks[trackId];
+    if (!track) throw new Error("Track not found");
+    const clampedVolume = Math.max(0, Math.min(1, volume));
+    try {
+      track.channel.volume.value = clampedVolume;
+      useEngineStore.setState((state) => ({
+        arrangement: {
+          ...state.arrangement,
+          tracks: {
+            ...state.arrangement.tracks,
+            [trackId]: {
+              ...track,
+              controls: { ...track.controls, volume: clampedVolume },
+            },
+          },
+        },
+      }));
+    } catch (error) {
+      console.error("Failed to set volume value:", error);
+      throw error;
+    }
+  }
+
+  getMeterValues(trackId: string): number | number[] {
+    const stateSnapshot = useEngineStore.getState().arrangement;
+    const track = stateSnapshot.tracks[trackId];
+    if (!track) throw new Error("Track not found");
+    return track.meter.getValue();
   }
 
   getState(): ArrangementState {

@@ -24,18 +24,18 @@ export const TempoTap: React.FC = () => {
   }, [handleTap]);
 
   return (
-    <div className="flex items-center space-x-2">
+    <div className="flex items-center gap-x-2">
       <Button
         variant="outline"
         size="sm"
         onClick={handleTap}
-        className={`px-3 py-1 transition-colors ${
+        className={`h-5 w-14 rounded-none py-1 transition-colors ${
           tapTimes.length > 0
             ? "bg-muted-foreground dark:bg-muted-foreground"
             : ""
         }`}
       >
-        {tapTimes.length > 0 ? `Tap (${tapTimes.length})` : "Tap Tempo"}
+        {tapTimes.length > 0 ? `Tap (${tapTimes.length})` : "Tap"}
       </Button>
     </div>
   );

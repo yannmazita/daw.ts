@@ -26,6 +26,7 @@ import {
   startAudioClip,
   updatePlayerFades,
   updatePlayerVolume,
+  stopAudioClip,
 } from "../utils/audioUtils";
 
 export class ClipEngineImpl implements ClipEngine {
@@ -703,7 +704,7 @@ export class ClipEngineImpl implements ClipEngine {
 
     try {
       if (part instanceof Tone.Player) {
-        part.stop();
+        stopAudioClip(part);
       } else if (part instanceof Tone.Part) {
         part.stop();
       }
