@@ -82,6 +82,7 @@ export const useEngineStore = create<EngineState>()(
                 },
               ]),
             ),
+            mixerTrackOrder: state.mix.mixerTrackOrder,
             devices: Object.fromEntries(
               Object.entries(state.mix.devices).map(([id, device]) => [
                 id,
@@ -91,6 +92,18 @@ export const useEngineStore = create<EngineState>()(
                   name: device.name,
                   bypass: device.bypass,
                   options: device.options,
+                },
+              ]),
+            ),
+            soundChains: Object.fromEntries(
+              Object.entries(state.mix.soundChains).map(([id, soundChain]) => [
+                id,
+                {
+                  id: soundChain.id,
+                  name: soundChain.name,
+                  deviceIds: soundChain.deviceIds,
+                  inputGainValue: soundChain.input.gain.value,
+                  outputGainValue: soundChain.output.gain.value,
                 },
               ]),
             ),
@@ -108,7 +121,6 @@ export const useEngineStore = create<EngineState>()(
               ]),
             ),
             trackSends: state.mix.trackSends,
-            mixerTrackOrder: state.mix.mixerTrackOrder,
           },
           automation: {
             ...state.automation,

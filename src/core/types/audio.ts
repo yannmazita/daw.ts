@@ -17,4 +17,5 @@ export interface Device<T = any> {
     | ToneProcessorType
     | Tone.ToneAudioNode;
   options?: T;
+  parentId: string; // ID of the mixer track or sound chain that owns this device
 }

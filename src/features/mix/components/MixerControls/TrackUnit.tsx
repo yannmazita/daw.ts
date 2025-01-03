@@ -7,6 +7,8 @@ import { useCallback, useEffect, useState, useRef } from "react";
 import { CassetteTape, Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/common/shadcn/ui/button";
 import { Input } from "@/common/shadcn/ui/input";
+import { DeviceType } from "@/core/types/audio";
+import { useDeviceOperations } from "../../hooks/useDeviceOperations";
 
 interface TrackUnitProps {
   trackId: string;
@@ -30,6 +32,15 @@ export const TrackUnit: React.FC<TrackUnitProps> = ({ trackId, className }) => {
   } = useTrackControls(trackId);
   const [localVolume, setLocalVolume] = useState(volume.toString());
   const meterRef = useRef<HTMLDivElement>(null);
+  const [selectedDevice, setSelectedDevice] = useState<string | null>(null);
+  const [deviceOptions, setDeviceOptions] = useState<any>({});
+  const { addDevice } = useDeviceOperations(trackId);
+
+  const handleAddDevice = (type: DeviceType) => {
+    const deviceId = addDevice(type);
+    setSelectedDevice(deviceId);
+    setDeviceOptions({});
+  };
 
   useEffect(() => {
     let animationFrameId: number;
@@ -143,6 +154,17 @@ export const TrackUnit: React.FC<TrackUnitProps> = ({ trackId, className }) => {
             </Button>
           </div>
         </div>
+      </div>
+      <div className="flex flex-row justify-around">
+        <Button size="sm" onClick={() => handleAddDevice("effect")}>
+          Add Effect
+        </Button>
+        <Button size="sm" onClick={() => handleAddDevice("processor")}>
+          Add Processor
+        </Button>
+        <Button size="sm" onClick={() => handleAddDevice("instrument")}>
+          Add Instrument
+        </Button>
       </div>
     </div>
   );

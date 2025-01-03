@@ -1,6 +1,6 @@
 // src/features/mix/utils/routingUtils.ts
 import * as Tone from "tone";
-import { Device, MixerTrack, Send } from "../types";
+import { Device, MixerTrack, Send, SoundChain } from "../types";
 import { Track } from "@/features/composition/types";
 
 export interface SendRoutingState {
@@ -17,33 +17,25 @@ export const connectMixerTrackChain = (
 ): void => {
   // Disconnect existing chain
   mixerTrack.input.disconnect();
-  mixerTrack.deviceIds.pre.forEach((deviceId) =>
-    devices[deviceId].node.disconnect(),
+  mixerTrack.deviceIds.forEach((deviceId) =>
+    devices[deviceId]?.node.disconnect(),
   );
-  mixerTrack.deviceIds.post.forEach((deviceId) =>
-    devices[deviceId].node.disconnect(),
-  );
-
   mixerTrack.channel.disconnect();
 
   // Connect chain
   let currentNode: Tone.ToneAudioNode = mixerTrack.input;
 
-  // Pre-fader chain
-  mixerTrack.deviceIds.pre.forEach((deviceId) => {
-    currentNode.connect(devices[deviceId].node);
-    currentNode = devices[deviceId].node;
+  // Connect devices
+  mixerTrack.deviceIds.forEach((deviceId) => {
+    if (devices[deviceId]) {
+      currentNode.connect(devices[deviceId].node);
+      currentNode = devices[deviceId].node;
+    }
   });
 
   // Connect to channel strip
   currentNode.connect(mixerTrack.channel);
   currentNode = mixerTrack.channel;
-
-  // Post-fader chain
-  mixerTrack.deviceIds.post.forEach((deviceId) => {
-    currentNode.connect(devices[deviceId].node);
-    currentNode = devices[deviceId].node;
-  });
 
   // Connect to meter
   currentNode.connect(mixerTrack.meter);
@@ -54,6 +46,32 @@ export const connectMixerTrackChain = (
   } else {
     currentNode.connect(masterTrack.input);
   }
+};
+
+export const connectSoundChain = (
+  soundChain: SoundChain,
+  devices: Record<string, Device>,
+): void => {
+  // Disconnect existing chain
+  soundChain.input.disconnect();
+  soundChain.deviceIds.forEach((deviceId) =>
+    devices[deviceId]?.node.disconnect(),
+  );
+  soundChain.output.disconnect();
+
+  // Connect chain
+  let currentNode: Tone.ToneAudioNode = soundChain.input;
+
+  // Connect devices
+  soundChain.deviceIds.forEach((deviceId) => {
+    if (devices[deviceId]) {
+      currentNode.connect(devices[deviceId].node);
+      currentNode = devices[deviceId].node;
+    }
+  });
+
+  // Connect to output
+  currentNode.connect(soundChain.output);
 };
 
 export const connectSend = (

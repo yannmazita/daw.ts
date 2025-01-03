@@ -68,10 +68,7 @@ export interface MixerTrack {
   id: string;
   name: string;
   type: "return" | "master";
-  deviceIds: {
-    pre: string[];
-    post: string[];
-  };
+  deviceIds: string[];
   controls: MixerTrackControlState;
 
   // Tone.js nodes
@@ -87,10 +84,27 @@ export interface PersistableMixerTrack {
   controls: PersistableMixerTrackControlState;
 }
 
+export interface SoundChain {
+  id: string;
+  name: string;
+  deviceIds: string[]; // IDs of devices within the sound chain
+  input: Gain;
+  output: Gain;
+}
+
+export interface PersistableSoundChain {
+  id: string;
+  name: string;
+  deviceIds: string[];
+  inputGainValue: number;
+  outputGainValue: number;
+}
+
 export interface MixState {
   mixerTracks: Record<string, MixerTrack>;
   mixerTrackOrder: string[];
   devices: Record<string, Device>;
+  soundChains: Record<string, SoundChain>;
   sends: Record<string, Send>;
   trackSends: Record<string, string[]>; // track id -> send IDs mapping
 }
@@ -99,6 +113,7 @@ export interface PersistableMixState {
   mixerTracks: Record<string, PersistableMixerTrack>;
   mixerTrackOrder: string[];
   devices: Record<string, PersistableDevice>;
+  soundChains: Record<string, PersistableSoundChain>;
   sends: Record<string, PersistableSend>;
   trackSends: Record<string, string[]>;
 }
@@ -132,6 +147,9 @@ export interface MixEngine {
   setSendAmount(baseTrackId: string, sendId: string, amount: number): void;
   getTrackSends(baseTrackId: string): Send[];
   disconnectTrackSends(baseTrackId: string): void;
+
+  // Sound Chains
+  createSoundChain(name?: string): string;
 
   // State
   getState(): MixState;

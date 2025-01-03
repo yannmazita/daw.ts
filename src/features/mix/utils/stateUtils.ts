@@ -1,5 +1,5 @@
 // src/features/mix/utils/stateUtils.ts
-import { MixState, MixerTrack, Device, Send } from "../types";
+import { MixState, MixerTrack, Device, Send, SoundChain } from "../types";
 
 export const updateMixerTrack = (
   state: MixState,
@@ -69,6 +69,25 @@ export const removeSendFromState = (
     trackSends: {
       ...state.trackSends,
       [send.sourceTrackId]: sourceTrackSends.filter((id) => id !== sendId),
+    },
+  };
+};
+export const updateSoundChain = (
+  state: MixState,
+  soundChainId: string,
+  updates: Partial<SoundChain>,
+): MixState => {
+  // Ensure soundChains exists
+  const soundChains = state.soundChains || {};
+  const existingSoundChain = soundChains[soundChainId];
+
+  return {
+    ...state,
+    soundChains: {
+      ...soundChains,
+      [soundChainId]: existingSoundChain
+        ? { ...existingSoundChain, ...updates }
+        : (updates as SoundChain),
     },
   };
 };
