@@ -7,6 +7,14 @@ import { Volume2, VolumeX } from "lucide-react";
 import { Knob } from "@/common/components/Knob/Knob";
 import { Button } from "@/common/shadcn/ui/button";
 import { Input } from "@/common/shadcn/ui/input";
+import { useMixEngine } from "@/core/engines/EngineManager";
+import { Device } from "@/features/mix/types";
+import { createDeviceNode } from "@/common/utils/audioNodes";
+import { DeviceType } from "@/core/types/audio";
+import { EffectName } from "@/core/types/effect";
+import { ProcessorName } from "@/core/types/processor";
+import { InstrumentName } from "@/core/types/instrument";
+import { useDeviceOperations } from "../../hooks/useDeviceOperations";
 
 interface MixerUnitProps {
   trackId: string;
@@ -28,6 +36,20 @@ export const MixerUnit: React.FC<MixerUnitProps> = ({ trackId, className }) => {
   } = useMixerTrackControls(trackId);
   const [localVolume, setLocalVolume] = useState(volume.toString());
   const meterRef = useRef<HTMLDivElement>(null);
+  const mixEngine = useMixEngine();
+  const [selectedDevice, setSelectedDevice] = useState<string | null>(null);
+  const [deviceOptions, setDeviceOptions] = useState<any>({});
+  const { addDevice } = useDeviceOperations(trackId);
+
+  const handleAddDevice = (type: DeviceType) => {
+    const deviceId = addDevice(type);
+    setSelectedDevice(deviceId);
+    setDeviceOptions({});
+  };
+
+  const handleDeviceChange = (deviceId: string, updates: Partial<Device>) => {
+    mixEngine.updateDevice(trackId, deviceId, updates);
+  };
 
   useEffect(() => {
     let animationFrameId: number;
@@ -130,6 +152,14 @@ export const MixerUnit: React.FC<MixerUnitProps> = ({ trackId, className }) => {
             </Button>
           </div>
         </div>
+      </div>
+      <div className="flex flex-row justify-around">
+        <Button size="sm" onClick={() => handleAddDevice("effect")}>
+          Add Effect
+        </Button>
+        <Button size="sm" onClick={() => handleAddDevice("processor")}>
+          Add Processor
+        </Button>
       </div>
     </div>
   );

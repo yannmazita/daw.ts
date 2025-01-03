@@ -1,10 +1,9 @@
 // src/features/mix/types.ts
-import {
-  EffectName,
-  EffectOptions,
-  ToneEffectType,
-} from "../../core/types/audio";
+import { EffectOptions, ToneEffectType } from "../../core/types/effect";
 import { Channel, Gain, Meter } from "tone";
+import { DeviceType } from "@/core/types/audio";
+import { InstrumentOptions, ToneInstrumentType } from "@/core/types/instrument";
+import { ProcessorOptions, ToneProcessorType } from "@/core/types/processor";
 
 export interface MixerTrackControlState {
   solo: boolean;
@@ -20,18 +19,28 @@ export interface PersistableMixerTrackControlState {
   volume: number;
 }
 
-export interface Device<T extends EffectOptions = EffectOptions> {
+export interface Device<
+  T extends
+    | EffectOptions
+    | ProcessorOptions
+    | InstrumentOptions = EffectOptions,
+> {
   id: string;
-  type: EffectName;
+  type: DeviceType;
   name: string;
   bypass: boolean;
-  node: ToneEffectType;
+  node: ToneEffectType | ToneProcessorType | ToneInstrumentType;
   options?: T;
 }
 
-export interface PersistableDevice<T extends EffectOptions = EffectOptions> {
+export interface PersistableDevice<
+  T extends
+    | EffectOptions
+    | ProcessorOptions
+    | InstrumentOptions = EffectOptions,
+> {
   id: string;
-  type: EffectName;
+  type: DeviceType;
   name: string;
   bypass: boolean;
   options?: T;
@@ -108,8 +117,8 @@ export interface MixEngine {
   getMeterValues(mixerTrackId: string): number | number[];
 
   // Device management
-  addDevice(mixerTrackId: string, deviceType: EffectName): string;
-  updateDevice<T extends EffectOptions>(
+  addDevice(mixerTrackId: string, deviceType: DeviceType): string;
+  updateDevice<T extends EffectOptions | ProcessorOptions | InstrumentOptions>(
     mixerTrackId: string,
     deviceId: string,
     updates: Partial<Device<T>>,

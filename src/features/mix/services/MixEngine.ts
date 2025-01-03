@@ -1,9 +1,14 @@
 // src/features/mix/services/MixEngine.ts
 import * as Tone from "tone";
-import { MixEngine, MixState, Device, Send, MixerTrack } from "../types";
-import { EffectName, EffectOptions } from "@/core/types/audio";
+import { MixEngine, MixState, Send, MixerTrack, Device } from "../types";
+import { EffectName, EffectOptions } from "@/core/types/effect";
 import { useEngineStore } from "@/core/stores/useEngineStore";
-import { createMixerTrackNodes, createEffectNode } from "../utils/audioNodes";
+import {
+  createMixerTrackNodes,
+  createEffectNode,
+  createInstrumentNode,
+  createProcessorNode,
+} from "@/common/utils/audioNodes";
 import {
   addSendToState,
   removeSendFromState,
@@ -25,6 +30,9 @@ import {
 import { validateSendRouting, validateSendUpdate } from "../utils/validation";
 import { moveMixerTrackInOrder } from "../utils/orderUtils";
 import { initialMixerTrackControlState } from "../utils/initialState";
+import { DeviceType } from "@/core/types/audio";
+import { InstrumentName, InstrumentOptions } from "@/core/types/instrument";
+import { ProcessorName, ProcessorOptions } from "@/core/types/processor";
 
 export class MixEngineImpl implements MixEngine {
   private disposed = false;
@@ -287,7 +295,7 @@ export class MixEngineImpl implements MixEngine {
     return mixerTrack.meter.getValue();
   }
 
-  addDevice(mixerTrackId: string, deviceType: EffectName): string {
+  addDevice(mixerTrackId: string, deviceType: DeviceType): string {
     const id = crypto.randomUUID();
     const stateSnapshot = useEngineStore.getState();
     const mixerTrack = stateSnapshot.mix.mixerTracks[mixerTrackId];
@@ -301,17 +309,17 @@ export class MixEngineImpl implements MixEngine {
       throw new Error("Master track not found");
     }
 
-    const node = createEffectNode(deviceType);
+    const node = this.createDeviceNode(deviceType);
     try {
-      const device: Device = {
-        id,
-        type: deviceType,
-        name: deviceType,
-        bypass: false,
-        node,
-      };
-
       useEngineStore.setState((state) => {
+        const device: Device = {
+          id,
+          type: deviceType,
+          name: deviceType,
+          bypass: false,
+          node,
+        };
+
         const updatedState = updateDevice(state.mix, id, device);
         const newState = {
           mix: updateMixerTrack(updatedState, mixerTrackId, {
@@ -324,9 +332,10 @@ export class MixEngineImpl implements MixEngine {
 
         // Get updated track reference
         const updatedTrack = newState.mix.mixerTracks[mixerTrackId];
+        const updatedDevices = newState.mix.devices;
 
         // Connect with master track reference
-        connectMixerTrackChain(updatedTrack, masterTrack, state.mix.devices);
+        connectMixerTrackChain(updatedTrack, masterTrack, updatedDevices);
 
         return newState;
       });
@@ -343,6 +352,19 @@ export class MixEngineImpl implements MixEngine {
         console.warn("Failed to clean up device node:", cleanupError);
       }
       throw error;
+    }
+  }
+
+  private createDeviceNode(type: DeviceType): Tone.ToneAudioNode {
+    switch (type) {
+      case "effect":
+        return createEffectNode(EffectName.AutoFilter); // Default effect
+      case "processor":
+        return createProcessorNode(ProcessorName.Compressor); // Default processor
+      case "instrument":
+        return createInstrumentNode(InstrumentName.Synth); // Default instrument
+      default:
+        throw new Error("Unknown device type");
     }
   }
 
@@ -390,9 +412,10 @@ export class MixEngineImpl implements MixEngine {
 
         // Get updated track reference
         const updatedTrack = newState.mix.mixerTracks[mixerTrackId];
+        const updatedDevices = newState.mix.devices;
 
         // Reconnect the chain within setState
-        connectMixerTrackChain(updatedTrack, masterTrack, devices);
+        connectMixerTrackChain(updatedTrack, masterTrack, updatedDevices);
 
         return newState;
       });
@@ -419,7 +442,7 @@ export class MixEngineImpl implements MixEngine {
     }
   }
 
-  updateDevice<T extends EffectOptions>(
+  updateDevice<T extends EffectOptions | ProcessorOptions | InstrumentOptions>(
     mixerTrackId: string,
     deviceId: string,
     updates: Partial<Device<T>>,

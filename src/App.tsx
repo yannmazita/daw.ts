@@ -24,9 +24,7 @@ export const App: React.FC = () => {
             <div className="flex-grow overflow-hidden">
               <TimelineGrid />
             </div>
-            <div className="h-1/3">
-              <MixerControls />
-            </div>
+            <MixerControls />
           </div>
         </div>
         <div className="grid grid-cols-12">

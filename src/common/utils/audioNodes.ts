@@ -1,19 +1,19 @@
-// src/features/mix/utils/audioNodes.ts
+// src/common/utils/audioNodes.ts
 import * as Tone from "tone";
 import {
   EffectName,
   EffectOptions,
-  EQ3Options,
   FeedbackDelayOptions,
   FrequencyShifterOptions,
   ReverbOptions,
-  ToneEffectType,
-} from "@/core/types/audio";
+} from "@/core/types/effect";
 import {
+  EQ3Options,
   ProcessorName,
   ProcessorOptions,
-  ToneProcessorType,
-} from "@/core/types/audio";
+} from "@/core/types/processor";
+import { InstrumentName, InstrumentOptions } from "@/core/types/instrument";
+import { DeviceType } from "@/core/types/audio";
 
 export const createMixerTrackNodes = () => {
   const input = new Tone.Gain();
@@ -26,7 +26,7 @@ export const createMixerTrackNodes = () => {
 export const createEffectNode = (
   type: EffectName,
   options?: EffectOptions,
-): ToneEffectType => {
+): Tone.ToneAudioNode => {
   const defaultOptions = { wet: 1, ...options };
   switch (type) {
     case EffectName.AutoFilter:
@@ -77,7 +77,7 @@ export const createEffectNode = (
 export const createProcessorNode = (
   type: ProcessorName,
   options?: ProcessorOptions,
-): ToneProcessorType => {
+): Tone.ToneAudioNode => {
   const defaultOptions = { ...options };
   switch (type) {
     case ProcessorName.EQ3:
@@ -88,5 +88,55 @@ export const createProcessorNode = (
       return new Tone.Gate(defaultOptions as Tone.GateOptions);
     default:
       throw new Error("Unknown processor type");
+  }
+};
+
+export const createInstrumentNode = (
+  type: InstrumentName,
+  options?: InstrumentOptions,
+): Tone.ToneAudioNode => {
+  switch (type) {
+    case InstrumentName.Synth:
+      return new Tone.Synth(options as Tone.SynthOptions);
+    case InstrumentName.AMSynth:
+      return new Tone.AMSynth(options as Tone.AMSynthOptions);
+    case InstrumentName.DuoSynth:
+      return new Tone.DuoSynth(options as Tone.DuoSynthOptions);
+    case InstrumentName.FMSynth:
+      return new Tone.FMSynth(options as Tone.FMSynthOptions);
+    case InstrumentName.MembraneSynth:
+      return new Tone.MembraneSynth(options as Tone.MembraneSynthOptions);
+    case InstrumentName.MetalSynth:
+      return new Tone.MetalSynth(options as Tone.MetalSynthOptions);
+    case InstrumentName.MonoSynth:
+      return new Tone.MonoSynth(options as Tone.MonoSynthOptions);
+    case InstrumentName.NoiseSynth:
+      return new Tone.NoiseSynth(options as Tone.NoiseSynthOptions);
+    case InstrumentName.Sampler:
+      return new Tone.Sampler(options as Tone.SamplerOptions);
+    default:
+      throw new Error("Unknown instrument type");
+  }
+};
+
+export const createDeviceNode = (
+  type: DeviceType,
+  options?: EffectOptions | ProcessorOptions | InstrumentOptions,
+): Tone.ToneAudioNode => {
+  switch (type) {
+    case "effect":
+      return createEffectNode(EffectName.AutoFilter, options as EffectOptions); // Default effect
+    case "processor":
+      return createProcessorNode(
+        ProcessorName.Compressor,
+        options as ProcessorOptions,
+      ); // Default processor
+    case "instrument":
+      return createInstrumentNode(
+        InstrumentName.Synth,
+        options as InstrumentOptions,
+      ); // Default instrument
+    default:
+      throw new Error("Unknown device type");
   }
 };
