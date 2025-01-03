@@ -2,7 +2,6 @@
 import { TransportEngineImpl } from "@/features/transport/services/TransportEngine";
 import { ClipEngineImpl } from "@/features/clips/services/ClipEngine";
 import { MixEngineImpl } from "@/features/mix/services/MixEngine";
-import { InstrumentEngineImpl } from "@/features/instruments/services/InstrumentsEngine";
 import { AutomationEngineImpl } from "@/features/automation/services/AutomationEngine";
 import { CompositionEngineImpl } from "@/features/composition/services/CompositionEngine";
 
@@ -12,7 +11,6 @@ export class EngineManager {
   private _transport: TransportEngineImpl;
   private _mix: MixEngineImpl;
   private _clips: ClipEngineImpl;
-  private _instruments: InstrumentEngineImpl;
   private _automation: AutomationEngineImpl;
   private _composition: CompositionEngineImpl;
   private _initialized = false;
@@ -25,15 +23,12 @@ export class EngineManager {
     console.log("Mix Engine initialized");
     this._clips = new ClipEngineImpl();
     console.log("Clip Engine initialized");
-    this._instruments = new InstrumentEngineImpl();
-    console.log("Instrument Engine initialized");
     this._automation = new AutomationEngineImpl();
     console.log("Automation Engine initialized");
     this._composition = new CompositionEngineImpl(
       this._transport,
       this._mix,
       this._clips,
-      this._instruments,
       this._automation,
     );
     console.log("Composition Engine initialized");
@@ -60,10 +55,6 @@ export class EngineManager {
     return this._clips;
   }
 
-  public get instruments() {
-    return this._instruments;
-  }
-
   public get automation() {
     return this._automation;
   }
@@ -78,7 +69,6 @@ export class EngineManager {
     // Dispose in reverse order of initialization
     this._composition.dispose();
     this._automation.dispose();
-    this._instruments.dispose();
     this._clips.dispose();
     this._mix.dispose();
     this._transport.dispose();
@@ -98,10 +88,6 @@ export const useMixEngine = () => {
 
 export const useClipEngine = () => {
   return EngineManager.getInstance().clips;
-};
-
-export const useInstrumentEngine = () => {
-  return EngineManager.getInstance().instruments;
 };
 
 export const useAutomationEngine = () => {
