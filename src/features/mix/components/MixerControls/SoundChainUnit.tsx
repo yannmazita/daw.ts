@@ -1,27 +1,26 @@
-// src/features/mix/components/MixerControls/MixerUnit.tsx
+// src/features/mix/components/MixerControls/SoundChainUnit.tsx
 import { useCallback, useEffect, useState, useRef } from "react";
-import { useTrackState } from "@/features/composition/hooks/useTrackState";
 import { useMixerTrackControls } from "../../hooks/useMixerTrackControls";
 import { cn } from "@/common/shadcn/lib/utils";
 import { Volume2, VolumeX } from "lucide-react";
 import { Knob } from "@/common/components/Knob/Knob";
 import { Button } from "@/common/shadcn/ui/button";
 import { Input } from "@/common/shadcn/ui/input";
-import { useDeviceManager } from "../../hooks/useDeviceManager";
+import { useEngineStore } from "@/core/stores/useEngineStore";
+import { useDeviceManager } from "@/features/mix/hooks/useDeviceManager";
 import { DeviceType } from "../../types";
 
-interface MixerUnitProps {
-  trackId: string;
+interface SoundChainUnitProps {
+  soundChainId: string;
   className?: string;
   onSelectParent: (parentId: string) => void;
 }
 
-export const MixerUnit: React.FC<MixerUnitProps> = ({
-  trackId,
+export const SoundChainUnit: React.FC<SoundChainUnitProps> = ({
+  soundChainId,
   className,
   onSelectParent,
 }) => {
-  const trackState = useTrackState(trackId);
   const {
     pan,
     volume,
@@ -32,12 +31,15 @@ export const MixerUnit: React.FC<MixerUnitProps> = ({
     toggleMute,
     toggleSolo,
     getMeterValues,
-  } = useMixerTrackControls(trackId);
+  } = useMixerTrackControls(soundChainId);
   const [localVolume, setLocalVolume] = useState(volume.toString());
   const meterRef = useRef<HTMLDivElement>(null);
   const [selectedDevice, setSelectedDevice] = useState<string | null>(null);
   const [deviceOptions, setDeviceOptions] = useState<any>({});
-  const { addDevice } = useDeviceManager(trackId);
+  const { addDevice } = useDeviceManager(soundChainId);
+  const soundChain = useEngineStore(
+    (state) => state.mix.soundChains[soundChainId],
+  );
 
   const handleAddDevice = (type: DeviceType) => {
     const deviceId = addDevice(type);
@@ -46,7 +48,7 @@ export const MixerUnit: React.FC<MixerUnitProps> = ({
   };
 
   const handleClick = () => {
-    onSelectParent(trackId);
+    onSelectParent(soundChainId);
   };
 
   useEffect(() => {
@@ -101,7 +103,7 @@ export const MixerUnit: React.FC<MixerUnitProps> = ({
         className,
       )}
     >
-      <div className="mx-1 h-fit">{trackState?.name}</div>
+      <div className="mx-1 h-fit">{soundChain?.name}</div>
       <div className="grid h-full grid-cols-2 bg-muted">
         <div className="relative overflow-hidden bg-muted-foreground">
           <div

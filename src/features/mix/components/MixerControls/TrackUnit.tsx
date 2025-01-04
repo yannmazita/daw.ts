@@ -7,8 +7,14 @@ import { useCallback, useEffect, useState, useRef } from "react";
 import { CassetteTape, Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/common/shadcn/ui/button";
 import { Input } from "@/common/shadcn/ui/input";
-import { DeviceType } from "@/features/mix/types";
-import { useDeviceOperations } from "../../hooks/useDeviceOperations";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/common/shadcn/ui/select";
+import { useEngineStore } from "@/core/stores/useEngineStore";
 
 interface TrackUnitProps {
   trackId: string;
@@ -32,14 +38,13 @@ export const TrackUnit: React.FC<TrackUnitProps> = ({ trackId, className }) => {
   } = useTrackControls(trackId);
   const [localVolume, setLocalVolume] = useState(volume.toString());
   const meterRef = useRef<HTMLDivElement>(null);
-  const [selectedDevice, setSelectedDevice] = useState<string | null>(null);
-  const [deviceOptions, setDeviceOptions] = useState<any>({});
-  const { addDevice } = useDeviceOperations(trackId);
+  const soundChains = useEngineStore((state) => state.mix.soundChains);
+  const [selectedSoundChain, setSelectedSoundChain] = useState<string | null>(
+    null,
+  );
 
-  const handleAddDevice = (type: DeviceType) => {
-    const deviceId = addDevice(type);
-    setSelectedDevice(deviceId);
-    setDeviceOptions({});
+  const handleSoundChainChange = (value: string) => {
+    setSelectedSoundChain(value);
   };
 
   useEffect(() => {
@@ -156,15 +161,21 @@ export const TrackUnit: React.FC<TrackUnitProps> = ({ trackId, className }) => {
         </div>
       </div>
       <div className="flex flex-row justify-around">
-        <Button size="sm" onClick={() => handleAddDevice("effect")}>
-          Add Effect
-        </Button>
-        <Button size="sm" onClick={() => handleAddDevice("processor")}>
-          Add Processor
-        </Button>
-        <Button size="sm" onClick={() => handleAddDevice("instrument")}>
-          Add Instrument
-        </Button>
+        <Select
+          onValueChange={handleSoundChainChange}
+          value={selectedSoundChain}
+        >
+          <SelectTrigger className="h-5 w-24 rounded-none py-1 text-center">
+            <SelectValue placeholder="Sound Chain" />
+          </SelectTrigger>
+          <SelectContent className="rounded-none">
+            {Object.values(soundChains).map((soundChain) => (
+              <SelectItem key={soundChain.id} value={soundChain.id}>
+                {soundChain.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
     </div>
   );

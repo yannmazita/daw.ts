@@ -62,11 +62,19 @@ export const connectSoundChain = (
   // Connect chain
   let currentNode: Tone.ToneAudioNode = soundChain.input;
 
-  // Connect devices
-  soundChain.deviceIds.forEach((deviceId) => {
-    if (devices[deviceId]) {
-      currentNode.connect(devices[deviceId].node);
-      currentNode = devices[deviceId].node;
+  soundChain.deviceIds.forEach((deviceId, index, array) => {
+    const device = devices[deviceId];
+    if (device) {
+      if (device.type === "instrument") {
+        currentNode.connect(device.node);
+        if (index === array.length - 1) {
+          device.node.connect(soundChain.output);
+        }
+        currentNode = device.node;
+      } else {
+        currentNode.connect(device.node);
+        currentNode = device.node;
+      }
     }
   });
 
