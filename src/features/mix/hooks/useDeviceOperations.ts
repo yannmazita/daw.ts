@@ -1,7 +1,7 @@
 // src/features/mix/hooks/useDeviceOperations.ts
 import { useCallback } from "react";
 import { useMixEngine } from "@/core/engines/EngineManager";
-import { DeviceType } from "@/core/types/audio";
+import { DeviceType } from "@/features/mix/types";
 import { useEngineStore } from "@/core/stores/useEngineStore";
 import { Device } from "../types";
 import { useTrackState } from "@/features/composition/hooks/useTrackState";

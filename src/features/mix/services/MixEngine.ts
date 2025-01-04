@@ -38,7 +38,7 @@ import {
 import { validateSendRouting, validateSendUpdate } from "../utils/validation";
 import { moveMixerTrackInOrder } from "../utils/orderUtils";
 import { initialMixerTrackControlState } from "../utils/initialState";
-import { DeviceType } from "@/core/types/audio";
+import { DeviceType } from "@/features/mix/types";
 import { InstrumentOptions } from "@/core/types/instrument";
 import { ProcessorOptions } from "@/core/types/processor";
 
@@ -373,9 +373,9 @@ export class MixEngineImpl implements MixEngine {
   removeDevice(parentId: string, deviceId: string): void {
     const stateSnapshot = useEngineStore.getState().mix;
     const devices = stateSnapshot.devices;
-    const mixerTrack = stateSnapshot.mix.mixerTracks[parentId];
-    const soundChain = stateSnapshot.mix.soundChains[parentId];
-    const masterTrack = stateSnapshot.mix.mixerTracks.master;
+    const mixerTrack = stateSnapshot.mixerTracks[parentId];
+    const soundChain = stateSnapshot.soundChains[parentId];
+    const masterTrack = stateSnapshot.mixerTracks.master;
 
     if (!devices[deviceId]) {
       throw new Error(`Device ${deviceId} not found`);

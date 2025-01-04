@@ -13,7 +13,7 @@ import {
   ProcessorOptions,
 } from "@/core/types/processor";
 import { InstrumentName, InstrumentOptions } from "@/core/types/instrument";
-import { DeviceType } from "@/core/types/audio";
+import { DeviceType } from "@/features/mix/types";
 
 export const createMixerTrackNodes = () => {
   const input = new Tone.Gain();

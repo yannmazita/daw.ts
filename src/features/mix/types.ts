@@ -1,7 +1,6 @@
 // src/features/mix/types.ts
 import { EffectOptions, ToneEffectType } from "../../core/types/effect";
 import { Channel, Gain, Meter } from "tone";
-import { DeviceType } from "@/core/types/audio";
 import { InstrumentOptions, ToneInstrumentType } from "@/core/types/instrument";
 import { ProcessorOptions, ToneProcessorType } from "@/core/types/processor";
 
@@ -19,6 +18,8 @@ export interface PersistableMixerTrackControlState {
   volume: number;
 }
 
+export type DeviceType = "effect" | "processor" | "instrument" | "soundChain";
+
 export interface Device<
   T extends
     | EffectOptions
@@ -31,6 +32,7 @@ export interface Device<
   bypass: boolean;
   node: ToneEffectType | ToneProcessorType | ToneInstrumentType;
   options?: T;
+  parentId: string; // ID of the mixer track or sound chain that owns this device
 }
 
 export interface PersistableDevice<

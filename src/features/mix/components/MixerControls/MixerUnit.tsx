@@ -7,7 +7,7 @@ import { Volume2, VolumeX } from "lucide-react";
 import { Knob } from "@/common/components/Knob/Knob";
 import { Button } from "@/common/shadcn/ui/button";
 import { Input } from "@/common/shadcn/ui/input";
-import { DeviceType } from "@/core/types/audio";
+import { DeviceType } from "@/features/mix/types";
 import { useDeviceOperations } from "../../hooks/useDeviceOperations";
 
 interface MixerUnitProps {

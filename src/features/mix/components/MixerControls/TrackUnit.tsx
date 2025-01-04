@@ -7,7 +7,7 @@ import { useCallback, useEffect, useState, useRef } from "react";
 import { CassetteTape, Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/common/shadcn/ui/button";
 import { Input } from "@/common/shadcn/ui/input";
-import { DeviceType } from "@/core/types/audio";
+import { DeviceType } from "@/features/mix/types";
 import { useDeviceOperations } from "../../hooks/useDeviceOperations";
 
 interface TrackUnitProps {
