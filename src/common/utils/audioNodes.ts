@@ -14,6 +14,7 @@ import {
 } from "@/core/types/processor";
 import { InstrumentName, InstrumentOptions } from "@/core/types/instrument";
 import { DeviceType } from "@/features/mix/types";
+import { ToneWithBypass } from "@/core/types/audio";
 
 export const createMixerTrackNodes = () => {
   const input = new Tone.Gain();
@@ -26,103 +27,151 @@ export const createMixerTrackNodes = () => {
 export const createEffectNode = (
   type: EffectName,
   options?: EffectOptions,
-): Tone.ToneAudioNode => {
+): ToneWithBypass => {
   const defaultOptions = { wet: 1, ...options };
+  let node: Tone.ToneAudioNode;
   switch (type) {
     case EffectName.AutoFilter:
-      return new Tone.AutoFilter(defaultOptions as Tone.AutoFilterOptions);
+      node = new Tone.AutoFilter(defaultOptions as Tone.AutoFilterOptions);
+      break;
     case EffectName.AutoPanner:
-      return new Tone.AutoPanner(defaultOptions as Tone.AutoPannerOptions);
+      node = new Tone.AutoPanner(defaultOptions as Tone.AutoPannerOptions);
+      break;
     case EffectName.AutoWah:
-      return new Tone.AutoWah(defaultOptions as Tone.AutoWahOptions);
+      node = new Tone.AutoWah(defaultOptions as Tone.AutoWahOptions);
+      break;
     case EffectName.BitCrusher:
-      return new Tone.BitCrusher(defaultOptions as Tone.BitCrusherOptions);
+      node = new Tone.BitCrusher(defaultOptions as Tone.BitCrusherOptions);
+      break;
     case EffectName.Chebyshev:
-      return new Tone.Chebyshev(defaultOptions as Tone.ChebyshevOptions);
+      node = new Tone.Chebyshev(defaultOptions as Tone.ChebyshevOptions);
+      break;
     case EffectName.Chorus:
-      return new Tone.Chorus(defaultOptions as Tone.ChorusOptions);
+      node = new Tone.Chorus(defaultOptions as Tone.ChorusOptions);
+      break;
     case EffectName.Distortion:
-      return new Tone.Distortion(defaultOptions as Tone.DistortionOptions);
+      node = new Tone.Distortion(defaultOptions as Tone.DistortionOptions);
+      break;
     case EffectName.FeedbackDelay:
-      return new Tone.FeedbackDelay(defaultOptions as FeedbackDelayOptions);
+      node = new Tone.FeedbackDelay(defaultOptions as FeedbackDelayOptions);
+      break;
     case EffectName.Freeverb:
-      return new Tone.Freeverb(defaultOptions as Tone.FreeverbOptions);
+      node = new Tone.Freeverb(defaultOptions as Tone.FreeverbOptions);
+      break;
     case EffectName.FrequencyShifter:
-      return new Tone.FrequencyShifter(
+      node = new Tone.FrequencyShifter(
         defaultOptions as FrequencyShifterOptions,
       );
+      break;
     case EffectName.JCReverb:
-      return new Tone.JCReverb(defaultOptions as Tone.JCReverbOptions);
+      node = new Tone.JCReverb(defaultOptions as Tone.JCReverbOptions);
+      break;
     case EffectName.Phaser:
-      return new Tone.Phaser(defaultOptions as Tone.PhaserOptions);
+      node = new Tone.Phaser(defaultOptions as Tone.PhaserOptions);
+      break;
     case EffectName.PingPongDelay:
-      return new Tone.PingPongDelay(
+      node = new Tone.PingPongDelay(
         defaultOptions as Tone.PingPongDelayOptions,
       );
+      break;
     case EffectName.PitchShift:
-      return new Tone.PitchShift(defaultOptions as Tone.PitchShiftOptions);
+      node = new Tone.PitchShift(defaultOptions as Tone.PitchShiftOptions);
+      break;
     case EffectName.Reverb:
-      return new Tone.Reverb(defaultOptions as ReverbOptions);
+      node = new Tone.Reverb(defaultOptions as ReverbOptions);
+      break;
     case EffectName.StereoWidener:
-      return new Tone.StereoWidener(
+      node = new Tone.StereoWidener(
         defaultOptions as Tone.StereoWidenerOptions,
       );
+      break;
     case EffectName.Tremolo:
-      return new Tone.Tremolo(defaultOptions as Tone.TremoloOptions);
+      node = new Tone.Tremolo(defaultOptions as Tone.TremoloOptions);
+      break;
     default:
       throw new Error("Unknown effect type");
   }
+
+  (node as ToneWithBypass).bypass = (bypass: boolean) => {
+    (node as any).wet.value = bypass ? 0 : 1;
+  };
+
+  return node as ToneWithBypass;
 };
 
 export const createProcessorNode = (
   type: ProcessorName,
   options?: ProcessorOptions,
-): Tone.ToneAudioNode => {
+): ToneWithBypass => {
+  let node: Tone.ToneAudioNode;
   const defaultOptions = { ...options };
   switch (type) {
     case ProcessorName.EQ3:
-      return new Tone.EQ3(defaultOptions as EQ3Options);
+      node = new Tone.EQ3(defaultOptions as EQ3Options);
+      break;
     case ProcessorName.Compressor:
-      return new Tone.Compressor(defaultOptions as Tone.CompressorOptions);
+      node = new Tone.Compressor(defaultOptions as Tone.CompressorOptions);
+      break;
     case ProcessorName.Gate:
-      return new Tone.Gate(defaultOptions as Tone.GateOptions);
+      node = new Tone.Gate(defaultOptions as Tone.GateOptions);
+      break;
     default:
       throw new Error("Unknown processor type");
   }
+  (node as ToneWithBypass).bypass = (bypass: boolean) => {
+    (node as any).gain.value = bypass ? -Infinity : 0;
+  };
+
+  return node as ToneWithBypass;
 };
 
 export const createInstrumentNode = (
   type: InstrumentName,
   options?: InstrumentOptions,
-): Tone.ToneAudioNode => {
+): ToneWithBypass => {
+  let node: Tone.ToneAudioNode;
   switch (type) {
     case InstrumentName.Synth:
-      return new Tone.Synth(options as Tone.SynthOptions);
+      node = new Tone.Synth(options as Tone.SynthOptions);
+      break;
     case InstrumentName.AMSynth:
-      return new Tone.AMSynth(options as Tone.AMSynthOptions);
+      node = new Tone.AMSynth(options as Tone.AMSynthOptions);
+      break;
     case InstrumentName.DuoSynth:
-      return new Tone.DuoSynth(options as Tone.DuoSynthOptions);
+      node = new Tone.DuoSynth(options as Tone.DuoSynthOptions);
+      break;
     case InstrumentName.FMSynth:
-      return new Tone.FMSynth(options as Tone.FMSynthOptions);
+      node = new Tone.FMSynth(options as Tone.FMSynthOptions);
+      break;
     case InstrumentName.MembraneSynth:
-      return new Tone.MembraneSynth(options as Tone.MembraneSynthOptions);
+      node = new Tone.MembraneSynth(options as Tone.MembraneSynthOptions);
+      break;
     case InstrumentName.MetalSynth:
-      return new Tone.MetalSynth(options as Tone.MetalSynthOptions);
+      node = new Tone.MetalSynth(options as Tone.MetalSynthOptions);
+      break;
     case InstrumentName.MonoSynth:
-      return new Tone.MonoSynth(options as Tone.MonoSynthOptions);
+      node = new Tone.MonoSynth(options as Tone.MonoSynthOptions);
+      break;
     case InstrumentName.NoiseSynth:
-      return new Tone.NoiseSynth(options as Tone.NoiseSynthOptions);
+      node = new Tone.NoiseSynth(options as Tone.NoiseSynthOptions);
+      break;
     case InstrumentName.Sampler:
-      return new Tone.Sampler(options as Tone.SamplerOptions);
+      node = new Tone.Sampler(options as Tone.SamplerOptions);
+      break;
     default:
       throw new Error("Unknown instrument type");
   }
+  (node as ToneWithBypass).bypass = (bypass: boolean) => {
+    (node as any).volume.value = bypass ? -Infinity : 0;
+  };
+
+  return node as ToneWithBypass;
 };
 
 export const createDeviceNode = (
   type: DeviceType,
   options?: EffectOptions | ProcessorOptions | InstrumentOptions,
-): Tone.ToneAudioNode => {
+): ToneWithBypass => {
   switch (type) {
     case "effect":
       return createEffectNode(EffectName.AutoFilter, options as EffectOptions); // Default effect

@@ -1,8 +1,9 @@
 // src/features/mix/types.ts
-import { EffectOptions, ToneEffectType } from "../../core/types/effect";
+import { EffectOptions } from "../../core/types/effect";
 import { Channel, Gain, Meter } from "tone";
-import { InstrumentOptions, ToneInstrumentType } from "@/core/types/instrument";
-import { ProcessorOptions, ToneProcessorType } from "@/core/types/processor";
+import { InstrumentOptions } from "@/core/types/instrument";
+import { ProcessorOptions } from "@/core/types/processor";
+import { ToneAudioNode } from "tone";
 
 export interface MixerTrackControlState {
   solo: boolean;
@@ -30,7 +31,7 @@ export interface Device<
   type: DeviceType;
   name: string;
   bypass: boolean;
-  node: ToneEffectType | ToneProcessorType | ToneInstrumentType;
+  node: ToneAudioNode;
   options?: T;
   parentId: string; // ID of the mixer track or sound chain that owns this device
 }
@@ -46,6 +47,7 @@ export interface PersistableDevice<
   name: string;
   bypass: boolean;
   options?: T;
+  parentId: string; // ID of the mixer track or sound chain that owns this device
 }
 
 export interface Send {
@@ -135,10 +137,10 @@ export interface MixEngine {
 
   // Device management
   addDevice(mixerTrackId: string, deviceType: DeviceType): string;
-  updateDevice<T extends EffectOptions | ProcessorOptions | InstrumentOptions>(
-    mixerTrackId: string,
+  updateDevice(
+    parentId: string,
     deviceId: string,
-    updates: Partial<Device<T>>,
+    updates: Partial<Device>,
   ): void;
   removeDevice(mixerTrackId: string, deviceId: string): void;
 

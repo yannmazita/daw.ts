@@ -1,3 +1,4 @@
+// src/features/mix/services/MixEngine.t
 // src/features/mix/services/MixEngine.ts
 import * as Tone from "tone";
 import {
@@ -7,8 +8,8 @@ import {
   MixerTrack,
   Device,
   SoundChain,
+  DeviceType,
 } from "../types";
-import { EffectOptions } from "@/core/types/effect";
 import { useEngineStore } from "@/core/stores/useEngineStore";
 import {
   createMixerTrackNodes,
@@ -38,9 +39,7 @@ import {
 import { validateSendRouting, validateSendUpdate } from "../utils/validation";
 import { moveMixerTrackInOrder } from "../utils/orderUtils";
 import { initialMixerTrackControlState } from "../utils/initialState";
-import { DeviceType } from "@/features/mix/types";
-import { InstrumentOptions } from "@/core/types/instrument";
-import { ProcessorOptions } from "@/core/types/processor";
+import { ToneWithBypass } from "@/core/types/audio";
 
 export class MixEngineImpl implements MixEngine {
   private disposed = false;
@@ -345,8 +344,8 @@ export class MixEngineImpl implements MixEngine {
         // Get updated track reference
         const updatedTrack = newState.mix.mixerTracks[parentId];
         const updatedDevices = newState.mix.devices;
+        // Connect with master track reference
         if (updatedTrack) {
-          // Connect with master track reference
           connectMixerTrackChain(updatedTrack, masterTrack, updatedDevices);
         } else if (soundChain) {
           connectSoundChain(soundChain, updatedDevices);
@@ -473,10 +472,10 @@ export class MixEngineImpl implements MixEngine {
     }
   }
 
-  updateDevice<T extends EffectOptions | ProcessorOptions | InstrumentOptions>(
+  updateDevice(
     parentId: string,
     deviceId: string,
-    updates: Partial<Device<T>>,
+    updates: Partial<Device>,
   ): void {
     const stateSnapshot = useEngineStore.getState();
     const device = stateSnapshot.mix.devices[deviceId];
@@ -489,16 +488,22 @@ export class MixEngineImpl implements MixEngine {
 
     try {
       // Update bypass state
-      if (updates.bypass !== undefined) {
-        device.node.wet.value = updates.bypass ? 0 : 1;
+      if (
+        updates.bypass !== undefined &&
+        (device.node as ToneWithBypass).bypass
+      ) {
+        (device.node as ToneWithBypass).bypass(updates.bypass);
       }
 
       // Update other parameters
       if (updates.options) {
         Object.entries(updates.options).forEach(([key, value]) => {
-          const param = device.node[key as keyof typeof device.node];
-          if (param instanceof Tone.Param) {
-            param.value = value;
+          if (
+            device.node[key as keyof typeof device.node] instanceof Tone.Param
+          ) {
+            (
+              device.node[key as keyof typeof device.node] as Tone.Param<any>
+            ).value = value;
           } else if (key in device.node) {
             (device.node as any)[key] = value;
           }
