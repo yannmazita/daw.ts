@@ -136,13 +136,13 @@ export interface MixEngine {
   getMeterValues(mixerTrackId: string): number | number[];
 
   // Device management
-  addDevice(mixerTrackId: string, deviceType: DeviceType): string;
+  addDevice(parentId: string, deviceType: DeviceType): string;
   updateDevice(
     parentId: string,
     deviceId: string,
     updates: Partial<Device>,
   ): void;
-  removeDevice(mixerTrackId: string, deviceId: string): void;
+  removeDevice(parentId: string, deviceId: string): void;
 
   // Sends
   createSend(fromId: string, toId: string): string;

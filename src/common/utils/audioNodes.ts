@@ -119,7 +119,7 @@ export const createProcessorNode = (
       throw new Error("Unknown processor type");
   }
   (node as ToneWithBypass).bypass = (bypass: boolean) => {
-    (node as any).gain.value = bypass ? -Infinity : 0;
+    (node as any).gain = bypass ? -Infinity : 0;
   };
 
   return node as ToneWithBypass;
@@ -162,7 +162,7 @@ export const createInstrumentNode = (
       throw new Error("Unknown instrument type");
   }
   (node as ToneWithBypass).bypass = (bypass: boolean) => {
-    (node as any).volume.value = bypass ? -Infinity : 0;
+    (node as any).volume = bypass ? -Infinity : 0;
   };
 
   return node as ToneWithBypass;

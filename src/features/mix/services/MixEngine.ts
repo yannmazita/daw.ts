@@ -436,7 +436,7 @@ export class MixEngineImpl implements MixEngine {
         const updatedTrack = newState.mix.mixerTracks[parentId];
         const updatedDevices = newState.mix.devices;
 
-        // Reconnect the chain within setState
+        // Reconnect the chain within setState with master track reference
         if (updatedTrack) {
           connectMixerTrackChain(updatedTrack, masterTrack, updatedDevices);
         } else if (soundChain) {
@@ -731,6 +731,40 @@ export class MixEngineImpl implements MixEngine {
     });
   }
 
+  createSoundChain(name?: string): string {
+    const id = crypto.randomUUID();
+    const input = new Tone.Gain();
+    const output = new Tone.Gain();
+
+    try {
+      const soundChain: SoundChain = {
+        id,
+        name: name ?? `Sound Chain ${id.slice(0, 6)}`,
+        deviceIds: [],
+        input,
+        output,
+      };
+
+      useEngineStore.setState((state) => ({
+        mix: {
+          ...state.mix,
+          soundChains: {
+            ...state.mix.soundChains,
+            [id]: soundChain,
+          },
+        },
+      }));
+
+      return id;
+    } catch (error) {
+      console.error("Failed to create sound chain");
+      // Clean up on error
+      input.dispose();
+      output.dispose();
+      throw error;
+    }
+  }
+
   getState(): MixState {
     return useEngineStore.getState().mix;
   }
@@ -764,40 +798,7 @@ export class MixEngineImpl implements MixEngine {
         },
       });
     } catch (error) {
-      console.error("Error during engine disposal:", error);
-      throw error;
-    }
-  }
-  createSoundChain(name?: string): string {
-    const id = crypto.randomUUID();
-    const input = new Tone.Gain();
-    const output = new Tone.Gain();
-
-    try {
-      const soundChain: SoundChain = {
-        id,
-        name: name ?? `Sound Chain ${id.slice(0, 6)}`,
-        deviceIds: [],
-        input,
-        output,
-      };
-
-      useEngineStore.setState((state) => ({
-        mix: {
-          ...state.mix,
-          soundChains: {
-            ...state.mix.soundChains,
-            [id]: soundChain,
-          },
-        },
-      }));
-
-      return id;
-    } catch (error) {
-      console.error("Failed to create sound chain:", error);
-      // Clean up on error
-      input.dispose();
-      output.dispose();
+      console.error("Error during engine disposal");
       throw error;
     }
   }
