@@ -96,81 +96,85 @@ export const TrackUnit: React.FC<TrackUnitProps> = ({ trackId, className }) => {
     <div
       className={cn("flex h-full w-40 min-w-40 flex-col px-1 py-2", className)}
     >
-      <div className="mx-1 h-fit">{trackState?.name}</div>
-      <div className="grid h-full grid-cols-2 bg-muted">
-        <Meter getMeterValues={getMeterValues} />
-        <div className="grid grid-rows-4">
-          <div className="row-span-1 flex w-full flex-col items-center pt-4">
-            <Input
-              type="number"
-              value={localVolume}
-              onChange={handleVolumeChange}
-              className="input-no-wheel h-5 w-14 rounded-none bg-background px-0 py-1 text-center"
-              step={0.01}
-              min={0}
-            />
+      <div className="mx-1 text-sm">{trackState?.name}</div>
+      <div className="bg-muted">
+        <div className="grid h-full grid-cols-2">
+          <div className="pt-4">
+            <Meter getMeterValues={getMeterValues} />
           </div>
-          <div className="k-full row-span-2 flex flex-col items-center gap-y-2">
-            <Knob
-              value={pan}
-              onChange={handleKnobChange}
-              radius={15}
-              min={-1}
-              max={1}
-              step={0.01}
-            />
-            <Button
-              variant="outline"
-              size="sm"
-              className={cn(
-                "size-7 rounded-none py-1",
-                muted ? "bg-muted-foreground dark:text-background" : "",
-              )}
-              onClick={toggleMute}
-            >
-              {muted ? <VolumeX /> : <Volume2 />}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className={cn(
-                "h-5 w-7 rounded-none py-1",
-                soloed ? "bg-muted-foreground dark:text-background" : "",
-              )}
-              onClick={toggleSolo}
-            >
-              S
-            </Button>
-            <Button
-              variant="outline"
-              className={cn(
-                "h-5 w-7 rounded-none py-1",
-                armed ? "bg-accent" : "",
-              )}
-              size="icon"
-              onClick={toggleArmed}
-            >
-              <CassetteTape />
-            </Button>
+          <div className="grid grid-rows-4">
+            <div className="row-span-1 flex w-full flex-col items-center pt-4">
+              <Input
+                type="number"
+                value={localVolume}
+                onChange={handleVolumeChange}
+                className="input-no-wheel h-5 w-14 rounded-none bg-background px-0 py-1 text-center"
+                step={0.01}
+                min={0}
+              />
+            </div>
+            <div className="k-full row-span-2 flex flex-col items-center gap-y-2">
+              <Knob
+                value={pan}
+                onChange={handleKnobChange}
+                radius={15}
+                min={-1}
+                max={1}
+                step={0.01}
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                className={cn(
+                  "size-7 rounded-none py-1",
+                  muted ? "bg-muted-foreground dark:text-background" : "",
+                )}
+                onClick={toggleMute}
+              >
+                {muted ? <VolumeX /> : <Volume2 />}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className={cn(
+                  "h-5 w-7 rounded-none py-1",
+                  soloed ? "bg-muted-foreground dark:text-background" : "",
+                )}
+                onClick={toggleSolo}
+              >
+                S
+              </Button>
+              <Button
+                variant="outline"
+                className={cn(
+                  "h-5 w-7 rounded-none py-1",
+                  armed ? "bg-accent" : "",
+                )}
+                size="icon"
+                onClick={toggleArmed}
+              >
+                <CassetteTape />
+              </Button>
+            </div>
           </div>
         </div>
-      </div>
-      <div className="flex flex-row justify-around">
-        <Select
-          onValueChange={handleSoundChainChange}
-          value={selectedSoundChain}
-        >
-          <SelectTrigger className="h-5 w-24 rounded-none py-1 text-center">
-            <SelectValue placeholder="Sound Chain" />
-          </SelectTrigger>
-          <SelectContent className="rounded-none">
-            {Object.values(soundChains).map((soundChain) => (
-              <SelectItem key={soundChain.id} value={soundChain.id}>
-                {soundChain.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex flex-row justify-around">
+          <Select
+            onValueChange={handleSoundChainChange}
+            value={selectedSoundChain}
+          >
+            <SelectTrigger className="h-5 w-24 rounded-none py-1 text-center">
+              <SelectValue placeholder="Sound Chain" />
+            </SelectTrigger>
+            <SelectContent className="rounded-none">
+              {Object.values(soundChains).map((soundChain) => (
+                <SelectItem key={soundChain.id} value={soundChain.id}>
+                  {soundChain.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
     </div>
   );
