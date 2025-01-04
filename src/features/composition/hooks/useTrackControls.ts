@@ -59,7 +59,7 @@ export const useTrackControls = (trackId: string) => {
   }, [compositionEngine, trackId, soloed, track]);
 
   const getMeterValues = useCallback(() => {
-    if (!track) return;
+    if (!track) return 0;
     return compositionEngine.getMeterValues(trackId);
   }, [compositionEngine, trackId, track]);
 

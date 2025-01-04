@@ -5,11 +5,6 @@ import { TransportState } from "@/features/transport/types";
 import { ClipState, PersistableClipState } from "@/features/clips/types";
 import { MixState, PersistableMixState } from "@/features/mix/types";
 import {
-  InstrumentState,
-  PersistableInstrumentState,
-} from "@/features/instruments/types";
-
-import {
   AutomationState,
   PersistableAutomationState,
 } from "@/features/automation/types";
@@ -20,14 +15,12 @@ import {
 import { initialTransportState } from "@/features/transport/utils/initialState";
 import { initialClipState } from "@/features/clips/utils/initialState";
 import { initialMixState } from "@/features/mix/utils/initialState";
-import { initialInstrumentState } from "@/features/instruments/utils/initialState";
 import { initialAutomationState } from "@/features/automation/utils/initialState";
 import { initialCompositionState } from "@/features/composition/utils/initialState";
 export interface EngineState {
   transport: TransportState;
   clips: ClipState;
   mix: MixState;
-  instruments: InstrumentState;
   automation: AutomationState;
   composition: CompositionState;
 }
@@ -37,7 +30,6 @@ interface PersistableEngineState {
   transport: TransportState;
   clips: PersistableClipState;
   mix: PersistableMixState;
-  instruments: PersistableInstrumentState;
   automation: PersistableAutomationState;
   composition: PersistableCompositionState;
 }
@@ -49,7 +41,6 @@ export const useEngineStore = create<EngineState>()(
         transport: initialTransportState,
         clips: initialClipState,
         mix: initialMixState,
-        instruments: initialInstrumentState,
         automation: initialAutomationState,
         composition: initialCompositionState,
       }),
@@ -91,6 +82,7 @@ export const useEngineStore = create<EngineState>()(
                 },
               ]),
             ),
+            mixerTrackOrder: state.mix.mixerTrackOrder,
             devices: Object.fromEntries(
               Object.entries(state.mix.devices).map(([id, device]) => [
                 id,
@@ -100,6 +92,19 @@ export const useEngineStore = create<EngineState>()(
                   name: device.name,
                   bypass: device.bypass,
                   options: device.options,
+                  parentId: device.parentId,
+                },
+              ]),
+            ),
+            soundChains: Object.fromEntries(
+              Object.entries(state.mix.soundChains).map(([id, soundChain]) => [
+                id,
+                {
+                  id: soundChain.id,
+                  name: soundChain.name,
+                  deviceIds: soundChain.deviceIds,
+                  inputGainValue: soundChain.input.gain.value,
+                  outputGainValue: soundChain.output.gain.value,
                 },
               ]),
             ),
@@ -117,23 +122,6 @@ export const useEngineStore = create<EngineState>()(
               ]),
             ),
             trackSends: state.mix.trackSends,
-            mixerTrackOrder: state.mix.mixerTrackOrder,
-          },
-          instruments: {
-            ...state.instruments,
-            instruments: Object.fromEntries(
-              Object.entries(state.instruments.instruments).map(
-                ([id, instrument]) => [
-                  id,
-                  {
-                    id: instrument.id,
-                    name: instrument.name,
-                    type: instrument.type,
-                    options: instrument.options,
-                  },
-                ],
-              ),
-            ),
           },
           automation: {
             ...state.automation,
@@ -180,8 +168,6 @@ export const useTransportState = () =>
   useEngineStore((state) => state.transport);
 export const useClipsState = () => useEngineStore((state) => state.clips);
 export const useMixState = () => useEngineStore((state) => state.mix);
-export const useInstrumentsState = () =>
-  useEngineStore((state) => state.instruments);
 export const useAutomationState = () =>
   useEngineStore((state) => state.automation);
 export const useCompositionState = () =>

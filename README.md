@@ -173,11 +173,10 @@ sequenceDiagram
 
 ```mermaid
 graph LR
-    A[Gain: Input] --> B(Effects: Pre-Fader);
+    A[Gain: Input] --> B(Devices: Pre-Fader);
     B --> C[Channel: Channel Strip];
-    C --> D(Effects: Post-Fader);
-    D --> E[Meter: Meter];
-    E --> F[Output: Output];
+    C --> D[Meter: Meter];
+    D --> E[Output: Output];
 ```
 
 </details>
@@ -222,22 +221,21 @@ graph LR
 
 ```mermaid
     graph LR
-        A[Gain: Master Track Input] --> B(Effects: Pre-Fader);
+        A[Gain: Master Track Input] --> B(Devices: Pre-Fader);
         B --> C[Channel: Channel Strip];
-        C --> D(Effects: Post-Fader);
-        D --> E[Meter: Meter];
-        E --> F[Output: Destination];
+        C --> D[Meter: Meter];
+        D --> E[Output: Destination];
 ```
 
 </details>
 
 <details>
     <summary>
-    **Still maybe a few words on the architecture...**
+    Still maybe a few words on the architecture...
     </summary>
 
 The application logic is made of engines (modules) that allow the application to grow with new features. Each engine has its own logic and state and is initialized by `EngineManager`.
-Currently there are 6 engines.
+Currently there are 5 engines.
 
 ### Composition Engine
 
@@ -245,11 +243,7 @@ This engine manages track and clip composition in the timeline. It interacts wit
 
 ### Automation Engine
 
-_Not implemented yet._ This engine manages automation lanes and paramater connections.
-
-### Instrument Engine
-
-_Not implemented yet._ This engine manages instruments, their devices and effects.
+_Not fully implemented yet._ This engine manages automation lanes and paramater connections.
 
 ### Clip Engine
 
@@ -257,7 +251,7 @@ This engine manages clips (MIDI clips and audio clips), MIDI file parsing, audio
 
 ### Mix Engine
 
-This engine manages mixing, sends, routing etc. Audio processing is done through Tone.js and is extended when needed.
+This engine manages mixing, sends, routing, sound chains etc. Audio processing is done through Tone.js and is extended when needed.
 
 ### Transport Engine
 
@@ -268,5 +262,3 @@ This engine manages playback transport, tempo (and tempo tap), time signature, l
 ## Contributing
 
 Contributions are welcome (and needed)! Features, business logic, UI, tests, optimization, Electron integration etc... there is a lot to do!
-
-Just look at these plain grey rectangles (they are meant to be meters), and empty spaces (they are meant to be features).

@@ -1,10 +1,9 @@
 // src/features/mix/types.ts
-import {
-  EffectName,
-  EffectOptions,
-  ToneEffectType,
-} from "../../core/types/audio";
+import { EffectOptions } from "../../core/types/effect";
 import { Channel, Gain, Meter } from "tone";
+import { InstrumentOptions } from "@/core/types/instrument";
+import { ProcessorOptions } from "@/core/types/processor";
+import { ToneAudioNode } from "tone";
 
 export interface MixerTrackControlState {
   solo: boolean;
@@ -20,21 +19,35 @@ export interface PersistableMixerTrackControlState {
   volume: number;
 }
 
-export interface Device<T extends EffectOptions = EffectOptions> {
+export type DeviceType = "effect" | "processor" | "instrument" | "soundChain";
+
+export interface Device<
+  T extends
+    | EffectOptions
+    | ProcessorOptions
+    | InstrumentOptions = EffectOptions,
+> {
   id: string;
-  type: EffectName;
+  type: DeviceType;
   name: string;
   bypass: boolean;
-  node: ToneEffectType;
+  node: ToneAudioNode;
   options?: T;
+  parentId: string; // ID of the mixer track or sound chain that owns this device
 }
 
-export interface PersistableDevice<T extends EffectOptions = EffectOptions> {
+export interface PersistableDevice<
+  T extends
+    | EffectOptions
+    | ProcessorOptions
+    | InstrumentOptions = EffectOptions,
+> {
   id: string;
-  type: EffectName;
+  type: DeviceType;
   name: string;
   bypass: boolean;
   options?: T;
+  parentId: string; // ID of the mixer track or sound chain that owns this device
 }
 
 export interface Send {
@@ -59,10 +72,7 @@ export interface MixerTrack {
   id: string;
   name: string;
   type: "return" | "master";
-  deviceIds: {
-    pre: string[];
-    post: string[];
-  };
+  deviceIds: string[];
   controls: MixerTrackControlState;
 
   // Tone.js nodes
@@ -78,10 +88,27 @@ export interface PersistableMixerTrack {
   controls: PersistableMixerTrackControlState;
 }
 
+export interface SoundChain {
+  id: string;
+  name: string;
+  deviceIds: string[]; // IDs of devices within the sound chain
+  input: Gain;
+  output: Gain;
+}
+
+export interface PersistableSoundChain {
+  id: string;
+  name: string;
+  deviceIds: string[];
+  inputGainValue: number;
+  outputGainValue: number;
+}
+
 export interface MixState {
   mixerTracks: Record<string, MixerTrack>;
   mixerTrackOrder: string[];
   devices: Record<string, Device>;
+  soundChains: Record<string, SoundChain>;
   sends: Record<string, Send>;
   trackSends: Record<string, string[]>; // track id -> send IDs mapping
 }
@@ -90,6 +117,7 @@ export interface PersistableMixState {
   mixerTracks: Record<string, PersistableMixerTrack>;
   mixerTrackOrder: string[];
   devices: Record<string, PersistableDevice>;
+  soundChains: Record<string, PersistableSoundChain>;
   sends: Record<string, PersistableSend>;
   trackSends: Record<string, string[]>;
 }
@@ -108,13 +136,13 @@ export interface MixEngine {
   getMeterValues(mixerTrackId: string): number | number[];
 
   // Device management
-  addDevice(mixerTrackId: string, deviceType: EffectName): string;
-  updateDevice<T extends EffectOptions>(
-    mixerTrackId: string,
+  addDevice(parentId: string, deviceType: DeviceType): string;
+  updateDevice(
+    parentId: string,
     deviceId: string,
-    updates: Partial<Device<T>>,
+    updates: Partial<Device>,
   ): void;
-  removeDevice(mixerTrackId: string, deviceId: string): void;
+  removeDevice(parentId: string, deviceId: string): void;
 
   // Sends
   createSend(fromId: string, toId: string): string;
@@ -123,6 +151,9 @@ export interface MixEngine {
   setSendAmount(baseTrackId: string, sendId: string, amount: number): void;
   getTrackSends(baseTrackId: string): Send[];
   disconnectTrackSends(baseTrackId: string): void;
+
+  // Sound Chains
+  createSoundChain(name?: string): string;
 
   // State
   getState(): MixState;

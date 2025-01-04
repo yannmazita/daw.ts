@@ -2,9 +2,9 @@
 import { Layout } from "@/common/components/Layout";
 import { EngineManager } from "./core/engines/EngineManager";
 import { TimelineGrid } from "./features/composition/components/TimelineGrid";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Browser } from "./features/browser/components/Browser";
-import { BottomSection } from "./common/components/BottomSection";
+import { DetailView } from "@/common/components/DetailView";
 import { MixerControls } from "./features/mix/components/MixerControls/MixerControls";
 
 export const App: React.FC = () => {
@@ -15,6 +15,13 @@ export const App: React.FC = () => {
       //EngineManager.getInstance().dispose();
     };
   }, []);
+  const [selectedParentId, setSelectedParentId] = useState<string | null>(
+    "master",
+  );
+
+  const handleSelectParent = (parentId: string) => {
+    setSelectedParentId(parentId);
+  };
   return (
     <Layout>
       <div className="grid h-full grid-rows-4">
@@ -24,13 +31,11 @@ export const App: React.FC = () => {
             <div className="flex-grow overflow-hidden">
               <TimelineGrid />
             </div>
-            <div className="h-1/3">
-              <MixerControls />
-            </div>
+            <MixerControls onSelectParent={handleSelectParent} />
           </div>
         </div>
         <div className="grid grid-cols-12">
-          <BottomSection />
+          <DetailView selectedParentId={selectedParentId} />
         </div>
       </div>
     </Layout>

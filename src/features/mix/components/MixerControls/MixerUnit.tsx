@@ -7,13 +7,21 @@ import { Volume2, VolumeX } from "lucide-react";
 import { Knob } from "@/common/components/Knob/Knob";
 import { Button } from "@/common/shadcn/ui/button";
 import { Input } from "@/common/shadcn/ui/input";
+import { useDeviceManager } from "../../hooks/useDeviceManager";
+import { DeviceType } from "../../types";
+import { Meter } from "@/common/components/Meter/Meter";
 
 interface MixerUnitProps {
   trackId: string;
   className?: string;
+  onSelectParent: (parentId: string) => void;
 }
 
-export const MixerUnit: React.FC<MixerUnitProps> = ({ trackId, className }) => {
+export const MixerUnit: React.FC<MixerUnitProps> = ({
+  trackId,
+  className,
+  onSelectParent,
+}) => {
   const trackState = useTrackState(trackId);
   const {
     pan,
@@ -28,6 +36,19 @@ export const MixerUnit: React.FC<MixerUnitProps> = ({ trackId, className }) => {
   } = useMixerTrackControls(trackId);
   const [localVolume, setLocalVolume] = useState(volume.toString());
   const meterRef = useRef<HTMLDivElement>(null);
+  const [selectedDevice, setSelectedDevice] = useState<string | null>(null);
+  const [deviceOptions, setDeviceOptions] = useState<any>({});
+  const { addDevice } = useDeviceManager(trackId);
+
+  const handleAddDevice = (type: DeviceType) => {
+    const deviceId = addDevice(type);
+    setSelectedDevice(deviceId);
+    setDeviceOptions({});
+  };
+
+  const handleClick = () => {
+    onSelectParent(trackId);
+  };
 
   useEffect(() => {
     let animationFrameId: number;
@@ -75,59 +96,79 @@ export const MixerUnit: React.FC<MixerUnitProps> = ({ trackId, className }) => {
 
   return (
     <div
-      className={cn("flex h-full w-40 min-w-40 flex-col px-1 py-2", className)}
+      onClick={handleClick}
+      className={cn(
+        "flex h-full w-40 min-w-40 cursor-pointer flex-col px-1 py-2",
+        className,
+      )}
     >
-      <div className="mx-1 h-fit">{trackState?.name}</div>
-      <div className="grid h-full grid-cols-2 bg-muted">
-        <div className="relative overflow-hidden bg-muted-foreground">
-          <div
-            ref={meterRef}
-            className="transition-width absolute left-0 top-0 h-full bg-primary duration-100"
-            style={{ width: "0%" }}
-          ></div>
-        </div>
-        <div className="grid grid-rows-4">
-          <div className="row-span-1 flex w-full flex-col items-center pt-4">
-            <Input
-              type="number"
-              value={localVolume}
-              onChange={handleVolumeChange}
-              className="input-no-wheel h-5 w-14 rounded-none bg-background px-0 py-1 text-center"
-              min={0}
-              step={0.01}
-            />
+      <div className="mx-1 text-sm font-bold">{trackState?.name}</div>
+      <div className="bg-muted">
+        <div className="grid h-full grid-cols-2">
+          <div className="pt-4">
+            <Meter getMeterValues={getMeterValues} />
           </div>
-          <div className="row-span-2 flex h-full flex-col items-center gap-y-2">
-            <Knob
-              value={pan}
-              onChange={handleKnobChange}
-              radius={15}
-              min={-1}
-              max={1}
-              step={0.01}
-            />
-            <Button
-              variant="outline"
-              size="sm"
-              className={cn(
-                "size-7 rounded-none py-1",
-                muted ? "bg-muted-foreground dark:text-background" : "",
-              )}
-              onClick={toggleMute}
-            >
-              {muted ? <VolumeX /> : <Volume2 />}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className={cn(
-                "h-5 w-7 rounded-none py-1",
-                soloed ? "bg-muted-foreground dark:text-background" : "",
-              )}
-              onClick={toggleSolo}
-            >
-              S
-            </Button>
+          <div className="grid grid-rows-4">
+            <div className="row-span-1 flex w-full flex-col items-center pt-4">
+              <Input
+                type="number"
+                value={localVolume}
+                onChange={handleVolumeChange}
+                className="input-no-wheel h-5 w-14 rounded-none bg-background px-0 py-1 text-center"
+                min={0}
+                step={0.01}
+              />
+            </div>
+            <div className="row-span-2 flex h-full flex-col items-center gap-y-2">
+              <Knob
+                value={pan}
+                onChange={handleKnobChange}
+                radius={15}
+                min={-1}
+                max={1}
+                step={0.01}
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                className={cn(
+                  "size-7 rounded-none py-1",
+                  muted ? "bg-muted-foreground dark:text-background" : "",
+                )}
+                onClick={toggleMute}
+              >
+                {muted ? <VolumeX /> : <Volume2 />}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className={cn(
+                  "h-5 w-7 rounded-none py-1",
+                  soloed ? "bg-muted-foreground dark:text-background" : "",
+                )}
+                onClick={toggleSolo}
+              >
+                S
+              </Button>
+              <div className="flex flex-col self-center">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleAddDevice("effect")}
+                  className="h-5 w-14 rounded-none bg-primary p-1 text-primary-foreground"
+                >
+                  Effect +
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleAddDevice("processor")}
+                  className="h-5 w-14 rounded-none bg-primary p-1 text-primary-foreground"
+                >
+                  Proc +
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
       </div>

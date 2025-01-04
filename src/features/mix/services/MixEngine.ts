@@ -1,30 +1,44 @@
 // src/features/mix/services/MixEngine.ts
 import * as Tone from "tone";
-import { MixEngine, MixState, Device, Send, MixerTrack } from "../types";
-import { EffectName, EffectOptions } from "@/core/types/audio";
+import {
+  MixEngine,
+  MixState,
+  Send,
+  MixerTrack,
+  Device,
+  SoundChain,
+  DeviceType,
+} from "../types";
 import { useEngineStore } from "@/core/stores/useEngineStore";
-import { createMixerTrackNodes, createEffectNode } from "../utils/audioNodes";
+import {
+  createMixerTrackNodes,
+  createDeviceNode,
+} from "@/common/utils/audioNodes";
 import {
   addSendToState,
   removeSendFromState,
   updateDevice,
   updateMixerTrack,
+  updateSoundChain,
 } from "../utils/stateUtils";
 import {
   disposeDevice,
   disposeMixerTrack,
   disposeSend,
+  disposeSoundChain,
 } from "../utils/cleanupUtils";
 import {
   calculateMasterLevel,
   captureRoutingState,
   connectMixerTrackChain,
   connectSend,
+  connectSoundChain,
   restoreSendRouting,
 } from "../utils/routingUtils";
 import { validateSendRouting, validateSendUpdate } from "../utils/validation";
 import { moveMixerTrackInOrder } from "../utils/orderUtils";
 import { initialMixerTrackControlState } from "../utils/initialState";
+import { ToneWithBypass } from "@/core/types/audio";
 
 export class MixEngineImpl implements MixEngine {
   private disposed = false;
@@ -99,7 +113,7 @@ export class MixEngineImpl implements MixEngine {
         name: name ?? `${type} ${id.slice(0, 6)}`,
         type,
         ...nodes,
-        deviceIds: { pre: [], post: [] },
+        deviceIds: [],
         controls: { ...initialMixerTrackControlState },
       };
 
@@ -287,21 +301,18 @@ export class MixEngineImpl implements MixEngine {
     return mixerTrack.meter.getValue();
   }
 
-  addDevice(mixerTrackId: string, deviceType: EffectName): string {
+  addDevice(parentId: string, deviceType: DeviceType): string {
     const id = crypto.randomUUID();
     const stateSnapshot = useEngineStore.getState();
-    const mixerTrack = stateSnapshot.mix.mixerTracks[mixerTrackId];
+    const mixerTrack = stateSnapshot.mix.mixerTracks[parentId];
+    const soundChain = stateSnapshot.mix.soundChains[parentId];
     const masterTrack = stateSnapshot.mix.mixerTracks.master;
 
-    if (!mixerTrack) {
-      throw new Error(`Mixer track ${mixerTrackId} not found`);
+    if (!mixerTrack && !soundChain) {
+      throw new Error(`Mixer track or sound chain ${parentId} not found`);
     }
 
-    if (!masterTrack) {
-      throw new Error("Master track not found");
-    }
-
-    const node = createEffectNode(deviceType);
+    const node = createDeviceNode(deviceType);
     try {
       const device: Device = {
         id,
@@ -309,24 +320,35 @@ export class MixEngineImpl implements MixEngine {
         name: deviceType,
         bypass: false,
         node,
+        parentId,
       };
 
       useEngineStore.setState((state) => {
         const updatedState = updateDevice(state.mix, id, device);
-        const newState = {
-          mix: updateMixerTrack(updatedState, mixerTrackId, {
-            deviceIds: {
-              ...mixerTrack.deviceIds,
-              pre: [...mixerTrack.deviceIds.pre, id],
-            },
-          }),
-        };
+        let newState = { mix: updatedState };
+        if (mixerTrack) {
+          newState = {
+            mix: updateMixerTrack(updatedState, parentId, {
+              deviceIds: [...(mixerTrack?.deviceIds || []), id],
+            }),
+          };
+        } else if (soundChain) {
+          newState = {
+            mix: updateSoundChain(updatedState, parentId, {
+              deviceIds: [...(soundChain?.deviceIds || []), id],
+            }),
+          };
+        }
 
         // Get updated track reference
-        const updatedTrack = newState.mix.mixerTracks[mixerTrackId];
-
+        const updatedTrack = newState.mix.mixerTracks[parentId];
+        const updatedDevices = newState.mix.devices;
         // Connect with master track reference
-        connectMixerTrackChain(updatedTrack, masterTrack, state.mix.devices);
+        if (updatedTrack) {
+          connectMixerTrackChain(updatedTrack, masterTrack, updatedDevices);
+        } else if (soundChain) {
+          connectSoundChain(soundChain, updatedDevices);
+        }
 
         return newState;
       });
@@ -334,7 +356,7 @@ export class MixEngineImpl implements MixEngine {
       return id;
     } catch (error) {
       console.error(
-        `Failed to add ${deviceType} device to track ${mixerTrackId}:`,
+        `Failed to add ${deviceType} device to track ${parentId}:`,
         error,
       );
       try {
@@ -346,19 +368,20 @@ export class MixEngineImpl implements MixEngine {
     }
   }
 
-  removeDevice(mixerTrackId: string, deviceId: string): void {
+  removeDevice(parentId: string, deviceId: string): void {
     const stateSnapshot = useEngineStore.getState().mix;
     const devices = stateSnapshot.devices;
-    const mixerTrack = stateSnapshot.mixerTracks[mixerTrackId];
+    const mixerTrack = stateSnapshot.mixerTracks[parentId];
+    const soundChain = stateSnapshot.soundChains[parentId];
     const masterTrack = stateSnapshot.mixerTracks.master;
 
     if (!devices[deviceId]) {
       throw new Error(`Device ${deviceId} not found`);
     }
-    if (!mixerTrack) {
-      throw new Error(`Mixer track ${mixerTrackId} not found`);
+    if (!mixerTrack && !soundChain) {
+      throw new Error(`Mixer track or sound chain ${parentId} not found`);
     }
-    if (!masterTrack) {
+    if (mixerTrack && !masterTrack) {
       throw new Error("Master track not found");
     }
 
@@ -368,31 +391,56 @@ export class MixEngineImpl implements MixEngine {
         // Remove device from state
         const { [deviceId]: _, ...remainingDevices } = state.mix.devices;
 
-        // Create new state with updated track
-        const newState = {
+        let newState = {
           mix: {
             ...state.mix,
             devices: remainingDevices,
-            mixerTracks: {
-              ...state.mix.mixerTracks,
-              [mixerTrackId]: {
-                ...mixerTrack,
-                deviceIds: {
-                  pre: mixerTrack.deviceIds.pre.filter((id) => id !== deviceId),
-                  post: mixerTrack.deviceIds.post.filter(
+          },
+        };
+        if (mixerTrack) {
+          newState = {
+            mix: {
+              ...state.mix,
+              devices: remainingDevices,
+              mixerTracks: {
+                ...state.mix.mixerTracks,
+                [parentId]: {
+                  ...mixerTrack,
+                  deviceIds: mixerTrack.deviceIds.filter(
                     (id) => id !== deviceId,
                   ),
                 },
               },
             },
-          },
-        };
+          };
+        } else if (soundChain) {
+          newState = {
+            mix: {
+              ...state.mix,
+              devices: remainingDevices,
+              soundChains: {
+                ...state.mix.soundChains,
+                [parentId]: {
+                  ...soundChain,
+                  deviceIds: soundChain.deviceIds.filter(
+                    (id) => id !== deviceId,
+                  ),
+                },
+              },
+            },
+          };
+        }
 
         // Get updated track reference
-        const updatedTrack = newState.mix.mixerTracks[mixerTrackId];
+        const updatedTrack = newState.mix.mixerTracks[parentId];
+        const updatedDevices = newState.mix.devices;
 
-        // Reconnect the chain within setState
-        connectMixerTrackChain(updatedTrack, masterTrack, devices);
+        // Reconnect the chain within setState with master track reference
+        if (updatedTrack) {
+          connectMixerTrackChain(updatedTrack, masterTrack, updatedDevices);
+        } else if (soundChain) {
+          connectSoundChain(soundChain, updatedDevices);
+        }
 
         return newState;
       });
@@ -406,12 +454,16 @@ export class MixEngineImpl implements MixEngine {
       }
     } catch (error) {
       console.error(
-        `Failed to remove device ${deviceId} from track ${mixerTrackId}:`,
+        `Failed to remove device ${deviceId} from track ${parentId}:`,
         error,
       );
       // Attempt to restore connection if state update failed
       try {
-        connectMixerTrackChain(mixerTrack, masterTrack, devices);
+        if (mixerTrack) {
+          connectMixerTrackChain(mixerTrack, masterTrack, devices);
+        } else if (soundChain) {
+          connectSoundChain(soundChain, devices);
+        }
       } catch (restoreError) {
         console.error("Failed to restore track connection:", restoreError);
       }
@@ -419,31 +471,38 @@ export class MixEngineImpl implements MixEngine {
     }
   }
 
-  updateDevice<T extends EffectOptions>(
-    mixerTrackId: string,
+  updateDevice(
+    parentId: string,
     deviceId: string,
-    updates: Partial<Device<T>>,
+    updates: Partial<Device>,
   ): void {
     const stateSnapshot = useEngineStore.getState();
     const device = stateSnapshot.mix.devices[deviceId];
-    const mixerTrack = stateSnapshot.mix.mixerTracks[mixerTrackId];
+    const mixerTrack = stateSnapshot.mix.mixerTracks[parentId];
+    const soundChain = stateSnapshot.mix.soundChains[parentId];
 
-    if (!device || !mixerTrack) {
-      throw new Error("Device or mixer track not found");
+    if (!device || (!mixerTrack && !soundChain)) {
+      throw new Error("Device or mixer track/soundchain not found");
     }
 
     try {
       // Update bypass state
-      if (updates.bypass !== undefined) {
-        device.node.wet.value = updates.bypass ? 0 : 1;
+      if (
+        updates.bypass !== undefined &&
+        (device.node as ToneWithBypass).bypass
+      ) {
+        (device.node as ToneWithBypass).bypass(updates.bypass);
       }
 
       // Update other parameters
       if (updates.options) {
         Object.entries(updates.options).forEach(([key, value]) => {
-          const param = device.node[key as keyof typeof device.node];
-          if (param instanceof Tone.Param) {
-            param.value = value;
+          if (
+            device.node[key as keyof typeof device.node] instanceof Tone.Param
+          ) {
+            (
+              device.node[key as keyof typeof device.node] as Tone.Param<any>
+            ).value = value;
           } else if (key in device.node) {
             (device.node as any)[key] = value;
           }
@@ -459,6 +518,41 @@ export class MixEngineImpl implements MixEngine {
       }));
     } catch (error) {
       console.error("Failed to update device:", error);
+      throw error;
+    }
+  }
+
+  connectTrackToSoundChain(trackId: string, soundChainId: string | null): void {
+    const stateSnapshot = useEngineStore.getState();
+    const track = stateSnapshot.composition.tracks[trackId];
+    const soundChain = soundChainId
+      ? stateSnapshot.mix.soundChains[soundChainId]
+      : null;
+    const masterTrack = stateSnapshot.mix.mixerTracks.master;
+    const devices = stateSnapshot.mix.devices;
+
+    if (!track) {
+      throw new Error(`Track ${trackId} not found`);
+    }
+
+    try {
+      // Disconnect the track from its current destination
+      track.channel.disconnect();
+
+      if (soundChain) {
+        // Connect to sound chain input
+        track.channel.connect(soundChain.input);
+      } else {
+        // Connect to master track input
+        track.channel.connect(masterTrack.input);
+      }
+
+      // Reconnect the chain within setState with master track reference
+      connectMixerTrackChain(masterTrack, masterTrack, devices);
+    } catch (error) {
+      console.error(
+        `Failed to connect track ${trackId} to sound chain ${soundChainId}:`,
+      );
       throw error;
     }
   }
@@ -671,6 +765,40 @@ export class MixEngineImpl implements MixEngine {
     });
   }
 
+  createSoundChain(name?: string): string {
+    const id = crypto.randomUUID();
+    const input = new Tone.Gain();
+    const output = new Tone.Gain();
+
+    try {
+      const soundChain: SoundChain = {
+        id,
+        name: name ?? `Sound Chain ${id.slice(0, 6)}`,
+        deviceIds: [],
+        input,
+        output,
+      };
+
+      useEngineStore.setState((state) => ({
+        mix: {
+          ...state.mix,
+          soundChains: {
+            ...state.mix.soundChains,
+            [id]: soundChain,
+          },
+        },
+      }));
+
+      return id;
+    } catch (error) {
+      console.error("Failed to create sound chain");
+      // Clean up on error
+      input.dispose();
+      output.dispose();
+      throw error;
+    }
+  }
+
   getState(): MixState {
     return useEngineStore.getState().mix;
   }
@@ -681,11 +809,15 @@ export class MixEngineImpl implements MixEngine {
 
     const stateSnapshot = useEngineStore.getState().mix;
     const devices = stateSnapshot.devices;
+    const soundChains = stateSnapshot.soundChains;
 
     try {
       // Dispose all mixer tracks and their devices
       Object.values(stateSnapshot.mixerTracks).forEach((mixerTrack) => {
         disposeMixerTrack(mixerTrack, devices);
+      });
+      Object.values(soundChains).forEach((soundChain) => {
+        disposeSoundChain(soundChain, devices);
       });
 
       // Reset state
@@ -696,10 +828,11 @@ export class MixEngineImpl implements MixEngine {
           devices: {},
           sends: {},
           trackSends: {},
+          soundChains: {},
         },
       });
     } catch (error) {
-      console.error("Error during engine disposal:", error);
+      console.error("Error during engine disposal");
       throw error;
     }
   }

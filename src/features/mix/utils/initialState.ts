@@ -11,6 +11,7 @@ export const initialMixerTrackControlState: MixerTrackControlState = {
 export const initialMixState: MixState = {
   mixerTracks: {},
   mixerTrackOrder: ["master"],
+  soundChains: {},
   devices: {},
   sends: {},
   trackSends: {},

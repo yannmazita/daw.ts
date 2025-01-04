@@ -4,7 +4,6 @@ import { ClipEngine } from "../clips/types";
 import { MixEngine } from "../mix/types";
 import { AutomationEngine } from "../automation/types";
 import { Channel, Gain, Meter, Panner } from "tone";
-import { InstrumentEngine } from "../instruments/types";
 
 export interface TrackControlState {
   solo: boolean;
@@ -84,7 +83,6 @@ export interface CompositionEngine {
   transportEngine: TransportEngine;
   mixEngine: MixEngine;
   clipEngine: ClipEngine;
-  instrumentEngine: InstrumentEngine;
   automationEngine: AutomationEngine;
 
   // Track operations
