@@ -92,6 +92,7 @@ export const useEngineStore = create<EngineState>()(
                   name: device.name,
                   bypass: device.bypass,
                   options: device.options,
+                  parentId: device.parentId,
                 },
               ]),
             ),
