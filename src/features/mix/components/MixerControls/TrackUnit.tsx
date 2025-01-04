@@ -1,6 +1,7 @@
 // src/features/mix/components/MixerControls/TrackUnit.tsx
 import { useTrackState } from "@/features/composition/hooks/useTrackState";
 import { cn } from "@/common/shadcn/lib/utils";
+import { Meter } from "@/common/components/Meter/Meter";
 import { Knob } from "@/common/components/Knob/Knob";
 import { useTrackControls } from "@/features/composition/hooks/useTrackControls";
 import { useCallback, useEffect, useState, useRef } from "react";
@@ -97,13 +98,7 @@ export const TrackUnit: React.FC<TrackUnitProps> = ({ trackId, className }) => {
     >
       <div className="mx-1 h-fit">{trackState?.name}</div>
       <div className="grid h-full grid-cols-2 bg-muted">
-        <div className="relative overflow-hidden bg-muted-foreground">
-          <div
-            ref={meterRef}
-            className="transition-width absolute left-0 top-0 h-full bg-primary duration-100"
-            style={{ width: "0%" }}
-          ></div>
-        </div>
+        <Meter getMeterValues={getMeterValues} />
         <div className="grid grid-rows-4">
           <div className="row-span-1 flex w-full flex-col items-center pt-4">
             <Input
