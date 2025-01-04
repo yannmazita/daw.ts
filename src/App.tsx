@@ -4,7 +4,7 @@ import { EngineManager } from "./core/engines/EngineManager";
 import { TimelineGrid } from "./features/composition/components/TimelineGrid";
 import { useEffect } from "react";
 import { Browser } from "./features/browser/components/Browser";
-import { BottomSection } from "./common/components/BottomSection";
+import { DetailView } from "./common/components/DetailView";
 import { MixerControls } from "./features/mix/components/MixerControls/MixerControls";
 
 export const App: React.FC = () => {
@@ -28,7 +28,7 @@ export const App: React.FC = () => {
           </div>
         </div>
         <div className="grid grid-cols-12">
-          <BottomSection />
+          <DetailView />
         </div>
       </div>
     </Layout>
