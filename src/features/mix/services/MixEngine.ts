@@ -1,4 +1,3 @@
-// src/features/mix/services/MixEngine.t
 // src/features/mix/services/MixEngine.ts
 import * as Tone from "tone";
 import {
@@ -519,6 +518,41 @@ export class MixEngineImpl implements MixEngine {
       }));
     } catch (error) {
       console.error("Failed to update device:", error);
+      throw error;
+    }
+  }
+
+  connectTrackToSoundChain(trackId: string, soundChainId: string | null): void {
+    const stateSnapshot = useEngineStore.getState();
+    const track = stateSnapshot.composition.tracks[trackId];
+    const soundChain = soundChainId
+      ? stateSnapshot.mix.soundChains[soundChainId]
+      : null;
+    const masterTrack = stateSnapshot.mix.mixerTracks.master;
+    const devices = stateSnapshot.mix.devices;
+
+    if (!track) {
+      throw new Error(`Track ${trackId} not found`);
+    }
+
+    try {
+      // Disconnect the track from its current destination
+      track.channel.disconnect();
+
+      if (soundChain) {
+        // Connect to sound chain input
+        track.channel.connect(soundChain.input);
+      } else {
+        // Connect to master track input
+        track.channel.connect(masterTrack.input);
+      }
+
+      // Reconnect the chain within setState with master track reference
+      connectMixerTrackChain(masterTrack, masterTrack, devices);
+    } catch (error) {
+      console.error(
+        `Failed to connect track ${trackId} to sound chain ${soundChainId}:`,
+      );
       throw error;
     }
   }
