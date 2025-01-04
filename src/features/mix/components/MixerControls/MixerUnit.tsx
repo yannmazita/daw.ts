@@ -162,9 +162,6 @@ export const MixerUnit: React.FC<MixerUnitProps> = ({
         <Button size="sm" onClick={() => handleAddDevice("processor")}>
           Add Processor
         </Button>
-        <Button size="sm" onClick={() => handleAddDevice("instrument")}>
-          Add Instrument
-        </Button>
       </div>
     </div>
   );
