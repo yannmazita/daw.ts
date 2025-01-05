@@ -1,4 +1,4 @@
-// src/features/mix/components/MixerControls/DeviceUnit.tsx
+// src/features/mix/components/Mixer/DeviceUnit.tsx
 import { Button } from "@/common/shadcn/ui/button";
 import { cn } from "@/common/shadcn/lib/utils";
 import { useMixEngine } from "@/core/engines/EngineManager";

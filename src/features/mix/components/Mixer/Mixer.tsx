@@ -1,21 +1,19 @@
-// src/features/mix/components/MixerControls/MixerControls.tsx
+// src/features/mix/components/Mixer/Mixer.tsx
 import { useTrackOperations } from "@/features/composition/hooks/useTrackOperations";
 import { useMixerTrackOperations } from "../../hooks/useMixerTrackOperations";
-import { TrackUnit } from "./TrackUnit";
-import { MixerUnit } from "./MixerUnit";
+import { CompositionTrackControls } from "./MixerUnits/CompositionTrackControls";
+import { MixerTrackControls } from "./MixerUnits/MixerTrackControls";
+import { SoundChainControls } from "./MixerUnits/SoundChainControls";
 import { cn } from "@/common/shadcn/lib/utils";
 import { ScrollArea, ScrollBar } from "@/common/shadcn/ui/scroll-area";
-import { SoundChainUnit } from "./SoundChainUnit";
 import { useSoundChainManager } from "../../hooks/useSoundChainManager";
 import { MixerBar } from "../MixerBar";
 
-interface MixerControlsProps {
+interface MixerProps {
   onSelectParent: (parentId: string) => void;
 }
 
-export const MixerControls: React.FC<MixerControlsProps> = ({
-  onSelectParent,
-}) => {
+export const Mixer: React.FC<MixerProps> = ({ onSelectParent }) => {
   const { trackOrder } = useTrackOperations();
   const { mixerTrackOrder } = useMixerTrackOperations();
   const { soundChains } = useSoundChainManager();
@@ -28,7 +26,7 @@ export const MixerControls: React.FC<MixerControlsProps> = ({
           <div className="flex h-full flex-row">
             {/* Regular tracks */}
             {trackOrder.map((trackId, index) => (
-              <TrackUnit
+              <CompositionTrackControls
                 key={trackId}
                 trackId={trackId}
                 className={cn(index === 0 && "ml-1")}
@@ -38,7 +36,7 @@ export const MixerControls: React.FC<MixerControlsProps> = ({
             {mixerTrackOrder
               .filter((trackId) => trackId !== "master")
               .map((trackId) => (
-                <MixerUnit
+                <MixerTrackControls
                   key={trackId}
                   trackId={trackId}
                   onSelectParent={onSelectParent}
@@ -46,7 +44,7 @@ export const MixerControls: React.FC<MixerControlsProps> = ({
               ))}
             {/* Sound Chains */}
             {Object.keys(soundChains).map((soundChainId) => (
-              <SoundChainUnit
+              <SoundChainControls
                 key={soundChainId}
                 soundChainId={soundChainId}
                 onSelectParent={onSelectParent}
@@ -56,7 +54,7 @@ export const MixerControls: React.FC<MixerControlsProps> = ({
           <ScrollBar orientation="horizontal" />
         </ScrollArea>
         {/* Master unit - fixed position */}
-        <MixerUnit
+        <MixerTrackControls
           key="master"
           trackId="master"
           onSelectParent={onSelectParent}

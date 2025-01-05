@@ -6,7 +6,7 @@ import {
   TabsTrigger,
 } from "@/common/shadcn/ui/tabs";
 import { useEngineStore } from "@/core/stores/useEngineStore";
-import { DeviceUnit } from "@/features/mix/components/MixerControls/DeviceUnit";
+import { DeviceUnit } from "@/features/mix/components/Mixer/DeviceUnit";
 import { useDeviceManager } from "@/features/mix/hooks/useDeviceManager";
 import { useMemo } from "react";
 

@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import { KnobIndicator } from "./KnobIndicator";
+import { cn } from "@/common/shadcn/lib/utils";
 
 interface KnobProps {
   min?: number;
@@ -18,6 +19,7 @@ interface KnobProps {
   };
   rotationRange?: number;
   startAngle?: number;
+  className?: string;
 }
 
 export const Knob: React.FC<KnobProps> = ({
@@ -31,6 +33,7 @@ export const Knob: React.FC<KnobProps> = ({
   sensitivity = { auto: true },
   rotationRange = 300, // default 300 degrees of rotation
   startAngle = -240,
+  className,
 }) => {
   const [currentValue, setCurrentValue] = useState(value);
   const [isDragging, setIsDragging] = useState(false);
@@ -179,7 +182,10 @@ export const Knob: React.FC<KnobProps> = ({
   return (
     <div
       ref={containerRef}
-      className="relative flex items-center justify-center focus:outline-none"
+      className={cn(
+        "relative flex items-center justify-center focus:outline-none",
+        className,
+      )}
       style={{ width: `${radius * 2}px`, height: `${radius * 2}px` }}
       onMouseDown={handleStart}
       onTouchStart={handleStart}

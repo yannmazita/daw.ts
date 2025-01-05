@@ -5,7 +5,7 @@ import { TimelineGrid } from "./features/composition/components/TimelineGrid";
 import { useEffect, useState } from "react";
 import { Browser } from "./features/browser/components/Browser";
 import { DetailView } from "@/common/components/DetailView";
-import { MixerControls } from "./features/mix/components/MixerControls/MixerControls";
+import { Mixer } from "./features/mix/components/Mixer/Mixer";
 
 export const App: React.FC = () => {
   useEffect(() => {
@@ -31,7 +31,7 @@ export const App: React.FC = () => {
             <div className="flex-grow overflow-hidden">
               <TimelineGrid />
             </div>
-            <MixerControls onSelectParent={handleSelectParent} />
+            <Mixer onSelectParent={handleSelectParent} />
           </div>
         </div>
         <div className="grid grid-cols-12">
