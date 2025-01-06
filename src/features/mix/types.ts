@@ -175,7 +175,6 @@ export interface MixEngine {
   // Sound Chains
   createSoundChain(state: MixState, name?: string): MixState;
 
-  // State
+  // Cleanup
   dispose(state: MixState): MixState;
-  initializeMixerTracks(state: MixState): MixState;
 }

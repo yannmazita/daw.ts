@@ -48,7 +48,7 @@ export class MixEngineImpl implements MixEngine {
     this.initializeMixerTracks(state);
   }
 
-  initializeMixerTracks(state: MixState): MixState {
+  private initializeMixerTracks(state: MixState): MixState {
     console.log("Initializing mixer tracks:", state.mixerTracks);
 
     try {
