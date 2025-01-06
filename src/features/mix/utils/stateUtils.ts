@@ -91,3 +91,11 @@ export const updateSoundChain = (
     },
   };
 };
+
+export const updateMixState = (
+  state: MixState,
+  updates: Partial<MixState>,
+): MixState => ({
+  ...state,
+  ...updates,
+});
