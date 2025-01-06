@@ -1,50 +1,65 @@
 // src/features/transport/types.ts
-import { BPM, Subdivision, Time } from "tone/build/esm/core/type/Units";
+import { Subdivision } from "tone/build/esm/core/type/Units";
 
 export interface TransportState {
   isPlaying: boolean;
   isRecording: boolean;
 
-  tempo: BPM;
+  tempo: number;
   timeSignature: number[];
   tapTimes: number[];
 
   loop: {
     enabled: boolean;
-    start: Time;
-    end: Time;
+    start: number;
+    end: number;
   };
 
   swing: number;
   swingSubdivision: Subdivision;
 
-  duration: Time;
+  duration: number;
+  position: number;
 }
 
 export interface TransportEngine {
   // Core transport
-  play(time?: Time): Promise<void>;
-  pause(): void;
-  stop(): void;
-  seekTo(time: Time): void;
+  play(state: TransportState, time?: number): Promise<TransportState>;
+  pause(state: TransportState): TransportState;
+  stop(state: TransportState): TransportState;
+  seekTo(state: TransportState, time: number): TransportState;
 
   // Settings
-  setTempo(tempo: BPM): void;
-  setTimeSignature(numerator: number, denominator: number): void;
-  setSwing(amount: number, subdivision?: Time): void;
+  setTempo(state: TransportState, tempo: number): TransportState;
+  setTimeSignature(
+    state: TransportState,
+    numerator: number,
+    denominator: number,
+  ): TransportState;
+  setSwing(
+    state: TransportState,
+    amount: number,
+    subdivision?: Subdivision,
+  ): TransportState;
 
   // Tap
-  startTapTempo(): BPM;
-  endTapTempo(): void;
+  startTapTempo(state: TransportState): TransportState;
+  endTapTempo(state: TransportState): TransportState;
 
   // Loop
-  setLoop(enabled: boolean): void;
-  setLoopPoints(start: Time, end: Time): void;
+  setLoop(state: TransportState, enabled: boolean): TransportState;
+  setLoopPoints(
+    state: TransportState,
+    start: number,
+    end: number,
+  ): TransportState;
 
-  // Duration
-  setDuration(duration: Time): void;
+  // Duration-Position
+  getTransportDuration(): number;
+  setTransportDuration(state: TransportState, duration: number): TransportState;
+  getTransportPosition(): number;
+  setTransportPosition(state: TransportState, position: number): TransportState;
 
-  // State
-  getState(): TransportState;
-  dispose(): void;
+  // Cleanup
+  dispose(state: TransportState): void;
 }
