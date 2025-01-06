@@ -162,11 +162,7 @@ export interface MixEngine {
     sendId: string,
     updates: Partial<Send>,
   ): EngineState;
-  removeSend(
-    state: EngineState,
-    baseTrackId: string,
-    sendId: string,
-  ): EngineState;
+  removeSend(state: MixState, baseTrackId: string, sendId: string): MixState;
   setSendAmount(
     state: EngineState,
     baseTrackId: string,

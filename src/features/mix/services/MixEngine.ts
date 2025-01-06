@@ -589,13 +589,9 @@ export class MixEngineImpl implements MixEngine {
     }
   }
 
-  removeSend(
-    state: EngineState,
-    baseTrackId: string,
-    sendId: string,
-  ): EngineState {
-    const send = state.mix.sends[sendId];
-    const sourceTrack = state.mix.mixerTracks[baseTrackId];
+  removeSend(state: MixState, baseTrackId: string, sendId: string): MixState {
+    const send = state.sends[sendId];
+    const sourceTrack = state.mixerTracks[baseTrackId];
 
     if (!send || !sourceTrack) {
       throw new Error("Send or source track not found");
@@ -615,10 +611,7 @@ export class MixEngineImpl implements MixEngine {
       disposeSend(send);
 
       // Update state
-      return {
-        ...state,
-        mix: removeSendFromState(state.mix, sendId),
-      };
+      return removeSendFromState(state, sendId);
     } catch (error) {
       console.error(`Failed to remove send ${sendId}:`, error);
       throw error;
