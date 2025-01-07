@@ -9,7 +9,11 @@ import { CompositionMixService } from "./CompositionMixService";
 import { CompositionClipService } from "./CompositionClipService";
 import { CompositionAutomationService } from "./CompositionAutomationService";
 import { CompositionTrackService } from "./CompositionTrackService";
-import { TrackEngine } from "@/features/tracks/types";
+import { TrackEngine, Track } from "@/features/tracks/types";
+import { Device, DeviceType, Send, MixerTrack } from "@/features/mix/types";
+import { Subdivision } from "tone/build/esm/core/type/Units";
+import { ClipContent, ClipLoop, MidiClipContent } from "@/features/clips/types";
+import { ToneAudioBuffer } from "tone";
 
 export class CompositionEngineImpl implements CompositionEngine {
   private disposed = false;
@@ -37,11 +41,190 @@ export class CompositionEngineImpl implements CompositionEngine {
     this.automationService = new CompositionAutomationService(automationEngine);
   }
 
+  // Transport methods
+  async play(time?: number): Promise<void> {
+    return this.transportService.play(time);
+  }
+  pause(): void {
+    return this.transportService.pause();
+  }
+  stop(): void {
+    return this.transportService.stop();
+  }
+  seekTo(time: number): void {
+    return this.transportService.seekTo(time);
+  }
+  setTempo(tempo: number): void {
+    return this.transportService.setTempo(tempo);
+  }
+  setTimeSignature(numerator: number, denominator: number): void {
+    return this.transportService.setTimeSignature(numerator, denominator);
+  }
+  setSwing(amount: number, subdivision?: Subdivision): void {
+    return this.transportService.setSwing(amount, subdivision);
+  }
+  startTapTempo(): void {
+    return this.transportService.startTapTempo();
+  }
+  endTapTempo(): void {
+    return this.transportService.endTapTempo();
+  }
+  getTransportDuration(): number {
+    return this.transportService.getTransportDuration();
+  }
+  setTransportDuration(duration: number): void {
+    return this.transportService.setTransportDuration(duration);
+  }
+  getTransportPosition(): number {
+    return this.transportService.getTransportPosition();
+  }
+  setTransportPosition(position: number): void {
+    return this.transportService.setTransportPosition(position);
+  }
+
+  // Mix methods
+  createMixerTrack(type: MixerTrack["type"], name?: string): void {
+    return this.mixService.createMixerTrack(type, name);
+  }
+  deleteMixerTrack(trackId: string): void {
+    return this.mixService.deleteMixerTrack(trackId);
+  }
+  setMixerTrackSolo(trackId: string, solo: boolean): void {
+    return this.mixService.setSolo(trackId, solo);
+  }
+  setMixerTrackMute(trackId: string, mute: boolean): void {
+    return this.mixService.setMute(trackId, mute);
+  }
+  setMixerTrackVolume(trackId: string, volume: number): void {
+    return this.mixService.setVolume(trackId, volume);
+  }
+  setMixerTrackPan(trackId: string, pan: number): void {
+    return this.mixService.setPan(trackId, pan);
+  }
+  getMixerTrackMeterValues(trackId: string): number | number[] {
+    return this.mixService.getMeterValues(trackId);
+  }
+  addDevice(parentId: string, deviceType: DeviceType): void {
+    return this.mixService.addDevice(parentId, deviceType);
+  }
+  updateDevice(
+    parentId: string,
+    deviceId: string,
+    updates: Partial<Device>,
+  ): void {
+    return this.mixService.updateDevice(parentId, deviceId, updates);
+  }
+  removeDevice(parentId: string, deviceId: string): void {
+    return this.mixService.removeDevice(parentId, deviceId);
+  }
+  createSend(sourceTrackId: string, targetTrackId: string): void {
+    return this.mixService.createSend(sourceTrackId, targetTrackId);
+  }
+  updateSend(
+    baseTrackId: string,
+    sendId: string,
+    updates: Partial<Send>,
+  ): void {
+    return this.mixService.updateSend(baseTrackId, sendId, updates);
+  }
+  removeSend(baseTrackId: string, sendId: string): void {
+    return this.mixService.removeSend(baseTrackId, sendId);
+  }
+  setSendAmount(baseTrackId: string, sendId: string, amount: number): void {
+    return this.mixService.setSendAmount(baseTrackId, sendId, amount);
+  }
+  getTrackSends(baseTrackId: string): Send[] {
+    return this.mixService.getTrackSends(baseTrackId);
+  }
+  disconnectTrackSends(baseTrackId: string): void {
+    return this.mixService.disconnectTrackSends(baseTrackId);
+  }
+  createSoundChain(name?: string): void {
+    return this.mixService.createSoundChain(name);
+  }
+
+  // Track Methods
+  createTrack(type: Track["type"], name?: string): void {
+    return this.trackService.createTrack(type, name);
+  }
+  updateTrack(trackId: string, updates: Partial<Track>): void {
+    return this.trackService.updateTrack(trackId, updates);
+  }
+  deleteTrack(trackId: string): void {
+    return this.trackService.deleteTrack(trackId);
+  }
+  moveTrack(trackId: string, position: number): void {
+    return this.trackService.moveTrack(trackId, position);
+  }
+  setTrackSolo(trackId: string, solo: boolean): void {
+    return this.trackService.setSolo(trackId, solo);
+  }
+  setTrackMute(trackId: string, mute: boolean): void {
+    return this.trackService.setMute(trackId, mute);
+  }
+  setArmed(trackId: string, armed: boolean): void {
+    return this.trackService.setArmed(trackId, armed);
+  }
+  setTrackPan(trackId: string, pan: number): void {
+    return this.trackService.setPan(trackId, pan);
+  }
+  setTrackVolume(trackId: string, volume: number): void {
+    return this.trackService.setVolume(trackId, volume);
+  }
+  getTrackMeterValues(trackId: string): number | number[] {
+    return this.trackService.getMeterValues(trackId);
+  }
+
+  // Clip Methods
+  createMidiClip(midiData: MidiClipContent): void {
+    return this.clipService.createMidiClip(midiData);
+  }
+  createAudioClip(buffer: ToneAudioBuffer): void {
+    return this.clipService.createAudioClip(buffer);
+  }
+  getClipContent(clipId: string): ClipContent {
+    return this.clipService.getClipContent(clipId);
+  }
+  addClip(contentId: string, startTime: number): void {
+    return this.clipService.addClip(contentId, startTime);
+  }
+  removeClip(clipId: string): void {
+    return this.clipService.removeClip(clipId);
+  }
+  moveClip(clipId: string, newTime: number): void {
+    return this.clipService.moveClip(clipId, newTime);
+  }
+  setClipLoop(clipId: string, enabled: boolean, settings?: ClipLoop): void {
+    return this.clipService.setClipLoop(clipId, enabled, settings);
+  }
+  setClipGain(clipId: string, gain: number): void {
+    return this.clipService.setClipGain(clipId, gain);
+  }
+  setClipFades(clipId: string, fadeIn: number, fadeOut: number): void {
+    return this.clipService.setClipFades(clipId, fadeIn, fadeOut);
+  }
+  playClip(clipId: string, startTime?: number): void {
+    return this.clipService.playClip(clipId, startTime);
+  }
+  stopClip(clipId: string): void {
+    return this.clipService.stopClip(clipId);
+  }
+  isClipPlaying(clipId: string): boolean {
+    return this.clipService.isClipPlaying(clipId);
+  }
+  getPlaybackState(clipId: string): boolean {
+    return this.clipService.getPlaybackState(clipId);
+  }
+
   dispose(): void {
     if (this.disposed) {
       return;
     }
     this.disposed = true;
+    this.transportService.dispose();
+    this.mixService.dispose();
+    this.clipService.dispose();
+    this.trackService.dispose();
   }
 
   private checkDisposed(): void {
