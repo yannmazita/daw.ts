@@ -1,4 +1,4 @@
-// src/common/store/engineStore.ts
+// src/core/stores/useEngineStore.ts
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
 import { TransportState } from "@/features/transport/types";
@@ -19,6 +19,7 @@ import { initialAutomationState } from "@/features/automation/utils/initialState
 import { initialCompositionState } from "@/features/composition/utils/initialState";
 import { PersistableTrackState, TrackState } from "@/features/tracks/types";
 import { initialTrackState } from "@/features/tracks/utils/initialState";
+
 export interface EngineState {
   transport: TransportState;
   clips: ClipState;
@@ -51,7 +52,6 @@ export const useEngineStore = create<EngineState>()(
       }),
       {
         name: "daw-engine-storage",
-        // Use the persistable types for storage
         partialize: (state): PersistableEngineState => ({
           transport: state.transport,
           clips: {
@@ -70,46 +70,48 @@ export const useEngineStore = create<EngineState>()(
             ),
           },
           mix: {
-            ...state.mix,
             mixerTracks: Object.fromEntries(
-              Object.entries(state.mix.mixerTracks).map(([id, mixerTrack]) => [
+              Object.entries(state.mix.mixerTracks).map(([id, track]) => [
                 id,
                 {
-                  id: mixerTrack.id,
-                  name: mixerTrack.name,
-                  type: mixerTrack.type,
+                  id: track.id,
+                  name: track.name,
+                  type: track.type,
+                  deviceIds: track.deviceIds,
                   controls: {
-                    solo: mixerTrack.controls.solo,
-                    mute: mixerTrack.controls.mute,
-                    pan: mixerTrack.controls.pan,
-                    volume: mixerTrack.controls.volume,
+                    solo: track.controls.solo,
+                    mute: track.controls.mute,
+                    pan: track.controls.pan,
+                    volume: track.controls.volume,
                   },
                 },
               ]),
             ),
             mixerTrackOrder: state.mix.mixerTrackOrder,
             devices: Object.fromEntries(
-              Object.entries(state.mix.devices).map(([id, device]) => [
-                id,
-                {
-                  id: device.id,
-                  type: device.type,
-                  name: device.name,
-                  bypass: device.bypass,
-                  options: device.options,
-                  parentId: device.parentId,
-                },
-              ]),
+              Object.entries(state.mix.devices)
+                .filter(([_, device]) => !device.node) // Exclude devices with runtime nodes
+                .map(([id, device]) => [
+                  id,
+                  {
+                    id: device.id,
+                    type: device.type,
+                    name: device.name,
+                    bypass: device.bypass,
+                    options: device.options,
+                    parentId: device.parentId,
+                  },
+                ]),
             ),
             soundChains: Object.fromEntries(
-              Object.entries(state.mix.soundChains).map(([id, soundChain]) => [
+              Object.entries(state.mix.soundChains).map(([id, chain]) => [
                 id,
                 {
-                  id: soundChain.id,
-                  name: soundChain.name,
-                  deviceIds: soundChain.deviceIds,
-                  inputGainValue: soundChain.input.gain.value,
-                  outputGainValue: soundChain.output.gain.value,
+                  id: chain.id,
+                  name: chain.name,
+                  deviceIds: chain.deviceIds,
+                  inputGainValue: chain.input?.gain?.value ?? 1,
+                  outputGainValue: chain.output?.gain?.value ?? 1,
                 },
               ]),
             ),
@@ -122,14 +124,13 @@ export const useEngineStore = create<EngineState>()(
                   sourceTrackId: send.sourceTrackId,
                   returnTrackId: send.returnTrackId,
                   preFader: send.preFader,
-                  gainValue: send.gain.gain.value,
+                  gainValue: send.gain?.gain?.value ?? 1,
                 },
               ]),
             ),
             trackSends: state.mix.trackSends,
           },
           automation: {
-            ...state.automation,
             lanes: state.automation.lanes,
             activeAutomation: Object.fromEntries(
               Object.entries(state.automation.activeAutomation).map(
@@ -138,20 +139,20 @@ export const useEngineStore = create<EngineState>()(
             ),
           },
           tracks: {
-            ...state.tracks,
             tracks: Object.fromEntries(
               Object.entries(state.tracks.tracks).map(([id, track]) => [
                 id,
                 {
                   id: track.id,
                   name: track.name,
+                  type: track.type,
                   controls: track.controls,
                   clipIds: track.clipIds,
                   automationIds: track.automationIds,
-                  type: track.type,
                 },
               ]),
             ),
+            trackOrder: state.tracks.trackOrder,
           },
           composition: state.composition,
         }),
@@ -162,7 +163,7 @@ export const useEngineStore = create<EngineState>()(
           console.warn(
             "Persisted state loading is deactivated, using initial state",
           );
-          return currentState; // Always return the initial state
+          return currentState;
         },
       },
     ),
