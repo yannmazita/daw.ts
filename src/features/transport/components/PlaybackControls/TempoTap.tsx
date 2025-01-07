@@ -1,16 +1,16 @@
 // src/features/transport/components/PlaybackControls/TempoTap.tsx
 import { Button } from "@/common/shadcn/ui/button";
 import { useEffect, useCallback } from "react";
-import { useTransportEngine } from "@/core/engines/EngineManager";
 import { useEngineStore } from "@/core/stores/useEngineStore";
+import { useTransportControls } from "../../hooks/useTransportControls";
 
 export const TempoTap: React.FC = () => {
-  const transportEngine = useTransportEngine();
   const tapTimes = useEngineStore((state) => state.transport.tapTimes);
+  const { startTapTempo } = useTransportControls();
 
   const handleTap = useCallback(() => {
-    transportEngine.startTapTempo();
-  }, [transportEngine]);
+    startTapTempo();
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {

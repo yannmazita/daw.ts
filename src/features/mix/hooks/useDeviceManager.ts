@@ -3,7 +3,7 @@ import { useCallback } from "react";
 import { useCompositionEngine } from "@/core/engines/EngineManager";
 import { Device, DeviceType } from "../types";
 
-export const useDeviceManager = (parentId: string | null) => {
+export const useDeviceManager = (parentId?: string | null) => {
   const compositionEngine = useCompositionEngine();
 
   const addDevice = useCallback(

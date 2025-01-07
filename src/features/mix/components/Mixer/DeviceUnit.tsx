@@ -1,18 +1,18 @@
 // src/features/mix/components/Mixer/DeviceUnit.tsx
 import { Button } from "@/common/shadcn/ui/button";
 import { cn } from "@/common/shadcn/lib/utils";
-import { useMixEngine } from "@/core/engines/EngineManager";
 import { Device } from "../../types";
+import { useDeviceManager } from "../../hooks/useDeviceManager";
 
 interface DeviceUnitProps {
   device: Device;
 }
 
 export const DeviceUnit: React.FC<DeviceUnitProps> = ({ device }) => {
-  const mixEngine = useMixEngine();
+  const { updateDevice } = useDeviceManager(device.parentId);
 
   const handleBypass = () => {
-    mixEngine.updateDevice(device.parentId, device.id, {
+    updateDevice(device.id, {
       bypass: !device.bypass,
     });
   };

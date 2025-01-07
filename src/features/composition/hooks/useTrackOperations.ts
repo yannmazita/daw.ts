@@ -1,13 +1,13 @@
 // src/features/composition/hooks/useTrackOperations.ts
 import { useCallback } from "react";
 import { useCompositionEngine } from "@/core/engines/EngineManager";
-import { Track } from "../types";
+import { Track } from "@/features/tracks/types";
 import { useEngineStore } from "@/core/stores/useEngineStore";
 
 export const useTrackOperations = () => {
   const compositionEngine = useCompositionEngine();
-  const tracks = useEngineStore((state) => state.composition.tracks);
-  const trackOrder = useEngineStore((state) => state.composition.trackOrder);
+  const tracks = useEngineStore((state) => state.tracks.tracks);
+  const trackOrder = useEngineStore((state) => state.tracks.trackOrder);
 
   const createTrack = useCallback(
     (type: Track["type"], name: string) => {

@@ -6,14 +6,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/common/shadcn/ui/select";
-import { useTransportEngine } from "@/core/engines/EngineManager";
 import { useEngineStore } from "@/core/stores/useEngineStore";
 import { useState } from "react";
+import { useTransportControls } from "@/features/transport/hooks/useTransportControls";
 
 export const TimeSignatureControl: React.FC = () => {
-  const transportEngine = useTransportEngine();
   const { timeSignature } = useEngineStore((state) => state.transport);
-
+  const { setTimeSignature } = useTransportControls();
   const [localNumerator, setLocalNumerator] = useState<number>(
     timeSignature[0],
   );
@@ -27,13 +26,13 @@ export const TimeSignatureControl: React.FC = () => {
   const handleNumeratorChange = (value: string) => {
     const num = parseInt(value);
     setLocalNumerator(num);
-    transportEngine.setTimeSignature(num, localDenominator);
+    setTimeSignature(num, localDenominator);
   };
 
   const handleDenominatorChange = (value: string) => {
     const denom = parseInt(value);
     setLocalDenominator(denom);
-    transportEngine.setTimeSignature(localNumerator, denom);
+    setTimeSignature(localNumerator, denom);
   };
 
   return (
