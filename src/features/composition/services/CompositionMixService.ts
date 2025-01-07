@@ -23,6 +23,12 @@ export class CompositionMixService {
     useEngineStore.setState({ mix: newState });
   }
 
+  moveMixerTrack(trackId: string, newIndex: number): void {
+    const state = useEngineStore.getState().mix;
+    const newState = this.mixEngine.moveMixerTrack(state, trackId, newIndex);
+    useEngineStore.setState({ mix: newState });
+  }
+
   setSolo(trackId: string, solo: boolean): void {
     const state = useEngineStore.getState().mix;
     const newState = this.mixEngine.setSolo(state, trackId, solo);

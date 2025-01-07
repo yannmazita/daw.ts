@@ -5,32 +5,32 @@ import { useEngineStore } from "@/core/stores/useEngineStore";
 
 export const useTrackControls = (trackId: string) => {
   const compositionEngine = useCompositionEngine();
-  const track = useEngineStore((state) => state.composition.tracks[trackId]);
+  const track = useEngineStore((state) => state.tracks.tracks[trackId]);
 
   const armed = useEngineStore(
-    (state) => state.composition.tracks[trackId].controls.armed ?? false,
+    (state) => state.tracks.tracks[trackId]?.controls.armed ?? false,
   );
 
   const pan = useEngineStore(
-    (state) => state.composition.tracks[trackId].controls.pan ?? 0,
+    (state) => state.tracks.tracks[trackId]?.controls.pan ?? 0,
   );
 
   const volume = useEngineStore(
-    (state) => state.composition.tracks[trackId]?.controls.volume ?? 0,
+    (state) => state.tracks.tracks[trackId]?.controls.volume ?? 0,
   );
 
   const muted = useEngineStore(
-    (state) => state.composition.tracks[trackId]?.controls.mute ?? false,
+    (state) => state.tracks.tracks[trackId]?.controls.mute ?? false,
   );
 
   const soloed = useEngineStore(
-    (state) => state.composition.tracks[trackId]?.controls.solo ?? false,
+    (state) => state.tracks.tracks[trackId]?.controls.solo ?? false,
   );
 
   const setVolume = useCallback(
     (value: number) => {
       if (!track) return;
-      compositionEngine.setVolume(trackId, value);
+      compositionEngine.setTrackVolume(trackId, value);
     },
     [compositionEngine, trackId, track],
   );
@@ -38,7 +38,7 @@ export const useTrackControls = (trackId: string) => {
   const setPan = useCallback(
     (Value: number) => {
       if (!track) return;
-      compositionEngine.setPan(trackId, Value);
+      compositionEngine.setTrackPan(trackId, Value);
     },
     [compositionEngine, trackId, track],
   );
@@ -50,17 +50,17 @@ export const useTrackControls = (trackId: string) => {
 
   const toggleMute = useCallback(() => {
     if (!track) return;
-    compositionEngine.setMute(trackId, !muted);
+    compositionEngine.setTrackMute(trackId, !muted);
   }, [compositionEngine, trackId, muted, track]);
 
   const toggleSolo = useCallback(() => {
     if (!track) return;
-    compositionEngine.setSolo(trackId, !soloed);
+    compositionEngine.setTrackSolo(trackId, !soloed);
   }, [compositionEngine, trackId, soloed, track]);
 
   const getMeterValues = useCallback(() => {
     if (!track) return 0;
-    return compositionEngine.getMeterValues(trackId);
+    return compositionEngine.getTrackMeterValues(trackId);
   }, [compositionEngine, trackId, track]);
 
   return {

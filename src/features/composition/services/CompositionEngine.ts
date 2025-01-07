@@ -89,6 +89,9 @@ export class CompositionEngineImpl implements CompositionEngine {
   deleteMixerTrack(trackId: string): void {
     return this.mixService.deleteMixerTrack(trackId);
   }
+  moveMixerTrack(trackId: string, newIndex: number): void {
+    return this.mixService.moveMixerTrack(trackId, newIndex);
+  }
   setMixerTrackSolo(trackId: string, solo: boolean): void {
     return this.mixService.setSolo(trackId, solo);
   }

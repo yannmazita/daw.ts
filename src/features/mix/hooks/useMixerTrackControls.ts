@@ -1,12 +1,11 @@
 // src/features/mix/hooks/useMixerTrackControls.ts
 import { useCallback } from "react";
-import { useMixEngine } from "@/core/engines/EngineManager";
+import { useCompositionEngine } from "@/core/engines/EngineManager";
 import { useEngineStore } from "@/core/stores/useEngineStore";
 
 export const useMixerTrackControls = (trackId: string) => {
-  const mixEngine = useMixEngine();
-  const mixerTracks = useEngineStore((state) => state.mix.mixerTracks);
-  const mixerTrack = mixerTracks[trackId];
+  const compositionEngine = useCompositionEngine();
+  const mixerTrack = useEngineStore((state) => state.mix.mixerTracks[trackId]);
 
   const volume = useEngineStore(
     (state) => state.mix.mixerTracks[trackId]?.controls.volume ?? 0,
@@ -26,33 +25,34 @@ export const useMixerTrackControls = (trackId: string) => {
 
   const setVolume = useCallback(
     (volume: number) => {
-      mixEngine.setVolume(trackId, volume);
+      if (!mixerTrack) return;
+      compositionEngine.setMixerTrackVolume(trackId, volume);
     },
-    [mixEngine, trackId, mixerTrack],
+    [compositionEngine, trackId, mixerTrack],
   );
 
   const setPan = useCallback(
     (pan: number) => {
       if (!mixerTrack) return;
-      mixEngine.setPan(trackId, pan);
+      compositionEngine.setMixerTrackPan(trackId, pan);
     },
-    [mixEngine, mixerTrack, trackId],
+    [compositionEngine, mixerTrack, trackId],
   );
 
   const toggleMute = useCallback(() => {
     if (!mixerTrack) return;
-    mixEngine.setMute(trackId, !muted);
-  }, [mixEngine, mixerTrack, trackId]);
+    compositionEngine.setMixerTrackMute(trackId, !muted);
+  }, [compositionEngine, mixerTrack, trackId, muted]);
 
   const toggleSolo = useCallback(() => {
     if (!mixerTrack) return;
-    mixEngine.setSolo(trackId, !soloed);
-  }, [mixEngine, mixerTrack, trackId]);
+    compositionEngine.setMixerTrackSolo(trackId, !soloed);
+  }, [compositionEngine, mixerTrack, trackId, soloed]);
 
   const getMeterValues = useCallback(() => {
     if (!mixerTrack) return;
-    return mixEngine.getMeterValues(trackId);
-  }, [mixEngine, mixerTrack, trackId]);
+    return compositionEngine.getMixerTrackMeterValues(trackId);
+  }, [compositionEngine, mixerTrack, trackId]);
 
   return {
     pan,
