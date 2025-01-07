@@ -44,11 +44,7 @@ import { EngineState } from "@/core/stores/useEngineStore";
 export class MixEngineImpl implements MixEngine {
   private disposed = false;
 
-  constructor(state: MixState) {
-    this.initializeMixerTracks(state);
-  }
-
-  private initializeMixerTracks(state: MixState): MixState {
+  initializeMix(state: MixState): MixState {
     console.log("Initializing mixer tracks:", state.mixerTracks);
 
     try {
@@ -75,7 +71,6 @@ export class MixEngineImpl implements MixEngine {
         });
       } else {
         // No persisted master track, create new one
-        console.log("Creating new master track");
         return this.createMixerTrack(state, "master", "Master Track");
       }
     } catch (error) {
@@ -96,6 +91,7 @@ export class MixEngineImpl implements MixEngine {
       id = crypto.randomUUID();
     }
     const nodes = createMixerTrackNodes();
+    console.log("Mixer track nodes created:", nodes);
 
     try {
       nodes.input.connect(nodes.meter);
@@ -304,24 +300,24 @@ export class MixEngineImpl implements MixEngine {
       };
 
       const updatedState = updateDevice(state, id, device);
-      let newState = { mix: updatedState };
+      let newState = { ...updatedState };
       if (mixerTrack) {
         newState = {
-          mix: updateMixerTrack(updatedState, parentId, {
+          ...updateMixerTrack(updatedState, parentId, {
             deviceIds: [...(mixerTrack?.deviceIds || []), id],
           }),
         };
       } else if (soundChain) {
         newState = {
-          mix: updateSoundChain(updatedState, parentId, {
+          ...updateSoundChain(updatedState, parentId, {
             deviceIds: [...(soundChain?.deviceIds || []), id],
           }),
         };
       }
 
       // Get updated track reference
-      const updatedTrack = newState.mix.mixerTracks[parentId];
-      const updatedDevices = newState.mix.devices;
+      const updatedTrack = newState.mixerTracks[parentId];
+      const updatedDevices = newState.devices;
       // Connect with master track reference
       if (updatedTrack) {
         connectMixerTrackChain(updatedTrack, masterTrack, updatedDevices);
@@ -476,7 +472,7 @@ export class MixEngineImpl implements MixEngine {
 
   createSend(state: EngineState, fromId: string, toId: string): EngineState {
     const id = crypto.randomUUID();
-    const sourceTrack = state.composition.tracks[fromId];
+    const sourceTrack = state.tracks.tracks[fromId];
     const returnTrack = state.mix.mixerTracks[toId];
 
     if (!sourceTrack) {
@@ -488,7 +484,7 @@ export class MixEngineImpl implements MixEngine {
     const validation = validateSendRouting(
       fromId,
       toId,
-      state.composition.tracks,
+      state.tracks.tracks,
       state.mix.mixerTracks,
       state.mix.sends,
       state.mix.trackSends,
@@ -528,7 +524,7 @@ export class MixEngineImpl implements MixEngine {
     updates: Partial<Send>,
   ): EngineState {
     const send = state.mix.sends[sendId];
-    const sourceTrack = state.composition.tracks[baseTrackId];
+    const sourceTrack = state.tracks.tracks[baseTrackId];
     const masterTrack = state.mix.mixerTracks.master;
 
     if (!send || !sourceTrack || !masterTrack) {
@@ -625,7 +621,7 @@ export class MixEngineImpl implements MixEngine {
     amount: number,
   ): EngineState {
     const send = state.mix.sends[sendId];
-    const sourceTrack = state.composition.tracks[baseTrackId];
+    const sourceTrack = state.tracks.tracks[baseTrackId];
     const masterTrack = state.mix.mixerTracks.master;
 
     if (!send || !sourceTrack || !masterTrack) {
