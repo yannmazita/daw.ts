@@ -337,6 +337,7 @@ export class ClipEngineImpl implements ClipEngine {
 
   removeClip(state: EngineState, clipId: string): EngineState {
     // First unschedule the clip to clean up audio resources
+    this.unscheduleClip(state, clipId);
     const activeClip = state.clips.activeClips[clipId];
     if (activeClip?.part) {
       if (activeClip.part instanceof Tone.Part) {

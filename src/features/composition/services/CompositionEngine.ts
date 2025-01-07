@@ -29,7 +29,11 @@ export class CompositionEngineImpl implements CompositionEngine {
     this.transportService = new CompositionTransportService(transportEngine);
     this.mixService = new CompositionMixService(mixEngine);
     this.clipService = new CompositionClipService(clipEngine);
-    this.trackService = new CompositionTrackService(trackEngine);
+    this.trackService = new CompositionTrackService(
+      trackEngine,
+      clipEngine,
+      mixEngine,
+    );
     this.automationService = new CompositionAutomationService(automationEngine);
   }
 

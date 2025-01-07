@@ -1,14 +1,31 @@
 // src/features/composition/services/CompositionTrackService.ts
 import { useEngineStore } from "@/core/stores/useEngineStore";
 import { Track, TrackEngine } from "@/features/tracks/types";
+import { MixEngine } from "@/features/mix/types";
+import { ClipEngine } from "@/features/clips/types";
 
 export class CompositionTrackService {
-  constructor(private readonly trackEngine: TrackEngine) {}
+  constructor(
+    private readonly trackEngine: TrackEngine,
+    private readonly clipEngine: ClipEngine,
+    private readonly mixEngine: MixEngine,
+  ) {}
 
   createTrack(type: Track["type"], name?: string): void {
-    const state = useEngineStore.getState().tracks;
-    const newState = this.trackEngine.createTrack(state, type, name);
-    useEngineStore.setState({ tracks: newState });
+    const state = useEngineStore.getState();
+    const trackState = state.tracks;
+
+    const newTrackState = this.trackEngine.createTrack(trackState, type, name);
+    const newTrackId =
+      newTrackState.trackOrder[newTrackState.trackOrder.length - 1];
+
+    // Send new track to master track
+    const newState = this.mixEngine.createSend(
+      { ...state, tracks: newTrackState },
+      newTrackId,
+      "master",
+    );
+    useEngineStore.setState(newState);
   }
 
   updateTrack(trackId: string, updates: Partial<Track>): void {
@@ -18,9 +35,34 @@ export class CompositionTrackService {
   }
 
   deleteTrack(trackId: string): void {
-    const state = useEngineStore.getState().tracks;
-    const newState = this.trackEngine.deleteTrack(state, trackId);
-    useEngineStore.setState({ tracks: newState });
+    const state = useEngineStore.getState();
+    const trackState = state.tracks;
+    const mixState = state.mix;
+
+    const newTrackState = this.trackEngine.deleteTrack(trackState, trackId);
+    const track = trackState.tracks[trackId];
+    const sendIds = mixState.trackSends[trackId] || [];
+    let newState = { ...state, tracks: newTrackState };
+
+    // Cleanup clips
+    if (track) {
+      track.clipIds.forEach((clipId) => {
+        newState = {
+          ...newState,
+          ...this.clipEngine.removeClip(newState, clipId),
+        };
+      });
+    }
+
+    // Cleanup sends
+    sendIds.forEach((sendId) => {
+      newState = {
+        ...newState,
+        ...this.mixEngine.removeSend(newState.mix, trackId, sendId),
+      };
+    });
+
+    useEngineStore.setState(newState);
   }
 
   moveTrack(trackId: string, position: number): void {
