@@ -69,6 +69,12 @@ export class CompositionEngineImpl implements CompositionEngine {
   endTapTempo(): void {
     return this.transportService.endTapTempo();
   }
+  setLoop(enabled: boolean): void {
+    return this.transportService.setLoop(enabled);
+  }
+  setLoopPoints(start: number, end: number): void {
+    return this.transportService.setLoopPoints(start, end);
+  }
   getTransportDuration(): number {
     return this.transportService.getTransportDuration();
   }

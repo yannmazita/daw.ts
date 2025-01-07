@@ -64,6 +64,18 @@ export class CompositionTransportService {
     useEngineStore.setState({ transport: newState });
   }
 
+  setLoop(enabled: boolean): void {
+    const state = useEngineStore.getState().transport;
+    const newState = this.transportEngine.setLoop(state, enabled);
+    useEngineStore.setState({ transport: newState });
+  }
+
+  setLoopPoints(start: number, end: number): void {
+    const state = useEngineStore.getState().transport;
+    const newState = this.transportEngine.setLoopPoints(state, start, end);
+    useEngineStore.setState({ transport: newState });
+  }
+
   getTransportDuration(): number {
     return this.transportEngine.getTransportDuration();
   }
