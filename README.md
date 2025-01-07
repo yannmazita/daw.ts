@@ -219,7 +219,8 @@ sequenceDiagram
     Still maybe a few words on the architecture...
     </summary>
 
-The application logic is made of engines (modules) that allow the application to grow with new features. Each engine has its own logic and state and is initialized by `EngineManager`.
+The application logic is made of engines with dedicated services that allow the application to grow with new features. The engines read a state object then return an updated state object, the service layer finally commits the changes meaning only one update is necessary. This is done immutably, the only side effects are runtime related.
+
 Currently there are 6 engines.
 
 ### Composition Engine
