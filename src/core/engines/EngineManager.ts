@@ -91,26 +91,6 @@ export class EngineManager {
   }
 }
 
-export const useTransportEngine = () => {
-  return EngineManager.getInstance().transport;
-};
-
-export const useMixEngine = () => {
-  return EngineManager.getInstance().mix;
-};
-
-export const useClipEngine = () => {
-  return EngineManager.getInstance().clips;
-};
-
-export const useAutomationEngine = () => {
-  return EngineManager.getInstance().automation;
-};
-
-export const useTrackEngine = () => {
-  return EngineManager.getInstance().tracks;
-};
-
 export const useCompositionEngine = () => {
   return EngineManager.getInstance().composition;
 };
