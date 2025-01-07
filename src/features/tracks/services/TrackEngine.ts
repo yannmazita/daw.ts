@@ -118,7 +118,7 @@ export class TrackEngineImpl implements TrackEngine {
       applyMuteStatesToNodes(state, soloUpdate.muteStates);
       const newState = updateTrackSoloStates(state, soloUpdate);
 
-      return updateTrackState(state, newState);
+      return newState;
     } catch (error) {
       console.error("Failed to set solo");
       throw error;
@@ -135,7 +135,7 @@ export class TrackEngineImpl implements TrackEngine {
           ...state.tracks,
           [trackId]: {
             ...track,
-            mute,
+            controls: { ...track.controls, mute },
           },
         },
       };
@@ -162,7 +162,7 @@ export class TrackEngineImpl implements TrackEngine {
           ...state.tracks,
           [trackId]: {
             ...track,
-            armed,
+            controls: { ...track.controls, armed },
           },
         },
       };
@@ -183,7 +183,7 @@ export class TrackEngineImpl implements TrackEngine {
           ...state.tracks,
           [trackId]: {
             ...track,
-            pan,
+            controls: { ...track.controls, pan },
           },
         },
       };
@@ -204,7 +204,7 @@ export class TrackEngineImpl implements TrackEngine {
           ...state.tracks,
           [trackId]: {
             ...track,
-            volume,
+            controls: { ...track.controls, volume },
           },
         },
       };

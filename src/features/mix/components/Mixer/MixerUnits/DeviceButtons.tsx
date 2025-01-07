@@ -17,6 +17,16 @@ export const DeviceButtons: React.FC<DeviceButtonsProps> = ({
   className,
 }) => (
   <div className={cn("flex flex-col self-center", className)}>
+    {onAddInstrument !== undefined && (
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={onAddInstrument}
+        className="h-5 w-14 rounded-none bg-primary p-1 text-primary-foreground"
+      >
+        Instr +
+      </Button>
+    )}
     {onAddEffect !== undefined && (
       <Button
         variant="outline"
@@ -32,16 +42,6 @@ export const DeviceButtons: React.FC<DeviceButtonsProps> = ({
         variant="outline"
         size="sm"
         onClick={onAddProcessor}
-        className="h-5 w-14 rounded-none bg-primary p-1 text-primary-foreground"
-      >
-        Proc +
-      </Button>
-    )}
-    {onAddInstrument !== undefined && (
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={onAddInstrument}
         className="h-5 w-14 rounded-none bg-primary p-1 text-primary-foreground"
       >
         Proc +

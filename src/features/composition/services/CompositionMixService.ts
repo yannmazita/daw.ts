@@ -9,7 +9,11 @@ import {
 import { useEngineStore } from "@/core/stores/useEngineStore";
 
 export class CompositionMixService {
-  constructor(private readonly mixEngine: MixEngine) {}
+  constructor(private readonly mixEngine: MixEngine) {
+    const state = useEngineStore.getState().mix;
+    const newState = this.mixEngine.initializeMix(state);
+    useEngineStore.setState({ mix: newState });
+  }
 
   createMixerTrack(type: MixerTrack["type"], name?: string): void {
     const state = useEngineStore.getState().mix;

@@ -1,6 +1,6 @@
 // src/features/composition/hooks/useTrackStatus.ts
 import { useEngineStore } from "@/core/stores/useEngineStore";
-import { Track } from "../types";
+import { Track } from "@/features/tracks/types";
 import { MixerTrack } from "@/features/mix/types";
 import { useMemo } from "react";
 import { useShallow } from "zustand/shallow";
@@ -19,7 +19,7 @@ export interface TrackStatus {
 
 export const useTrackStatus = (trackId: string): TrackStatus | null => {
   const compositionTrack = useEngineStore(
-    useShallow((state) => state.composition.tracks[trackId]),
+    useShallow((state) => state.tracks.tracks[trackId]),
   );
 
   const mixerTrack = useEngineStore(

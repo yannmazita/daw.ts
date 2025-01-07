@@ -125,6 +125,7 @@ export interface PersistableMixState {
 
 export interface MixEngine {
   // Mixer track operations
+  initializeMix(state: MixState): MixState;
   createMixerTrack(
     state: MixState,
     type: MixerTrack["type"],

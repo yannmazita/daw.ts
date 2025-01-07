@@ -51,6 +51,7 @@ export const useTrackControls = (trackId: string) => {
   const toggleMute = useCallback(() => {
     if (!track) return;
     compositionEngine.setTrackMute(trackId, !muted);
+    console.log(muted);
   }, [compositionEngine, trackId, muted, track]);
 
   const toggleSolo = useCallback(() => {
