@@ -4,9 +4,9 @@ import { Time } from "tone/build/esm/core/type/Units";
 
 const TIME_REGEX = /^(\d+):(\d+):(\d+)$/;
 
-export const formatTime = (time: Time): string => {
+export const formatTime = (time: number): string => {
   try {
-    const seconds = Tone.Time(time).toSeconds();
+    const seconds = time;
     const transport = Tone.getTransport();
     const bpm = transport.bpm.value;
 

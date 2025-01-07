@@ -1,431 +1,239 @@
 // src/features/composition/services/CompositionEngine.ts
-import { CompositionEngine, CompositionState, Track } from "../types";
+import { CompositionEngine } from "../types";
 import { TransportEngine } from "../../transport/types";
 import { ClipEngine } from "../../clips/types";
 import { MixEngine } from "../../mix/types";
 import { AutomationEngine } from "../../automation/types";
-import { useEngineStore } from "@/core/stores/useEngineStore";
-import { initialCompositionState } from "../utils/initialState";
-import { createTrackData } from "../utils/trackUtils";
-import { moveTrackInOrder } from "../utils/orderUtils";
-import { validateCompositionState } from "../utils/validation";
-import { calculateSoloState, updateTrackSoloStates } from "../utils/stateUtils";
+import { CompositionTransportService } from "./CompositionTransportService";
+import { CompositionMixService } from "./CompositionMixService";
+import { CompositionClipService } from "./CompositionClipService";
+import { CompositionAutomationService } from "./CompositionAutomationService";
+import { CompositionTrackService } from "./CompositionTrackService";
+import { TrackEngine, Track } from "@/features/tracks/types";
+import { Device, DeviceType, Send, MixerTrack } from "@/features/mix/types";
+import { Subdivision } from "tone/build/esm/core/type/Units";
+import { ClipContent, ClipLoop, MidiClipContent } from "@/features/clips/types";
+import { ToneAudioBuffer } from "tone";
 
 export class CompositionEngineImpl implements CompositionEngine {
   private disposed = false;
+  private readonly transportService: CompositionTransportService;
+  private readonly mixService: CompositionMixService;
+  private readonly clipService: CompositionClipService;
+  private readonly trackService: CompositionTrackService;
+  private readonly automationService: CompositionAutomationService;
 
   constructor(
     public readonly transportEngine: TransportEngine,
     public readonly mixEngine: MixEngine,
     public readonly clipEngine: ClipEngine,
+    public readonly trackEngine: TrackEngine,
     public readonly automationEngine: AutomationEngine,
   ) {
-    this.initializeDefaultTracks();
-    this.initializeDummyMidiClips();
+    this.transportService = new CompositionTransportService(transportEngine);
+    this.mixService = new CompositionMixService(mixEngine);
+    this.clipService = new CompositionClipService(clipEngine);
+    this.trackService = new CompositionTrackService(
+      trackEngine,
+      clipEngine,
+      mixEngine,
+    );
+    this.automationService = new CompositionAutomationService(automationEngine);
   }
 
-  private initializeDefaultTracks(): void {
-    const state = useEngineStore.getState();
-    const persistedTracks = state.composition.trackOrder;
-
-    try {
-      if (persistedTracks.length > 0) {
-        // Reinitialize persisted tracks
-        console.log("Reinitializing persisted tracks");
-        persistedTracks.forEach((trackId) => {
-          const persistedTrack = state.composition.tracks[trackId];
-          if (persistedTrack) {
-            this.createTrack(persistedTrack.type, persistedTrack.name);
-          }
-        });
-      } else {
-        // Create default tracks
-        // 2 MIDI, 2 Audio but using more for debugging purposes
-        console.log("Creating default tracks");
-        for (let i = 0; i < 5; i++) {
-          this.createTrack("midi", `Test MIDI ${i + 1}`);
-        }
-        for (let i = 0; i < 5; i++) {
-          this.createTrack("audio", `Test Audio ${i + 1}`);
-        }
-      }
-    } catch (error) {
-      console.error("Failed to initialize tracks:", error);
-      throw error;
-    }
+  // Transport methods
+  async play(time?: number): Promise<void> {
+    return this.transportService.play(time);
+  }
+  pause(): void {
+    return this.transportService.pause();
+  }
+  stop(): void {
+    return this.transportService.stop();
+  }
+  seekTo(time: number): void {
+    return this.transportService.seekTo(time);
+  }
+  setTempo(tempo: number): void {
+    return this.transportService.setTempo(tempo);
+  }
+  setTimeSignature(numerator: number, denominator: number): void {
+    return this.transportService.setTimeSignature(numerator, denominator);
+  }
+  setSwing(amount: number, subdivision?: Subdivision): void {
+    return this.transportService.setSwing(amount, subdivision);
+  }
+  startTapTempo(): void {
+    return this.transportService.startTapTempo();
+  }
+  endTapTempo(): void {
+    return this.transportService.endTapTempo();
+  }
+  setLoop(enabled: boolean): void {
+    return this.transportService.setLoop(enabled);
+  }
+  setLoopPoints(start: number, end: number): void {
+    return this.transportService.setLoopPoints(start, end);
+  }
+  getTransportDuration(): number {
+    return this.transportService.getTransportDuration();
+  }
+  setTransportDuration(duration: number): void {
+    return this.transportService.setTransportDuration(duration);
+  }
+  getTransportPosition(): number {
+    return this.transportService.getTransportPosition();
+  }
+  setTransportPosition(position: number): void {
+    return this.transportService.setTransportPosition(position);
   }
 
-  private initializeDummyMidiClips(): void {
-    const stateSNapshot = useEngineStore.getState().composition;
-    const trackOrder = stateSNapshot.trackOrder;
-
-    trackOrder.forEach((trackId, index) => {
-      const track = stateSNapshot.tracks[trackId];
-      if (track.type === "midi") {
-        const contentId = this.clipEngine.createMidiClip({
-          name: `Test MIDI Clip ${index + 1}`,
-          duration: 4,
-          tracks: [],
-        });
-        const clipId = this.clipEngine.addClip(contentId, 0);
-        this.updateTrack(trackId, { clipIds: [clipId] });
-      }
-    });
+  // Mix methods
+  createMixerTrack(type: MixerTrack["type"], name?: string): void {
+    return this.mixService.createMixerTrack(type, name);
+  }
+  deleteMixerTrack(trackId: string): void {
+    return this.mixService.deleteMixerTrack(trackId);
+  }
+  moveMixerTrack(trackId: string, newIndex: number): void {
+    return this.mixService.moveMixerTrack(trackId, newIndex);
+  }
+  setMixerTrackSolo(trackId: string, solo: boolean): void {
+    return this.mixService.setSolo(trackId, solo);
+  }
+  setMixerTrackMute(trackId: string, mute: boolean): void {
+    return this.mixService.setMute(trackId, mute);
+  }
+  setMixerTrackVolume(trackId: string, volume: number): void {
+    return this.mixService.setVolume(trackId, volume);
+  }
+  setMixerTrackPan(trackId: string, pan: number): void {
+    return this.mixService.setPan(trackId, pan);
+  }
+  getMixerTrackMeterValues(trackId: string): number | number[] {
+    return this.mixService.getMeterValues(trackId);
+  }
+  addDevice(parentId: string, deviceType: DeviceType): void {
+    return this.mixService.addDevice(parentId, deviceType);
+  }
+  updateDevice(
+    parentId: string,
+    deviceId: string,
+    updates: Partial<Device>,
+  ): void {
+    return this.mixService.updateDevice(parentId, deviceId, updates);
+  }
+  removeDevice(parentId: string, deviceId: string): void {
+    return this.mixService.removeDevice(parentId, deviceId);
+  }
+  createSend(sourceTrackId: string, targetTrackId: string): void {
+    return this.mixService.createSend(sourceTrackId, targetTrackId);
+  }
+  updateSend(
+    baseTrackId: string,
+    sendId: string,
+    updates: Partial<Send>,
+  ): void {
+    return this.mixService.updateSend(baseTrackId, sendId, updates);
+  }
+  removeSend(baseTrackId: string, sendId: string): void {
+    return this.mixService.removeSend(baseTrackId, sendId);
+  }
+  setSendAmount(baseTrackId: string, sendId: string, amount: number): void {
+    return this.mixService.setSendAmount(baseTrackId, sendId, amount);
+  }
+  getTrackSends(baseTrackId: string): Send[] {
+    return this.mixService.getTrackSends(baseTrackId);
+  }
+  disconnectTrackSends(baseTrackId: string): void {
+    return this.mixService.disconnectTrackSends(baseTrackId);
+  }
+  createSoundChain(name?: string): void {
+    return this.mixService.createSoundChain(name);
   }
 
-  createTrack(type: Track["type"], name?: string): string {
-    this.checkDisposed();
-
-    const id = crypto.randomUUID();
-
-    try {
-      const track = createTrackData(id, type, name);
-
-      useEngineStore.setState((state) => {
-        const newState = {
-          composition: {
-            ...state.composition,
-            tracks: {
-              ...state.composition.tracks,
-              [id]: { ...track },
-            },
-            trackOrder: [...state.composition.trackOrder, id],
-          },
-          mix: {
-            ...state.mix,
-            trackSends: {
-              ...state.mix.trackSends,
-              [id]: [],
-            },
-          },
-        };
-
-        // Validate new state
-        const validation = validateCompositionState(newState.composition);
-        if (!validation.valid) {
-          throw new Error(
-            `Invalid state after track creation: ${validation.errors.join(", ")}`,
-          );
-        }
-
-        return newState;
-      });
-
-      // Route all new tracks to master mixer track by default
-      try {
-        this.mixEngine.createSend(id, "master");
-      } catch (error) {
-        console.error("Failed to create send to master track:", error);
-      }
-
-      return id;
-    } catch (error) {
-      console.error("Failed to create track:", error);
-      throw error;
-    }
+  // Track Methods
+  createTrack(type: Track["type"], name?: string): void {
+    return this.trackService.createTrack(type, name);
   }
-
-  deleteTrack(trackId: string): void {
-    this.checkDisposed();
-    const state = useEngineStore.getState().composition;
-    const track = state.tracks[trackId];
-
-    if (!track) {
-      throw new Error("Track not found");
-    }
-
-    try {
-      // Cleanup resources
-      this.cleanupTrackResources(track);
-
-      // Update state atomically
-      useEngineStore.setState((state) => {
-        const { [trackId]: removed, ...remainingTracks } =
-          state.composition.tracks;
-        const newTrackOrder = state.composition.trackOrder.filter(
-          (id) => id !== trackId,
-        );
-
-        // Create new state
-        const newState = {
-          ...state.composition,
-          tracks: remainingTracks,
-          trackOrder: newTrackOrder,
-        };
-
-        return {
-          composition: {
-            ...newState,
-          },
-        };
-      });
-    } catch (error) {
-      console.error("Failed to delete track:", error);
-      throw error;
-    }
-  }
-
-  private cleanupTrackResources(track: Track): void {
-    // Cleanup clips
-    track.clipIds.forEach((clipId) => {
-      try {
-        this.clipEngine.unscheduleClip(clipId);
-      } catch (e) {
-        console.warn(`Failed to unschedule clip ${clipId}:`, e);
-      }
-    });
-
-    // Cleanup automation
-    track.automationIds.forEach((automationId) => {
-      try {
-        this.automationEngine.unscheduleLane(automationId);
-      } catch (e) {
-        console.warn(`Failed to unschedule automation ${automationId}:`, e);
-      }
-    });
-
-    // Cleanup sends
-    //
-  }
-
   updateTrack(trackId: string, updates: Partial<Track>): void {
-    this.checkDisposed();
-    const state = useEngineStore.getState().composition;
-    const track = state.tracks[trackId];
-    if (!track) {
-      throw new Error("Track not found");
-    }
-    try {
-      useEngineStore.setState((state) => {
-        const newState = {
-          composition: {
-            ...state.composition,
-            tracks: {
-              ...state.composition.tracks,
-              [trackId]: { ...track, ...updates },
-            },
-          },
-        };
-        // Validate new state
-        const validation = validateCompositionState(newState.composition);
-        if (!validation.valid) {
-          throw new Error(
-            `Invalid state after track update: ${validation.errors.join(", ")}`,
-          );
-        }
-        return newState;
-      });
-    } catch (error) {
-      console.error("Failed to update track:", error);
-      throw error;
-    }
+    return this.trackService.updateTrack(trackId, updates);
   }
-
-  moveTrack(trackId: string, newIndex: number): void {
-    this.checkDisposed();
-    const state = useEngineStore.getState().composition;
-    const track = state.tracks[trackId];
-
-    if (!track) {
-      throw new Error("Cannot move track");
-    }
-
-    try {
-      const newOrder = moveTrackInOrder(trackId, newIndex, state);
-
-      useEngineStore.setState((state) => {
-        const newState = {
-          composition: {
-            ...state.composition,
-            trackOrder: newOrder,
-          },
-        };
-
-        // Validate new state
-        const validation = validateCompositionState(newState.composition);
-        if (!validation.valid) {
-          throw new Error(
-            `Invalid state after track move: ${validation.errors.join(", ")}`,
-          );
-        }
-
-        return newState;
-      });
-    } catch (error) {
-      console.error("Failed to move track:", error);
-      throw error;
-    }
+  deleteTrack(trackId: string): void {
+    return this.trackService.deleteTrack(trackId);
   }
-
-  setSolo(trackId: string, solo: boolean): void {
-    const stateSnapshot = useEngineStore.getState().composition;
-    const track = stateSnapshot.tracks[trackId];
-
-    if (!track) throw new Error("Track not found");
-
-    try {
-      const soloUpdate = calculateSoloState(
-        trackId,
-        solo,
-        stateSnapshot.tracks,
-      );
-
-      // Apply mute states to audio nodes
-      Object.entries(soloUpdate.muteStates).forEach(([id, mute]) => {
-        const track = stateSnapshot.tracks[id];
-        if (track) {
-          track.channel.mute = mute;
-        }
-      });
-
-      // Update state
-      useEngineStore.setState((state) => ({
-        composition: updateTrackSoloStates(state.composition, soloUpdate),
-      }));
-    } catch (error) {
-      console.error("Failed to set solo state:", error);
-      throw error;
-    }
+  moveTrack(trackId: string, position: number): void {
+    return this.trackService.moveTrack(trackId, position);
   }
-
-  setMute(trackId: string, mute: boolean): void {
-    const stateSnapshot = useEngineStore.getState().composition;
-    const track = stateSnapshot.tracks[trackId];
-    if (!track) throw new Error("Track not found");
-
-    try {
-      // Only apply mute if track is not affected by solo
-      const anySolo = Object.values(stateSnapshot.tracks).some(
-        (t) => t.controls.solo,
-      );
-      if (!anySolo || track.controls.solo) {
-        track.channel.mute = mute;
-      }
-
-      useEngineStore.setState((state) => ({
-        composition: {
-          ...state.composition,
-          tracks: {
-            ...state.composition.tracks,
-            [trackId]: {
-              ...track,
-              controls: { ...track.controls, mute },
-            },
-          },
-        },
-      }));
-    } catch (error) {
-      console.error("Failed to set mute state:", error);
-      throw error;
-    }
+  setTrackSolo(trackId: string, solo: boolean): void {
+    return this.trackService.setSolo(trackId, solo);
   }
-
+  setTrackMute(trackId: string, mute: boolean): void {
+    return this.trackService.setMute(trackId, mute);
+  }
   setArmed(trackId: string, armed: boolean): void {
-    const stateSnapshot = useEngineStore.getState().composition;
-    const track = stateSnapshot.tracks[trackId];
-    if (!track) throw new Error("Track not found");
-    try {
-      useEngineStore.setState((state) => ({
-        composition: {
-          ...state.composition,
-          tracks: {
-            ...state.composition.tracks,
-            [trackId]: {
-              ...track,
-              controls: { ...track.controls, armed },
-            },
-          },
-        },
-      }));
-    } catch (error) {
-      console.error("Failed to set armed state:", error);
-      throw error;
-    }
+    return this.trackService.setArmed(trackId, armed);
+  }
+  setTrackPan(trackId: string, pan: number): void {
+    return this.trackService.setPan(trackId, pan);
+  }
+  setTrackVolume(trackId: string, volume: number): void {
+    return this.trackService.setVolume(trackId, volume);
+  }
+  getTrackMeterValues(trackId: string): number | number[] {
+    return this.trackService.getMeterValues(trackId);
   }
 
-  setPan(trackId: string, pan: number): void {
-    const stateSnapshot = useEngineStore.getState().composition;
-    const track = stateSnapshot.tracks[trackId];
-    if (!track) throw new Error("Track not found");
-
-    const clampedPan = Math.max(-1, Math.min(1, pan));
-
-    try {
-      track.panner.pan.value = clampedPan;
-
-      useEngineStore.setState((state) => ({
-        composition: {
-          ...state.composition,
-          tracks: {
-            ...state.composition.tracks,
-            [trackId]: {
-              ...track,
-              controls: { ...track.controls, pan: clampedPan },
-            },
-          },
-        },
-      }));
-    } catch (error) {
-      console.error("Failed to set pan value:", error);
-      throw error;
-    }
+  // Clip Methods
+  createMidiClip(midiData: MidiClipContent): void {
+    return this.clipService.createMidiClip(midiData);
   }
-
-  setVolume(trackId: string, volume: number): void {
-    const stateSnapshot = useEngineStore.getState().composition;
-    const track = stateSnapshot.tracks[trackId];
-    if (!track) throw new Error("Track not found");
-    const clampedVolume = Math.max(0, Math.min(1, volume));
-    try {
-      track.channel.volume.value = clampedVolume;
-      useEngineStore.setState((state) => ({
-        composition: {
-          ...state.composition,
-          tracks: {
-            ...state.composition.tracks,
-            [trackId]: {
-              ...track,
-              controls: { ...track.controls, volume: clampedVolume },
-            },
-          },
-        },
-      }));
-    } catch (error) {
-      console.error("Failed to set volume value:", error);
-      throw error;
-    }
+  createAudioClip(buffer: ToneAudioBuffer): void {
+    return this.clipService.createAudioClip(buffer);
   }
-
-  getMeterValues(trackId: string): number | number[] {
-    const stateSnapshot = useEngineStore.getState().composition;
-    const track = stateSnapshot.tracks[trackId];
-    if (!track) throw new Error("Track not found");
-    return track.meter.getValue();
+  getClipContent(clipId: string): ClipContent {
+    return this.clipService.getClipContent(clipId);
   }
-
-  getState(): CompositionState {
-    return useEngineStore.getState().composition;
+  addClip(contentId: string, startTime: number): void {
+    return this.clipService.addClip(contentId, startTime);
+  }
+  removeClip(clipId: string): void {
+    return this.clipService.removeClip(clipId);
+  }
+  moveClip(clipId: string, newTime: number): void {
+    return this.clipService.moveClip(clipId, newTime);
+  }
+  setClipLoop(clipId: string, enabled: boolean, settings?: ClipLoop): void {
+    return this.clipService.setClipLoop(clipId, enabled, settings);
+  }
+  setClipGain(clipId: string, gain: number): void {
+    return this.clipService.setClipGain(clipId, gain);
+  }
+  setClipFades(clipId: string, fadeIn: number, fadeOut: number): void {
+    return this.clipService.setClipFades(clipId, fadeIn, fadeOut);
+  }
+  playClip(clipId: string, startTime?: number): void {
+    return this.clipService.playClip(clipId, startTime);
+  }
+  stopClip(clipId: string): void {
+    return this.clipService.stopClip(clipId);
+  }
+  isClipPlaying(clipId: string): boolean {
+    return this.clipService.isClipPlaying(clipId);
+  }
+  getPlaybackState(clipId: string): boolean {
+    return this.clipService.getPlaybackState(clipId);
   }
 
   dispose(): void {
-    if (this.disposed) return;
-
-    try {
-      const state = useEngineStore.getState().composition;
-
-      // Cleanup all tracks
-      Object.values(state.tracks).forEach((track) => {
-        this.cleanupTrackResources(track);
-      });
-
-      // Reset to initial state
-      useEngineStore.setState({ composition: initialCompositionState });
-
-      this.disposed = true;
-    } catch (error) {
-      console.error("Failed to dispose composition engine:", error);
-      throw error;
+    if (this.disposed) {
+      return;
     }
+    this.disposed = true;
+    this.transportService.dispose();
+    this.mixService.dispose();
+    this.clipService.dispose();
+    this.trackService.dispose();
   }
 
   private checkDisposed(): void {

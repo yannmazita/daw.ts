@@ -4,6 +4,7 @@ import { Channel, Gain, Meter } from "tone";
 import { InstrumentOptions } from "@/core/types/instrument";
 import { ProcessorOptions } from "@/core/types/processor";
 import { ToneAudioNode } from "tone";
+import { EngineState } from "@/core/stores/useEngineStore";
 
 export interface MixerTrackControlState {
   solo: boolean;
@@ -124,38 +125,58 @@ export interface PersistableMixState {
 
 export interface MixEngine {
   // Mixer track operations
-  createMixerTrack(type: MixerTrack["type"], name?: string): string;
-  deleteMixerTrack(id: string): void;
-  moveMixerTrack(id: string, newIndex: number): void;
+  initializeMix(state: MixState): MixState;
+  createMixerTrack(
+    state: MixState,
+    type: MixerTrack["type"],
+    name?: string,
+  ): MixState;
+  deleteMixerTrack(state: MixState, id: string): MixState;
+  moveMixerTrack(state: MixState, id: string, newIndex: number): MixState;
 
   // Mixer track controls
-  setSolo(mixerTrackId: string, solo: boolean): void;
-  setMute(mixerTrackId: string, mute: boolean): void;
-  setVolume(mixerTrackId: string, volume: number): void;
-  setPan(mixerTrackId: string, pan: number): void;
-  getMeterValues(mixerTrackId: string): number | number[];
+  setSolo(state: MixState, mixerTrackId: string, solo: boolean): MixState;
+  setMute(state: MixState, mixerTrackId: string, mute: boolean): MixState;
+  setVolume(state: MixState, mixerTrackId: string, volume: number): MixState;
+  setPan(state: MixState, mixerTrackId: string, pan: number): MixState;
+  getMeterValues(state: MixState, mixerTrackId: string): number | number[];
 
   // Device management
-  addDevice(parentId: string, deviceType: DeviceType): string;
+  addDevice(
+    state: MixState,
+    parentId: string,
+    deviceType: DeviceType,
+  ): MixState;
   updateDevice(
+    state: MixState,
     parentId: string,
     deviceId: string,
     updates: Partial<Device>,
-  ): void;
-  removeDevice(parentId: string, deviceId: string): void;
+  ): MixState;
+  removeDevice(state: MixState, parentId: string, deviceId: string): MixState;
 
   // Sends
-  createSend(fromId: string, toId: string): string;
-  updateSend(baseTrackId: string, sendId: string, updates: Partial<Send>): void;
-  removeSend(baseTrackId: string, sendId: string): void;
-  setSendAmount(baseTrackId: string, sendId: string, amount: number): void;
-  getTrackSends(baseTrackId: string): Send[];
-  disconnectTrackSends(baseTrackId: string): void;
+  createSend(state: EngineState, fromId: string, toId: string): EngineState;
+
+  updateSend(
+    state: EngineState,
+    baseTrackId: string,
+    sendId: string,
+    updates: Partial<Send>,
+  ): EngineState;
+  removeSend(state: MixState, baseTrackId: string, sendId: string): MixState;
+  setSendAmount(
+    state: EngineState,
+    baseTrackId: string,
+    sendId: string,
+    amount: number,
+  ): EngineState;
+  getTrackSends(state: MixState, baseTrackId: string): Send[];
+  disconnectTrackSends(state: MixState, baseTrackId: string): MixState;
 
   // Sound Chains
-  createSoundChain(name?: string): string;
+  createSoundChain(state: MixState, name?: string): MixState;
 
-  // State
-  getState(): MixState;
-  dispose(): void;
+  // Cleanup
+  dispose(state: MixState): MixState;
 }

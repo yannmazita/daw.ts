@@ -1,13 +1,13 @@
-// src/features/composition/hooks/useTrackState.ts
+// src/features/composition/hooks/useTrackStatus.ts
 import { useEngineStore } from "@/core/stores/useEngineStore";
-import { Track } from "../types";
+import { Track } from "@/features/tracks/types";
 import { MixerTrack } from "@/features/mix/types";
 import { useMemo } from "react";
 import { useShallow } from "zustand/shallow";
 
 export type TrackType = "composition" | "mixer";
 
-export interface TrackState {
+export interface TrackStatus {
   type: TrackType;
   id: string;
   name: string;
@@ -17,9 +17,9 @@ export interface TrackState {
   isMixer: boolean;
 }
 
-export const useTrackState = (trackId: string): TrackState | null => {
+export const useTrackStatus = (trackId: string): TrackStatus | null => {
   const compositionTrack = useEngineStore(
-    useShallow((state) => state.composition.tracks[trackId]),
+    useShallow((state) => state.tracks.tracks[trackId]),
   );
 
   const mixerTrack = useEngineStore(

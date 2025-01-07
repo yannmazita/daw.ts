@@ -1,6 +1,6 @@
 // src/features/mix/components/Mixer/MixerTrackControls.tsx
 import { useEffect, useState, useRef } from "react";
-import { useTrackState } from "@/features/composition/hooks/useTrackState";
+import { useTrackStatus } from "@/features/composition/hooks/useTrackStatus";
 import { useMixerTrackControls } from "../../../hooks/useMixerTrackControls";
 import { cn } from "@/common/shadcn/lib/utils";
 import { useDeviceManager } from "../../../hooks/useDeviceManager";
@@ -22,7 +22,7 @@ export const MixerTrackControls: React.FC<MixerTrackControlsProps> = ({
   className,
   onSelectParent,
 }) => {
-  const trackState = useTrackState(trackId);
+  const trackState = useTrackStatus(trackId);
   const {
     pan,
     volume,

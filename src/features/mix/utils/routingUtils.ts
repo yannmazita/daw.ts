@@ -2,6 +2,7 @@
 import * as Tone from "tone";
 import { Device, MixerTrack, Send, SoundChain } from "../types";
 import { Track } from "@/features/composition/types";
+import { EngineState } from "@/core/stores/useEngineStore";
 
 export interface SendRoutingState {
   returnTrackId: string;
@@ -176,4 +177,41 @@ export const restoreSendRouting = (
   send.gain.connect(returnTrack.input);
   send.gain.gain.value = originalState.gainValue;
   sourceTrack.channel.volume.value = originalState.channelVolume;
+};
+
+export const connectTrackToSoundChain = (
+  state: EngineState,
+  trackId: string,
+  soundChainId: string | null,
+): EngineState => {
+  const track = state.composition.tracks[trackId];
+  const soundChain = soundChainId ? state.mix.soundChains[soundChainId] : null;
+  const masterTrack = state.mix.mixerTracks.master;
+  const devices = state.mix.devices;
+
+  if (!track) {
+    throw new Error(`Track ${trackId} not found`);
+  }
+
+  try {
+    // Disconnect the track from its current destination
+    track.channel.disconnect();
+
+    if (soundChain) {
+      // Connect to sound chain input
+      track.channel.connect(soundChain.input);
+    } else {
+      // Connect to master track input
+      track.channel.connect(masterTrack.input);
+    }
+
+    // Reconnect the chain within setState with master track reference
+    connectMixerTrackChain(masterTrack, masterTrack, devices);
+    return state;
+  } catch (error) {
+    console.error(
+      `Failed to connect track ${trackId} to sound chain ${soundChainId}:`,
+    );
+    throw error;
+  }
 };

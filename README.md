@@ -34,132 +34,116 @@ Because sometimes a picture is worth a thousand words.
 
 <details>
     <summary>
-    Transport Control Interaction
+    State Update Flow
     </summary>
 
 ```mermaid
 sequenceDiagram
-    participant UI
-    participant useTransportControls
-    participant TransportEngine
+    participant C as Component
+    participant H as Hook
+    participant S as Store
+    participant E as Engine
+    participant A as AudioNode
 
-    UI->>useTransportControls: play()
-    useTransportControls->>TransportEngine: play()
-    TransportEngine->>Tone.js: start()
-    TransportEngine-->>useTransportControls: isPlaying = true
-    useTransportControls-->>UI: isPlaying = true
-
-    UI->>useTransportControls: pause()
-    useTransportControls->>TransportEngine: pause()
-    TransportEngine->>Tone.js: pause()
-     TransportEngine-->>useTransportControls: isPlaying = false
-    useTransportControls-->>UI: isPlaying = false
-
-    UI->>useTransportControls: stop()
-    useTransportControls->>TransportEngine: stop()
-    TransportEngine->>Tone.js: stop()
-    TransportEngine-->>useTransportControls: isPlaying = false, isRecording = false
-    useTransportControls-->>UI: isPlaying = false, isRecording = false
-
-    UI->>useTransportControls: setTempo(tempo)
-    useTransportControls->>TransportEngine: setTempo(tempo)
-    TransportEngine->>Tone.js: setBpm(tempo)
-    TransportEngine-->>useTransportControls: tempo
-    useTransportControls-->>UI: tempo
+    C->>H: Call hook method
+    H->>E: Call engine method
+    E->>A: Update audio node
+    E->>S: Update state
+    S->>C: Re-render with new state
 ```
 
 </details>
 
 <details>
     <summary>
-    Mixer Device Interaction
+    Audio State Management
     </summary>
 
 ```mermaid
 sequenceDiagram
-    participant UI
-    participant useMixerTrackOperations
-    participant MixEngine
+    participant C as Component
+    participant S as Store
+    participant E as Engine
+    participant T as Tone.js
+    participant A as AudioContext
 
-    UI->>useMixerTrackOperations: addDevice(trackId, deviceType)
-    useMixerTrackOperations->>MixEngine: addDevice(trackId, deviceType)
-    MixEngine->>Tone.js: createEffectNode(deviceType)
-    MixEngine-->>useMixerTrackOperations: deviceId
-    useMixerTrackOperations-->>UI: deviceId
-
-    UI->>useMixerTrackOperations: updateDevice(trackId, deviceId, updates)
-    useMixerTrackOperations->>MixEngine: updateDevice(trackId, deviceId, updates)
-    MixEngine->>Tone.js: updateNode(updates)
-    MixEngine-->>useMixerTrackOperations: updated device
-    useMixerTrackOperations-->>UI: updated device
+    C->>S: Update State
+    S->>E: Notify Engine
+    E->>T: Update Audio Nodes
+    T->>A: Schedule Changes
+    A->>T: Audio Processing
+    T->>E: Update Status
+    E->>S: Update State
+    S->>C: Re-render
 ```
 
 </details>
 
 <details>
     <summary>
-    Clip Scheduling Interaction
+    State Update Lifecycle
     </summary>
 
-```mermaid
-sequenceDiagram
-    participant UI
-    participant useTrackOperations
-    participant CompositionEngine
-    participant ClipEngine
+The intended lifecycle, more often than not validation and rollback are not (yet) implemented.
 
-    UI->>useTrackOperations: addClip(contentId, startTime)
-    useTrackOperations->>CompositionEngine: addClip(contentId, startTime)
-    CompositionEngine->>ClipEngine: scheduleClip(clip)
-    ClipEngine->>Tone.js: start(time)
-    ClipEngine-->>CompositionEngine: clipId
-    CompositionEngine-->>useTrackOperations: clipId
-    useTrackOperations-->>UI: clipId
+```mermaid
+stateDiagram-v2
+    [*] --> InitialState
+    InitialState --> UpdateRequested: Action Triggered
+    UpdateRequested --> ValidationCheck: Check Update
+    ValidationCheck --> AudioNodeUpdate: Valid
+    ValidationCheck --> ErrorState: Invalid
+    AudioNodeUpdate --> StateUpdate: Success
+    AudioNodeUpdate --> ErrorState: Failure
+    StateUpdate --> [*]
+    ErrorState --> InitialState: Rollback
 ```
 
 </details>
 
 <details>
     <summary>
-    Automation Scheduling Interaction
+    Transport Time Flow
     </summary>
 
 ```mermaid
 sequenceDiagram
-    participant UI
-    participant CompositionEngine
-    participant AutomationEngine
+    participant T as Transport
+    participant S as Scheduler
+    participant C as Clock
+    participant A as AudioContext
 
-    UI->>AutomationEngine: createLane(targetType, targetId, parameterId)
-    UI->>AutomationEngine: addPoint(laneId, time, value)
-    UI->>CompositionEngine: scheduleLane(laneId)
-    CompositionEngine->>AutomationEngine: scheduleLane(laneId)
-    AutomationEngine-->>CompositionEngine: laneId
-    CompositionEngine-->>UI: laneId
-    Note over AutomationEngine: Placeholder, no Tone.js interaction
+    T->>S: Schedule Event
+    S->>C: Calculate Time
+    C->>A: Schedule Audio
+    A->>C: Time Update
+    C->>T: Position Update
+    T->>S: Check Schedule
 ```
 
 </details>
 
 <details>
     <summary>
-    Track Creation Interaction
+    Mix Engine Architecture
     </summary>
 
 ```mermaid
-sequenceDiagram
-    participant UI
-    participant useTrackOperations
-    participant CompositionEngine
-    participant MixEngine
+graph TD
+    A[MixEngine] --> B[Master Track]
+    A --> C[Return Tracks]
+    A --> D[Sound Chains]
 
-    UI->>useTrackOperations: createTrack(type, name)
-    useTrackOperations->>CompositionEngine: createTrack(type, name)
-    CompositionEngine->>Tone.js: createAudioNodes()
-    CompositionEngine->>MixEngine: createSend(trackId, masterId)
-    MixEngine-->>CompositionEngine: sendId
-    CompositionEngine-->>useTrackOperations: trackId
-    useTrackOperations-->>UI: trackId
+    B --> E[Master Channel]
+    E --> F[Destination]
+
+    C --> G[Return Channels]
+    G --> E
+
+    D --> H[Device Chain]
+    H --> I[Track Input]
+    I --> J[Track Channel]
+    J --> E
 ```
 
 </details>
@@ -168,63 +152,64 @@ sequenceDiagram
 
 <details>
     <summary>
-    Mixer Track Signal Flow
+    Mixer Track Types
     </summary>
 
 ```mermaid
-graph LR
-    A[Gain: Input] --> B(Devices: Pre-Fader);
-    B --> C[Channel: Channel Strip];
-    C --> D[Meter: Meter];
-    D --> E[Output: Output];
+graph TD
+    A[Mixer Tracks] --> B[Regular Track]
+    A --> C[Return Track]
+    A --> D[Master Track]
+
+    B --> E[Channel Strip]
+    C --> E
+    D --> E
+
+    E --> F[Input Gain]
+    E --> G[Pan]
+    E --> H[Volume]
+    E --> I[Meter]
 ```
 
 </details>
 
 <details>
     <summary>
-    Send Routing Signal Flow
+    Send/Return Architecture
     </summary>
 
 ```mermaid
-graph LR
-    A[Input: Source Track] --> B{Gain: Pre-Fader Send};
-    A --> C[Channel: Source Track];
-    C --> D{Gain: Post-Fader Send};
-    B --> E[Gain: Send Gain];
-    D --> E;
-    E --> F[Input: Return Track];
-    F --> G[Output: Destination]
+graph TD
+    A[Source Track] --> B{Send Point}
+    B -->|Pre-Fader| C[Send Gain]
+    B -->|Post-Fader| C
+    C --> D[Return Track]
+    D --> E[Master Track]
+
+    F[Source Track 2] --> G{Send Point}
+    G -->|Pre-Fader| H[Send Gain]
+    G -->|Post-Fader| H
+    H --> D
 ```
 
 </details>
 
 <details>
     <summary>
-    Track Signal Flow
+    Device Routing
     </summary>
 
 ```mermaid
-    graph LR
-        A[Gain: Track Input] --> B[Panner: Panner];
-        B --> C[Channel: Channel Strip];
-        C --> D[Meter: Meter];
-        D --> E[Output: Output];
-```
+sequenceDiagram
+    participant I as Input
+    participant D as Device Chain
+    participant B as Bypass
+    participant O as Output
 
-</details>
-
-<details>
-    <summary>
-    Master Track Signal Flow
-    </summary>
-
-```mermaid
-    graph LR
-        A[Gain: Master Track Input] --> B(Devices: Pre-Fader);
-        B --> C[Channel: Channel Strip];
-        C --> D[Meter: Meter];
-        D --> E[Output: Destination];
+    I->>D: Audio Signal
+    D->>B: Process
+    B-->>O: Bypassed
+    B->>O: Processed
 ```
 
 </details>
@@ -235,11 +220,15 @@ graph LR
     </summary>
 
 The application logic is made of engines (modules) that allow the application to grow with new features. Each engine has its own logic and state and is initialized by `EngineManager`.
-Currently there are 5 engines.
+Currently there are 6 engines.
 
 ### Composition Engine
 
-This engine manages track and clip composition in the timeline. It interacts with `MixEngine` and `ClipEngine` to handle sends or playback.
+This engine is the orchestrator for all other engines, it is the sole interface for the UI and has dedicated services for each engine.
+
+### Track Engine
+
+This engine manages track creation and manipulation (volume, pan, routing, metering etc).
 
 ### Automation Engine
 

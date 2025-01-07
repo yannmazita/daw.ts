@@ -10,7 +10,7 @@ interface TrackLaneProps {
 
 export const TrackLane: React.FC<TrackLaneProps> = ({ trackId, className }) => {
   const clipIds = useEngineStore(
-    (state) => state.composition.tracks[trackId].clipIds,
+    (state) => state.tracks.tracks[trackId]?.clipIds ?? [],
   );
 
   return (

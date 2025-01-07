@@ -1,5 +1,5 @@
-// src/features/mix/components/Mixer/MixerUnits/CompositionTrackControls
-import { useTrackState } from "@/features/composition/hooks/useTrackState";
+// src/features/mix/components/Mixer/MixerUnits/CompositionTrackControls.tsx
+import { useTrackStatus } from "@/features/composition/hooks/useTrackStatus";
 import { cn } from "@/common/shadcn/lib/utils";
 import { Meter } from "@/common/components/Meter/Meter";
 import { useTrackControls } from "@/features/composition/hooks/useTrackControls";
@@ -24,7 +24,7 @@ interface CompositionTrackControlsProps {
 export const CompositionTrackControls: React.FC<
   CompositionTrackControlsProps
 > = ({ trackId, className }) => {
-  const trackState = useTrackState(trackId);
+  const trackState = useTrackStatus(trackId);
   const {
     pan,
     volume,

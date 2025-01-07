@@ -1,5 +1,5 @@
 // src/features/composition/components/TrackHeader.tsx
-import { useTrackState } from "@/features/composition/hooks/useTrackState";
+import { useTrackStatus } from "@/features/composition/hooks/useTrackStatus";
 import { useTrackControls } from "@/features/composition/hooks/useTrackControls";
 import { cn } from "@/common/shadcn/lib/utils";
 import { CassetteTape, Volume2, VolumeX } from "lucide-react";
@@ -16,7 +16,7 @@ export const TrackHeader: React.FC<TrackHeaderProps> = ({
   trackId,
   className,
 }) => {
-  const trackState = useTrackState(trackId);
+  const trackState = useTrackStatus(trackId);
   const {
     pan,
     volume,
