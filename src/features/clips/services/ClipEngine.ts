@@ -106,7 +106,7 @@ export class ClipEngineImpl implements ClipEngine {
     return state.contents[contentId];
   }
 
-  scheduleClip(state: EngineState, clip: CompositionClip): EngineState {
+  private scheduleClip(state: EngineState, clip: CompositionClip): EngineState {
     const content = state.clips.contents[clip.contentId];
 
     if (!content) return state;
@@ -192,7 +192,7 @@ export class ClipEngineImpl implements ClipEngine {
     }
   }
 
-  unscheduleClip(state: EngineState, clipId: string): EngineState {
+  private unscheduleClip(state: EngineState, clipId: string): EngineState {
     const activeClip = state.clips.activeClips[clipId];
 
     if (!activeClip) return state;

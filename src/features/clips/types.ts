@@ -141,10 +141,6 @@ export interface ClipEngine {
   createAudioClip(state: ClipState, buffer: ToneAudioBuffer): ClipState;
   getClipContent(state: ClipState, contentId: string): ClipContent;
 
-  // Clip instance management
-  scheduleClip(state: EngineState, clip: CompositionClip): EngineState;
-  unscheduleClip(state: EngineState, clipId: string): EngineState;
-
   // Clip operations
   addClip(
     state: EngineState,

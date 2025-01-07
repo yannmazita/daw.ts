@@ -2,7 +2,7 @@
 
 import { Track, CompositionState } from "../types";
 
-interface SoloStateUpdate {
+export interface SoloStateUpdate {
   trackId: string;
   solo: boolean;
   muteStates: Record<string, boolean>;
@@ -88,5 +88,15 @@ export const updateTrackSoloStates = (
   return {
     ...state,
     tracks: newTracks,
+  };
+};
+
+export const updateCompositionState = (
+  state: CompositionState,
+  updates: Partial<CompositionState>,
+): CompositionState => {
+  return {
+    ...state,
+    ...updates,
   };
 };

@@ -17,11 +17,14 @@ import { initialClipState } from "@/features/clips/utils/initialState";
 import { initialMixState } from "@/features/mix/utils/initialState";
 import { initialAutomationState } from "@/features/automation/utils/initialState";
 import { initialCompositionState } from "@/features/composition/utils/initialState";
+import { PersistableTrackState, TrackState } from "@/features/tracks/types";
+import { initialTrackState } from "@/features/tracks/utils/initialState";
 export interface EngineState {
   transport: TransportState;
   clips: ClipState;
   mix: MixState;
   automation: AutomationState;
+  tracks: TrackState;
   composition: CompositionState;
 }
 
@@ -31,6 +34,7 @@ interface PersistableEngineState {
   clips: PersistableClipState;
   mix: PersistableMixState;
   automation: PersistableAutomationState;
+  tracks: PersistableTrackState;
   composition: PersistableCompositionState;
 }
 
@@ -42,6 +46,7 @@ export const useEngineStore = create<EngineState>()(
         clips: initialClipState,
         mix: initialMixState,
         automation: initialAutomationState,
+        tracks: initialTrackState,
         composition: initialCompositionState,
       }),
       {
@@ -132,10 +137,10 @@ export const useEngineStore = create<EngineState>()(
               ),
             ),
           },
-          composition: {
-            ...state.composition,
+          tracks: {
+            ...state.tracks,
             tracks: Object.fromEntries(
-              Object.entries(state.composition.tracks).map(([id, track]) => [
+              Object.entries(state.tracks.tracks).map(([id, track]) => [
                 id,
                 {
                   id: track.id,
@@ -148,6 +153,7 @@ export const useEngineStore = create<EngineState>()(
               ]),
             ),
           },
+          composition: state.composition,
         }),
         merge: (
           persistedState: unknown,
