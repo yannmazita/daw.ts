@@ -11,6 +11,22 @@ import { applyMuteStatesToNodes } from "../utils/audioUtils";
 export class TrackEngineImpl implements TrackEngine {
   private disposed = false;
 
+  initializeTracks(state: TrackState): TrackState {
+    console.log("Initializing tracks:", state.tracks);
+
+    try {
+      const midi1 = this.createTrack(state, "midi", "Test MIDI 1");
+      const midi2 = this.createTrack(midi1, "midi", "Test MIDI 2");
+      const audio1 = this.createTrack(midi2, "audio", "Test Audio 1");
+      const audio2 = this.createTrack(audio1, "audio", "Test Audio 2");
+
+      return audio2;
+    } catch (error) {
+      console.error("Failed to initialize tracks");
+      throw error;
+    }
+  }
+
   createTrack(
     state: TrackState,
     type: Track["type"],

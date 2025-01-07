@@ -77,6 +77,7 @@ export interface PersistableTrackState {
 
 export interface TrackEngine {
   // Track operations
+  initializeTracks(state: TrackState): TrackState;
   createTrack(
     state: TrackState,
     type: Track["type"],

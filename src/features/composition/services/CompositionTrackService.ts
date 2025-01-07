@@ -9,7 +9,11 @@ export class CompositionTrackService {
     private readonly trackEngine: TrackEngine,
     private readonly clipEngine: ClipEngine,
     private readonly mixEngine: MixEngine,
-  ) {}
+  ) {
+    const state = useEngineStore.getState();
+    const newState = this.trackEngine.initializeTracks(state.tracks);
+    useEngineStore.setState({ tracks: newState });
+  }
 
   createTrack(type: Track["type"], name?: string): void {
     const state = useEngineStore.getState();
