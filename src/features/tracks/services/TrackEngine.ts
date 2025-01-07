@@ -1,11 +1,7 @@
 // src/features/services/TrackEngine.ts
 import { createTrackData } from "../utils/trackUtils";
 import { Track, TrackEngine, TrackState } from "../types";
-import {
-  updateTrackState,
-  updateTrackSoloStates,
-  calculateSoloState,
-} from "../utils/stateUtils";
+import { updateTrackSoloStates, calculateSoloState } from "../utils/stateUtils";
 import { applyMuteStatesToNodes } from "../utils/audioUtils";
 
 export class TrackEngineImpl implements TrackEngine {
@@ -46,7 +42,7 @@ export class TrackEngineImpl implements TrackEngine {
         trackOrder: [...state.trackOrder, id],
       };
 
-      return updateTrackState(state, newState);
+      return newState;
     } catch (error) {
       console.error("Failed to create track:");
       throw error;
@@ -71,7 +67,7 @@ export class TrackEngineImpl implements TrackEngine {
           },
         },
       };
-      return updateTrackState(state, newState);
+      return newState;
     } catch (error) {
       console.error("Failed to update track");
       throw error;
@@ -88,7 +84,7 @@ export class TrackEngineImpl implements TrackEngine {
         tracks,
         trackOrder,
       };
-      return updateTrackState(state, newState);
+      return newState;
     } catch (error) {
       console.error("Failed to delete track");
       throw error;
@@ -104,7 +100,7 @@ export class TrackEngineImpl implements TrackEngine {
         ...state,
         trackOrder,
       };
-      return updateTrackState(state, newState);
+      return newState;
     } catch (error) {
       console.error("Failed to move track");
       throw error;
@@ -145,7 +141,7 @@ export class TrackEngineImpl implements TrackEngine {
         track.channel.mute = mute;
       }
 
-      return updateTrackState(state, newState);
+      return newState;
     } catch (error) {
       console.error("Failed to set mute");
       throw error;
@@ -166,7 +162,7 @@ export class TrackEngineImpl implements TrackEngine {
           },
         },
       };
-      return updateTrackState(state, newState);
+      return newState;
     } catch (error) {
       console.error("Failed to set armed");
       throw error;
@@ -187,7 +183,7 @@ export class TrackEngineImpl implements TrackEngine {
           },
         },
       };
-      return updateTrackState(state, newState);
+      return newState;
     } catch (error) {
       console.error("Failed to set pan");
       throw error;
@@ -208,7 +204,7 @@ export class TrackEngineImpl implements TrackEngine {
           },
         },
       };
-      return updateTrackState(state, newState);
+      return newState;
     } catch (error) {
       console.error("Failed to set volume");
       throw error;
@@ -236,7 +232,7 @@ export class TrackEngineImpl implements TrackEngine {
         tracks: {},
         trackOrder: [],
       };
-      return updateTrackState(state, newState);
+      return newState;
     } catch (error) {
       console.error("Failed to dispose");
       throw error;
