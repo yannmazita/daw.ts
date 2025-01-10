@@ -1,5 +1,5 @@
 // src/common/components/Layout.tsx
-import { useThemeStore } from "@/core/stores/useThemeStore";
+import { useUIStore } from "@/core/stores/useUIStore";
 import { Button } from "@/common/shadcn/ui/button";
 import { Moon, Sun } from "lucide-react";
 import { PlaybackControls } from "@/features/transport/components/PlaybackControls/PlaybackControls";
@@ -9,7 +9,7 @@ interface LayoutProps {
 }
 
 export const Layout: React.FC<LayoutProps> = ({ children }) => {
-  const { theme, setTheme } = useThemeStore();
+  const { theme, setTheme } = useUIStore();
 
   return (
     <div className="flex h-screen w-full flex-col bg-background">

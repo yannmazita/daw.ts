@@ -1,73 +1,49 @@
 // src/features/composition/services/CompositionClipService.ts
 import { useEngineStore } from "@/core/stores/useEngineStore";
-import {
-  ClipContent,
-  ClipEngine,
-  ClipLoop,
-  MidiClipContent,
-} from "@/features/clips/types";
-import { ToneAudioBuffer } from "tone";
+import { ClipEngine, ClipState, CompositionClip } from "@/features/clips/types";
 
 export class CompositionClipService {
   constructor(private readonly clipEngine: ClipEngine) {}
 
-  createMidiClip(midiData: MidiClipContent): void {
+  async importMidi(clipId: string, file: File): Promise<void> {
     const state = useEngineStore.getState().clips;
-    const newState = this.clipEngine.createMidiClip(state, midiData);
+    const newState = await this.clipEngine.importMidi(state, clipId, file);
     useEngineStore.setState({ clips: newState });
   }
 
-  createAudioClip(buffer: ToneAudioBuffer): void {
+  async exportMidi(clipId: string): Promise<void> {
     const state = useEngineStore.getState().clips;
-    const newState = this.clipEngine.createAudioClip(state, buffer);
+    // todo
+    return new Promise(() => {});
+  }
+
+  createClip(
+    type: CompositionClip["type"],
+    startTime: number,
+    name?: string,
+  ): void {
+    const state = useEngineStore.getState().clips;
+    const newState = this.clipEngine.createClip(state, type, startTime, name);
     useEngineStore.setState({ clips: newState });
   }
 
-  getClipContent(clipId: string): ClipContent {
+  deleteClip(clipId: string): void {
     const state = useEngineStore.getState().clips;
-    return this.clipEngine.getClipContent(state, clipId);
-  }
-
-  addClip(contentId: string, startTime: number): void {
-    const state = useEngineStore.getState();
-    const newState = this.clipEngine.addClip(state, contentId, startTime);
-    useEngineStore.setState(newState);
-  }
-
-  removeClip(clipId: string): void {
-    const state = useEngineStore.getState();
-    const newState = this.clipEngine.removeClip(state, clipId);
-    useEngineStore.setState(newState);
-  }
-
-  moveClip(clipId: string, newTime: number): void {
-    const state = useEngineStore.getState();
-    const newState = this.clipEngine.moveClip(state, clipId, newTime);
-    useEngineStore.setState(newState);
-  }
-
-  setClipLoop(clipId: string, enabled: boolean, settings?: ClipLoop): void {
-    const state = useEngineStore.getState().clips;
-    const newState = this.clipEngine.setClipLoop(
-      state,
-      clipId,
-      enabled,
-      settings,
-    );
+    const newState = this.clipEngine.deleteClip(state, clipId);
     useEngineStore.setState({ clips: newState });
   }
 
-  setClipGain(clipId: string, gain: number): void {
+  moveClip(clipId: string, startTime: number): void {
     const state = useEngineStore.getState().clips;
-    const newState = this.clipEngine.setClipGain(state, clipId, gain);
+    const newState = this.clipEngine.moveClip(state, clipId, startTime);
     useEngineStore.setState({ clips: newState });
   }
 
-  setClipFades(clipId: string, fadeIn: number, fadeOut: number): void {
+  setClipFades(clickId: string, fadeIn: number, fadeOut: number): void {
     const state = useEngineStore.getState().clips;
     const newState = this.clipEngine.setClipFades(
       state,
-      clipId,
+      clickId,
       fadeIn,
       fadeOut,
     );
@@ -76,26 +52,29 @@ export class CompositionClipService {
 
   playClip(clipId: string, startTime?: number): void {
     const state = useEngineStore.getState().clips;
-    this.clipEngine.playClip(state, clipId, startTime);
+    const newState = this.clipEngine.playClip(state, clipId, startTime);
+    useEngineStore.setState({ clips: newState });
+  }
+
+  pauseClip(clipId: string): void {
+    const state = useEngineStore.getState().clips;
+    const newState = this.clipEngine.pauseClip(state, clipId);
+    useEngineStore.setState({ clips: newState });
   }
 
   stopClip(clipId: string): void {
     const state = useEngineStore.getState().clips;
-    this.clipEngine.stopClip(state, clipId);
+    const newState = this.clipEngine.stopClip(state, clipId);
+    useEngineStore.setState({ clips: newState });
   }
 
-  isClipPlaying(clipId: string): boolean {
+  getClipPlaybackPosition(clipId: string): number {
     const state = useEngineStore.getState().clips;
-    return this.clipEngine.isClipPlaying(state, clipId);
-  }
-
-  getPlaybackState(clipId: string): boolean {
-    const state = useEngineStore.getState().clips;
-    return this.clipEngine.isClipPlaying(state, clipId);
+    return this.clipEngine.getClipPlaybackPosition(state, clipId);
   }
 
   dispose(): void {
-    const state = useEngineStore.getState();
+    const state = useEngineStore.getState().clips;
     this.clipEngine.dispose(state);
   }
 }

@@ -1,44 +1,55 @@
 // src/features/composition/components/Clip.tsx
-import { useEngineStore } from "@/core/stores/useEngineStore";
 import { cn } from "@/common/shadcn/lib/utils";
 import * as Tone from "tone";
+import { useClipOperations } from "../hooks/useClipOperations";
+import { useClipControls } from "../hooks/useClipControls";
 
 interface ClipProps {
   clipId: string;
 }
 
 export const Clip: React.FC<ClipProps> = ({ clipId }) => {
-  const activeClips = useEngineStore((state) => state.clips.activeClips);
-  const contents = useEngineStore((state) => state.clips.contents);
+  const {
+    createClip,
+    deleteClip,
+    moveClip,
+    setClipFades,
+    playClip,
+    pauseClip,
+    stopClip,
+    getClipPlaybackPosition,
+    clips,
+  } = useClipOperations();
+  const {
+    setStartTime,
+    setDuration,
+    setFadeIn,
+    setFadeOut,
+    clip,
+    fadeIn,
+    fadeOut,
+    startTime,
+    duration,
+  } = useClipControls(clipId);
 
-  const activeClip = activeClips[clipId];
-
-  if (!activeClip) {
+  if (!clip) {
     return null;
   }
 
-  const { contentId, startTime, duration } = activeClip.clip;
-  const content = contents[contentId];
-
-  if (!content) {
-    return null;
-  }
-
-  // direct use of Tone -> bad
-  const clipWidth = Tone.Time(duration).toSeconds() * 50; // 50px per second for now
+  const clipWidth = clip.duration * 50; // 50px per second for now
 
   return (
     <div
       className={cn(
         "absolute top-2 h-10 rounded border border-border bg-accent text-center text-foreground",
-        content.type === "midi" && "bg-primary",
+        clip.type === "midi" && "bg-primary",
       )}
       style={{
-        left: `${Tone.Time(startTime).toSeconds() * 50}px`, // 50px per second for now
+        left: `${Tone.Time(clip.startTime).toSeconds() * 50}px`, // 50px per second for now
         width: `${clipWidth}px`,
       }}
     >
-      {content.name}
+      {clip.name}
     </div>
   );
 };

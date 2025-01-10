@@ -10,18 +10,18 @@ import { VolumeControl } from "../MixerUnits/VolumeControl";
 import { PanControl } from "../MixerUnits/PanControl";
 import { DeviceButtons } from "../MixerUnits/DeviceButtons";
 import { TrackButtons } from "./TrackButtons";
+import { useSelection } from "@/common/hooks/useSelection";
 
 interface MixerTrackControlsProps {
   trackId: string;
   className?: string;
-  onSelectParent: (parentId: string) => void;
 }
 
 export const MixerTrackControls: React.FC<MixerTrackControlsProps> = ({
   trackId,
   className,
-  onSelectParent,
 }) => {
+  const { handleClickedTrack } = useSelection();
   const trackState = useTrackStatus(trackId);
   const {
     pan,
@@ -43,10 +43,6 @@ export const MixerTrackControls: React.FC<MixerTrackControlsProps> = ({
     const deviceId = addDevice(type);
     setSelectedDevice(deviceId);
     setDeviceOptions({});
-  };
-
-  const handleClick = () => {
-    onSelectParent(trackId);
   };
 
   useEffect(() => {
@@ -72,7 +68,7 @@ export const MixerTrackControls: React.FC<MixerTrackControlsProps> = ({
 
   return (
     <div
-      onClick={handleClick}
+      onClick={() => handleClickedTrack(trackId)}
       className={cn(
         "flex h-full w-40 min-w-40 cursor-pointer flex-col px-1 py-2",
         className,

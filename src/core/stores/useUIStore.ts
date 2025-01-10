@@ -1,16 +1,18 @@
-// src/common/stores/useThemeStore.ts
+// src/common/stores/useUIStore.ts
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
 import type {} from "@redux-devtools/extension";
 
 type Theme = "dark" | "light";
 
-interface ThemeState {
+interface UIState {
   theme: Theme;
   setTheme: (theme: Theme) => void;
+  clickedComponentId: string | null;
+  setClickedComponentId: (id: string | null) => void;
 }
 
-export const useThemeStore = create<ThemeState>()(
+export const useUIStore = create<UIState>()(
   devtools(
     persist(
       (set) => ({
@@ -21,9 +23,11 @@ export const useThemeStore = create<ThemeState>()(
           root.classList.add(theme);
           set({ theme });
         },
+        clickedComponentId: null,
+        setClickedComponentId: (id) => set({ clickedComponentId: id }),
       }),
       {
-        name: "daw-theme-storage",
+        name: "daw-ui-storage",
       },
     ),
   ),
@@ -31,7 +35,7 @@ export const useThemeStore = create<ThemeState>()(
 
 // Initialize theme on app load
 if (typeof window !== "undefined") {
-  const theme = useThemeStore.getState().theme;
+  const theme = useUIStore.getState().theme;
   const root = window.document.documentElement;
   root.classList.remove("light", "dark");
   root.classList.add(theme);
