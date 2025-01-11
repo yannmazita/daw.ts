@@ -8,10 +8,21 @@ export const useClipOperations = () => {
   const compositionEngine = useCompositionEngine();
   const clips = useEngineStore((state) => state.clips.clips);
   const clipIds = useMemo(() => Object.keys(clips), [clips]);
+  const getClipIdsForTrack = useCallback(
+    (trackId: string) => {
+      return clipIds.filter((clipId) => clips[clipId].parentId === trackId);
+    },
+    [clipIds, clips],
+  );
 
   const createClip = useCallback(
-    (type: CompositionClip["type"], startTime: number, name?: string) => {
-      compositionEngine.createClip(type, startTime, name);
+    (
+      type: CompositionClip["type"],
+      startTime: number,
+      parentId: string,
+      name?: string,
+    ) => {
+      compositionEngine.createClip(type, startTime, parentId, name);
     },
     [compositionEngine],
   );
@@ -69,5 +80,6 @@ export const useClipOperations = () => {
     pauseClip,
     stopClip,
     getClipPlaybackPosition,
+    getClipIdsForTrack,
   };
 };

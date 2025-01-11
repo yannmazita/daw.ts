@@ -1,6 +1,6 @@
 // src/features/composition/services/CompositionClipService.ts
 import { useEngineStore } from "@/core/stores/useEngineStore";
-import { ClipEngine, ClipState, CompositionClip } from "@/features/clips/types";
+import { ClipEngine, CompositionClip } from "@/features/clips/types";
 
 export class CompositionClipService {
   constructor(private readonly clipEngine: ClipEngine) {}
@@ -20,10 +20,17 @@ export class CompositionClipService {
   createClip(
     type: CompositionClip["type"],
     startTime: number,
+    parentId: string,
     name?: string,
   ): void {
     const state = useEngineStore.getState().clips;
-    const newState = this.clipEngine.createClip(state, type, startTime, name);
+    const newState = this.clipEngine.createClip(
+      state,
+      type,
+      startTime,
+      parentId,
+      name,
+    );
     useEngineStore.setState({ clips: newState });
   }
 

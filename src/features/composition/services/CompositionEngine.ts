@@ -186,9 +186,10 @@ export class CompositionEngineImpl implements CompositionEngine {
   createClip(
     type: CompositionClip["type"],
     startTime: number,
+    parentId: string,
     name?: string,
   ): void {
-    return this.clipService.createClip(type, startTime, name);
+    return this.clipService.createClip(type, startTime, parentId, name);
   }
   deleteClip(clipId: string): void {
     return this.clipService.deleteClip(clipId);

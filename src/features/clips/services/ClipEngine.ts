@@ -69,11 +69,13 @@ export class ClipEngineImpl implements ClipEngine {
     state: ClipState,
     type: CompositionClip["type"],
     startTime: number,
+    parentId: string,
     name?: string,
   ): ClipState {
     const clipId = crypto.randomUUID();
     const newClip: CompositionClip = {
       id: clipId,
+      parentId,
       name: name ?? `Clip ${Object.keys(state.clips).length + 1}`,
       type,
       data: null,

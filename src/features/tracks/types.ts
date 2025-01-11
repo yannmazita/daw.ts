@@ -26,8 +26,6 @@ export interface BaseTrack {
   name: string;
   controls: TrackControlState;
 
-  // Content
-  clipIds: string[];
   automationIds: string[];
 
   // Tone.js nodes
@@ -41,7 +39,6 @@ export interface PersistableBaseTrack {
   id: string;
   name: string;
   controls: PersistableTrackControlState;
-  clipIds: string[];
   automationIds: string[];
 }
 

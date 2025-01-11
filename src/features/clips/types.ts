@@ -4,6 +4,7 @@ import { Part, Player, ToneAudioBuffer } from "tone";
 
 export interface CompositionClip {
   id: string;
+  parentId: string;
   name: string;
   type: "midi" | "audio";
   data: Midi | ToneAudioBuffer | null;
@@ -18,6 +19,7 @@ export interface CompositionClip {
 
 export interface PersistableCompositionClip {
   id: string;
+  parentId: string; // id of parent track
   name: string;
   type: "midi" | "audio";
   startTime: number;
@@ -45,6 +47,7 @@ export interface ClipEngine {
     state: ClipState,
     type: CompositionClip["type"],
     startTime: number,
+    parentId: string,
     name?: string,
   ): ClipState;
   deleteClip(state: ClipState, clipId: string): ClipState;

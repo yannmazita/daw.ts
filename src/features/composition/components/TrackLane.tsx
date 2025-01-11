@@ -18,10 +18,11 @@ interface TrackLaneProps {
 
 export const TrackLane: React.FC<TrackLaneProps> = ({ trackId, className }) => {
   const { handleClickedTrack } = useSelection();
-  const { clipIds } = useClipOperations();
+  const { getClipIdsForTrack } = useClipOperations();
   const { createClip } = useClipOperations();
   const { tracks } = useTrackOperations();
   const track = tracks[trackId];
+  const trackClipIds = getClipIdsForTrack(trackId);
 
   return (
     <ContextMenu>
@@ -33,19 +34,19 @@ export const TrackLane: React.FC<TrackLaneProps> = ({ trackId, className }) => {
           )}
           onClick={() => handleClickedTrack(trackId)}
         >
-          {clipIds.map((clipId: string) => (
+          {trackClipIds.map((clipId: string) => (
             <Clip key={clipId} clipId={clipId} />
           ))}
         </div>
       </ContextMenuTrigger>
       <ContextMenuContent>
         {track.type === "midi" && (
-          <ContextMenuItem onClick={() => createClip("midi", 0)}>
+          <ContextMenuItem onClick={() => createClip("midi", 0, trackId)}>
             Create MIDI Clip
           </ContextMenuItem>
         )}
         {track?.type === "audio" && (
-          <ContextMenuItem onClick={() => createClip("audio", 0)}>
+          <ContextMenuItem onClick={() => createClip("audio", 0, trackId)}>
             Create Audio Clip
           </ContextMenuItem>
         )}
