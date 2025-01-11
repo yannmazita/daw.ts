@@ -9,11 +9,7 @@ import { ScrollArea, ScrollBar } from "@/common/shadcn/ui/scroll-area";
 import { useSoundChainManager } from "../../hooks/useSoundChainManager";
 import { MixerBar } from "../MixerBar";
 
-interface MixerProps {
-  onSelectParent: (parentId: string) => void;
-}
-
-export const Mixer: React.FC<MixerProps> = ({ onSelectParent }) => {
+export const Mixer: React.FC = () => {
   const { trackOrder } = useTrackOperations();
   const { mixerTrackOrder } = useMixerTrackOperations();
   const { soundChains } = useSoundChainManager();
@@ -36,18 +32,13 @@ export const Mixer: React.FC<MixerProps> = ({ onSelectParent }) => {
             {mixerTrackOrder
               .filter((trackId) => trackId !== "master")
               .map((trackId) => (
-                <MixerTrackControls
-                  key={trackId}
-                  trackId={trackId}
-                  onSelectParent={onSelectParent}
-                />
+                <MixerTrackControls key={trackId} trackId={trackId} />
               ))}
             {/* Sound Chains */}
             {Object.keys(soundChains).map((soundChainId) => (
               <SoundChainControls
                 key={soundChainId}
                 soundChainId={soundChainId}
-                onSelectParent={onSelectParent}
               />
             ))}
           </div>
@@ -57,7 +48,6 @@ export const Mixer: React.FC<MixerProps> = ({ onSelectParent }) => {
         <MixerTrackControls
           key="master"
           trackId="master"
-          onSelectParent={onSelectParent}
           className="border-l"
         />
       </div>

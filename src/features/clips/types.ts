@@ -1,163 +1,59 @@
 // src/features/clips/types.ts
-import { EngineState } from "@/core/stores/useEngineStore";
+import { Midi } from "@tonejs/midi";
 import { Part, Player, ToneAudioBuffer } from "tone";
-
-export interface MidiNote {
-  midi: number; // MIDI note number
-  name: string; // Note name (e.g., "C4")
-  pitch: string; // Pitch class (e.g., "C")
-  octave: number; // Octave number
-  velocity: number; // Normalized 0-1
-  duration: number; // Duration in seconds
-  time: number; // Time in seconds
-  ticks?: number; // Optional MIDI ticks
-}
-
-export interface MidiControlChange {
-  number: number; // CC number
-  value: number; // Normalized 0-1
-  time: number; // Time in seconds
-  ticks?: number; // Optional MIDI ticks
-}
-
-export interface MidiTrackInstrument {
-  number: number; // Program number
-  family: string; // Instrument family
-  name: string; // Instrument name
-  percussion: boolean; // Is percussion channel
-}
-
-export interface MidiTrackData {
-  name?: string;
-  notes: MidiNote[];
-  controlChanges: Record<number, MidiControlChange[]>;
-  instrument: MidiTrackInstrument;
-  channel: number;
-}
-
-export interface MidiClipContent {
-  name: string;
-  tracks: MidiTrackData[];
-  duration: number;
-  tempos?: {
-    bpm: number;
-    time: number;
-  }[];
-  timeSignatures?: {
-    timeSignature: [number, number];
-    time: number;
-  }[];
-}
-
-export interface ClipContent {
-  id: string;
-  type: "midi" | "audio";
-  name: string;
-
-  // MIDI specific
-  midiData?: MidiClipContent;
-
-  // Audio specific
-  buffer?: ToneAudioBuffer;
-  warpMarkers?: {
-    time: number;
-    position: number;
-  }[];
-}
-
-export interface PersistableClipContent {
-  id: string;
-  type: "midi" | "audio";
-  name: string;
-
-  // MIDI
-  midiData?: MidiClipContent;
-
-  // Audio
-  warpMarkers?: {
-    time: number;
-    position: number;
-  }[];
-}
-
-export interface ClipLoop {
-  enabled: boolean;
-  start: number;
-  duration: number;
-}
 
 export interface CompositionClip {
   id: string;
-  contentId: string;
-
+  parentId: string;
+  name: string;
+  type: "midi" | "audio";
+  data: Midi | ToneAudioBuffer | null;
   startTime: number;
+  pausedAt: number;
   duration: number;
+  fadeIn: number;
+  fadeOut: number;
 
-  loop?: ClipLoop;
+  node: Part | Player | null;
+}
 
-  gain: number;
+export interface PersistableCompositionClip {
+  id: string;
+  parentId: string; // id of parent track
+  name: string;
+  type: "midi" | "audio";
+  startTime: number;
+  pausedAt: number;
+  duration: number;
   fadeIn: number;
   fadeOut: number;
 }
 
 export interface ClipState {
-  contents: Record<string, ClipContent>;
-  activeClips: Record<
-    string,
-    {
-      part: Part | Player | null;
-      clip: CompositionClip;
-    }
-  >;
-  isRecording: boolean;
-  recordingTake?: {
-    trackId: string;
-    startTime: number;
-    type: "midi" | "audio";
-  };
-  independentPlayback: Record<string, boolean>; // Track independent playback state per contentId
+  clips: Record<string, CompositionClip>;
 }
 
 export interface PersistableClipState {
-  contents: Record<string, PersistableClipContent>;
-  activeClips: Record<
-    string,
-    {
-      clip: CompositionClip;
-    }
-  >;
-  isRecording: boolean;
-  recordingTake?: {
-    trackId: string;
-    startTime: number;
-    type: "midi" | "audio";
-  };
-  independentPlayback: Record<string, boolean>;
+  clips: Record<string, PersistableCompositionClip>;
 }
 
 export interface ClipEngine {
-  // Content management
-  createMidiClip(state: ClipState, midiData: MidiClipContent): ClipState;
-  createAudioClip(state: ClipState, buffer: ToneAudioBuffer): ClipState;
-  getClipContent(state: ClipState, contentId: string): ClipContent;
+  // Clip management
+  importMidi(state: ClipState, clipId: string, file: File): Promise<ClipState>;
+  exportMidi(state: ClipState, clipId: string): Midi;
 
   // Clip operations
-  addClip(
-    state: EngineState,
-    contentId: string,
+  createClip(
+    state: ClipState,
+    type: CompositionClip["type"],
     startTime: number,
-  ): EngineState;
-  removeClip(state: EngineState, clipId: string): EngineState;
-  moveClip(state: EngineState, clipId: string, newTime: number): EngineState;
+    parentId: string,
+    name?: string,
+  ): ClipState;
+  deleteClip(state: ClipState, clipId: string): ClipState;
+  moveClip(state: ClipState, clipId: string, newTime: number): ClipState;
 
   // Clip properties
-  setClipLoop(
-    state: ClipState,
-    clipId: string,
-    enabled: boolean,
-    settings?: ClipLoop,
-  ): ClipState;
-  setClipGain(state: ClipState, clipId: string, gain: number): ClipState;
   setClipFades(
     state: ClipState,
     clipId: string,
@@ -165,14 +61,14 @@ export interface ClipEngine {
     fadeOut: number,
   ): ClipState;
 
-  // Independant playback
-  playClip(state: ClipState, clipId: string, startTime?: number): void;
-  stopClip(state: ClipState, clipId: string): void;
+  // Clip playback
+  playClip(state: ClipState, clipId: string, startTime?: number): ClipState;
+  pauseClip(state: ClipState, clipId: string): ClipState;
+  stopClip(state: ClipState, clipId: string): ClipState;
 
   // Playback state
-  isClipPlaying(state: ClipState, clipId: string): boolean;
-  getPlaybackPosition(state: ClipState, clipId: string): number;
+  getClipPlaybackPosition(state: ClipState, clipId: string): number;
 
   // Cleanup
-  dispose(state: EngineState): void;
+  dispose(state: ClipState): void;
 }

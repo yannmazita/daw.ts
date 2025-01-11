@@ -7,18 +7,18 @@ import { useDeviceManager } from "@/features/mix/hooks/useDeviceManager";
 import { DeviceType } from "../../../types";
 import { Meter } from "@/common/components/Meter/Meter";
 import { DeviceButtons } from "../MixerUnits/DeviceButtons";
+import { useSelection } from "@/common/hooks/useSelection";
 
 interface SoundChainControlsProps {
   soundChainId: string;
   className?: string;
-  onSelectParent: (parentId: string) => void;
 }
 
 export const SoundChainControls: React.FC<SoundChainControlsProps> = ({
   soundChainId,
   className,
-  onSelectParent,
 }) => {
+  const { handleClickedTrack } = useSelection();
   const { getMeterValues } = useMixerTrackControls(soundChainId);
   const meterRef = useRef<HTMLDivElement>(null);
   const [selectedDevice, setSelectedDevice] = useState<string | null>(null);
@@ -32,10 +32,6 @@ export const SoundChainControls: React.FC<SoundChainControlsProps> = ({
     const deviceId = addDevice(type);
     setSelectedDevice(deviceId);
     setDeviceOptions({});
-  };
-
-  const handleClick = () => {
-    onSelectParent(soundChainId);
   };
 
   useEffect(() => {
@@ -61,7 +57,7 @@ export const SoundChainControls: React.FC<SoundChainControlsProps> = ({
 
   return (
     <div
-      onClick={handleClick}
+      onClick={() => handleClickedTrack(soundChainId)}
       className={cn(
         "flex w-40 min-w-40 cursor-pointer flex-col px-1 py-2",
         className,

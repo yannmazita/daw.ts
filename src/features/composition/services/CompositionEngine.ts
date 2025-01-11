@@ -1,7 +1,7 @@
 // src/features/composition/services/CompositionEngine.ts
 import { CompositionEngine } from "../types";
 import { TransportEngine } from "../../transport/types";
-import { ClipEngine } from "../../clips/types";
+import { ClipEngine, CompositionClip } from "../../clips/types";
 import { MixEngine } from "../../mix/types";
 import { AutomationEngine } from "../../automation/types";
 import { CompositionTransportService } from "./CompositionTransportService";
@@ -12,8 +12,6 @@ import { CompositionTrackService } from "./CompositionTrackService";
 import { TrackEngine, Track } from "@/features/tracks/types";
 import { Device, DeviceType, Send, MixerTrack } from "@/features/mix/types";
 import { Subdivision } from "tone/build/esm/core/type/Units";
-import { ClipContent, ClipLoop, MidiClipContent } from "@/features/clips/types";
-import { ToneAudioBuffer } from "tone";
 
 export class CompositionEngineImpl implements CompositionEngine {
   private disposed = false;
@@ -185,29 +183,19 @@ export class CompositionEngineImpl implements CompositionEngine {
   }
 
   // Clip Methods
-  createMidiClip(midiData: MidiClipContent): void {
-    return this.clipService.createMidiClip(midiData);
+  createClip(
+    type: CompositionClip["type"],
+    startTime: number,
+    parentId: string,
+    name?: string,
+  ): void {
+    return this.clipService.createClip(type, startTime, parentId, name);
   }
-  createAudioClip(buffer: ToneAudioBuffer): void {
-    return this.clipService.createAudioClip(buffer);
+  deleteClip(clipId: string): void {
+    return this.clipService.deleteClip(clipId);
   }
-  getClipContent(clipId: string): ClipContent {
-    return this.clipService.getClipContent(clipId);
-  }
-  addClip(contentId: string, startTime: number): void {
-    return this.clipService.addClip(contentId, startTime);
-  }
-  removeClip(clipId: string): void {
-    return this.clipService.removeClip(clipId);
-  }
-  moveClip(clipId: string, newTime: number): void {
-    return this.clipService.moveClip(clipId, newTime);
-  }
-  setClipLoop(clipId: string, enabled: boolean, settings?: ClipLoop): void {
-    return this.clipService.setClipLoop(clipId, enabled, settings);
-  }
-  setClipGain(clipId: string, gain: number): void {
-    return this.clipService.setClipGain(clipId, gain);
+  moveClip(clipId: string, startTime: number): void {
+    return this.clipService.moveClip(clipId, startTime);
   }
   setClipFades(clipId: string, fadeIn: number, fadeOut: number): void {
     return this.clipService.setClipFades(clipId, fadeIn, fadeOut);
@@ -215,14 +203,14 @@ export class CompositionEngineImpl implements CompositionEngine {
   playClip(clipId: string, startTime?: number): void {
     return this.clipService.playClip(clipId, startTime);
   }
+  pauseClip(clipId: string): void {
+    return this.clipService.pauseClip(clipId);
+  }
   stopClip(clipId: string): void {
     return this.clipService.stopClip(clipId);
   }
-  isClipPlaying(clipId: string): boolean {
-    return this.clipService.isClipPlaying(clipId);
-  }
-  getPlaybackState(clipId: string): boolean {
-    return this.clipService.getPlaybackState(clipId);
+  getClipPlaybackPosition(clipId: string): number {
+    return this.clipService.getClipPlaybackPosition(clipId);
   }
 
   dispose(): void {

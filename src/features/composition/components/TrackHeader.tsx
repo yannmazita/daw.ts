@@ -6,6 +6,7 @@ import { CassetteTape, Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/common/shadcn/ui/button";
 import { Input } from "@/common/shadcn/ui/input";
 import { useCallback, useEffect, useState } from "react";
+import { useUIStore } from "@/core/stores/useUIStore";
 
 interface TrackHeaderProps {
   trackId: string;
@@ -31,6 +32,11 @@ export const TrackHeader: React.FC<TrackHeaderProps> = ({
   } = useTrackControls(trackId);
   const [localVolume, setLocalVolume] = useState(volume.toString());
   const [localPan, setLocalPan] = useState(pan.toString());
+  const { setClickedComponentId } = useUIStore();
+
+  const handleClick = useCallback(() => {
+    setClickedComponentId(trackId);
+  }, [setClickedComponentId, trackId]);
 
   const handleVolumeChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -70,6 +76,7 @@ export const TrackHeader: React.FC<TrackHeaderProps> = ({
         "flex h-24 w-40 flex-col border-b border-border bg-background px-1 py-2",
         className,
       )}
+      onClick={handleClick}
     >
       <Input
         type="text"

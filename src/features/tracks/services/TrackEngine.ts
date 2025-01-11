@@ -222,6 +222,31 @@ export class TrackEngineImpl implements TrackEngine {
     }
   }
 
+  addClipToTrack(
+    state: TrackState,
+    trackId: string,
+    clipId: string,
+  ): TrackState {
+    this.checkDisposed();
+    try {
+      const track = state.tracks[trackId];
+      const newState = {
+        ...state,
+        tracks: {
+          ...state.tracks,
+          [trackId]: {
+            ...track,
+            clips: [...track.clipIds, clipId],
+          },
+        },
+      };
+      return newState;
+    } catch (error) {
+      console.error("Failed to add clip to track");
+      throw error;
+    }
+  }
+
   dispose(state: TrackState): TrackState {
     if (this.disposed) {
       return state;

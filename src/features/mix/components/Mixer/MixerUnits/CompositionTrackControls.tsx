@@ -15,6 +15,7 @@ import { useEngineStore } from "@/core/stores/useEngineStore";
 import { VolumeControl } from "../MixerUnits/VolumeControl";
 import { PanControl } from "../MixerUnits/PanControl";
 import { TrackButtons } from "../MixerUnits/TrackButtons";
+import { useSelection } from "@/common/hooks/useSelection";
 
 interface CompositionTrackControlsProps {
   trackId: string;
@@ -24,6 +25,7 @@ interface CompositionTrackControlsProps {
 export const CompositionTrackControls: React.FC<
   CompositionTrackControlsProps
 > = ({ trackId, className }) => {
+  const { handleClickedTrack } = useSelection();
   const trackState = useTrackStatus(trackId);
   const {
     pan,
@@ -77,6 +79,7 @@ export const CompositionTrackControls: React.FC<
   return (
     <div
       className={cn("flex h-full w-40 min-w-40 flex-col px-1 py-2", className)}
+      onClick={() => handleClickedTrack(trackId)}
     >
       <div className="mx-1 text-sm">{trackState?.name}</div>
       <div className="bg-muted">

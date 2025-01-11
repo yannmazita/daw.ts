@@ -6,15 +6,11 @@ import {
   TabsTrigger,
 } from "@/common/shadcn/ui/tabs";
 import { useEngineStore } from "@/core/stores/useEngineStore";
+import { useUIStore } from "@/core/stores/useUIStore";
 import { DeviceUnit } from "@/features/mix/components/Mixer/DeviceUnit";
-import { useDeviceManager } from "@/features/mix/hooks/useDeviceManager";
 import { useMemo } from "react";
 
-interface DetailViewProps {
-  selectedParentId: string | null;
-}
-
-export const DetailView: React.FC<DetailViewProps> = ({ selectedParentId }) => {
+export const DetailView: React.FC = () => {
   return (
     <div className="col-span-12 flex flex-col border border-border">
       <Tabs defaultValue="devices" className="h-full">
@@ -24,7 +20,7 @@ export const DetailView: React.FC<DetailViewProps> = ({ selectedParentId }) => {
           <TabsTrigger value="clip">Clip</TabsTrigger>
         </TabsList>
         <TabsContent value="devices" className="h-full">
-          <DeviceTabContent selectedParentId={selectedParentId} />
+          <DeviceTabContent />
         </TabsContent>
         <TabsContent value="automation" className="h-full">
           <div className="p-4">Automation View</div>
@@ -37,16 +33,11 @@ export const DetailView: React.FC<DetailViewProps> = ({ selectedParentId }) => {
   );
 };
 
-interface DeviceTabContentProps {
-  selectedParentId: string | null;
-}
-
-const DeviceTabContent: React.FC<DeviceTabContentProps> = ({
-  selectedParentId,
-}) => {
+const DeviceTabContent: React.FC = () => {
+  const { clickedComponentId } = useUIStore();
   const { devices } = useEngineStore((state) => state.mix);
-  const { addDevice, updateDevice, removeDevice } =
-    useDeviceManager(selectedParentId);
+
+  const selectedParentId = clickedComponentId;
 
   const filteredDevices = useMemo(() => {
     return Object.values(devices).filter(

@@ -49,14 +49,7 @@ export class CompositionTrackService {
     let newState = { ...state, tracks: newTrackState };
 
     // Cleanup clips
-    if (track) {
-      track.clipIds.forEach((clipId) => {
-        newState = {
-          ...newState,
-          ...this.clipEngine.removeClip(newState, clipId),
-        };
-      });
-    }
+    // todo
 
     // Cleanup sends
     sendIds.forEach((sendId) => {

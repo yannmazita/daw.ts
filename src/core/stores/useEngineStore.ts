@@ -56,16 +56,19 @@ export const useEngineStore = create<EngineState>()(
           transport: state.transport,
           clips: {
             ...state.clips,
-            contents: Object.fromEntries(
-              Object.entries(state.clips.contents).map(([id, content]) => [
+            clips: Object.fromEntries(
+              Object.entries(state.clips.clips).map(([id, clip]) => [
                 id,
-                { ...content, buffer: null },
-              ]),
-            ),
-            activeClips: Object.fromEntries(
-              Object.entries(state.clips.activeClips).map(([id, clip]) => [
-                id,
-                { clip: clip.clip },
+                {
+                  id: clip.id,
+                  name: clip.name,
+                  type: clip.type,
+                  startTime: clip.startTime,
+                  pausedAt: clip.pausedAt,
+                  duration: clip.duration,
+                  fadeIn: clip.fadeIn,
+                  fadeOut: clip.fadeOut,
+                },
               ]),
             ),
           },
