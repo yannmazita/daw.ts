@@ -5,10 +5,10 @@ import * as Tone from "tone";
 import { ClipEngine, CompositionClip, ClipState } from "../types";
 import { Midi } from "@tonejs/midi";
 import {
-  convertTimeFromSecondsToTicks,
   updateTransportTempo,
   updateTransportTimeSignature,
 } from "@/features/transport/utils/midiUtils";
+import { startAudioPlayback, startMidiPlayback } from "../utils/midiPlayback";
 
 export class ClipEngineImpl implements ClipEngine {
   private disposed = false;
@@ -172,7 +172,6 @@ export class ClipEngineImpl implements ClipEngine {
   }
 
   playClip(state: ClipState, clipId: string, startTime?: number): ClipState {
-    console.log("playClip called:", { clipId, startTime });
     const clip = state.clips[clipId];
     if (!clip?.data) {
       console.error(`Clip with id ${clipId} not found or has no data`);
@@ -180,76 +179,26 @@ export class ClipEngineImpl implements ClipEngine {
     }
 
     if (clip.node) {
-      console.warn(
-        `Clip with id ${clipId} already has a node, disposing of it`,
-      );
-      clip.node.dispose();
+      this.disposeNode(clip.node);
       clip.node = null;
     }
 
     try {
       if (clip.type === "midi" && clip.data instanceof Midi) {
-        console.log("Playing MIDI clip:", clipId);
-        const midi = clip.data;
-        Tone.getTransport().PPQ = midi.header.ppq;
-
-        // broken
-        //convertTimeFromSecondsToTicks(midi);
-
-        if (midi.tracks.length === 0) {
-          console.warn("Midi file has no tracks");
-          return state;
-        }
-
-        const synths: Tone.PolySynth[] = [];
-        const now = Tone.now() + 0.5;
-
-        midi.tracks.forEach((track) => {
-          if (track.notes.length === 0) {
-            console.warn("Midi track has no notes, skipping");
-            return;
-          }
-          //create a synth for each track
-          const synth = new Tone.PolySynth(Tone.Synth, {
-            envelope: {
-              attack: 0.02,
-              decay: 0.1,
-              sustain: 0.3,
-              release: 1,
-            },
-          }).toDestination();
-          synth.maxPolyphony = 256;
-          synths.push(synth);
-          //schedule all of the events
-          track.notes.forEach((note) => {
-            synth.triggerAttackRelease(
-              note.name,
-              note.duration,
-              note.time + now,
-              note.velocity,
-            );
-          });
-        });
-        clip.node = synths; // Store synths for disposal
-        console.log("MIDI clip playback started:", clipId);
+        return startMidiPlayback(state, clip, startTime);
       } else if (
         clip.type === "audio" &&
         clip.data instanceof Tone.ToneAudioBuffer
       ) {
-        console.log("Playing audio clip:", clipId);
-        const player = new Tone.Player(clip.data).toDestination();
-        player.start(startTime ?? clip.pausedAt);
-        clip.node = player;
-        clip.playerStartTime = startTime ?? clip.pausedAt; // Store the start time
-        console.log("Audio clip playback started:", clipId);
+        return startAudioPlayback(state, clip, startTime);
       } else {
         console.error(`Clip with id ${clipId} has invalid data`);
+        return state;
       }
     } catch (error) {
       console.error("Error during clip playback:", error);
+      return state;
     }
-
-    return state;
   }
 
   pauseClip(state: ClipState, clipId: string): ClipState {
@@ -258,16 +207,11 @@ export class ClipEngineImpl implements ClipEngine {
       console.error(`Clip with id ${clipId} not found`);
       return state;
     }
-
-    if (Array.isArray(clip.node)) {
-      clip.node.forEach((synth) => {
-        synth.disconnect();
-      });
-    } else if (clip.node instanceof Tone.Player) {
-      clip.node.stop();
-      clip.node.dispose();
+    let pausedAt = 0;
+    if (clip.node instanceof Tone.Player) {
+      pausedAt = clip.node.now();
     }
-    clip.node = null;
+    this.disposeNode(clip.node);
 
     return {
       ...state,
@@ -275,7 +219,7 @@ export class ClipEngineImpl implements ClipEngine {
         ...state.clips,
         [clipId]: {
           ...clip,
-          pausedAt: clip.node instanceof Tone.Player ? clip.node.now() : 0, // Store the pause time
+          pausedAt: pausedAt,
           node: null,
         },
       },
@@ -289,14 +233,7 @@ export class ClipEngineImpl implements ClipEngine {
       return state;
     }
 
-    if (Array.isArray(clip.node)) {
-      clip.node.forEach((synth) => {
-        synth.disconnect();
-      });
-    } else if (clip.node instanceof Tone.Player) {
-      clip.node.stop();
-      clip.node.dispose();
-    }
+    this.disposeNode(clip.node);
     clip.node = null;
     return state;
   }
@@ -307,15 +244,28 @@ export class ClipEngineImpl implements ClipEngine {
       return 0;
     }
 
-    if (clip.node instanceof Tone.Part) {
-      return clip.node.progress;
-    } else if (clip.node instanceof Tone.Player) {
+    if (clip.node instanceof Tone.Player) {
       if (clip.playerStartTime === undefined) {
         return 0;
       }
       return clip.node.now() + clip.playerStartTime;
+    } else if (Array.isArray(clip.node)) {
+      // For MIDI clips, return 0 for now as we don't have a single progress value
+      return 0;
     }
     return 0;
+  }
+
+  private disposeNode(node: Tone.Player | Tone.PolySynth[] | null) {
+    if (Array.isArray(node)) {
+      node.forEach((synth) => {
+        synth.disconnect();
+        synth.dispose();
+      });
+    } else if (node instanceof Tone.Player) {
+      node.stop();
+      node.dispose();
+    }
   }
 
   dispose(state: ClipState): void {
