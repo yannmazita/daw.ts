@@ -24,14 +24,12 @@ export const TrackLane: React.FC<TrackLaneProps> = ({ trackId, className }) => {
   const { tracks } = useTrackOperations();
   const track = tracks[trackId];
   const clips = useEngineStore((state) => state.clips.clips);
-
   const trackClipIds = useMemo(() => {
     return Object.keys(clips).filter(
       (clipId) => clips[clipId].parentId === trackId,
     );
   }, [clips, trackId]);
 
-  console.log("TrackLane Render:", { trackId, clips });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleImportMidi = useCallback(() => {

@@ -17,7 +17,7 @@ interface ClipProps {
 
 export const Clip: React.FC<ClipProps> = ({ clipId }) => {
   const { importMidi } = useClipOperations();
-  const { clip } = useClipControls(clipId);
+  const { clip, playClip, pauseClip, stopClip } = useClipControls(clipId);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleImportMidi = useCallback(() => {
@@ -72,6 +72,15 @@ export const Clip: React.FC<ClipProps> = ({ clipId }) => {
               Import MIDI
             </ContextMenuItem>
           )}
+          <ContextMenuItem onClick={() => playClip()}>
+            Play Clip
+          </ContextMenuItem>
+          <ContextMenuItem onClick={() => pauseClip()}>
+            Pause Clip
+          </ContextMenuItem>
+          <ContextMenuItem onClick={() => stopClip()}>
+            Stop Clip
+          </ContextMenuItem>
         </>
       </ContextMenuContent>
       <input

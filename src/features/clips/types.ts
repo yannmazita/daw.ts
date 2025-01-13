@@ -1,6 +1,6 @@
 // src/features/clips/types.ts
 import { Midi } from "@tonejs/midi";
-import { Part, Player, ToneAudioBuffer } from "tone";
+import { Player, ToneAudioBuffer, PolySynth } from "tone";
 
 export interface CompositionClip {
   id: string;
@@ -15,7 +15,7 @@ export interface CompositionClip {
   fadeOut: number;
   playerStartTime?: number;
 
-  node: Part | Player | null;
+  node: PolySynth[] | Player | null;
 }
 
 export interface PersistableCompositionClip {

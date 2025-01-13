@@ -12,6 +12,21 @@ export const useClipControls = (clipId: string) => {
   const fadeIn = clip.fadeIn;
   const fadeOut = clip.fadeOut;
 
+  const playClip = useCallback(
+    (startTime?: number) => {
+      compositionEngine.playClip(clipId, startTime);
+    },
+    [compositionEngine, clipId],
+  );
+
+  const pauseClip = useCallback(() => {
+    compositionEngine.pauseClip(clipId);
+  }, [compositionEngine, clipId]);
+
+  const stopClip = useCallback(() => {
+    compositionEngine.stopClip(clipId);
+  }, [compositionEngine, clipId]);
+
   const setStartTime = useCallback(
     (value: number) => {
       if (!clip) return;
@@ -55,5 +70,8 @@ export const useClipControls = (clipId: string) => {
     setDuration,
     setFadeIn,
     setFadeOut,
+    playClip,
+    pauseClip,
+    stopClip,
   };
 };

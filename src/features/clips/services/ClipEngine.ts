@@ -172,46 +172,83 @@ export class ClipEngineImpl implements ClipEngine {
   }
 
   playClip(state: ClipState, clipId: string, startTime?: number): ClipState {
+    console.log("playClip called:", { clipId, startTime });
     const clip = state.clips[clipId];
     if (!clip?.data) {
       console.error(`Clip with id ${clipId} not found or has no data`);
       return state;
     }
 
-    if (clip.type === "midi" && clip.data instanceof Midi) {
-      const midi = clip.data;
-      Tone.getTransport().PPQ = midi.header.ppq;
-      const numofVoices = midi.tracks.length;
-      const synths: Tone.PolySynth[] = [];
-
-      // Convert note times from ticks to seconds
-      convertTimeFromSecondsToTicks(midi);
-
-      // Create synths and parts, one for each track
-      for (let i = 0; i < numofVoices; i++) {
-        synths[i] = new Tone.PolySynth().toDestination();
-
-        const part = new Tone.Part((time, value) => {
-          synths[i].triggerAttackRelease(
-            value.name,
-            value.duration,
-            time,
-            value.velocity,
-          );
-        }, midi.tracks[i].notes).start(startTime ?? clip.pausedAt);
-        clip.node = part;
-      }
-    } else if (
-      clip.type === "audio" &&
-      clip.data instanceof Tone.ToneAudioBuffer
-    ) {
-      const player = new Tone.Player(clip.data).toDestination();
-      player.start(startTime ?? clip.pausedAt);
-      clip.node = player;
-      clip.playerStartTime = startTime ?? clip.pausedAt; // Store the start time
-    } else {
-      console.error(`Clip with id ${clipId} has invalid data`);
+    if (clip.node) {
+      console.warn(
+        `Clip with id ${clipId} already has a node, disposing of it`,
+      );
+      clip.node.dispose();
+      clip.node = null;
     }
+
+    try {
+      if (clip.type === "midi" && clip.data instanceof Midi) {
+        console.log("Playing MIDI clip:", clipId);
+        const midi = clip.data;
+        Tone.getTransport().PPQ = midi.header.ppq;
+
+        // broken
+        //convertTimeFromSecondsToTicks(midi);
+
+        if (midi.tracks.length === 0) {
+          console.warn("Midi file has no tracks");
+          return state;
+        }
+
+        const synths: Tone.PolySynth[] = [];
+        const now = Tone.now() + 0.5;
+
+        midi.tracks.forEach((track) => {
+          if (track.notes.length === 0) {
+            console.warn("Midi track has no notes, skipping");
+            return;
+          }
+          //create a synth for each track
+          const synth = new Tone.PolySynth(Tone.Synth, {
+            envelope: {
+              attack: 0.02,
+              decay: 0.1,
+              sustain: 0.3,
+              release: 1,
+            },
+          }).toDestination();
+          synth.maxPolyphony = 256;
+          synths.push(synth);
+          //schedule all of the events
+          track.notes.forEach((note) => {
+            synth.triggerAttackRelease(
+              note.name,
+              note.duration,
+              note.time + now,
+              note.velocity,
+            );
+          });
+        });
+        clip.node = synths; // Store synths for disposal
+        console.log("MIDI clip playback started:", clipId);
+      } else if (
+        clip.type === "audio" &&
+        clip.data instanceof Tone.ToneAudioBuffer
+      ) {
+        console.log("Playing audio clip:", clipId);
+        const player = new Tone.Player(clip.data).toDestination();
+        player.start(startTime ?? clip.pausedAt);
+        clip.node = player;
+        clip.playerStartTime = startTime ?? clip.pausedAt; // Store the start time
+        console.log("Audio clip playback started:", clipId);
+      } else {
+        console.error(`Clip with id ${clipId} has invalid data`);
+      }
+    } catch (error) {
+      console.error("Error during clip playback:", error);
+    }
+
     return state;
   }
 
@@ -222,18 +259,27 @@ export class ClipEngineImpl implements ClipEngine {
       return state;
     }
 
-    if (clip.node instanceof Tone.Part) {
-      clip.pausedAt = clip.node.progress;
-      clip.node.stop();
-      clip.node.dispose();
-      clip.node = null;
+    if (Array.isArray(clip.node)) {
+      clip.node.forEach((synth) => {
+        synth.disconnect();
+      });
     } else if (clip.node instanceof Tone.Player) {
-      clip.pausedAt = clip.node.now();
       clip.node.stop();
       clip.node.dispose();
-      clip.node = null;
     }
-    return state;
+    clip.node = null;
+
+    return {
+      ...state,
+      clips: {
+        ...state.clips,
+        [clipId]: {
+          ...clip,
+          pausedAt: clip.node instanceof Tone.Player ? clip.node.now() : 0, // Store the pause time
+          node: null,
+        },
+      },
+    };
   }
 
   stopClip(state: ClipState, clipId: string): ClipState {
@@ -243,9 +289,10 @@ export class ClipEngineImpl implements ClipEngine {
       return state;
     }
 
-    if (clip.node instanceof Tone.Part) {
-      clip.node.stop();
-      clip.node.dispose();
+    if (Array.isArray(clip.node)) {
+      clip.node.forEach((synth) => {
+        synth.disconnect();
+      });
     } else if (clip.node instanceof Tone.Player) {
       clip.node.stop();
       clip.node.dispose();
