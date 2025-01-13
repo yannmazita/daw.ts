@@ -13,6 +13,7 @@ export interface CompositionClip {
   duration: number;
   fadeIn: number;
   fadeOut: number;
+  playerStartTime?: number;
 
   node: Part | Player | null;
 }
@@ -39,7 +40,12 @@ export interface PersistableClipState {
 
 export interface ClipEngine {
   // Clip management
-  importMidi(state: ClipState, clipId: string, file: File): Promise<ClipState>;
+  importMidi(
+    state: ClipState,
+    file: File,
+    clipId?: string,
+    trackId?: string,
+  ): Promise<ClipState>;
   exportMidi(state: ClipState, clipId: string): Midi;
 
   // Clip operations

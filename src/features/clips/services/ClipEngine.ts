@@ -15,11 +15,17 @@ export class ClipEngineImpl implements ClipEngine {
 
   async importMidi(
     state: ClipState,
-    clipId: string,
     file: File,
+    clipId?: string,
+    trackId?: string,
   ): Promise<ClipState> {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
+
+      if (clipId && trackId) {
+        reject(new Error("ClipId and trackId cannot be provided together"));
+        return;
+      }
 
       reader.onload = (event) => {
         try {
@@ -36,17 +42,36 @@ export class ClipEngineImpl implements ClipEngine {
           updateTransportTempo(midi);
           updateTransportTimeSignature(midi);
 
-          const newState = {
-            ...state,
-            clips: {
+          const newState = { ...state };
+          if (clipId) {
+            const clip = state.clips[clipId];
+            newState.clips = {
               ...state.clips,
               [clipId]: {
-                ...state.clips[clipId],
+                ...clip,
                 data: midi,
-                duration: midi.duration,
               },
-            },
-          };
+            };
+          } else {
+            const newClipId = crypto.randomUUID();
+            const newClip: CompositionClip = {
+              id: newClipId,
+              parentId: trackId ?? "",
+              name: file.name,
+              type: "midi",
+              data: midi,
+              startTime: 0,
+              pausedAt: 0,
+              duration: 4,
+              fadeIn: 0,
+              fadeOut: 0,
+              node: null,
+            };
+            newState.clips = {
+              ...state.clips,
+              [newClipId]: newClip,
+            };
+          }
           resolve(newState);
         } catch (error) {
           console.error("Error importing MIDI:", error);
@@ -183,6 +208,7 @@ export class ClipEngineImpl implements ClipEngine {
       const player = new Tone.Player(clip.data).toDestination();
       player.start(startTime ?? clip.pausedAt);
       clip.node = player;
+      clip.playerStartTime = startTime ?? clip.pausedAt; // Store the start time
     } else {
       console.error(`Clip with id ${clipId} has invalid data`);
     }
@@ -202,7 +228,7 @@ export class ClipEngineImpl implements ClipEngine {
       clip.node.dispose();
       clip.node = null;
     } else if (clip.node instanceof Tone.Player) {
-      clip.pausedAt = clip.node.now(); // likely incorrect
+      clip.pausedAt = clip.node.now();
       clip.node.stop();
       clip.node.dispose();
       clip.node = null;
@@ -237,7 +263,10 @@ export class ClipEngineImpl implements ClipEngine {
     if (clip.node instanceof Tone.Part) {
       return clip.node.progress;
     } else if (clip.node instanceof Tone.Player) {
-      return clip.node.now(); // likely incorrect
+      if (clip.playerStartTime === undefined) {
+        return 0;
+      }
+      return clip.node.now() + clip.playerStartTime;
     }
     return 0;
   }

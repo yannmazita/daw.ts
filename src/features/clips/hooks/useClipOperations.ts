@@ -10,11 +10,21 @@ export const useClipOperations = () => {
   const clipIds = useMemo(() => Object.keys(clips), [clips]);
   const getClipIdsForTrack = useCallback(
     (trackId: string) => {
-      return clipIds.filter((clipId) => clips[clipId].parentId === trackId);
+      const clips: string[] = clipIds.filter(
+        (clipId) => clips[clipId].parentId === trackId,
+      );
+      console.log("getClipIdsForTrack:", { trackId, clips });
+      return clips;
     },
     [clipIds, clips],
   );
 
+  const importMidi = useCallback(
+    async (file: File, clipId?: string, trackId?: string) => {
+      await compositionEngine.importMidi(file, clipId, trackId);
+    },
+    [compositionEngine],
+  );
   const createClip = useCallback(
     (
       type: CompositionClip["type"],
@@ -72,6 +82,7 @@ export const useClipOperations = () => {
   return {
     clips,
     clipIds,
+    importMidi,
     createClip,
     deleteClip,
     moveClip,

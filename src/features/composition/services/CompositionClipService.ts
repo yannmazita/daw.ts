@@ -5,9 +5,18 @@ import { ClipEngine, CompositionClip } from "@/features/clips/types";
 export class CompositionClipService {
   constructor(private readonly clipEngine: ClipEngine) {}
 
-  async importMidi(clipId: string, file: File): Promise<void> {
+  async importMidi(
+    file: File,
+    clipId?: string,
+    trackId?: string,
+  ): Promise<void> {
     const state = useEngineStore.getState().clips;
-    const newState = await this.clipEngine.importMidi(state, clipId, file);
+    const newState = await this.clipEngine.importMidi(
+      state,
+      file,
+      clipId,
+      trackId,
+    );
     useEngineStore.setState({ clips: newState });
   }
 

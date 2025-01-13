@@ -183,6 +183,12 @@ export class CompositionEngineImpl implements CompositionEngine {
   }
 
   // Clip Methods
+  importMidi(file: File, clipId?: string, trackId?: string): Promise<void> {
+    return this.clipService.importMidi(file, clipId, trackId);
+  }
+  exportMidi(clipId: string): Promise<void> {
+    return this.clipService.exportMidi(clipId);
+  }
   createClip(
     type: CompositionClip["type"],
     startTime: number,
