@@ -2,26 +2,32 @@
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
 import { TransportState } from "@/features/transport/types";
+import {
+  SamplerState,
+  PersistableSamplerState,
+} from "@/features/sampler/types";
 import { ClipState, PersistableClipState } from "@/features/clips/types";
 import { MixState, PersistableMixState } from "@/features/mix/types";
 import {
   AutomationState,
   PersistableAutomationState,
 } from "@/features/automation/types";
+import { PersistableTrackState, TrackState } from "@/features/tracks/types";
 import {
   CompositionState,
   PersistableCompositionState,
 } from "@/features/composition/types";
 import { initialTransportState } from "@/features/transport/utils/initialState";
+import { initialSamplerState } from "@/features/sampler/utils/initialState";
 import { initialClipState } from "@/features/clips/utils/initialState";
 import { initialMixState } from "@/features/mix/utils/initialState";
 import { initialAutomationState } from "@/features/automation/utils/initialState";
 import { initialCompositionState } from "@/features/composition/utils/initialState";
-import { PersistableTrackState, TrackState } from "@/features/tracks/types";
 import { initialTrackState } from "@/features/tracks/utils/initialState";
 
 export interface EngineState {
   transport: TransportState;
+  sampler: SamplerState;
   clips: ClipState;
   mix: MixState;
   automation: AutomationState;
@@ -32,6 +38,7 @@ export interface EngineState {
 // Type for persisted state
 interface PersistableEngineState {
   transport: TransportState;
+  sampler: PersistableSamplerState;
   clips: PersistableClipState;
   mix: PersistableMixState;
   automation: PersistableAutomationState;
@@ -44,6 +51,7 @@ export const useEngineStore = create<EngineState>()(
     persist(
       (set) => ({
         transport: initialTransportState,
+        sampler: initialSamplerState,
         clips: initialClipState,
         mix: initialMixState,
         automation: initialAutomationState,
@@ -54,6 +62,27 @@ export const useEngineStore = create<EngineState>()(
         name: "daw-engine-storage",
         partialize: (state): PersistableEngineState => ({
           transport: state.transport,
+          sampler: {
+            ...state.sampler,
+            instruments: Object.fromEntries(
+              Object.entries(state.sampler.instruments).map(
+                ([id, instrument]) => [
+                  id,
+                  {
+                    id: instrument.id,
+                    name: instrument.name,
+                    samples: Object.fromEntries(
+                      Object.entries(instrument.samples).map(
+                        ([sampleId, sample]) => [sampleId, { url: sample.url }],
+                      ),
+                    ),
+                    regions: instrument.regions,
+                    node: null,
+                  },
+                ],
+              ),
+            ),
+          },
           clips: {
             ...state.clips,
             clips: Object.fromEntries(
@@ -61,6 +90,7 @@ export const useEngineStore = create<EngineState>()(
                 id,
                 {
                   id: clip.id,
+                  parentId: clip.parentId,
                   name: clip.name,
                   type: clip.type,
                   startTime: clip.startTime,
@@ -68,6 +98,8 @@ export const useEngineStore = create<EngineState>()(
                   duration: clip.duration,
                   fadeIn: clip.fadeIn,
                   fadeOut: clip.fadeOut,
+                  playerStartTime: clip.playerStartTime,
+                  instrumentId: clip.instrumentId,
                 },
               ]),
             ),
@@ -150,8 +182,6 @@ export const useEngineStore = create<EngineState>()(
                   name: track.name,
                   type: track.type,
                   controls: track.controls,
-                  clipIds: track.clipIds,
-                  automationIds: track.automationIds,
                 },
               ]),
             ),

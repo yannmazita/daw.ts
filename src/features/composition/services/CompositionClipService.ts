@@ -9,6 +9,7 @@ export class CompositionClipService {
     file: File,
     clipId?: string,
     trackId?: string,
+    instrumentId?: string,
   ): Promise<void> {
     const state = useEngineStore.getState().clips;
     const newState = await this.clipEngine.importMidi(
@@ -16,6 +17,7 @@ export class CompositionClipService {
       file,
       clipId,
       trackId,
+      instrumentId,
     );
     useEngineStore.setState({ clips: newState });
   }
@@ -31,6 +33,7 @@ export class CompositionClipService {
     startTime: number,
     parentId: string,
     name?: string,
+    instrumentId?: string,
   ): void {
     const state = useEngineStore.getState().clips;
     const newState = this.clipEngine.createClip(
@@ -39,6 +42,7 @@ export class CompositionClipService {
       startTime,
       parentId,
       name,
+      instrumentId,
     );
     useEngineStore.setState({ clips: newState });
   }
@@ -67,9 +71,12 @@ export class CompositionClipService {
   }
 
   playClip(clipId: string, startTime?: number): void {
-    const state = useEngineStore.getState().clips;
+    const state = useEngineStore.getState();
     const newState = this.clipEngine.playClip(state, clipId, startTime);
-    useEngineStore.setState({ clips: newState });
+    useEngineStore.setState({
+      clips: newState.clips,
+      sampler: newState.sampler,
+    });
   }
 
   pauseClip(clipId: string): void {
