@@ -25,8 +25,9 @@ export class EngineManager {
     this._transport = new TransportEngineImpl(
       useEngineStore.getState().transport,
     );
-    this._sampler = new SamplerEngineImpl();
     console.log("Transport Engine initialized");
+    this._sampler = new SamplerEngineImpl();
+    console.log("Sampler Engine initialized");
     this._mix = new MixEngineImpl();
     console.log("Mix Engine initialized");
     this._clips = new ClipEngineImpl(this._sampler);

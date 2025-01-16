@@ -221,7 +221,7 @@ sequenceDiagram
 
 The application logic is made of engines with dedicated services that allow the application to grow with new features. The engines read a state object then return an updated state object, the service layer finally commits the changes meaning only one update is necessary. This is done immutably, the only side effects are runtime related.
 
-Currently there are 6 engines.
+Currently there are 7 engines.
 
 ### Composition Engine
 
@@ -242,6 +242,10 @@ This engine manages clips (MIDI clips and audio clips), MIDI file parsing, audio
 ### Mix Engine
 
 This engine manages mixing, sends, routing, sound chains etc. Audio processing is done through Tone.js and is extended when needed.
+
+### Sampler Engine
+
+This engine manages SFZ instrument loading/caching, sampling playback
 
 ### Transport Engine
 
