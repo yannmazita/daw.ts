@@ -18,13 +18,9 @@ export class CompositionSamplerService {
     });
   }
 
-  async loadInstrument(instrumentId: string, sfzFile: File): Promise<void> {
+  async loadInstrument(sfzFile: File): Promise<void> {
     const state = useEngineStore.getState().sampler;
-    const newState = await this.samplerEngine.loadInstrument(
-      state,
-      instrumentId,
-      sfzFile,
-    );
+    const newState = await this.samplerEngine.loadInstrument(state, sfzFile);
     useEngineStore.setState({ sampler: newState });
   }
 

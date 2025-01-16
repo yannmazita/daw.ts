@@ -61,11 +61,11 @@ export class SamplerEngineImpl implements SamplerEngine {
 
   async loadInstrument(
     state: SamplerState,
-    instrumentId: string,
     sfzFile: File,
   ): Promise<SamplerState> {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
+      const instrumentId = crypto.randomUUID();
 
       reader.onload = async (event) => {
         try {

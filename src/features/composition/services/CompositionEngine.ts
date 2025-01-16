@@ -188,7 +188,15 @@ export class CompositionEngineImpl implements CompositionEngine {
   }
 
   // Sampler methods
-  // not exposed, dedicated service may get removed
+  startSamplerPlayback(clipId: string, startTime?: number): void {
+    return this.samplerService.startSamplerPlayback(clipId, startTime);
+  }
+  async loadInstrument(file: File): Promise<void> {
+    return this.samplerService.loadInstrument(file);
+  }
+  createSampler(instrumentId: string): void {
+    return this.samplerService.createSampler(instrumentId);
+  }
 
   // Clip Methods
   importMidi(

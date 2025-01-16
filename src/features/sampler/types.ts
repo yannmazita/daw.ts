@@ -62,11 +62,7 @@ export interface SamplerEngine {
     startTime?: number,
   ): EngineState;
 
-  loadInstrument(
-    state: SamplerState,
-    instrumentId: string,
-    sfzFile: File,
-  ): Promise<SamplerState>;
+  loadInstrument(state: SamplerState, sfzFile: File): Promise<SamplerState>;
   createSampler(state: SamplerState, instrumentId: string): SamplerState;
   dispose(state: SamplerState): SamplerState;
 }
