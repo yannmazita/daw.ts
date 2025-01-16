@@ -133,13 +133,7 @@ export class ClipEngineImpl implements ClipEngine {
     const { [clipId]: clipToDelete, ...remainingClips } = state.clips;
 
     if (clipToDelete?.node) {
-      if (clipToDelete.node instanceof Tone.Part) {
-        clipToDelete.node.dispose();
-      } else if (clipToDelete.node instanceof Tone.Player) {
-        clipToDelete.node.dispose();
-      } else if (clipToDelete.node instanceof Tone.Sampler) {
-        clipToDelete.node.dispose();
-      }
+      clipToDelete.node.dispose();
     }
 
     return {
