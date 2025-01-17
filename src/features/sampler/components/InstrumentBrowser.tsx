@@ -1,6 +1,7 @@
 // src/features/sampler/components/InstrumentBrowser.tsx
 import { Button } from "@/common/shadcn/ui/button";
-import { useCallback, useRef, useState } from "react";
+import { Input } from "@/common/shadcn/ui/input";
+import { useState } from "react";
 import {
   Select,
   SelectContent,
@@ -12,32 +13,9 @@ import { useInstrumentBrowser } from "../hooks/useInstrumentBrowser";
 
 export const InstrumentBrowser: React.FC = () => {
   const { instruments, loadInstrument } = useInstrumentBrowser();
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedInstrument, setSelectedInstrument] = useState<
     string | undefined
   >();
-
-  const handleLoadSFZ = useCallback(() => {
-    fileInputRef.current?.click();
-  }, []);
-
-  const handleFileChange = useCallback(
-    async (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
-
-      try {
-        await loadInstrument(file);
-      } catch (error) {
-        console.error("Error loading SFZ:", error);
-      }
-
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
-    },
-    [loadInstrument],
-  );
 
   const handleInstrumentChange = (value: string) => {
     setSelectedInstrument(value);
@@ -45,10 +23,10 @@ export const InstrumentBrowser: React.FC = () => {
 
   return (
     <div className="flex flex-col border border-border p-2">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col">
         <h2 className="text-lg font-semibold">Instruments</h2>
-        <Button variant="outline" size="sm" onClick={handleLoadSFZ}>
-          Load SFZ
+        <Button variant="outline" size="sm" onClick={loadInstrument}>
+          Load Instruments
         </Button>
       </div>
       <div className="mt-4">
@@ -75,13 +53,6 @@ export const InstrumentBrowser: React.FC = () => {
           <p className="text-muted-foreground">No instruments loaded</p>
         )}
       </div>
-      <input
-        type="file"
-        accept=".sfz"
-        style={{ display: "none" }}
-        ref={fileInputRef}
-        onChange={handleFileChange}
-      />
     </div>
   );
 };

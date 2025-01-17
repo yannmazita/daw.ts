@@ -7,16 +7,13 @@ export const useInstrumentBrowser = () => {
   const compositionEngine = useCompositionEngine();
   const instruments = useEngineStore((state) => state.sampler.instruments);
 
-  const loadInstrument = useCallback(
-    async (file: File) => {
-      try {
-        await compositionEngine.loadInstrument(file);
-      } catch (error) {
-        console.error("Error loading SFZ:", error);
-      }
-    },
-    [compositionEngine],
-  );
+  const loadInstrument = useCallback(async () => {
+    try {
+      await compositionEngine.loadLocalInstrument();
+    } catch (error) {
+      console.error("Error loading SFZ:", error);
+    }
+  }, [compositionEngine]);
 
   return {
     instruments,

@@ -5,39 +5,37 @@ See: https://github.com/sfzlab/sfz-web-player
 As part of this project, this code is distributed under the terms of the GNU General Public License version 3.
 */
 import * as Tone from "tone";
-import {
-  FileLocal,
-  FileRemote,
-  FilesMap,
-  FilesTree,
-  FileWithHandle,
-} from "./fileLoaderTypes";
+import { FileLocal, FileRemote, FilesMap, FilesTree } from "../types/files";
 import { apiArrayBuffer, apiText } from "@sfz-tools/core/dist/api";
 import {
   encodeHashes,
   pathGetExt,
   pathGetSubDirectory,
 } from "@sfz-tools/core/dist/utils";
+import { FileWithDirectoryAndFileHandle } from "browser-fs-access";
+import * as fs from "fs";
 
 export class FileLoader {
-  audio: AudioContext | undefined;
+  audio: Tone.BaseContext | undefined;
   files: FilesMap = {};
   filesTree: FilesTree = {};
   root = "";
 
   constructor() {
     if (window.AudioContext) {
-      this.audio = new window.AudioContext();
+      this.audio = Tone.getContext();
     }
   }
 
-  addDirectory(files: string[] | FileWithHandle[]) {
-    files.forEach((file: string | FileWithHandle) => this.addFile(file));
+  addDirectory(files: string[] | FileWithDirectoryAndFileHandle[]) {
+    files.forEach((file: string | FileWithDirectoryAndFileHandle) =>
+      this.addFile(file),
+    );
   }
 
-  addFile(file: string | FileWithHandle) {
+  addFile(file: string | FileWithDirectoryAndFileHandle) {
     const path: string = decodeURI(
-      typeof file === "string" ? file : file.webkitRelativePath || file.name,
+      typeof file === "string" ? file : file.webkitRelativePath,
     );
     if (path === this.root) return;
     const fileKey: string = pathGetSubDirectory(path, this.root);
@@ -49,7 +47,7 @@ export class FileLoader {
       };
     } else {
       this.files[fileKey] = {
-        ext: pathGetExt(file.webkitRelativePath || file.name),
+        ext: pathGetExt(file.webkitRelativePath),
         contents: null,
         path,
         handle: file,
@@ -70,6 +68,15 @@ export class FileLoader {
     return this.files[fileKey];
   }
 
+  addFilesContents(directory: string, filenames: string[]) {
+    filenames.forEach((filename: string) => {
+      this.addFileContents(
+        directory + filename,
+        fs.readFileSync(directory + filename).toString(),
+      );
+    });
+  }
+
   addToFileTree(key: string) {
     key
       .split("/")
@@ -81,29 +88,10 @@ export class FileLoader {
     if (buffer === true) {
       const arrayBuffer: ArrayBuffer = await file.handle.arrayBuffer();
       if (this.audio && arrayBuffer) {
-        try {
-          const audioBuffer = await this.audio.decodeAudioData(arrayBuffer);
-          file.contents = await new Promise<Tone.ToneAudioBuffer>(
-            (resolve, reject) => {
-              const buffer = new Tone.ToneAudioBuffer(
-                audioBuffer,
-                () => {
-                  resolve(buffer);
-                },
-                (error) => {
-                  reject(error);
-                },
-              );
-            },
-          );
-        } catch (error) {
-          console.error("Error decoding audio data:", error);
-          throw error;
-        }
+        file.contents = await this.audio.decodeAudioData(arrayBuffer);
       }
     } else {
-      const text = await file.handle.text();
-      file.contents = text;
+      file.contents = await file.handle.text();
     }
     return file;
   }
@@ -113,26 +101,8 @@ export class FileLoader {
       const arrayBuffer: ArrayBuffer = await apiArrayBuffer(
         encodeHashes(file.path),
       );
-      if (this.audio && arrayBuffer) {
-        try {
-          const audioBuffer = await this.audio.decodeAudioData(arrayBuffer);
-          file.contents = await new Promise<Tone.ToneAudioBuffer>(
-            (resolve, reject) => {
-              const buffer = new Tone.ToneAudioBuffer(
-                audioBuffer,
-                () => {
-                  resolve(buffer);
-                },
-                (error) => {
-                  reject(error);
-                },
-              );
-            },
-          );
-        } catch (error) {
-          console.error("Error decoding audio data:", error);
-          throw error;
-        }
+      if (this.audio) {
+        file.contents = await this.audio.decodeAudioData(arrayBuffer);
       }
     } else {
       file.contents = await apiText(encodeHashes(file.path));

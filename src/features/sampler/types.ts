@@ -35,7 +35,6 @@ export interface PersistableInstrument {
   id: string;
   name: string;
   samples: Record<string, PersistableSample>;
-  regions: SFZRegion[];
 }
 
 export interface SamplerState {
@@ -53,8 +52,6 @@ export interface SamplerEngine {
     clipId: string,
     startTime?: number,
   ): EngineState;
-
-  loadInstrument(state: SamplerState, sfzFile: File): Promise<SamplerState>;
-  createSampler(state: SamplerState, instrumentId: string): SamplerState;
+  loadLocalInstrument(state: SamplerState): Promise<SamplerState>;
   dispose(state: SamplerState): SamplerState;
 }
