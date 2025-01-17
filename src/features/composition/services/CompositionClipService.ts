@@ -70,6 +70,16 @@ export class CompositionClipService {
     useEngineStore.setState({ clips: newState });
   }
 
+  setClipInstrument(clipId: string, instrumentId: string): void {
+    const state = useEngineStore.getState().clips;
+    const newState = this.clipEngine.setClipInstrument(
+      state,
+      clipId,
+      instrumentId,
+    );
+    useEngineStore.setState({ clips: newState });
+  }
+
   playClip(clipId: string, startTime?: number): void {
     const state = useEngineStore.getState();
     const newState = this.clipEngine.playClip(state, clipId, startTime);

@@ -72,6 +72,11 @@ export interface ClipEngine {
     fadeIn: number,
     fadeOut: number,
   ): ClipState;
+  setClipInstrument(
+    state: ClipState,
+    clipId: string,
+    instrumentId: string,
+  ): ClipState;
 
   // Clip playback
   playClip(state: EngineState, clipId: string, startTime?: number): EngineState;

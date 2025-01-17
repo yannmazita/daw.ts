@@ -234,6 +234,9 @@ export class CompositionEngineImpl implements CompositionEngine {
   setClipFades(clipId: string, fadeIn: number, fadeOut: number): void {
     return this.clipService.setClipFades(clipId, fadeIn, fadeOut);
   }
+  setClipInstrument(clipId: string, instrumentId: string): void {
+    return this.clipService.setClipInstrument(clipId, instrumentId);
+  }
   playClip(clipId: string, startTime?: number): void {
     return this.clipService.playClip(clipId, startTime);
   }

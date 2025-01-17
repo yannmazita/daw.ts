@@ -1,13 +1,33 @@
 // src/features/sampler/services/SamplerEngine.ts
 import * as Tone from "tone";
-import { SamplerEngine, Instrument, Sample, SamplerState } from "../types";
-import { SFZParser } from "../utils/sfzParser";
-import { SampleUtils } from "../utils/sampleUtils";
+import {
+  SamplerEngine,
+  Instrument,
+  Sample,
+  SamplerState,
+  SFZRegion,
+} from "../types";
+import { FileLoader } from "../utils/fileLoader";
 import { Midi } from "@tonejs/midi";
 import { EngineState } from "@/core/stores/useEngineStore";
+import { parseHeaders, parseSfz } from "@sfz-tools/core/dist/parse";
+import { pathGetDirectory } from "@sfz-tools/core/dist/utils";
+import { ParseHeader, ParseOpcodeObj } from "@sfz-tools/core/dist/types/parse";
+
+class SampleImpl implements Sample {
+  buffer: Tone.ToneAudioBuffer;
+  url: string;
+  constructor(buffer: Tone.ToneAudioBuffer, url: string) {
+    this.buffer = buffer;
+    this.url = url;
+  }
+  dispose(): void {
+    this.buffer.dispose();
+  }
+}
 
 export class SamplerEngineImpl implements SamplerEngine {
-  private sampleUtils: SampleUtils = new SampleUtils();
+  private fileLoader: FileLoader = new FileLoader();
 
   startSamplerPlayback(
     state: EngineState,
@@ -63,60 +83,59 @@ export class SamplerEngineImpl implements SamplerEngine {
     state: SamplerState,
     sfzFile: File,
   ): Promise<SamplerState> {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
+    try {
       const instrumentId = crypto.randomUUID();
+      const file = this.fileLoader.addFile(sfzFile);
+      const fileLoaded = await this.fileLoader.getFile(file);
 
-      reader.onload = async (event) => {
-        try {
-          if (!event.target?.result) {
-            reject(new Error("FileReader result is empty"));
-            return;
-          }
+      if (!fileLoaded) {
+        throw new Error("Failed to load SFZ file");
+      }
 
-          const sfzContent = event.target.result as string;
-          const parser = new SFZParser(sfzContent);
-          const { regions, global } = parser.parse();
+      const prefix: string = pathGetDirectory(fileLoaded.path);
+      let headers: ParseHeader[] = [];
 
-          const loadedSamples = await this.sampleUtils.loadSamples(
-            regions,
-            global.defaultPath,
-            instrumentId,
+      if (fileLoaded.ext === "sfz") {
+        headers = await parseSfz(fileLoaded.contents, prefix);
+      } else if (fileLoaded.ext === "json") {
+        headers = JSON.parse(fileLoaded.contents).elements;
+      } else {
+        throw new Error("Unsupported file extension");
+      }
+
+      const regions: ParseOpcodeObj[] = parseHeaders(headers, prefix);
+      const samples: Record<string, Sample> = {};
+
+      for (const region of regions) {
+        if (!region.sample) continue;
+
+        const sampleFile = await this.fileLoader.getFile(region.sample, true);
+
+        if (sampleFile?.contents) {
+          samples[region.sample] = new SampleImpl(
+            sampleFile.contents,
+            region.sample,
           );
-
-          const samples: Record<string, Sample> = {};
-          for (const url in loadedSamples) {
-            samples[url] = {
-              url: url,
-              buffer: loadedSamples[url],
-            };
-          }
-
-          const instrument: Instrument = {
-            id: instrumentId,
-            name: sfzFile.name,
-            samples: samples,
-            regions: regions,
-          };
-
-          const newInstruments = {
-            ...state.instruments,
-            [instrumentId]: instrument,
-          };
-
-          resolve({ ...state, instruments: newInstruments });
-        } catch (error) {
-          console.error("Error loading instrument:", error);
-          reject(new Error("Failed to load instrument"));
         }
+      }
+
+      const instrument: Instrument = {
+        id: instrumentId,
+        name: sfzFile.name,
+        samples,
+        regions: regions as SFZRegion[],
       };
 
-      reader.onerror = (error) => {
-        console.error("FileReader error:", error);
-        reject(new Error("Failed to read SFZ file"));
+      const newInstruments = {
+        ...state.instruments,
+        [instrumentId]: instrument,
       };
-      reader.readAsText(sfzFile);
-    });
+
+      return { ...state, instruments: newInstruments };
+    } catch (error) {
+      console.error("Error loading instrument:", error);
+      throw new Error("Failed to load instrument");
+    }
   }
 
   createSampler(state: SamplerState, instrumentId: string): SamplerState {
@@ -136,18 +155,23 @@ export class SamplerEngineImpl implements SamplerEngine {
       }
       sampler.add(region.loKey as Tone.Unit.MidiNote, sample[1].buffer);
     });
-    const newInstruments = {
-      ...state.instruments,
-      [instrumentId]: { ...instrument, sampler: sampler },
+    const newSamplers = {
+      ...state.samplers,
+      [instrumentId]: sampler,
     };
-    return { ...state, instruments: newInstruments };
+    return { ...state, samplers: newSamplers };
   }
 
   dispose(state: SamplerState): SamplerState {
     for (const samplerId in state.samplers) {
       state.samplers[samplerId].dispose();
     }
-    this.sampleUtils.dispose();
+    for (const instrumentId in state.instruments) {
+      const instrument = state.instruments[instrumentId];
+      for (const sampleId in instrument.samples) {
+        instrument.samples[sampleId].dispose();
+      }
+    }
     return { instruments: {}, samplers: {} };
   }
 }

@@ -1,18 +1,9 @@
 // src/features/sampler/types.ts
 import * as Tone from "tone";
 import { EngineState } from "@/core/stores/useEngineStore";
+import { ParseOpcodeObj } from "@sfz-tools/core/dist/types/parse";
 
-export interface SFZRegion {
-  sample: string;
-  loKey: number;
-  hiKey: number;
-  loVel: number;
-  hiVel: number;
-  pitchKeycenter: number;
-  loopMode: string;
-  loopStart: number;
-  loopEnd: number;
-}
+export interface SFZRegion extends ParseOpcodeObj {}
 
 export interface SFZGlobal {
   defaultPath?: string;
@@ -26,6 +17,7 @@ export interface ParsedSFZ {
 export interface Sample {
   url: string;
   buffer: Tone.ToneAudioBuffer;
+  dispose(): void;
 }
 
 export interface PersistableSample {

@@ -174,6 +174,23 @@ export class ClipEngineImpl implements ClipEngine {
     };
   }
 
+  setClipInstrument(
+    state: ClipState,
+    clipId: string,
+    instrumentId: string,
+  ): ClipState {
+    return {
+      ...state,
+      clips: {
+        ...state.clips,
+        [clipId]: {
+          ...state.clips[clipId],
+          instrumentId,
+        },
+      },
+    };
+  }
+
   playClip(
     state: EngineState,
     clipId: string,

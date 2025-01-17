@@ -56,6 +56,12 @@ export const useClipOperations = () => {
     },
     [compositionEngine],
   );
+  const setClipInstrument = useCallback(
+    (clipId: string, instrumentId: string) => {
+      compositionEngine.setClipInstrument(clipId, instrumentId);
+    },
+    [compositionEngine],
+  );
   const playClip = useCallback(
     (clipId: string, startTime?: number) => {
       compositionEngine.playClip(clipId, startTime);
@@ -89,6 +95,7 @@ export const useClipOperations = () => {
     deleteClip,
     moveClip,
     setClipFades,
+    setClipInstrument,
     playClip,
     pauseClip,
     stopClip,

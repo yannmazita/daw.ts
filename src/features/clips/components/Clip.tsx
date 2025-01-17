@@ -24,7 +24,7 @@ interface ClipProps {
 }
 
 export const Clip: React.FC<ClipProps> = ({ clipId }) => {
-  const { importMidi } = useClipOperations();
+  const { importMidi, setClipInstrument } = useClipOperations();
   const { clip, playClip, pauseClip, stopClip } = useClipControls(clipId);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const instruments = useEngineStore((state) => state.sampler.instruments);
@@ -57,6 +57,7 @@ export const Clip: React.FC<ClipProps> = ({ clipId }) => {
 
   const handleInstrumentChange = (value: string) => {
     setSelectedInstrument(value);
+    setClipInstrument(clipId, value);
   };
 
   if (!clip) {
