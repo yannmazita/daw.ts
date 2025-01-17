@@ -1,6 +1,5 @@
 // src/features/sampler/components/InstrumentBrowser.tsx
 import { Button } from "@/common/shadcn/ui/button";
-import { Input } from "@/common/shadcn/ui/input";
 import { useState } from "react";
 import {
   Select,
@@ -10,15 +9,22 @@ import {
   SelectValue,
 } from "@/common/shadcn/ui/select";
 import { useInstrumentBrowser } from "../hooks/useInstrumentBrowser";
+import { InstrumentsTree } from "./InstrumentsTree";
 
 export const InstrumentBrowser: React.FC = () => {
-  const { instruments, loadInstrument } = useInstrumentBrowser();
+  const { instruments, filesTree, filesMap, loadInstrument } =
+    useInstrumentBrowser();
   const [selectedInstrument, setSelectedInstrument] = useState<
     string | undefined
   >();
 
   const handleInstrumentChange = (value: string) => {
     setSelectedInstrument(value);
+  };
+
+  const handleFileClick = async (content: string): Promise<void> => {
+    console.log("File clicked:", content);
+    // Handle file interactions
   };
 
   return (
@@ -51,6 +57,18 @@ export const InstrumentBrowser: React.FC = () => {
           </Select>
         ) : (
           <p className="text-muted-foreground">No instruments loaded</p>
+        )}
+      </div>
+      <div className="mt-4">
+        {Object.keys(filesTree).length > 0 ? (
+          <InstrumentsTree
+            root=""
+            files={filesMap}
+            filesTree={filesTree}
+            onFileClick={handleFileClick}
+          />
+        ) : (
+          <p className="text-muted-foreground">No files loaded</p>
         )}
       </div>
     </div>

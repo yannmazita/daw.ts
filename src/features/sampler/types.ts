@@ -2,6 +2,7 @@
 import * as Tone from "tone";
 import { EngineState } from "@/core/stores/useEngineStore";
 import { ParseOpcodeObj } from "@sfz-tools/core/dist/types/parse";
+import { FileLoader } from "./utils/fileLoader";
 
 export interface SFZRegion extends ParseOpcodeObj {}
 
@@ -52,6 +53,9 @@ export interface SamplerEngine {
     clipId: string,
     startTime?: number,
   ): EngineState;
+
   loadLocalInstrument(state: SamplerState): Promise<SamplerState>;
+  getInstrumentsLoader(): FileLoader;
+
   dispose(state: SamplerState): SamplerState;
 }

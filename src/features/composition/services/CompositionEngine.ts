@@ -194,6 +194,9 @@ export class CompositionEngineImpl implements CompositionEngine {
   async loadLocalInstrument(): Promise<void> {
     return this.samplerService.loadLocalInstrument();
   }
+  getInstrumentsLoader() {
+    return this.samplerService.getInstrumentsLoader();
+  }
 
   // Clip Methods
   importMidi(

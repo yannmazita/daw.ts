@@ -238,6 +238,10 @@ export class SamplerEngineImpl implements SamplerEngine {
     }
   }
 
+  getInstrumentsLoader(): FileLoader {
+    return this.loader;
+  }
+
   dispose(state: SamplerState): SamplerState {
     for (const samplerId in state.samplers) {
       state.samplers[samplerId].dispose();

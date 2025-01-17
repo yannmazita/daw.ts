@@ -24,6 +24,10 @@ export class CompositionSamplerService {
     useEngineStore.setState({ sampler: newState });
   }
 
+  getInstrumentsLoader() {
+    return this.samplerEngine.getInstrumentsLoader();
+  }
+
   dispose(): void {
     const state = useEngineStore.getState().sampler;
     const newState = this.samplerEngine.dispose(state);
