@@ -33,21 +33,29 @@ export class TransportEngineImpl implements TransportEngine {
     this.audioContext = new AudioContext();
     this._tempo = state.tempo;
     this._timeSignature = state.timeSignature;
-    this._loop = state.loop;
+    this._loop = {
+      enabled: state.loop.enabled,
+      start: state.loop.start,
+      end: state.loop.end,
+    };
     this.config = {
       tapTimeout: config.tapTimeout ?? 3000,
       maxTapHistory: config.maxTapHistory ?? 4,
       minTapInterval: config.minTapInterval ?? 200,
       maxTapInterval: config.maxTapInterval ?? 3000,
     };
-    this.clock = new TransportClock(this.audioContext, this._tempo, this.tick);
+    this.clock = new TransportClock(
+      this.audioContext,
+      this._tempo,
+      this._timeSignature,
+      this.tick,
+    );
     this.initializeTransport(state);
   }
 
   /**
    * Initializes the transport engine with the provided state.
    * @param state - The initial transport state.
-   * @private
    */
   private initializeTransport(state: TransportState): void {
     try {
@@ -56,7 +64,11 @@ export class TransportEngineImpl implements TransportEngine {
       this._timeSignature = state.timeSignature;
 
       // Configure loop settings
-      this._loop = state.loop;
+      this._loop = {
+        enabled: state.loop.enabled,
+        start: state.loop.start,
+        end: state.loop.end,
+      };
     } catch (error) {
       console.error("Transport initialization failed");
       throw error;
@@ -65,22 +77,22 @@ export class TransportEngineImpl implements TransportEngine {
 
   /**
    * Calculates the current position and schedules the next tick.
-   * @private
    */
   private tick = () => {
     this._position = this.clock.getPosition();
     if (this._loop.enabled) {
       if (this._position >= this._loop.end) {
-        this._position = this._loop.start + (this._position - this._loop.end);
+        this._position =
+          this._loop.start + (this.clock.getPosition() - this._loop.end);
         this.clock.seek(this._position);
       }
     }
   };
 
   /**
-   * Starts the transport playback.
+   * Starts transport playback.
    * @param state - The current transport state.
-   * @param time - The optional start time in beats.
+   * @param time - The optional start time in seconds.
    * @returns A promise that resolves with the updated transport state.
    */
   async play(state: TransportState, time?: number): Promise<TransportState> {
@@ -90,6 +102,7 @@ export class TransportEngineImpl implements TransportEngine {
       if (this.audioContext.state === "suspended") {
         await this.audioContext.resume();
       }
+
       this.clock.start(time ?? this._position);
       return { ...state, isPlaying: true };
     } catch (error) {
@@ -99,7 +112,7 @@ export class TransportEngineImpl implements TransportEngine {
   }
 
   /**
-   * Pauses the transport playback.
+   * Pauses transport playback.
    * @param state - The current transport state.
    * @returns The updated transport state.
    */
@@ -116,7 +129,7 @@ export class TransportEngineImpl implements TransportEngine {
   }
 
   /**
-   * Stops the transport playback and resets the position to 0.
+   * Stops transport playback and resets the position to 0.
    * @param state - The current transport state.
    * @returns The updated transport state.
    */
@@ -136,7 +149,7 @@ export class TransportEngineImpl implements TransportEngine {
   /**
    * Seeks transport to position.
    * @param state - The current transport state.
-   * @param time - The target position in beats.
+   * @param time - The target position in seconds.
    * @returns The updated transport state.
    */
   seekTo(state: TransportState, time: number): TransportState {
@@ -149,7 +162,7 @@ export class TransportEngineImpl implements TransportEngine {
     try {
       this._position = time;
       this.clock.seek(this._position);
-      return { ...state, position: time };
+      return { ...state, position: this.clock.getCurrentPositionBeats() };
     } catch (error) {
       console.error("Failed to seek:", error);
       throw error;
@@ -301,7 +314,6 @@ export class TransportEngineImpl implements TransportEngine {
 
     try {
       this._loop = { ...this._loop, enabled };
-
       return { ...state, loop: { ...state.loop, enabled } };
     } catch (error) {
       console.error("Failed to set loop", error);
@@ -328,7 +340,11 @@ export class TransportEngineImpl implements TransportEngine {
     }
 
     try {
-      this._loop = { ...this._loop, start, end };
+      this._loop = {
+        ...this._loop,
+        start: start,
+        end: end,
+      };
       return { ...state, loop: { ...state.loop, start, end } };
     } catch (error) {
       console.error("Failed to set loop points", error);
@@ -374,13 +390,13 @@ export class TransportEngineImpl implements TransportEngine {
    * @returns The current transport position in beats.
    */
   getTransportPosition(): number {
-    return this._position;
+    return this.clock.getCurrentPositionBeats();
   }
 
   /**
    * Sets the transport position.
    * @param state - The current transport state.
-   * @param position - The new transport position in beats.
+   * @param position - The new transport position in seconds.
    * @returns The updated transport state.
    */
   setTransportPosition(
@@ -394,7 +410,7 @@ export class TransportEngineImpl implements TransportEngine {
     try {
       this._position = position;
       this.clock.seek(this._position);
-      return { ...state, position };
+      return { ...state, position: this.clock.getCurrentPositionBeats() };
     } catch (error) {
       console.error("Failed updating position", error);
       throw error;

@@ -1,4 +1,6 @@
 // src/features/transport/services/TransportClock.ts
+import { secondsToBarsBeats } from "../../../common/utils/timeUtils";
+
 export interface TransportClockConfig {
   tapTimeout: number;
   maxTapHistory: number;
@@ -10,41 +12,44 @@ export class TransportClock {
   private audioContext: AudioContext;
   private clockSource: AudioBufferSourceNode | null = null;
   private startTime = 0;
-  private _position = 0;
+  private _position = 0; // Position in seconds
   private _tempo: number;
+  private _timeSignature: number[];
   private tickCallback: () => void;
   private isRunning = false;
+  private nextTickTime: number | null = null;
 
   constructor(
     audioContext: AudioContext,
     tempo: number,
+    timeSignature: number[],
     tickCallback: () => void,
   ) {
     this.audioContext = audioContext;
     this._tempo = tempo;
+    this._timeSignature = timeSignature;
     this.tickCallback = tickCallback;
-    this.createClockSource();
   }
 
   private createClockSource() {
-    this.clockSource = this.audioContext.createBufferSource();
+    const clockSource = this.audioContext.createBufferSource();
     const buffer = this.audioContext.createBuffer(
       1,
       1,
       this.audioContext.sampleRate,
     );
-    this.clockSource.buffer = buffer;
-    this.clockSource.connect(this.audioContext.destination);
+    clockSource.buffer = buffer;
+    clockSource.connect(this.audioContext.destination);
+    return clockSource;
   }
 
   start(position: number) {
     if (this.isRunning) return;
     this.isRunning = true;
-    this._position = position;
-    this.startTime =
-      this.audioContext.currentTime - this._position / (this._tempo / 60);
-    console.log("Start time", this.startTime);
+    this._position = position; // Position in seconds
+    this.startTime = this.audioContext.currentTime - this._position;
     this.scheduleTick();
+    console.log("Start time", this.startTime, "position", this._position);
   }
 
   stop() {
@@ -52,14 +57,16 @@ export class TransportClock {
     this.isRunning = false;
     if (this.clockSource) {
       this.clockSource.stop();
+      this.clockSource.disconnect();
+      this.clockSource = null;
     }
+    this.nextTickTime = null;
     console.log("Stop time", this.audioContext.currentTime);
   }
 
   seek(position: number) {
-    this._position = position;
-    this.startTime =
-      this.audioContext.currentTime - this._position / (this._tempo / 60);
+    this._position = position; // Position in seconds
+    this.startTime = this.audioContext.currentTime - this._position;
     if (this.isRunning) {
       this.scheduleTick();
     }
@@ -76,25 +83,22 @@ export class TransportClock {
   private scheduleTick() {
     if (!this.isRunning) return;
     if (this.clockSource) {
-      try {
-        this.clockSource.stop(); // Stop the previous clock source
-      } catch (e) {
-        console.warn("Attempted to stop a non-started clock source", e);
-      }
+      this.clockSource.stop();
       this.clockSource.disconnect();
     }
-    this.createClockSource();
+
+    this.clockSource = this.createClockSource();
+    const secondsPerBeat = 60 / this._tempo;
+    this.nextTickTime = this.audioContext.currentTime + secondsPerBeat;
+
+    this.clockSource.start(this.nextTickTime, 0, secondsPerBeat);
     this.clockSource.onended = () => {
       this.tick();
     };
-    const secondsPerBeat = 60 / this._tempo;
-    this.clockSource.start(this.audioContext.currentTime + secondsPerBeat);
   }
 
   private tick = () => {
     if (this.isRunning) {
-      this._position =
-        (this.audioContext.currentTime - this.startTime) * (this._tempo / 60);
       this.tickCallback();
       this.scheduleTick();
     }
@@ -102,6 +106,20 @@ export class TransportClock {
 
   getPosition() {
     return this._position;
+  }
+
+  getCurrentPositionBeats() {
+    return (
+      (this.audioContext.currentTime - this.startTime) * (this._tempo / 60)
+    );
+  }
+
+  getCurrentPositionBarsBeats() {
+    return secondsToBarsBeats(
+      this.audioContext.currentTime - this.startTime,
+      this._tempo,
+      this._timeSignature,
+    );
   }
 
   getTempo() {
