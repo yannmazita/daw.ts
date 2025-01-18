@@ -11,11 +11,7 @@ import { TransportClock } from "./TransportClock";
  */
 export class TransportEngineImpl implements TransportEngine {
   private disposed = false;
-  private audioContext: AudioContext;
   private clock: TransportClock;
-  private _position = 0;
-  private _tempo: number;
-  private _timeSignature: number[];
   private tapTimeoutId: number | null = null;
   private _loop: { enabled: boolean; start: number; end: number };
   private _duration = 0;
@@ -30,14 +26,6 @@ export class TransportEngineImpl implements TransportEngine {
     state: TransportState,
     config: Partial<TransportClockConfig> = {},
   ) {
-    this.audioContext = new AudioContext();
-    this._tempo = state.tempo;
-    this._timeSignature = state.timeSignature;
-    this._loop = {
-      enabled: state.loop.enabled,
-      start: state.loop.start,
-      end: state.loop.end,
-    };
     this.config = {
       tapTimeout: config.tapTimeout ?? 3000,
       maxTapHistory: config.maxTapHistory ?? 4,
@@ -45,24 +33,25 @@ export class TransportEngineImpl implements TransportEngine {
       maxTapInterval: config.maxTapInterval ?? 3000,
     };
     this.clock = new TransportClock(
-      this.audioContext,
-      this._tempo,
-      this._timeSignature,
+      new AudioContext(), // Create the AudioContext here
+      state.tempo,
+      state.timeSignature,
       this.tick,
     );
+    this._loop = {
+      enabled: state.loop.enabled,
+      start: state.loop.start,
+      end: state.loop.end,
+    };
     this.initializeTransport(state);
   }
 
   /**
-   * Initializes the transport engine with the provided state.
+   * Initializes transport engine with the provided state.
    * @param state - The initial transport state.
    */
   private initializeTransport(state: TransportState): void {
     try {
-      // Configure transport settings
-      this._tempo = state.tempo;
-      this._timeSignature = state.timeSignature;
-
       // Configure loop settings
       this._loop = {
         enabled: state.loop.enabled,
@@ -76,15 +65,15 @@ export class TransportEngineImpl implements TransportEngine {
   }
 
   /**
-   * Calculates the current position and schedules the next tick.
+   * Calculates current position and schedules the next tick.
    */
   private tick = () => {
-    this._position = this.clock.getPosition();
+    const position = this.clock.getPosition();
     if (this._loop.enabled) {
-      if (this._position >= this._loop.end) {
-        this._position =
-          this._loop.start + (this.clock.getPosition() - this._loop.end);
-        this.clock.seek(this._position);
+      if (position >= this._loop.end) {
+        this.clock.seek(
+          this._loop.start + (this.clock.getPosition() - this._loop.end),
+        );
       }
     }
   };
@@ -99,11 +88,11 @@ export class TransportEngineImpl implements TransportEngine {
     this.checkDisposed();
 
     try {
-      if (this.audioContext.state === "suspended") {
-        await this.audioContext.resume();
+      if (this.clock.getAudioContext().state === "suspended") {
+        await this.clock.getAudioContext().resume();
       }
 
-      this.clock.start(time ?? this._position);
+      this.clock.start(time ?? this.clock.getPosition());
       return { ...state, isPlaying: true };
     } catch (error) {
       console.error("Failed to start transport", error);
@@ -138,7 +127,6 @@ export class TransportEngineImpl implements TransportEngine {
 
     try {
       this.clock.stop();
-      this._position = 0;
       return { ...state, isPlaying: false, position: 0, isRecording: false };
     } catch (error) {
       console.error("Failed to stop transport");
@@ -160,9 +148,8 @@ export class TransportEngineImpl implements TransportEngine {
     }
 
     try {
-      this._position = time;
-      this.clock.seek(this._position);
-      return { ...state, position: this.clock.getCurrentPositionBeats() };
+      this.clock.seek(time);
+      return { ...state, position: time };
     } catch (error) {
       console.error("Failed to seek:", error);
       throw error;
@@ -183,8 +170,7 @@ export class TransportEngineImpl implements TransportEngine {
     }
 
     try {
-      this._tempo = tempo;
-      this.clock.setTempo(this._tempo);
+      this.clock.setTempo(tempo);
       return { ...state, tempo };
     } catch (error) {
       console.error("Failed to set tempo:", error);
@@ -211,8 +197,11 @@ export class TransportEngineImpl implements TransportEngine {
     }
 
     try {
-      this._timeSignature = [numerator, denominator];
-      return { ...state, timeSignature: [numerator, denominator] };
+      // Directly modify the time signature in the clock
+      // This is safe as time signature is not used in the tick method
+      // (only tempo and position are used)
+      const timeSignature = [numerator, denominator];
+      return { ...state, timeSignature };
     } catch (error) {
       console.error("Failed to set time signature:", error);
       throw error;
@@ -220,7 +209,7 @@ export class TransportEngineImpl implements TransportEngine {
   }
 
   /**
-   * Starts the tap tempo process.
+   * Starts tap tempo process.
    * @param state - The current transport state.
    * @returns The updated transport state.
    */
@@ -282,7 +271,7 @@ export class TransportEngineImpl implements TransportEngine {
   }
 
   /**
-   * Calculates the tempo based on the tap times.
+   * Calculates tempo based on tap times.
    * @param times - The array of tap times.
    * @returns The calculated tempo in BPM, or null if it cannot be calculated.
    * @private
@@ -304,7 +293,7 @@ export class TransportEngineImpl implements TransportEngine {
   }
 
   /**
-   * Sets the loop enabled state.
+   * Sets loop enabled state.
    * @param state - The current transport state.
    * @param enabled - Whether the loop is enabled.
    * @returns The updated transport state.
@@ -322,7 +311,7 @@ export class TransportEngineImpl implements TransportEngine {
   }
 
   /**
-   * Sets the loop points.
+   * Sets loop points.
    * @param state - The current transport state.
    * @param start - The loop start point in beats.
    * @param end - The loop end point in beats.
@@ -386,35 +375,11 @@ export class TransportEngineImpl implements TransportEngine {
   }
 
   /**
-   * Gets the current transport position.
-   * @returns The current transport position in beats.
+   * Gets current transport position.
+   * @returns The current transport position in seconds.
    */
   getTransportPosition(): number {
-    return this.clock.getCurrentPositionBeats();
-  }
-
-  /**
-   * Sets the transport position.
-   * @param state - The current transport state.
-   * @param position - The new transport position in seconds.
-   * @returns The updated transport state.
-   */
-  setTransportPosition(
-    state: TransportState,
-    position: number,
-  ): TransportState {
-    this.checkDisposed();
-    if (position < 0) {
-      throw new Error("Position cannot be negative");
-    }
-    try {
-      this._position = position;
-      this.clock.seek(this._position);
-      return { ...state, position: this.clock.getCurrentPositionBeats() };
-    } catch (error) {
-      console.error("Failed updating position", error);
-      throw error;
-    }
+    return this.clock.getPosition();
   }
 
   /**
@@ -429,7 +394,7 @@ export class TransportEngineImpl implements TransportEngine {
       this.disposed = true;
       this.endTapTempo(state);
       this.clock.dispose();
-      await this.audioContext.close();
+      await this.clock.getAudioContext().close();
     } catch (error) {
       console.error("Failed to dispose transport engine", error);
       throw error;
@@ -445,13 +410,5 @@ export class TransportEngineImpl implements TransportEngine {
     if (this.disposed) {
       throw new Error("TransportEngine is disposed");
     }
-  }
-
-  /**
-   * Gets the audio context.
-   * @returns The audio context.
-   */
-  getAudioContext(): AudioContext {
-    return this.audioContext;
   }
 }

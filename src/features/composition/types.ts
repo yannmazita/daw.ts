@@ -17,5 +17,5 @@ export interface CompositionEngine {
   automationEngine: AutomationEngine;
 
   // Cleanup
-  dispose(): void;
+  dispose(): Promise<void>;
 }

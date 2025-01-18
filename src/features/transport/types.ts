@@ -56,7 +56,6 @@ export interface TransportEngine {
   getTransportDuration(): number;
   setTransportDuration(state: TransportState, duration: number): TransportState;
   getTransportPosition(): number;
-  setTransportPosition(state: TransportState, position: number): TransportState;
 
   // Cleanup
   dispose(state: TransportState): Promise<void>;

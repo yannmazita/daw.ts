@@ -12,7 +12,7 @@ export class TransportClock {
   private audioContext: AudioContext;
   private clockSource: AudioBufferSourceNode | null = null;
   private startTime = 0;
-  private _position = 0; // Position in seconds
+  private _position = 0;
   private _tempo: number;
   private _timeSignature: number[];
   private tickCallback: () => void;
@@ -46,7 +46,7 @@ export class TransportClock {
   start(position: number) {
     if (this.isRunning) return;
     this.isRunning = true;
-    this._position = position; // Position in seconds
+    this._position = position;
     this.startTime = this.audioContext.currentTime - this._position;
     this.scheduleTick();
     console.log("Start time", this.startTime, "position", this._position);
@@ -126,11 +126,19 @@ export class TransportClock {
     return this._tempo;
   }
 
+  getTimeSignature() {
+    return this._timeSignature;
+  }
+
   dispose() {
     this.stop();
     if (this.clockSource) {
       this.clockSource.disconnect();
       this.clockSource = null;
     }
+  }
+
+  getAudioContext() {
+    return this.audioContext;
   }
 }

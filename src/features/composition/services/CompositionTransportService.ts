@@ -83,14 +83,8 @@ export class CompositionTransportService {
     return this.transportEngine.getTransportPosition();
   }
 
-  setTransportPosition(position: number): void {
+  async dispose(): Promise<void> {
     const state = useEngineStore.getState().transport;
-    const newState = this.transportEngine.setTransportPosition(state, position);
-    useEngineStore.setState({ transport: newState });
-  }
-
-  dispose(): void {
-    const state = useEngineStore.getState().transport;
-    this.transportEngine.dispose(state);
+    await this.transportEngine.dispose(state);
   }
 }

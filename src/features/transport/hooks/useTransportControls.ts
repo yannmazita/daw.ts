@@ -82,13 +82,6 @@ export const useTransportControls = () => {
     [compositionEngine],
   );
 
-  const setTransportPosition = useCallback(
-    (position: number) => {
-      compositionEngine.setTransportPosition(position);
-    },
-    [compositionEngine],
-  );
-
   return {
     isPlaying,
     tempo,
@@ -108,7 +101,6 @@ export const useTransportControls = () => {
     setLoop,
     setLoopPoints,
     setTransportDuration,
-    setTransportPosition,
     transportState,
   };
 };

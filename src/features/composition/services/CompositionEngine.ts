@@ -13,7 +13,6 @@ import { CompositionAutomationService } from "./CompositionAutomationService";
 import { CompositionTrackService } from "./CompositionTrackService";
 import { TrackEngine, Track } from "@/features/tracks/types";
 import { Device, DeviceType, Send, MixerTrack } from "@/features/mix/types";
-import { Subdivision } from "tone/build/esm/core/type/Units";
 
 export class CompositionEngineImpl implements CompositionEngine {
   private disposed = false;
@@ -83,9 +82,6 @@ export class CompositionEngineImpl implements CompositionEngine {
   }
   getTransportPosition(): number {
     return this.transportService.getTransportPosition();
-  }
-  setTransportPosition(position: number): void {
-    return this.transportService.setTransportPosition(position);
   }
 
   // Mix methods
@@ -250,12 +246,12 @@ export class CompositionEngineImpl implements CompositionEngine {
     return this.clipService.getClipPlaybackPosition(clipId);
   }
 
-  dispose(): void {
+  async dispose(): Promise<void> {
     if (this.disposed) {
       return;
     }
     this.disposed = true;
-    this.transportService.dispose();
+    await this.transportService.dispose();
     this.samplerService.dispose();
     this.mixService.dispose();
     this.clipService.dispose();
