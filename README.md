@@ -4,7 +4,7 @@ Work in progress! Very early stage.
 
 `daw.ts` is a Digital Audio Workstation (DAW) application built with TypeScript, [React](https://react.dev/), [Zustand](https://github.com/pmndrs/zustand), and [Tone.js](https://tonejs.github.io/).
 
-![capture](https://github.com/user-attachments/assets/a5ebd776-026c-439a-862f-5dd7158097c8)
+![screenshot](https://github.com/user-attachments/assets/9ef3c5b1-001e-40e0-a901-cd18a7838254)
 
 ## Getting Started
 
