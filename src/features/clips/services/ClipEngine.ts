@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/no-empty-function */
 // src/features/clips/services/ClipEngine.ts
 import * as Tone from "tone";
 import { ClipEngine, CompositionClip, ClipState } from "../types";
@@ -8,16 +6,21 @@ import {
   updateTransportTempo,
   updateTransportTimeSignature,
 } from "@/features/transport/utils/midiUtils";
-import { startAudioPlayback, startMidiPlayback } from "../utils/midiPlayback";
+import { startAudioPlayback } from "../utils/playbackUtils";
+import { SamplerEngine } from "@/features/sampler/types";
+import { EngineState } from "@/core/stores/useEngineStore";
 
 export class ClipEngineImpl implements ClipEngine {
   private disposed = false;
+
+  constructor(private samplerEngine: SamplerEngine) {}
 
   async importMidi(
     state: ClipState,
     file: File,
     clipId?: string,
     trackId?: string,
+    instrumentId?: string,
   ): Promise<ClipState> {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -50,6 +53,7 @@ export class ClipEngineImpl implements ClipEngine {
               [clipId]: {
                 ...clip,
                 data: midi,
+                instrumentId: instrumentId,
               },
             };
           } else {
@@ -66,6 +70,7 @@ export class ClipEngineImpl implements ClipEngine {
               fadeIn: 0,
               fadeOut: 0,
               node: null,
+              instrumentId: instrumentId,
             };
             newState.clips = {
               ...state.clips,
@@ -96,6 +101,7 @@ export class ClipEngineImpl implements ClipEngine {
     startTime: number,
     parentId: string,
     name?: string,
+    instrumentId?: string,
   ): ClipState {
     const clipId = crypto.randomUUID();
     const newClip: CompositionClip = {
@@ -110,6 +116,7 @@ export class ClipEngineImpl implements ClipEngine {
       fadeIn: 0,
       fadeOut: 0,
       node: null,
+      instrumentId: instrumentId,
     };
     const newState = {
       ...state,
@@ -126,11 +133,7 @@ export class ClipEngineImpl implements ClipEngine {
     const { [clipId]: clipToDelete, ...remainingClips } = state.clips;
 
     if (clipToDelete?.node) {
-      if (clipToDelete.node instanceof Tone.Part) {
-        clipToDelete.node.dispose();
-      } else if (clipToDelete.node instanceof Tone.Player) {
-        clipToDelete.node.dispose();
-      }
+      clipToDelete.node.dispose();
     }
 
     return {
@@ -171,8 +174,29 @@ export class ClipEngineImpl implements ClipEngine {
     };
   }
 
-  playClip(state: ClipState, clipId: string, startTime?: number): ClipState {
-    const clip = state.clips[clipId];
+  setClipInstrument(
+    state: ClipState,
+    clipId: string,
+    instrumentId: string,
+  ): ClipState {
+    return {
+      ...state,
+      clips: {
+        ...state.clips,
+        [clipId]: {
+          ...state.clips[clipId],
+          instrumentId,
+        },
+      },
+    };
+  }
+
+  async playClip(
+    state: EngineState,
+    clipId: string,
+    startTime?: number,
+  ): Promise<EngineState> {
+    const clip = state.clips.clips[clipId];
     if (!clip?.data) {
       console.error(`Clip with id ${clipId} not found or has no data`);
       return state;
@@ -185,12 +209,17 @@ export class ClipEngineImpl implements ClipEngine {
 
     try {
       if (clip.type === "midi" && clip.data instanceof Midi) {
-        return startMidiPlayback(state, clip, startTime);
+        return await this.samplerEngine.startSamplerPlayback(
+          state,
+          clipId,
+          startTime,
+        );
       } else if (
         clip.type === "audio" &&
         clip.data instanceof Tone.ToneAudioBuffer
       ) {
-        return startAudioPlayback(state, clip, startTime);
+        const newClipState = startAudioPlayback(state.clips, clip, startTime);
+        return { ...state, clips: newClipState };
       } else {
         console.error(`Clip with id ${clipId} has invalid data`);
         return state;
@@ -256,7 +285,9 @@ export class ClipEngineImpl implements ClipEngine {
     return 0;
   }
 
-  private disposeNode(node: Tone.Player | Tone.PolySynth[] | null) {
+  private disposeNode(
+    node: Tone.Player | Tone.PolySynth[] | Tone.Sampler | null,
+  ) {
     if (Array.isArray(node)) {
       node.forEach((synth) => {
         synth.disconnect();
@@ -264,6 +295,8 @@ export class ClipEngineImpl implements ClipEngine {
       });
     } else if (node instanceof Tone.Player) {
       node.stop();
+      node.dispose();
+    } else if (node instanceof Tone.Sampler) {
       node.dispose();
     }
   }
@@ -274,7 +307,6 @@ export class ClipEngineImpl implements ClipEngine {
     for (const clipId in state.clips) {
       this.stopClip(state, clipId);
     }
-
     this.disposed = true;
   }
 }

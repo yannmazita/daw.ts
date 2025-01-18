@@ -1,10 +1,12 @@
 // src/features/composition/services/CompositionEngine.ts
 import { CompositionEngine } from "../types";
 import { TransportEngine } from "../../transport/types";
+import { SamplerEngine } from "../../sampler/types";
 import { ClipEngine, CompositionClip } from "../../clips/types";
 import { MixEngine } from "../../mix/types";
 import { AutomationEngine } from "../../automation/types";
 import { CompositionTransportService } from "./CompositionTransportService";
+import { CompositionSamplerService } from "./CompositionSamplerService";
 import { CompositionMixService } from "./CompositionMixService";
 import { CompositionClipService } from "./CompositionClipService";
 import { CompositionAutomationService } from "./CompositionAutomationService";
@@ -16,6 +18,7 @@ import { Subdivision } from "tone/build/esm/core/type/Units";
 export class CompositionEngineImpl implements CompositionEngine {
   private disposed = false;
   private readonly transportService: CompositionTransportService;
+  private readonly samplerService: CompositionSamplerService;
   private readonly mixService: CompositionMixService;
   private readonly clipService: CompositionClipService;
   private readonly trackService: CompositionTrackService;
@@ -23,12 +26,14 @@ export class CompositionEngineImpl implements CompositionEngine {
 
   constructor(
     public readonly transportEngine: TransportEngine,
+    public readonly samplerEngine: SamplerEngine,
     public readonly mixEngine: MixEngine,
     public readonly clipEngine: ClipEngine,
     public readonly trackEngine: TrackEngine,
     public readonly automationEngine: AutomationEngine,
   ) {
     this.transportService = new CompositionTransportService(transportEngine);
+    this.samplerService = new CompositionSamplerService(samplerEngine);
     this.mixService = new CompositionMixService(mixEngine);
     this.clipService = new CompositionClipService(clipEngine);
     this.trackService = new CompositionTrackService(
@@ -182,9 +187,28 @@ export class CompositionEngineImpl implements CompositionEngine {
     return this.trackService.getMeterValues(trackId);
   }
 
+  // Sampler methods
+  async startSamplerPlayback(
+    clipId: string,
+    startTime?: number,
+  ): Promise<void> {
+    return this.samplerService.startSamplerPlayback(clipId, startTime);
+  }
+  async loadLocalInstrument(): Promise<void> {
+    return this.samplerService.loadLocalInstrument();
+  }
+  getInstrumentsLoader() {
+    return this.samplerService.getInstrumentsLoader();
+  }
+
   // Clip Methods
-  importMidi(file: File, clipId?: string, trackId?: string): Promise<void> {
-    return this.clipService.importMidi(file, clipId, trackId);
+  importMidi(
+    file: File,
+    clipId?: string,
+    trackId?: string,
+    instrumentId?: string,
+  ): Promise<void> {
+    return this.clipService.importMidi(file, clipId, trackId, instrumentId);
   }
   exportMidi(clipId: string): Promise<void> {
     return this.clipService.exportMidi(clipId);
@@ -194,8 +218,15 @@ export class CompositionEngineImpl implements CompositionEngine {
     startTime: number,
     parentId: string,
     name?: string,
+    instrumentId?: string,
   ): void {
-    return this.clipService.createClip(type, startTime, parentId, name);
+    return this.clipService.createClip(
+      type,
+      startTime,
+      parentId,
+      name,
+      instrumentId,
+    );
   }
   deleteClip(clipId: string): void {
     return this.clipService.deleteClip(clipId);
@@ -206,7 +237,10 @@ export class CompositionEngineImpl implements CompositionEngine {
   setClipFades(clipId: string, fadeIn: number, fadeOut: number): void {
     return this.clipService.setClipFades(clipId, fadeIn, fadeOut);
   }
-  playClip(clipId: string, startTime?: number): void {
+  setClipInstrument(clipId: string, instrumentId: string): void {
+    return this.clipService.setClipInstrument(clipId, instrumentId);
+  }
+  async playClip(clipId: string, startTime?: number): Promise<void> {
     return this.clipService.playClip(clipId, startTime);
   }
   pauseClip(clipId: string): void {
@@ -225,6 +259,7 @@ export class CompositionEngineImpl implements CompositionEngine {
     }
     this.disposed = true;
     this.transportService.dispose();
+    this.samplerService.dispose();
     this.mixService.dispose();
     this.clipService.dispose();
     this.trackService.dispose();

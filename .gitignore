@@ -172,3 +172,5 @@ dist
 
 # SvelteKit build / generate output
 .svelte-kit
+
+data/samples/*

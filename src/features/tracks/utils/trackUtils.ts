@@ -25,8 +25,6 @@ export const createTrackData = (
     type,
     name: name ?? `${type} ${id.slice(0, 6)}`,
     controls: { ...initialTrackControlState },
-    clipIds: [],
-    automationIds: [],
     input,
     panner,
     channel,

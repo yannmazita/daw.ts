@@ -3,22 +3,34 @@ import { cn } from "@/common/shadcn/lib/utils";
 import * as Tone from "tone";
 import { useClipOperations } from "../hooks/useClipOperations";
 import { useClipControls } from "../hooks/useClipControls";
-import { useCallback, useRef } from "react";
+import { useCallback, useRef, useState } from "react";
 import {
   ContextMenu,
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuTrigger,
 } from "@/common/shadcn/ui/context-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/common/shadcn/ui/select";
+import { useEngineStore } from "@/core/stores/useEngineStore";
 
 interface ClipProps {
   clipId: string;
 }
 
 export const Clip: React.FC<ClipProps> = ({ clipId }) => {
-  const { importMidi } = useClipOperations();
+  const { importMidi, setClipInstrument } = useClipOperations();
   const { clip, playClip, pauseClip, stopClip } = useClipControls(clipId);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const instruments = useEngineStore((state) => state.sampler.instruments);
+  const [selectedInstrument, setSelectedInstrument] = useState<
+    string | undefined
+  >(clip?.instrumentId);
 
   const handleImportMidi = useCallback(() => {
     fileInputRef.current?.click();
@@ -30,7 +42,7 @@ export const Clip: React.FC<ClipProps> = ({ clipId }) => {
       if (!file) return;
 
       try {
-        await importMidi(file, clipId, undefined);
+        await importMidi(file, clipId, undefined, selectedInstrument);
       } catch (error) {
         console.error("Error importing MIDI:", error);
       }
@@ -40,8 +52,13 @@ export const Clip: React.FC<ClipProps> = ({ clipId }) => {
         fileInputRef.current.value = "";
       }
     },
-    [importMidi],
+    [importMidi, clipId, selectedInstrument],
   );
+
+  const handleInstrumentChange = (value: string) => {
+    setSelectedInstrument(value);
+    setClipInstrument(clipId, value);
+  };
 
   if (!clip) {
     return null;
@@ -71,6 +88,28 @@ export const Clip: React.FC<ClipProps> = ({ clipId }) => {
             <ContextMenuItem onClick={handleImportMidi}>
               Import MIDI
             </ContextMenuItem>
+          )}
+          {clip.type === "midi" && (
+            <div className="px-2">
+              <Select
+                value={selectedInstrument}
+                onValueChange={handleInstrumentChange}
+              >
+                <SelectTrigger
+                  className="h-7 w-40 rounded-none py-1 text-left"
+                  aria-label="Instrument"
+                >
+                  <SelectValue placeholder="Select Instrument" />
+                </SelectTrigger>
+                <SelectContent className="rounded-none">
+                  {Object.entries(instruments).map(([id, instrument]) => (
+                    <SelectItem key={id} value={id}>
+                      {instrument.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           )}
           <ContextMenuItem onClick={() => playClip()}>
             Play Clip

@@ -1,10 +1,11 @@
 // src/features/clips/types.ts
+import { EngineState } from "@/core/stores/useEngineStore";
 import { Midi } from "@tonejs/midi";
-import { Player, ToneAudioBuffer, PolySynth } from "tone";
+import { Player, ToneAudioBuffer, Sampler } from "tone";
 
 export interface CompositionClip {
   id: string;
-  parentId: string;
+  parentId: string; // id of parent track
   name: string;
   type: "midi" | "audio";
   data: Midi | ToneAudioBuffer | null;
@@ -14,13 +15,14 @@ export interface CompositionClip {
   fadeIn: number;
   fadeOut: number;
   playerStartTime?: number;
+  instrumentId?: string;
 
-  node: PolySynth[] | Player | null;
+  node: Sampler | Player | null;
 }
 
 export interface PersistableCompositionClip {
   id: string;
-  parentId: string; // id of parent track
+  parentId: string;
   name: string;
   type: "midi" | "audio";
   startTime: number;
@@ -28,6 +30,8 @@ export interface PersistableCompositionClip {
   duration: number;
   fadeIn: number;
   fadeOut: number;
+  playerStartTime?: number;
+  instrumentId?: string;
 }
 
 export interface ClipState {
@@ -45,6 +49,7 @@ export interface ClipEngine {
     file: File,
     clipId?: string,
     trackId?: string,
+    instrumentId?: string,
   ): Promise<ClipState>;
   exportMidi(state: ClipState, clipId: string): Midi;
 
@@ -55,6 +60,7 @@ export interface ClipEngine {
     startTime: number,
     parentId: string,
     name?: string,
+    instrumentId?: string,
   ): ClipState;
   deleteClip(state: ClipState, clipId: string): ClipState;
   moveClip(state: ClipState, clipId: string, newTime: number): ClipState;
@@ -66,9 +72,18 @@ export interface ClipEngine {
     fadeIn: number,
     fadeOut: number,
   ): ClipState;
+  setClipInstrument(
+    state: ClipState,
+    clipId: string,
+    instrumentId: string,
+  ): ClipState;
 
   // Clip playback
-  playClip(state: ClipState, clipId: string, startTime?: number): ClipState;
+  playClip(
+    state: EngineState,
+    clipId: string,
+    startTime?: number,
+  ): Promise<EngineState>;
   pauseClip(state: ClipState, clipId: string): ClipState;
   stopClip(state: ClipState, clipId: string): ClipState;
 

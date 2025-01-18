@@ -26,8 +26,6 @@ export interface BaseTrack {
   name: string;
   controls: TrackControlState;
 
-  automationIds: string[];
-
   // Tone.js nodes
   input: Gain;
   channel: Channel;
@@ -39,7 +37,6 @@ export interface PersistableBaseTrack {
   id: string;
   name: string;
   controls: PersistableTrackControlState;
-  automationIds: string[];
 }
 
 export interface AudioTrack extends BaseTrack {

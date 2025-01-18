@@ -1,16 +1,18 @@
 // src/core/engines/EngineManager.ts
 import { TransportEngineImpl } from "@/features/transport/services/TransportEngine";
+import { SamplerEngineImpl } from "@/features/sampler/services/SamplerEngine";
 import { ClipEngineImpl } from "@/features/clips/services/ClipEngine";
 import { MixEngineImpl } from "@/features/mix/services/MixEngine";
 import { AutomationEngineImpl } from "@/features/automation/services/AutomationEngine";
+import { TrackEngineImpl } from "@/features/tracks/services/TrackEngine";
 import { CompositionEngineImpl } from "@/features/composition/services/CompositionEngine";
 import { useEngineStore } from "../stores/useEngineStore";
-import { TrackEngineImpl } from "@/features/tracks/services/TrackEngine";
 
 export class EngineManager {
   private static instance: EngineManager | null;
 
   private _transport: TransportEngineImpl;
+  private _sampler: SamplerEngineImpl;
   private _mix: MixEngineImpl;
   private _clips: ClipEngineImpl;
   private _automation: AutomationEngineImpl;
@@ -24,9 +26,11 @@ export class EngineManager {
       useEngineStore.getState().transport,
     );
     console.log("Transport Engine initialized");
-    this._mix = new MixEngineImpl(useEngineStore.getState().mix);
+    this._sampler = new SamplerEngineImpl();
+    console.log("Sampler Engine initialized");
+    this._mix = new MixEngineImpl();
     console.log("Mix Engine initialized");
-    this._clips = new ClipEngineImpl();
+    this._clips = new ClipEngineImpl(this._sampler);
     console.log("Clip Engine initialized");
     this._automation = new AutomationEngineImpl();
     console.log("Automation Engine initialized");
@@ -34,6 +38,7 @@ export class EngineManager {
     console.log("Track Engine initialized");
     this._composition = new CompositionEngineImpl(
       this._transport,
+      this._sampler,
       this._mix,
       this._clips,
       this._tracks,
@@ -53,6 +58,10 @@ export class EngineManager {
 
   public get transport() {
     return this._transport;
+  }
+
+  public get sampler() {
+    return this._sampler;
   }
 
   public get mix() {
@@ -82,8 +91,9 @@ export class EngineManager {
     this._composition.dispose();
     this._tracks.dispose(useEngineStore.getState().tracks);
     this._automation.dispose();
-    this._clips.dispose(useEngineStore.getState());
+    this._clips.dispose(useEngineStore.getState().clips);
     this._mix.dispose(useEngineStore.getState().mix);
+    this._sampler.dispose();
     this._transport.dispose(useEngineStore.getState().transport);
 
     this._initialized = false;
