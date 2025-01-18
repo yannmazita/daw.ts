@@ -1,7 +1,6 @@
 // src/features/transport/hooks/useTransportControls.ts
 import { useCallback } from "react";
 import { useCompositionEngine } from "@/core/engines/EngineManager";
-import { Subdivision } from "tone/build/esm/core/type/Units";
 import { useEngineStore } from "@/core/stores/useEngineStore";
 
 export const useTransportControls = () => {
@@ -15,10 +14,6 @@ export const useTransportControls = () => {
   );
   const tapTimes = useEngineStore((state) => state.transport.tapTimes);
   const loop = useEngineStore((state) => state.transport.loop);
-  const swing = useEngineStore((state) => state.transport.swing);
-  const swingSubdivision = useEngineStore(
-    (state) => state.transport.swingSubdivision,
-  );
   const duration = useEngineStore((state) => state.transport.duration);
   const position = useEngineStore((state) => state.transport.position);
 
@@ -54,13 +49,6 @@ export const useTransportControls = () => {
   const setTimeSignature = useCallback(
     (numerator: number, denominator: number) => {
       compositionEngine.setTimeSignature(numerator, denominator);
-    },
-    [compositionEngine],
-  );
-
-  const setSwing = useCallback(
-    (amount: number, subdivision?: Subdivision) => {
-      compositionEngine.setSwing(amount, subdivision);
     },
     [compositionEngine],
   );
@@ -107,8 +95,6 @@ export const useTransportControls = () => {
     timeSignature,
     tapTimes,
     loop,
-    swing,
-    swingSubdivision,
     duration,
     position,
     play,
@@ -117,7 +103,6 @@ export const useTransportControls = () => {
     seekTo,
     setTempo,
     setTimeSignature,
-    setSwing,
     startTapTempo,
     endTapTempo,
     setLoop,

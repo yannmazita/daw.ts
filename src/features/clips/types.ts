@@ -20,26 +20,8 @@ export interface CompositionClip {
   node: Sampler | Player | null;
 }
 
-export interface PersistableCompositionClip {
-  id: string;
-  parentId: string;
-  name: string;
-  type: "midi" | "audio";
-  startTime: number;
-  pausedAt: number;
-  duration: number;
-  fadeIn: number;
-  fadeOut: number;
-  playerStartTime?: number;
-  instrumentId?: string;
-}
-
 export interface ClipState {
   clips: Record<string, CompositionClip>;
-}
-
-export interface PersistableClipState {
-  clips: Record<string, PersistableCompositionClip>;
 }
 
 export interface ClipEngine {

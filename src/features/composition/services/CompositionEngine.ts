@@ -63,9 +63,6 @@ export class CompositionEngineImpl implements CompositionEngine {
   setTimeSignature(numerator: number, denominator: number): void {
     return this.transportService.setTimeSignature(numerator, denominator);
   }
-  setSwing(amount: number, subdivision?: Subdivision): void {
-    return this.transportService.setSwing(amount, subdivision);
-  }
   startTapTempo(): void {
     return this.transportService.startTapTempo();
   }

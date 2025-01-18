@@ -1,11 +1,6 @@
 // src/features/transport/services/TransportEngine.ts
 import * as Tone from "tone";
-import {
-  BPM,
-  Subdivision,
-  Time,
-  TimeSignature,
-} from "tone/build/esm/core/type/Units";
+import { BPM, Time, TimeSignature } from "tone/build/esm/core/type/Units";
 import { TransportEngine, TransportState } from "../types";
 import { updateTransportState } from "../utils/stateUtils";
 
@@ -29,8 +24,6 @@ export class TransportEngineImpl implements TransportEngine {
       this.updateTransportRuntime({
         bpm: state.tempo,
         timeSignature: state.timeSignature,
-        swing: state.swing,
-        swingSubdivision: state.swingSubdivision,
       });
 
       // Configure loop settings
@@ -50,8 +43,6 @@ export class TransportEngineImpl implements TransportEngine {
   private updateTransportRuntime(settings: {
     bpm?: number;
     timeSignature?: number[];
-    swing?: number;
-    swingSubdivision?: Subdivision;
     duration?: number;
   }): void {
     try {
@@ -60,12 +51,6 @@ export class TransportEngineImpl implements TransportEngine {
       }
       if (settings.timeSignature !== undefined) {
         this.transport.timeSignature = settings.timeSignature;
-      }
-      if (settings.swing !== undefined) {
-        this.transport.swing = settings.swing;
-      }
-      if (settings.swingSubdivision !== undefined) {
-        this.transport.swingSubdivision = settings.swingSubdivision;
       }
       if (settings.duration !== undefined) {
         this.transport.seconds = settings.duration;
@@ -167,36 +152,6 @@ export class TransportEngineImpl implements TransportEngine {
       return updateTransportState(state, { timeSignature });
     } catch (error) {
       console.error("Failed to set time signature:");
-      throw error;
-    }
-  }
-
-  setSwing(
-    state: TransportState,
-    amount: number,
-    subdivision?: Subdivision,
-  ): TransportState {
-    this.checkDisposed();
-
-    if (typeof amount !== "number" || !isFinite(amount)) {
-      throw new Error("Swing amount must be a finite number");
-    }
-
-    if (amount < 0 || amount > 1) {
-      throw new Error("Swing amount must be between 0 and 1");
-    }
-
-    try {
-      this.updateTransportRuntime({
-        swing: amount,
-        ...(subdivision && { swingSubdivision: subdivision }),
-      });
-      return updateTransportState(state, {
-        swing: amount,
-        ...(subdivision && { swingSubdivision: subdivision }),
-      });
-    } catch (error) {
-      console.error("Failed to set swing");
       throw error;
     }
   }

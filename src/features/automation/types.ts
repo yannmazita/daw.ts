@@ -28,16 +28,6 @@ export interface AutomationState {
   >;
 }
 
-export interface PersistableAutomationState {
-  lanes: Record<string, AutomationLane>;
-  activeAutomation: Record<
-    string,
-    {
-      points: AutomationPoint[];
-    }
-  >;
-}
-
 export interface AutomationEngine {
   createLane(targetType: string, targetId: string, parameterId: string): string;
   deleteLane(laneId: string): void;

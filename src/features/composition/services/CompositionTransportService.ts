@@ -1,7 +1,6 @@
 // src/features/composition/services/CompositionTransportService.ts
 import { TransportEngine } from "@/features/transport/types";
 import { useEngineStore } from "@/core/stores/useEngineStore";
-import { Subdivision } from "tone/build/esm/core/type/Units";
 
 export class CompositionTransportService {
   constructor(private readonly transportEngine: TransportEngine) {}
@@ -43,12 +42,6 @@ export class CompositionTransportService {
       numerator,
       denominator,
     );
-    useEngineStore.setState({ transport: newState });
-  }
-
-  setSwing(amount: number, subdivision?: Subdivision): void {
-    const state = useEngineStore.getState().transport;
-    const newState = this.transportEngine.setSwing(state, amount, subdivision);
     useEngineStore.setState({ transport: newState });
   }
 

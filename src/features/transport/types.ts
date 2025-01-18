@@ -1,5 +1,4 @@
 // src/features/transport/types.ts
-import { Subdivision } from "tone/build/esm/core/type/Units";
 
 export interface TransportState {
   isPlaying: boolean;
@@ -14,9 +13,6 @@ export interface TransportState {
     start: number;
     end: number;
   };
-
-  swing: number;
-  swingSubdivision: Subdivision;
 
   duration: number;
   position: number;
@@ -35,11 +31,6 @@ export interface TransportEngine {
     state: TransportState,
     numerator: number,
     denominator: number,
-  ): TransportState;
-  setSwing(
-    state: TransportState,
-    amount: number,
-    subdivision?: Subdivision,
   ): TransportState;
 
   // Tap

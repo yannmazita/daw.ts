@@ -8,8 +8,6 @@ import { TrackEngine } from "../tracks/types";
 
 export interface CompositionState {}
 
-export interface PersistableCompositionState {}
-
 export interface CompositionEngine {
   transportEngine: TransportEngine;
   samplerEngine: SamplerEngine;
