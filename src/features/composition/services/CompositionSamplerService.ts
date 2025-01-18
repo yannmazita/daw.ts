@@ -5,9 +5,12 @@ import { SamplerEngine } from "@/features/sampler/types";
 export class CompositionSamplerService {
   constructor(private readonly samplerEngine: SamplerEngine) {}
 
-  startSamplerPlayback(clipId: string, startTime?: number): void {
+  async startSamplerPlayback(
+    clipId: string,
+    startTime?: number,
+  ): Promise<void> {
     const state = useEngineStore.getState();
-    const newState = this.samplerEngine.startSamplerPlayback(
+    const newState = await this.samplerEngine.startSamplerPlayback(
       state,
       clipId,
       startTime,

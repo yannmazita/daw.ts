@@ -188,7 +188,10 @@ export class CompositionEngineImpl implements CompositionEngine {
   }
 
   // Sampler methods
-  startSamplerPlayback(clipId: string, startTime?: number): void {
+  async startSamplerPlayback(
+    clipId: string,
+    startTime?: number,
+  ): Promise<void> {
     return this.samplerService.startSamplerPlayback(clipId, startTime);
   }
   async loadLocalInstrument(): Promise<void> {
@@ -237,7 +240,7 @@ export class CompositionEngineImpl implements CompositionEngine {
   setClipInstrument(clipId: string, instrumentId: string): void {
     return this.clipService.setClipInstrument(clipId, instrumentId);
   }
-  playClip(clipId: string, startTime?: number): void {
+  async playClip(clipId: string, startTime?: number): Promise<void> {
     return this.clipService.playClip(clipId, startTime);
   }
   pauseClip(clipId: string): void {

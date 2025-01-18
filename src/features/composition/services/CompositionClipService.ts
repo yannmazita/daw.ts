@@ -80,9 +80,9 @@ export class CompositionClipService {
     useEngineStore.setState({ clips: newState });
   }
 
-  playClip(clipId: string, startTime?: number): void {
+  async playClip(clipId: string, startTime?: number): Promise<void> {
     const state = useEngineStore.getState();
-    const newState = this.clipEngine.playClip(state, clipId, startTime);
+    const newState = await this.clipEngine.playClip(state, clipId, startTime);
     useEngineStore.setState({
       clips: newState.clips,
       sampler: newState.sampler,

@@ -63,8 +63,8 @@ export const useClipOperations = () => {
     [compositionEngine],
   );
   const playClip = useCallback(
-    (clipId: string, startTime?: number) => {
-      compositionEngine.playClip(clipId, startTime);
+    async (clipId: string, startTime?: number) => {
+      await compositionEngine.playClip(clipId, startTime);
     },
     [compositionEngine],
   );

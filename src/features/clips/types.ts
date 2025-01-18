@@ -79,7 +79,11 @@ export interface ClipEngine {
   ): ClipState;
 
   // Clip playback
-  playClip(state: EngineState, clipId: string, startTime?: number): EngineState;
+  playClip(
+    state: EngineState,
+    clipId: string,
+    startTime?: number,
+  ): Promise<EngineState>;
   pauseClip(state: ClipState, clipId: string): ClipState;
   stopClip(state: ClipState, clipId: string): ClipState;
 

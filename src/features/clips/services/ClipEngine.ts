@@ -191,11 +191,11 @@ export class ClipEngineImpl implements ClipEngine {
     };
   }
 
-  playClip(
+  async playClip(
     state: EngineState,
     clipId: string,
     startTime?: number,
-  ): EngineState {
+  ): Promise<EngineState> {
     const clip = state.clips.clips[clipId];
     if (!clip?.data) {
       console.error(`Clip with id ${clipId} not found or has no data`);
@@ -209,7 +209,7 @@ export class ClipEngineImpl implements ClipEngine {
 
     try {
       if (clip.type === "midi" && clip.data instanceof Midi) {
-        return this.samplerEngine.startSamplerPlayback(
+        return await this.samplerEngine.startSamplerPlayback(
           state,
           clipId,
           startTime,

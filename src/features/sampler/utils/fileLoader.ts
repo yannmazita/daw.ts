@@ -118,8 +118,11 @@ export class FileLoader {
     if (typeof file === "string") {
       if (pathGetExt(file).length === 0) return;
       const fileKey: string = pathGetSubDirectory(file, this.root);
+      console.log("fileKey", fileKey);
       let fileRef: FileLocal | FileRemote | undefined = this.files[fileKey];
+      console.log("fileRef", fileRef);
       if (!fileRef) fileRef = this.addFile(file);
+      console.log("fileRef", fileRef);
       if (fileRef?.contents) return fileRef;
       if (file.startsWith("http"))
         return await this.loadFileRemote(fileRef as FileRemote, buffer);

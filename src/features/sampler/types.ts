@@ -52,7 +52,7 @@ export interface SamplerEngine {
     state: EngineState,
     clipId: string,
     startTime?: number,
-  ): EngineState;
+  ): Promise<EngineState>;
 
   loadLocalInstrument(state: SamplerState): Promise<SamplerState>;
   getInstrumentsLoader(): FileLoader;
