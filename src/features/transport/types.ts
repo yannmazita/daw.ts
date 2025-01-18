@@ -1,4 +1,12 @@
 // src/features/transport/types.ts
+
+export interface TransportClockConfig {
+  tapTimeout: number;
+  maxTapHistory: number;
+  minTapInterval: number;
+  maxTapInterval: number;
+}
+
 export interface TransportState {
   isPlaying: boolean;
   isRecording: boolean;

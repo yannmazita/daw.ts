@@ -1,5 +1,10 @@
 // src/features/transport/services/TransportEngine.ts
-import { TransportEngine, TransportState } from "../types";
+import {
+  TransportEngine,
+  TransportState,
+  TransportClockConfig,
+} from "../types";
+import { TransportClock } from "./TransportClock";
 
 /**
  * Provides core transport functionality
@@ -7,28 +12,35 @@ import { TransportEngine, TransportState } from "../types";
 export class TransportEngineImpl implements TransportEngine {
   private disposed = false;
   private audioContext: AudioContext;
-  private clockSource: AudioBufferSourceNode | null = null;
-  private startTime = 0;
+  private clock: TransportClock;
   private _position = 0;
   private _tempo: number;
   private _timeSignature: number[];
-  private static readonly MAX_TAP_HISTORY = 4;
-  private static readonly MIN_TAP_INTERVAL = 200; // ms
-  private static readonly MAX_TAP_INTERVAL = 3000; // ms
-  private static readonly TAP_TIMEOUT = 3000; // ms
   private tapTimeoutId: number | null = null;
   private _loop: { enabled: boolean; start: number; end: number };
   private _duration = 0;
+  private config: TransportClockConfig;
 
   /**
    * TransportEngineImpl constructor.
    * @param state - The initial transport state.
+   * @param config - Transport clock config.
    */
-  constructor(state: TransportState) {
+  constructor(
+    state: TransportState,
+    config: Partial<TransportClockConfig> = {},
+  ) {
     this.audioContext = new AudioContext();
     this._tempo = state.tempo;
     this._timeSignature = state.timeSignature;
     this._loop = state.loop;
+    this.config = {
+      tapTimeout: config.tapTimeout ?? 3000,
+      maxTapHistory: config.maxTapHistory ?? 4,
+      minTapInterval: config.minTapInterval ?? 200,
+      maxTapInterval: config.maxTapInterval ?? 3000,
+    };
+    this.clock = new TransportClock(this.audioContext, this._tempo, this.tick);
     this.initializeTransport(state);
   }
 
@@ -56,37 +68,14 @@ export class TransportEngineImpl implements TransportEngine {
    * @private
    */
   private tick = () => {
-    if (this.audioContext.state === "running") {
-      this._position =
-        (this.audioContext.currentTime - this.startTime) * (this._tempo / 60);
-      if (this._loop.enabled) {
-        if (this._position >= this._loop.end) {
-          this._position = this._loop.start + (this._position - this._loop.end);
-        }
+    this._position = this.clock.getPosition();
+    if (this._loop.enabled) {
+      if (this._position >= this._loop.end) {
+        this._position = this._loop.start + (this._position - this._loop.end);
+        this.clock.seek(this._position);
       }
-      this.scheduleTick();
     }
   };
-
-  /**
-   * Schedules the next tick using AudioBufferSourceNode.
-   * @private
-   */
-  private scheduleTick() {
-    if (this.audioContext.state === "running") {
-      this.clockSource = this.audioContext.createBufferSource();
-      const buffer = this.audioContext.createBuffer(
-        1,
-        1,
-        this.audioContext.sampleRate,
-      );
-      this.clockSource.buffer = buffer;
-      this.clockSource.connect(this.audioContext.destination);
-      this.clockSource.onended = this.tick;
-      const secondsPerBeat = 60 / this._tempo;
-      this.clockSource.start(this.audioContext.currentTime + secondsPerBeat);
-    }
-  }
 
   /**
    * Starts the transport playback.
@@ -101,10 +90,7 @@ export class TransportEngineImpl implements TransportEngine {
       if (this.audioContext.state === "suspended") {
         await this.audioContext.resume();
       }
-      this.startTime =
-        this.audioContext.currentTime -
-        (time ?? this._position / (this._tempo / 60));
-      this.scheduleTick();
+      this.clock.start(time ?? this._position);
       return { ...state, isPlaying: true };
     } catch (error) {
       console.error("Failed to start transport", error);
@@ -121,12 +107,7 @@ export class TransportEngineImpl implements TransportEngine {
     this.checkDisposed();
 
     try {
-      if (this.clockSource) {
-        this.clockSource.onended = null;
-        this.clockSource.stop();
-        this.clockSource.disconnect();
-        this.clockSource = null;
-      }
+      this.clock.stop();
       return { ...state, isPlaying: false };
     } catch (error) {
       console.error("Failed to pause transport");
@@ -143,12 +124,7 @@ export class TransportEngineImpl implements TransportEngine {
     this.checkDisposed();
 
     try {
-      if (this.clockSource) {
-        this.clockSource.onended = null;
-        this.clockSource.stop();
-        this.clockSource.disconnect();
-        this.clockSource = null;
-      }
+      this.clock.stop();
       this._position = 0;
       return { ...state, isPlaying: false, position: 0, isRecording: false };
     } catch (error) {
@@ -172,16 +148,7 @@ export class TransportEngineImpl implements TransportEngine {
 
     try {
       this._position = time;
-      this.startTime =
-        this.audioContext.currentTime - this._position / (this._tempo / 60);
-      if (this.clockSource && this.audioContext.state === "running") {
-        this.clockSource.onended = null;
-        this.clockSource.stop();
-        this.clockSource.disconnect();
-        this.clockSource = null;
-        this.scheduleTick();
-      }
-
+      this.clock.seek(this._position);
       return { ...state, position: time };
     } catch (error) {
       console.error("Failed to seek:", error);
@@ -204,6 +171,7 @@ export class TransportEngineImpl implements TransportEngine {
 
     try {
       this._tempo = tempo;
+      this.clock.setTempo(this._tempo);
       return { ...state, tempo };
     } catch (error) {
       console.error("Failed to set tempo:", error);
@@ -253,14 +221,14 @@ export class TransportEngineImpl implements TransportEngine {
 
     this.tapTimeoutId = window.setTimeout(() => {
       this.endTapTempo(state);
-    }, TransportEngineImpl.TAP_TIMEOUT);
+    }, this.config.tapTimeout);
 
     // Handle invalid intervals
     if (state.tapTimes.length > 0) {
       const interval = now - state.tapTimes[state.tapTimes.length - 1];
       if (
-        interval < TransportEngineImpl.MIN_TAP_INTERVAL ||
-        interval > TransportEngineImpl.MAX_TAP_INTERVAL
+        interval < this.config.minTapInterval ||
+        interval > this.config.maxTapInterval
       ) {
         this.endTapTempo(state);
         return { ...state, tapTimes: [now] };
@@ -270,9 +238,7 @@ export class TransportEngineImpl implements TransportEngine {
     // Update tap times in state
     const updatedState = {
       ...state,
-      tapTimes: [...state.tapTimes, now].slice(
-        -TransportEngineImpl.MAX_TAP_HISTORY,
-      ),
+      tapTimes: [...state.tapTimes, now].slice(-this.config.maxTapHistory),
     };
     // Calculate BPM if possible
     if (updatedState.tapTimes.length >= 2) {
@@ -427,8 +393,7 @@ export class TransportEngineImpl implements TransportEngine {
     }
     try {
       this._position = position;
-      this.startTime =
-        this.audioContext.currentTime - this._position / (this._tempo / 60);
+      this.clock.seek(this._position);
       return { ...state, position };
     } catch (error) {
       console.error("Failed updating position", error);
@@ -447,12 +412,7 @@ export class TransportEngineImpl implements TransportEngine {
     try {
       this.disposed = true;
       this.endTapTempo(state);
-      if (this.clockSource) {
-        this.clockSource.onended = null;
-        this.clockSource.stop();
-        this.clockSource.disconnect();
-        this.clockSource = null;
-      }
+      this.clock.dispose();
       await this.audioContext.close();
     } catch (error) {
       console.error("Failed to dispose transport engine", error);
@@ -469,5 +429,13 @@ export class TransportEngineImpl implements TransportEngine {
     if (this.disposed) {
       throw new Error("TransportEngine is disposed");
     }
+  }
+
+  /**
+   * Gets the audio context.
+   * @returns The audio context.
+   */
+  getAudioContext(): AudioContext {
+    return this.audioContext;
   }
 }
