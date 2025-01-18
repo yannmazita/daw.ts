@@ -1,108 +1,168 @@
 // src/features/transport/services/TransportEngine.ts
-import * as Tone from "tone";
-import { BPM, Time, TimeSignature } from "tone/build/esm/core/type/Units";
 import { TransportEngine, TransportState } from "../types";
-import { updateTransportState } from "../utils/stateUtils";
 
+/**
+ * Provides core transport functionality
+ */
 export class TransportEngineImpl implements TransportEngine {
   private disposed = false;
-  private transport: ReturnType<typeof Tone.getTransport>;
+  private audioContext: AudioContext;
+  private clockSource: AudioBufferSourceNode | null = null;
+  private startTime = 0;
+  private _position = 0;
+  private _tempo: number;
+  private _timeSignature: number[];
   private static readonly MAX_TAP_HISTORY = 4;
   private static readonly MIN_TAP_INTERVAL = 200; // ms
   private static readonly MAX_TAP_INTERVAL = 3000; // ms
   private static readonly TAP_TIMEOUT = 3000; // ms
   private tapTimeoutId: number | null = null;
+  private _loop: { enabled: boolean; start: number; end: number };
+  private _duration = 0;
 
+  /**
+   * TransportEngineImpl constructor.
+   * @param state - The initial transport state.
+   */
   constructor(state: TransportState) {
-    this.transport = Tone.getTransport();
+    this.audioContext = new AudioContext();
+    this._tempo = state.tempo;
+    this._timeSignature = state.timeSignature;
+    this._loop = state.loop;
     this.initializeTransport(state);
   }
 
+  /**
+   * Initializes the transport engine with the provided state.
+   * @param state - The initial transport state.
+   * @private
+   */
   private initializeTransport(state: TransportState): void {
     try {
       // Configure transport settings
-      this.updateTransportRuntime({
-        bpm: state.tempo,
-        timeSignature: state.timeSignature,
-      });
+      this._tempo = state.tempo;
+      this._timeSignature = state.timeSignature;
 
       // Configure loop settings
-      if (state.loop.enabled) {
-        this.updateLoopSettings({
-          enabled: true,
-          start: state.loop.start,
-          end: state.loop.end,
-        });
-      }
+      this._loop = state.loop;
     } catch (error) {
       console.error("Transport initialization failed");
       throw error;
     }
   }
 
-  private updateTransportRuntime(settings: {
-    bpm?: number;
-    timeSignature?: number[];
-    duration?: number;
-  }): void {
-    try {
-      if (settings.bpm !== undefined) {
-        this.transport.bpm.value = settings.bpm;
+  /**
+   * Calculates the current position and schedules the next tick.
+   * @private
+   */
+  private tick = () => {
+    if (this.audioContext.state === "running") {
+      this._position =
+        (this.audioContext.currentTime - this.startTime) * (this._tempo / 60);
+      if (this._loop.enabled) {
+        if (this._position >= this._loop.end) {
+          this._position = this._loop.start + (this._position - this._loop.end);
+        }
       }
-      if (settings.timeSignature !== undefined) {
-        this.transport.timeSignature = settings.timeSignature;
-      }
-      if (settings.duration !== undefined) {
-        this.transport.seconds = settings.duration;
-      }
-    } catch (error) {
-      console.error("Failed to update transport settings");
-      throw error;
+      this.scheduleTick();
+    }
+  };
+
+  /**
+   * Schedules the next tick using AudioBufferSourceNode.
+   * @private
+   */
+  private scheduleTick() {
+    if (this.audioContext.state === "running") {
+      this.clockSource = this.audioContext.createBufferSource();
+      const buffer = this.audioContext.createBuffer(
+        1,
+        1,
+        this.audioContext.sampleRate,
+      );
+      this.clockSource.buffer = buffer;
+      this.clockSource.connect(this.audioContext.destination);
+      this.clockSource.onended = this.tick;
+      const secondsPerBeat = 60 / this._tempo;
+      this.clockSource.start(this.audioContext.currentTime + secondsPerBeat);
     }
   }
 
-  async play(state: TransportState, time?: Time): Promise<TransportState> {
+  /**
+   * Starts the transport playback.
+   * @param state - The current transport state.
+   * @param time - The optional start time in beats.
+   * @returns A promise that resolves with the updated transport state.
+   */
+  async play(state: TransportState, time?: number): Promise<TransportState> {
     this.checkDisposed();
 
     try {
-      await Tone.start();
-      this.transport.start(time);
-      return updateTransportState(state, { isPlaying: true });
+      if (this.audioContext.state === "suspended") {
+        await this.audioContext.resume();
+      }
+      this.startTime =
+        this.audioContext.currentTime -
+        (time ?? this._position / (this._tempo / 60));
+      this.scheduleTick();
+      return { ...state, isPlaying: true };
     } catch (error) {
-      console.error("Failed to start transport");
+      console.error("Failed to start transport", error);
       throw error;
     }
   }
 
+  /**
+   * Pauses the transport playback.
+   * @param state - The current transport state.
+   * @returns The updated transport state.
+   */
   pause(state: TransportState): TransportState {
     this.checkDisposed();
 
     try {
-      this.transport.pause();
-
-      return updateTransportState(state, { isPlaying: false });
+      if (this.clockSource) {
+        this.clockSource.onended = null;
+        this.clockSource.stop();
+        this.clockSource.disconnect();
+        this.clockSource = null;
+      }
+      return { ...state, isPlaying: false };
     } catch (error) {
       console.error("Failed to pause transport");
       throw error;
     }
   }
 
+  /**
+   * Stops the transport playback and resets the position to 0.
+   * @param state - The current transport state.
+   * @returns The updated transport state.
+   */
   stop(state: TransportState): TransportState {
     this.checkDisposed();
 
     try {
-      this.transport.stop();
-
-      return updateTransportState(state, {
-        isPlaying: false,
-        isRecording: false,
-      });
+      if (this.clockSource) {
+        this.clockSource.onended = null;
+        this.clockSource.stop();
+        this.clockSource.disconnect();
+        this.clockSource = null;
+      }
+      this._position = 0;
+      return { ...state, isPlaying: false, position: 0, isRecording: false };
     } catch (error) {
       console.error("Failed to stop transport");
       throw error;
     }
   }
 
+  /**
+   * Seeks transport to position.
+   * @param state - The current transport state.
+   * @param time - The target position in beats.
+   * @returns The updated transport state.
+   */
   seekTo(state: TransportState, time: number): TransportState {
     this.checkDisposed();
 
@@ -111,15 +171,31 @@ export class TransportEngineImpl implements TransportEngine {
     }
 
     try {
-      this.transport.seconds = time;
-      return updateTransportState(state, { position: time });
+      this._position = time;
+      this.startTime =
+        this.audioContext.currentTime - this._position / (this._tempo / 60);
+      if (this.clockSource && this.audioContext.state === "running") {
+        this.clockSource.onended = null;
+        this.clockSource.stop();
+        this.clockSource.disconnect();
+        this.clockSource = null;
+        this.scheduleTick();
+      }
+
+      return { ...state, position: time };
     } catch (error) {
-      console.error("Failed to seek:");
+      console.error("Failed to seek:", error);
       throw error;
     }
   }
 
-  setTempo(state: TransportState, tempo: BPM): TransportState {
+  /**
+   * Sets transport tempo.
+   * @param state - The current transport state.
+   * @param tempo - The new tempo in BPM.
+   * @returns The updated transport state.
+   */
+  setTempo(state: TransportState, tempo: number): TransportState {
     this.checkDisposed();
 
     if (tempo < 20 || tempo > 999) {
@@ -127,14 +203,21 @@ export class TransportEngineImpl implements TransportEngine {
     }
 
     try {
-      this.updateTransportRuntime({ bpm: tempo });
-      return updateTransportState(state, { tempo });
+      this._tempo = tempo;
+      return { ...state, tempo };
     } catch (error) {
-      console.error("Failed to set tempo:");
+      console.error("Failed to set tempo:", error);
       throw error;
     }
   }
 
+  /**
+   * Sets transport time signature.
+   * @param state - The current transport state.
+   * @param numerator - Time signature numerator.
+   * @param denominator - Time signature denominator.
+   * @returns The updated transport state.
+   */
   setTimeSignature(
     state: TransportState,
     numerator: number,
@@ -147,15 +230,19 @@ export class TransportEngineImpl implements TransportEngine {
     }
 
     try {
-      const timeSignature: TimeSignature = [numerator, denominator];
-      this.updateTransportRuntime({ timeSignature });
-      return updateTransportState(state, { timeSignature });
+      this._timeSignature = [numerator, denominator];
+      return { ...state, timeSignature: [numerator, denominator] };
     } catch (error) {
-      console.error("Failed to set time signature:");
+      console.error("Failed to set time signature:", error);
       throw error;
     }
   }
 
+  /**
+   * Starts the tap tempo process.
+   * @param state - The current transport state.
+   * @returns The updated transport state.
+   */
   startTapTempo(state: TransportState): TransportState {
     const now = performance.now();
 
@@ -176,17 +263,17 @@ export class TransportEngineImpl implements TransportEngine {
         interval > TransportEngineImpl.MAX_TAP_INTERVAL
       ) {
         this.endTapTempo(state);
-        return updateTransportState(state, { tapTimes: [now] });
+        return { ...state, tapTimes: [now] };
       }
     }
 
     // Update tap times in state
-    const updatedState = updateTransportState(state, {
+    const updatedState = {
+      ...state,
       tapTimes: [...state.tapTimes, now].slice(
         -TransportEngineImpl.MAX_TAP_HISTORY,
       ),
-    });
-
+    };
     // Calculate BPM if possible
     if (updatedState.tapTimes.length >= 2) {
       const bpm = this.calculateTapTempo(updatedState.tapTimes);
@@ -201,16 +288,27 @@ export class TransportEngineImpl implements TransportEngine {
     return updatedState;
   }
 
+  /**
+   * Ends the tap tempo process.
+   * @param state - The current transport state.
+   * @returns The updated transport state.
+   */
   endTapTempo(state: TransportState): TransportState {
     if (this.tapTimeoutId) {
       clearTimeout(this.tapTimeoutId);
       this.tapTimeoutId = null;
     }
 
-    return updateTransportState(state, { tapTimes: [] });
+    return { ...state, tapTimes: [] };
   }
 
-  private calculateTapTempo(times: number[]): BPM | null {
+  /**
+   * Calculates the tempo based on the tap times.
+   * @param times - The array of tap times.
+   * @returns The calculated tempo in BPM, or null if it cannot be calculated.
+   * @private
+   */
+  private calculateTapTempo(times: number[]): number | null {
     const intervals = [];
     for (let i = 1; i < times.length; i++) {
       intervals.push(times[i] - times[i - 1]);
@@ -226,45 +324,32 @@ export class TransportEngineImpl implements TransportEngine {
     return bpm >= 20 && bpm <= 999 ? bpm : null;
   }
 
-  private updateLoopSettings(settings: {
-    enabled?: boolean;
-    start?: Time;
-    end?: Time;
-  }): void {
-    try {
-      if (settings.enabled !== undefined) {
-        this.transport.loop = settings.enabled;
-      }
-      if (settings.start !== undefined) {
-        this.transport.loopStart = settings.start;
-      }
-      if (settings.end !== undefined) {
-        this.transport.loopEnd = settings.end;
-      }
-    } catch (error) {
-      console.error("Failed to update loop settings");
-      throw error;
-    }
-  }
-
+  /**
+   * Sets the loop enabled state.
+   * @param state - The current transport state.
+   * @param enabled - Whether the loop is enabled.
+   * @returns The updated transport state.
+   */
   setLoop(state: TransportState, enabled: boolean): TransportState {
     this.checkDisposed();
 
     try {
-      this.updateLoopSettings({ enabled });
+      this._loop = { ...this._loop, enabled };
 
-      return updateTransportState(state, {
-        loop: {
-          ...state.loop,
-          enabled,
-        },
-      });
+      return { ...state, loop: { ...state.loop, enabled } };
     } catch (error) {
-      console.error("Failed to set loop");
+      console.error("Failed to set loop", error);
       throw error;
     }
   }
 
+  /**
+   * Sets the loop points.
+   * @param state - The current transport state.
+   * @param start - The loop start point in beats.
+   * @param end - The loop end point in beats.
+   * @returns The updated transport state.
+   */
   setLoopPoints(
     state: TransportState,
     start: number,
@@ -277,24 +362,28 @@ export class TransportEngineImpl implements TransportEngine {
     }
 
     try {
-      this.updateLoopSettings({ start, end });
-      return updateTransportState(state, {
-        loop: {
-          ...state.loop,
-          start,
-          end,
-        },
-      });
+      this._loop = { ...this._loop, start, end };
+      return { ...state, loop: { ...state.loop, start, end } };
     } catch (error) {
-      console.error("Failed to set loop points");
+      console.error("Failed to set loop points", error);
       throw error;
     }
   }
 
+  /**
+   * Gets the transport duration.
+   * @returns The transport duration in beats.
+   */
   getTransportDuration(): number {
-    return Tone.getTransport().seconds;
+    return this._duration;
   }
 
+  /**
+   * Sets the transport duration.
+   * @param state - The current transport state.
+   * @param duration - The new transport duration in beats.
+   * @returns The updated transport state.
+   */
   setTransportDuration(
     state: TransportState,
     duration: number,
@@ -306,18 +395,28 @@ export class TransportEngineImpl implements TransportEngine {
     }
 
     try {
-      this.updateTransportRuntime({ duration });
-      return updateTransportState(state, { duration });
+      this._duration = duration;
+      return { ...state, duration };
     } catch (error) {
-      console.error("Failed updating duration");
+      console.error("Failed updating duration", error);
       throw error;
     }
   }
 
+  /**
+   * Gets the current transport position.
+   * @returns The current transport position in beats.
+   */
   getTransportPosition(): number {
-    return Tone.Time(Tone.getTransport().position).toSeconds();
+    return this._position;
   }
 
+  /**
+   * Sets the transport position.
+   * @param state - The current transport state.
+   * @param position - The new transport position in beats.
+   * @returns The updated transport state.
+   */
   setTransportPosition(
     state: TransportState,
     position: number,
@@ -327,26 +426,45 @@ export class TransportEngineImpl implements TransportEngine {
       throw new Error("Position cannot be negative");
     }
     try {
-      this.transport.seconds = position;
-      return updateTransportState(state, { position });
+      this._position = position;
+      this.startTime =
+        this.audioContext.currentTime - this._position / (this._tempo / 60);
+      return { ...state, position };
     } catch (error) {
-      console.error("Failed updating position");
+      console.error("Failed updating position", error);
       throw error;
     }
   }
 
-  dispose(state: TransportState): void {
+  /**
+   * Disposes of the transport engine and releases resources.
+   * @param state - The current transport state.
+   * @returns A promise that resolves when the transport engine is disposed.
+   */
+  async dispose(state: TransportState): Promise<void> {
     this.checkDisposed();
 
     try {
       this.disposed = true;
       this.endTapTempo(state);
+      if (this.clockSource) {
+        this.clockSource.onended = null;
+        this.clockSource.stop();
+        this.clockSource.disconnect();
+        this.clockSource = null;
+      }
+      await this.audioContext.close();
     } catch (error) {
-      console.error("Failed to dispose transport engine");
+      console.error("Failed to dispose transport engine", error);
       throw error;
     }
   }
 
+  /**
+   * Checks if the transport engine has been disposed of.
+   * @private
+   * @throws {Error} If the transport engine is disposed.
+   */
   private checkDisposed(): void {
     if (this.disposed) {
       throw new Error("TransportEngine is disposed");

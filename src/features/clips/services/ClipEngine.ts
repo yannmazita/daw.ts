@@ -2,10 +2,6 @@
 import * as Tone from "tone";
 import { ClipEngine, CompositionClip, ClipState } from "../types";
 import { Midi } from "@tonejs/midi";
-import {
-  updateTransportTempo,
-  updateTransportTimeSignature,
-} from "@/features/transport/utils/midiUtils";
 import { startAudioPlayback } from "../utils/playbackUtils";
 import { SamplerEngine } from "@/features/sampler/types";
 import { EngineState } from "@/core/stores/useEngineStore";
@@ -42,8 +38,8 @@ export class ClipEngineImpl implements ClipEngine {
           const midi = new Midi(uint8Array);
 
           // Update transport tempo and time signature
-          updateTransportTempo(midi);
-          updateTransportTimeSignature(midi);
+          //updateTransportTempo(midi);
+          //updateTransportTimeSignature(midi);
 
           const newState = { ...state };
           if (clipId) {

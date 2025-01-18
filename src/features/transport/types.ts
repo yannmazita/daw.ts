@@ -1,5 +1,4 @@
 // src/features/transport/types.ts
-
 export interface TransportState {
   isPlaying: boolean;
   isRecording: boolean;
@@ -52,5 +51,5 @@ export interface TransportEngine {
   setTransportPosition(state: TransportState, position: number): TransportState;
 
   // Cleanup
-  dispose(state: TransportState): void;
+  dispose(state: TransportState): Promise<void>;
 }
