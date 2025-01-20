@@ -1,119 +1,247 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 // src/features/mix/services/MixEngine.ts
-import {
-  MixEngine,
-  MixState,
-  Send,
-  MixerTrack,
-  Device,
-  DeviceType,
-} from "../types";
-import { EngineState } from "@/core/stores/useEngineStore";
+import { MasterTrack, MixState } from "../types";
+import { MixRoutingService } from "./MixRoutingService";
+import { MixTrackService } from "./MixTrackService";
+import { MixParameterService } from "./MixParameterService";
 
-export class MixEngineImpl implements MixEngine {
-  private disposed = false;
+/**
+ * Main class for the mix engine.
+ */
+export class MixEngineImpl {
+  private audioContext: AudioContext;
+  private routingService: MixRoutingService;
+  private trackService: MixTrackService;
+  private parameterService: MixParameterService;
 
-  initializeMix(state: MixState): MixState {
-    return state;
+  constructor() {
+    this.audioContext = new AudioContext();
+    this.routingService = new MixRoutingService(this.audioContext);
+    this.trackService = new MixTrackService(
+      this.audioContext,
+      this.routingService,
+    );
+    this.parameterService = new MixParameterService(this.audioContext);
   }
 
-  createMixerTrack(
+  /**
+   * Initializes the mixer with a master track.
+   * @param state - The current state.
+   * @returns The updated state.
+   */
+  initializeMixer(state: MixState): MixState {
+    const masterTrack = this.createMasterTrack();
+    return { ...state, mixer: { ...state.mixer, masterTrack } };
+  }
+
+  /**
+   * Creates a master track.
+   * The Master Track input node is connected to pan then to destination (speakers etc).
+   * @returns The created master track.
+   */
+  private createMasterTrack(): MasterTrack {
+    const inputNode = this.audioContext.createGain();
+    const outputNode = this.audioContext.destination;
+    const panNode = this.audioContext.createStereoPanner();
+
+    const masterTrack: MasterTrack = {
+      id: "master",
+      name: "Master Track",
+      inputNode,
+      outputNode,
+      panNode,
+      isMuted: false,
+      isSoloed: false,
+      effects: {},
+      effectsOrder: [],
+    };
+    this.routingService.connect(masterTrack.inputNode, masterTrack.panNode);
+    this.routingService.connect(masterTrack.panNode, masterTrack.outputNode);
+    return masterTrack;
+  }
+
+  /**
+   * Creates a new track.
+   * @param state - The current state.
+   * New tracks send to the Master Track by default.
+   * @param name - The name of the track.
+   * @returns The updated state.
+   */
+  createTrack(state: MixState, name: string): MixState {
+    const track = this.trackService.createTrack(name);
+    const masterTrack = state.mixer.masterTrack;
+    this.routingService.connectTrackInput(track);
+    this.routingService.connectTrackOutput(track, masterTrack.inputNode);
+    return {
+      ...state,
+      mixer: {
+        ...state.mixer,
+        tracks: { ...state.mixer.tracks, [track.id]: track },
+      },
+    };
+  }
+
+  /**
+   * Creates a new send for a track.
+   * @param state - The current state.
+   * @param trackId - The id of the track to create the send for.
+   * @param returnTrackId - The id of the return track to send to.
+   * @param name - The name of the send.
+   * @returns The updated state.
+   * @throws If track or return track is not found.
+   */
+  createSend(
     state: MixState,
-    type: MixerTrack["type"] = "return",
-    name?: string,
+    trackId: string,
+    returnTrackId: string,
+    name: string,
   ): MixState {
-    return state;
+    const track = state.mixer.tracks[trackId];
+    const returnTrack = state.mixer.returnTracks[returnTrackId];
+
+    if (!track || !returnTrack) {
+      throw new Error("Track or return track not found");
+    }
+
+    const send = this.trackService.createSend(track, returnTrack, name);
+    this.routingService.connectSendToReturn(send, returnTrack);
+    return {
+      ...state,
+      mixer: {
+        ...state.mixer,
+        tracks: {
+          ...state.mixer.tracks,
+          [trackId]: {
+            ...state.mixer.tracks[trackId],
+            sends: [...state.mixer.tracks[trackId].sends, send],
+          },
+        },
+      },
+    };
   }
 
-  deleteMixerTrack(state: MixState, id: string): MixState {
-    return state;
+  /**
+   * Creates a new return track.
+   * @param state - The current state.
+   * @param name - The name of the return track.
+   * @returns The updated state.
+   */
+  createReturnTrack(state: MixState, name: string): MixState {
+    const returnTrack = this.trackService.createReturnTrack(name);
+    this.routingService.connectTrackOutput(
+      returnTrack,
+      state.mixer.masterTrack.inputNode,
+    );
+    return {
+      ...state,
+      mixer: {
+        ...state.mixer,
+        returnTracks: {
+          ...state.mixer.returnTracks,
+          [returnTrack.id]: returnTrack,
+        },
+      },
+    };
   }
 
-  moveMixerTrack(state: MixState, trackId: string, newIndex: number): MixState {
-    return state;
+  /**
+   * Creates a new sound chain.
+   * @param state - The current state.
+   * @param trackId - The id of the track to add the chain to.
+   * @param name - The name of the sound chain.
+   * @returns The updated state.
+   */
+  createSoundChain(state: MixState, trackId: string, name: string): MixState {
+    const soundChain = this.trackService.createSoundChain(name);
+    return {
+      ...state,
+      mixer: {
+        ...state.mixer,
+        tracks: {
+          ...state.mixer.tracks,
+          [trackId]: {
+            ...state.mixer.tracks[trackId],
+            soundChain,
+          },
+        },
+      },
+    };
   }
 
-  setSolo(state: MixState, mixerTrackId: string, solo: boolean): MixState {
-    return state;
-  }
-
-  setMute(state: MixState, mixerTrackId: string, mute: boolean): MixState {
-    return state;
-  }
-
-  setPan(state: MixState, mixerTrackId: string, pan: number): MixState {
-    return state;
-  }
-
-  setVolume(state: MixState, mixerTrackId: string, volume: number): MixState {
-    return state;
-  }
-
-  getMeterValues(state: MixState, mixerTrackId: string): number | number[] {
-    return 0;
-  }
-
-  addDevice(
+  /**
+   * Creates a new chain.
+   * @param state - The current state.
+   * @param trackId - The id of the sound chain track.
+   * @param name - The name of the chain.
+   * @param instrument - The instrument node of the chain.
+   * @returns The updated state.
+   * @throws If track has no sound chain.
+   */
+  createChain(
     state: MixState,
-    parentId: string,
-    deviceType: DeviceType,
+    trackId: string,
+    name: string,
+    instrument: AudioNode | null = null,
   ): MixState {
-    return state;
+    const soundChain = state.mixer.tracks[trackId].soundChain;
+    let chain = null;
+
+    if (!soundChain) {
+      throw new Error("Track has no sound chain");
+    }
+
+    if (instrument) {
+      chain = this.trackService.createChain(name, instrument);
+    } else {
+      chain = this.trackService.createChain(name);
+    }
+    this.routingService.connectChainOutput(chain, soundChain.outputNode);
+
+    return {
+      ...state,
+      mixer: {
+        ...state.mixer,
+        tracks: {
+          ...state.mixer.tracks,
+          [trackId]: {
+            ...state.mixer.tracks[trackId],
+            soundChain: {
+              ...soundChain,
+              chains: { ...soundChain.chains, [chain.id]: chain },
+              chainsOrder: [...soundChain.chainsOrder, chain.id],
+            },
+          },
+        },
+      },
+    };
   }
 
-  removeDevice(state: MixState, parentId: string, deviceId: string): MixState {
-    return state;
-  }
+  /**
+   * Disposes of the mix engine and releases resources.
+   */
+  async dispose(state: MixState): Promise<void> {
+    // Dispose all nodes
+    for (const trackId in state.mixer.tracks) {
+      const track = state.mixer.tracks[trackId];
+      this.routingService.disposeNode(track.outputNode);
+      if (track.inputNode) {
+        this.routingService.disposeNode(track.inputNode);
+      }
+      track.sends.forEach((send) => {
+        this.routingService.disposeNode(send.outputNode);
+      });
+    }
 
-  updateDevice(
-    state: MixState,
-    parentId: string,
-    deviceId: string,
-    updates: Partial<Device>,
-  ): MixState {
-    return state;
-  }
+    for (const returnTrackId in state.mixer.returnTracks) {
+      const returnTrack = state.mixer.returnTracks[returnTrackId];
+      this.routingService.disposeNode(returnTrack.outputNode);
+      if (returnTrack.inputNode) {
+        this.routingService.disposeNode(returnTrack.inputNode);
+      }
+    }
 
-  createSend(state: EngineState, fromId: string, toId: string): EngineState {
-    return state;
-  }
-
-  updateSend(
-    state: EngineState,
-    baseTrackId: string,
-    sendId: string,
-    updates: Partial<Send>,
-  ): EngineState {
-    return state;
-  }
-
-  removeSend(state: MixState, baseTrackId: string, sendId: string): MixState {
-    return state;
-  }
-
-  setSendAmount(
-    state: EngineState,
-    baseTrackId: string,
-    sendId: string,
-    amount: number,
-  ): EngineState {
-    return state;
-  }
-
-  getTrackSends(state: MixState, baseTrackId: string): Send[] {
-    const sendIds = state.trackSends[baseTrackId] || [];
-    return sendIds.map((id) => state.sends[id]).filter(Boolean);
-  }
-
-  disconnectTrackSends(state: MixState, baseTrackId: string): MixState {
-    return state;
-  }
-
-  createSoundChain(state: MixState, name?: string): MixState {
-    return state;
-  }
-
-  dispose(state: MixState): MixState {
-    return state;
+    this.routingService.disposeNode(state.mixer.masterTrack.inputNode);
+    this.routingService.disposeNode(state.mixer.masterTrack.outputNode);
+    // Close the audio context
+    await this.audioContext.close();
   }
 }

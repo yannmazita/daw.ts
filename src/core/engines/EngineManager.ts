@@ -84,17 +84,17 @@ export class EngineManager {
     return this._composition;
   }
 
-  public dispose(): void {
+  public async dispose(): Promise<void> {
     if (!this._initialized) return;
 
     // Dispose in reverse order of initialization
-    this._composition.dispose();
+    await this._composition.dispose();
     this._tracks.dispose(useEngineStore.getState().tracks);
     this._automation.dispose();
     this._clips.dispose(useEngineStore.getState().clips);
     this._mix.dispose(useEngineStore.getState().mix);
-    this._sampler.dispose();
-    this._transport.dispose(useEngineStore.getState().transport);
+    this._sampler.dispose(useEngineStore.getState().sampler);
+    await this._transport.dispose(useEngineStore.getState().transport);
 
     this._initialized = false;
     EngineManager.instance = null;
