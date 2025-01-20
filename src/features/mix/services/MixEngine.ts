@@ -1,5 +1,5 @@
 // src/features/mix/services/MixEngine.ts
-import { MasterTrack, MixState } from "../types";
+import { MasterTrack, MixEngine, MixState } from "../types";
 import { MixRoutingService } from "./MixRoutingService";
 import { MixTrackService } from "./MixTrackService";
 import { MixParameterService } from "./MixParameterService";
@@ -7,7 +7,7 @@ import { MixParameterService } from "./MixParameterService";
 /**
  * Main class for the mix engine.
  */
-export class MixEngineImpl {
+export class MixEngineImpl implements MixEngine {
   private audioContext: AudioContext;
   private routingService: MixRoutingService;
   private trackService: MixTrackService;

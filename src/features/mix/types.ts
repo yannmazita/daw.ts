@@ -79,6 +79,27 @@ export interface MasterTrack {
   effectsOrder: string[];
 }
 
+export interface MixEngine {
+  initializeMixer(state: MixState): MixState;
+  createTrack(state: MixState, name: string): MixState;
+  createSend(
+    state: MixState,
+    trackId: string,
+    returnTrackId: string,
+    name: string,
+  ): MixState;
+  createReturnTrack(state: MixState, name: string): MixState;
+  createSoundChain(state: MixState, trackId: string, name: string): MixState;
+  createChain(
+    state: MixState,
+    trackId: string,
+    name: string,
+    instrument?: AudioNode | null,
+  ): MixState;
+
+  dispose(state: MixState): Promise<void>;
+}
+
 export interface MixState {
   mixer: Mixer;
 }

@@ -10,9 +10,6 @@ import { CompositionSamplerService } from "./CompositionSamplerService";
 import { CompositionMixService } from "./CompositionMixService";
 import { CompositionClipService } from "./CompositionClipService";
 import { CompositionAutomationService } from "./CompositionAutomationService";
-import { CompositionTrackService } from "./CompositionTrackService";
-import { TrackEngine, Track } from "@/features/tracks/types";
-import { Device, DeviceType, Send, MixerTrack } from "@/features/mix/types";
 
 export class CompositionEngineImpl implements CompositionEngine {
   private disposed = false;
@@ -20,7 +17,6 @@ export class CompositionEngineImpl implements CompositionEngine {
   private readonly samplerService: CompositionSamplerService;
   private readonly mixService: CompositionMixService;
   private readonly clipService: CompositionClipService;
-  private readonly trackService: CompositionTrackService;
   private readonly automationService: CompositionAutomationService;
 
   constructor(
@@ -28,18 +24,12 @@ export class CompositionEngineImpl implements CompositionEngine {
     public readonly samplerEngine: SamplerEngine,
     public readonly mixEngine: MixEngine,
     public readonly clipEngine: ClipEngine,
-    public readonly trackEngine: TrackEngine,
     public readonly automationEngine: AutomationEngine,
   ) {
     this.transportService = new CompositionTransportService(transportEngine);
     this.samplerService = new CompositionSamplerService(samplerEngine);
     this.mixService = new CompositionMixService(mixEngine);
     this.clipService = new CompositionClipService(clipEngine);
-    this.trackService = new CompositionTrackService(
-      trackEngine,
-      clipEngine,
-      mixEngine,
-    );
     this.automationService = new CompositionAutomationService(automationEngine);
   }
 
@@ -85,99 +75,24 @@ export class CompositionEngineImpl implements CompositionEngine {
   }
 
   // Mix methods
-  createMixerTrack(type: MixerTrack["type"], name?: string): void {
-    return this.mixService.createMixerTrack(type, name);
+  createTrack(name: string): void {
+    return this.mixService.createTrack(name);
   }
-  deleteMixerTrack(trackId: string): void {
-    return this.mixService.deleteMixerTrack(trackId);
+  createSend(trackId: string, returnTrackId: string, name: string): void {
+    return this.mixService.createSend(trackId, returnTrackId, name);
   }
-  moveMixerTrack(trackId: string, newIndex: number): void {
-    return this.mixService.moveMixerTrack(trackId, newIndex);
+  createReturnTrack(name: string): void {
+    return this.mixService.createReturnTrack(name);
   }
-  setMixerTrackSolo(trackId: string, solo: boolean): void {
-    return this.mixService.setSolo(trackId, solo);
+  createSoundChain(trackId: string, name: string): void {
+    return this.mixService.createSoundChain(trackId, name);
   }
-  setMixerTrackMute(trackId: string, mute: boolean): void {
-    return this.mixService.setMute(trackId, mute);
-  }
-  setMixerTrackVolume(trackId: string, volume: number): void {
-    return this.mixService.setVolume(trackId, volume);
-  }
-  setMixerTrackPan(trackId: string, pan: number): void {
-    return this.mixService.setPan(trackId, pan);
-  }
-  getMixerTrackMeterValues(trackId: string): number | number[] {
-    return this.mixService.getMeterValues(trackId);
-  }
-  addDevice(parentId: string, deviceType: DeviceType): void {
-    return this.mixService.addDevice(parentId, deviceType);
-  }
-  updateDevice(
-    parentId: string,
-    deviceId: string,
-    updates: Partial<Device>,
+  createChain(
+    trackId: string,
+    name: string,
+    instrument?: AudioNode | null,
   ): void {
-    return this.mixService.updateDevice(parentId, deviceId, updates);
-  }
-  removeDevice(parentId: string, deviceId: string): void {
-    return this.mixService.removeDevice(parentId, deviceId);
-  }
-  createSend(sourceTrackId: string, targetTrackId: string): void {
-    return this.mixService.createSend(sourceTrackId, targetTrackId);
-  }
-  updateSend(
-    baseTrackId: string,
-    sendId: string,
-    updates: Partial<Send>,
-  ): void {
-    return this.mixService.updateSend(baseTrackId, sendId, updates);
-  }
-  removeSend(baseTrackId: string, sendId: string): void {
-    return this.mixService.removeSend(baseTrackId, sendId);
-  }
-  setSendAmount(baseTrackId: string, sendId: string, amount: number): void {
-    return this.mixService.setSendAmount(baseTrackId, sendId, amount);
-  }
-  getTrackSends(baseTrackId: string): Send[] {
-    return this.mixService.getTrackSends(baseTrackId);
-  }
-  disconnectTrackSends(baseTrackId: string): void {
-    return this.mixService.disconnectTrackSends(baseTrackId);
-  }
-  createSoundChain(name?: string): void {
-    return this.mixService.createSoundChain(name);
-  }
-
-  // Track Methods
-  createTrack(type: Track["type"], name?: string): void {
-    return this.trackService.createTrack(type, name);
-  }
-  updateTrack(trackId: string, updates: Partial<Track>): void {
-    return this.trackService.updateTrack(trackId, updates);
-  }
-  deleteTrack(trackId: string): void {
-    return this.trackService.deleteTrack(trackId);
-  }
-  moveTrack(trackId: string, position: number): void {
-    return this.trackService.moveTrack(trackId, position);
-  }
-  setTrackSolo(trackId: string, solo: boolean): void {
-    return this.trackService.setSolo(trackId, solo);
-  }
-  setTrackMute(trackId: string, mute: boolean): void {
-    return this.trackService.setMute(trackId, mute);
-  }
-  setArmed(trackId: string, armed: boolean): void {
-    return this.trackService.setArmed(trackId, armed);
-  }
-  setTrackPan(trackId: string, pan: number): void {
-    return this.trackService.setPan(trackId, pan);
-  }
-  setTrackVolume(trackId: string, volume: number): void {
-    return this.trackService.setVolume(trackId, volume);
-  }
-  getTrackMeterValues(trackId: string): number | number[] {
-    return this.trackService.getMeterValues(trackId);
+    return this.mixService.createChain(trackId, name, instrument);
   }
 
   // Sampler methods
@@ -253,9 +168,8 @@ export class CompositionEngineImpl implements CompositionEngine {
     this.disposed = true;
     await this.transportService.dispose();
     this.samplerService.dispose();
-    this.mixService.dispose();
+    await this.mixService.dispose();
     this.clipService.dispose();
-    this.trackService.dispose();
   }
 
   private checkDisposed(): void {
