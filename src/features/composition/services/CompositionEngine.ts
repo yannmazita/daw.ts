@@ -10,6 +10,7 @@ import { CompositionSamplerService } from "./CompositionSamplerService";
 import { CompositionMixService } from "./CompositionMixService";
 import { CompositionClipService } from "./CompositionClipService";
 import { CompositionAutomationService } from "./CompositionAutomationService";
+import { FileLoaderService } from "@/features/sampler/services/FileLoaderService";
 
 export class CompositionEngineImpl implements CompositionEngine {
   private disposed = false;
@@ -75,38 +76,32 @@ export class CompositionEngineImpl implements CompositionEngine {
   }
 
   // Mix methods
-  createTrack(name: string): void {
+  createTrack(name?: string): void {
     return this.mixService.createTrack(name);
   }
-  createSend(trackId: string, returnTrackId: string, name: string): void {
+  createSend(trackId: string, returnTrackId: string, name?: string): void {
     return this.mixService.createSend(trackId, returnTrackId, name);
   }
-  createReturnTrack(name: string): void {
+  createReturnTrack(name?: string): void {
     return this.mixService.createReturnTrack(name);
   }
-  createSoundChain(trackId: string, name: string): void {
+  createSoundChain(trackId: string, name?: string): void {
     return this.mixService.createSoundChain(trackId, name);
   }
   createChain(
     trackId: string,
-    name: string,
+    name?: string,
     instrument?: AudioNode | null,
   ): void {
     return this.mixService.createChain(trackId, name, instrument);
   }
 
   // Sampler methods
-  async startSamplerPlayback(
-    clipId: string,
-    startTime?: number,
-  ): Promise<void> {
-    return this.samplerService.startSamplerPlayback(clipId, startTime);
-  }
   async loadLocalInstrument(): Promise<void> {
     return this.samplerService.loadLocalInstrument();
   }
-  getInstrumentsLoader() {
-    return this.samplerService.getInstrumentsLoader();
+  getFileLoader(): FileLoaderService {
+    return this.samplerService.getFileLoader();
   }
 
   // Clip Methods
@@ -167,7 +162,7 @@ export class CompositionEngineImpl implements CompositionEngine {
     }
     this.disposed = true;
     await this.transportService.dispose();
-    this.samplerService.dispose();
+    await this.samplerService.dispose();
     await this.mixService.dispose();
     this.clipService.dispose();
   }

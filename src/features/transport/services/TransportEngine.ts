@@ -24,6 +24,7 @@ export class TransportEngineImpl implements TransportEngine {
    */
   constructor(
     state: TransportState,
+    audioContext: AudioContext,
     config: Partial<TransportClockConfig> = {},
   ) {
     this.config = {
@@ -33,7 +34,7 @@ export class TransportEngineImpl implements TransportEngine {
       maxTapInterval: config.maxTapInterval ?? 3000,
     };
     this.clock = new TransportClock(
-      new AudioContext(), // Create the AudioContext here
+      audioContext,
       state.tempo,
       state.timeSignature,
       this.tick,
@@ -313,8 +314,8 @@ export class TransportEngineImpl implements TransportEngine {
   /**
    * Sets loop points.
    * @param state - The current transport state.
-   * @param start - The loop start point in beats.
-   * @param end - The loop end point in beats.
+   * @param start - The loop start point in seconds.
+   * @param end - The loop end point in seconds.
    * @returns The updated transport state.
    */
   setLoopPoints(
@@ -343,7 +344,7 @@ export class TransportEngineImpl implements TransportEngine {
 
   /**
    * Gets the transport duration.
-   * @returns The transport duration in beats.
+   * @returns The transport duration in seconds.
    */
   getTransportDuration(): number {
     return this._duration;
@@ -352,7 +353,7 @@ export class TransportEngineImpl implements TransportEngine {
   /**
    * Sets the transport duration.
    * @param state - The current transport state.
-   * @param duration - The new transport duration in beats.
+   * @param duration - The new transport duration in seconds.
    * @returns The updated transport state.
    */
   setTransportDuration(

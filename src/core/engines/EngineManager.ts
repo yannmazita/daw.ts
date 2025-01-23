@@ -10,6 +10,7 @@ import { useEngineStore } from "../stores/useEngineStore";
 export class EngineManager {
   private static instance: EngineManager | null;
 
+  private _audioContext = new AudioContext();
   private _transport: TransportEngineImpl;
   private _sampler: SamplerEngineImpl;
   private _mix: MixEngineImpl;
@@ -22,11 +23,12 @@ export class EngineManager {
     // Initialize engines in dependency order
     this._transport = new TransportEngineImpl(
       useEngineStore.getState().transport,
+      this._audioContext,
     );
     console.log("Transport Engine initialized");
-    this._sampler = new SamplerEngineImpl();
+    this._sampler = new SamplerEngineImpl(this._audioContext);
     console.log("Sampler Engine initialized");
-    this._mix = new MixEngineImpl();
+    this._mix = new MixEngineImpl(this._audioContext);
     console.log("Mix Engine initialized");
     this._clips = new ClipEngineImpl(this._sampler);
     console.log("Clip Engine initialized");
@@ -83,7 +85,7 @@ export class EngineManager {
     this._automation.dispose();
     this._clips.dispose(useEngineStore.getState().clips);
     await this._mix.dispose(useEngineStore.getState().mix);
-    this._sampler.dispose(useEngineStore.getState().sampler);
+    await this._sampler.dispose(useEngineStore.getState().sampler);
     await this._transport.dispose(useEngineStore.getState().transport);
 
     this._initialized = false;

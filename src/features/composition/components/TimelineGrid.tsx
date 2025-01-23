@@ -1,12 +1,12 @@
 // src/features/composition/components/TimelineGrid.tsx
-import { useTrackOperations } from "@/features/composition/hooks/useTrackOperations";
+import { useTrackOperations } from "@/features/mix/hooks/useTrackOperations";
 import { TrackLane } from "./TrackLane";
 import { TrackHeader } from "./TrackHeader";
 import { cn } from "@/common/shadcn/lib/utils";
 import { ScrollArea, ScrollBar } from "@/common/shadcn/ui/scroll-area";
 
 export const TimelineGrid: React.FC = () => {
-  const { trackOrder } = useTrackOperations();
+  const { tracksOrder } = useTrackOperations();
 
   return (
     <div className="h-full overflow-hidden border border-border">
@@ -14,7 +14,7 @@ export const TimelineGrid: React.FC = () => {
         <div className="grid grid-cols-[auto,1fr]">
           {/* Fixed Headers Column */}
           <div className="border-r border-border bg-background">
-            {trackOrder.map((trackId) => (
+            {tracksOrder.map((trackId) => (
               <TrackHeader key={trackId} trackId={trackId} />
             ))}
           </div>
@@ -22,12 +22,12 @@ export const TimelineGrid: React.FC = () => {
           {/* Scrollable Lanes */}
           <ScrollArea className="h-full" type="scroll">
             <div className="flex flex-col">
-              {trackOrder.map((trackId, index) => (
+              {tracksOrder.map((trackId, index) => (
                 <TrackLane
                   key={trackId}
                   trackId={trackId}
                   className={cn(
-                    index === trackOrder.length - 1 && "border-b-0",
+                    index === tracksOrder.length - 1 && "border-b-0",
                   )}
                 />
               ))}

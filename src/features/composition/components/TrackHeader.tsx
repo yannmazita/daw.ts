@@ -1,12 +1,11 @@
 // src/features/composition/components/TrackHeader.tsx
-import { useTrackStatus } from "@/features/composition/hooks/useTrackStatus";
-import { useTrackControls } from "@/features/composition/hooks/useTrackControls";
 import { cn } from "@/common/shadcn/lib/utils";
 import { CassetteTape, Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/common/shadcn/ui/button";
 import { Input } from "@/common/shadcn/ui/input";
 import { useCallback, useEffect, useState } from "react";
 import { useUIStore } from "@/core/stores/useUIStore";
+import { useTrack } from "@/features/mix/hooks/useTrack";
 
 interface TrackHeaderProps {
   trackId: string;
@@ -17,8 +16,8 @@ export const TrackHeader: React.FC<TrackHeaderProps> = ({
   trackId,
   className,
 }) => {
-  const trackState = useTrackStatus(trackId);
   const {
+    track,
     pan,
     volume,
     muted,
@@ -29,7 +28,7 @@ export const TrackHeader: React.FC<TrackHeaderProps> = ({
     toggleMute,
     toggleSolo,
     toggleArmed,
-  } = useTrackControls(trackId);
+  } = useTrack(trackId);
   const [localVolume, setLocalVolume] = useState(volume.toString());
   const [localPan, setLocalPan] = useState(pan.toString());
   const { setClickedComponentId } = useUIStore();
@@ -80,7 +79,7 @@ export const TrackHeader: React.FC<TrackHeaderProps> = ({
     >
       <Input
         type="text"
-        value={trackState?.name}
+        value={track.name}
         className="h-5 w-full rounded-none bg-background py-1 text-center"
         disabled
       />

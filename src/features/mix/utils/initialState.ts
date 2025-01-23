@@ -1,18 +1,13 @@
 // src/features/mix/utils/intialState.ts
-import { MixerTrackControlState, MixState } from "../types";
-
-export const initialMixerTrackControlState: MixerTrackControlState = {
-  solo: false,
-  mute: false,
-  pan: 0,
-  volume: 0,
-};
+import { MixState } from "../types";
 
 export const initialMixState: MixState = {
-  mixerTracks: {},
-  mixerTrackOrder: ["master"],
-  soundChains: {},
-  devices: {},
-  sends: {},
-  trackSends: {},
+  mixer: {
+    tracks: {},
+    returnTracks: {},
+    masterTrack: {},
+    soloedElementsIds: {},
+    tracksOrder: [],
+    returnTracksOrder: [],
+  },
 };

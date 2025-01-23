@@ -9,13 +9,13 @@ export class CompositionMixService {
     useEngineStore.setState({ mix: newState });
   }
 
-  createTrack(name: string): void {
+  createTrack(name?: string): void {
     const state = useEngineStore.getState().mix;
     const newState = this.mixEngine.createTrack(state, name);
     useEngineStore.setState({ mix: newState });
   }
 
-  createSend(trackId: string, returnTrackId: string, name: string): void {
+  createSend(trackId: string, returnTrackId: string, name?: string): void {
     const state = useEngineStore.getState().mix;
     const newState = this.mixEngine.createSend(
       state,
@@ -26,13 +26,13 @@ export class CompositionMixService {
     useEngineStore.setState({ mix: newState });
   }
 
-  createReturnTrack(name: string): void {
+  createReturnTrack(name?: string): void {
     const state = useEngineStore.getState().mix;
     const newState = this.mixEngine.createReturnTrack(state, name);
     useEngineStore.setState({ mix: newState });
   }
 
-  createSoundChain(trackId: string, name: string): void {
+  createSoundChain(trackId: string, name?: string): void {
     const state = useEngineStore.getState().mix;
     const newState = this.mixEngine.createSoundChain(state, trackId, name);
     useEngineStore.setState({ mix: newState });
@@ -40,7 +40,7 @@ export class CompositionMixService {
 
   createChain(
     trackId: string,
-    name: string,
+    name?: string,
     instrument?: AudioNode | null,
   ): void {
     const state = useEngineStore.getState().mix;

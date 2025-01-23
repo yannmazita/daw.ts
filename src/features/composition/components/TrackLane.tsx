@@ -7,7 +7,7 @@ import {
   ContextMenuItem,
   ContextMenuTrigger,
 } from "@/common/shadcn/ui/context-menu";
-import { useTrackOperations } from "../hooks/useTrackOperations";
+import { useTrackOperations } from "@/features/mix/hooks/useTrackOperations";
 import { useClipOperations } from "@/features/clips/hooks/useClipOperations";
 import { useSelection } from "@/common/hooks/useSelection";
 import { useCallback, useRef, useMemo } from "react";
@@ -16,9 +16,14 @@ import { useEngineStore } from "@/core/stores/useEngineStore";
 interface TrackLaneProps {
   trackId: string;
   className?: string;
+  isPlaceholder?: boolean;
 }
 
-export const TrackLane: React.FC<TrackLaneProps> = ({ trackId, className }) => {
+export const TrackLane: React.FC<TrackLaneProps> = ({
+  trackId,
+  className,
+  isPlaceholder = false,
+}) => {
   const { handleClickedTrack } = useSelection();
   const { importMidi, createClip } = useClipOperations();
   const { tracks } = useTrackOperations();
@@ -54,6 +59,17 @@ export const TrackLane: React.FC<TrackLaneProps> = ({ trackId, className }) => {
     },
     [importMidi, track?.type, trackId, clips],
   );
+
+  if (isPlaceholder) {
+    return (
+      <div
+        className={cn(
+          "relative h-24 w-max min-w-full border-b border-dashed border-border bg-muted opacity-50",
+          className,
+        )}
+      />
+    );
+  }
 
   return (
     <ContextMenu>

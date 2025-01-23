@@ -8,13 +8,11 @@ import { MixParameterService } from "./MixParameterService";
  * Main class for the mix engine.
  */
 export class MixEngineImpl implements MixEngine {
-  private audioContext: AudioContext;
   private routingService: MixRoutingService;
   private trackService: MixTrackService;
   private parameterService: MixParameterService;
 
-  constructor() {
-    this.audioContext = new AudioContext();
+  constructor(private audioContext: AudioContext) {
     this.routingService = new MixRoutingService(this.audioContext);
     this.trackService = new MixTrackService(
       this.audioContext,
@@ -40,6 +38,7 @@ export class MixEngineImpl implements MixEngine {
    */
   private createMasterTrack(): MasterTrack {
     const inputNode = this.audioContext.createGain();
+    const gainNode = this.audioContext.createGain();
     const outputNode = this.audioContext.destination;
     const panNode = this.audioContext.createStereoPanner();
 
@@ -47,15 +46,18 @@ export class MixEngineImpl implements MixEngine {
       id: "master",
       name: "Master Track",
       inputNode,
+      gainNode,
       outputNode,
       panNode,
       isMuted: false,
       isSoloed: false,
+      previousGain: 1,
       effects: {},
       effectsOrder: [],
     };
     this.routingService.connect(masterTrack.inputNode, masterTrack.panNode);
-    this.routingService.connect(masterTrack.panNode, masterTrack.outputNode);
+    this.routingService.connect(masterTrack.panNode, masterTrack.gainNode);
+    this.routingService.connect(masterTrack.gainNode, masterTrack.outputNode);
     return masterTrack;
   }
 
@@ -66,16 +68,17 @@ export class MixEngineImpl implements MixEngine {
    * @param name - The name of the track.
    * @returns The updated state.
    */
-  createTrack(state: MixState, name: string): MixState {
+  createTrack(state: MixState, name?: string): MixState {
     const track = this.trackService.createTrack(name);
     const masterTrack = state.mixer.masterTrack;
     this.routingService.connectTrackInput(track);
-    this.routingService.connectTrackOutput(track, masterTrack.inputNode);
+    this.routingService.connect(track.outputNode, masterTrack.inputNode);
     return {
       ...state,
       mixer: {
         ...state.mixer,
         tracks: { ...state.mixer.tracks, [track.id]: track },
+        tracksOrder: [...state.mixer.tracksOrder, track.id],
       },
     };
   }
@@ -93,7 +96,7 @@ export class MixEngineImpl implements MixEngine {
     state: MixState,
     trackId: string,
     returnTrackId: string,
-    name: string,
+    name?: string,
   ): MixState {
     const track = state.mixer.tracks[trackId];
     const returnTrack = state.mixer.returnTracks[returnTrackId];
@@ -103,7 +106,13 @@ export class MixEngineImpl implements MixEngine {
     }
 
     const send = this.trackService.createSend(track, returnTrack, name);
-    this.routingService.connectSendToReturn(send, returnTrack);
+
+    if (!returnTrack.inputNode) {
+      const inputNode = this.audioContext.createGain();
+      returnTrack.inputNode = inputNode;
+    }
+    this.routingService.connect(send.outputNode, returnTrack.inputNode);
+
     return {
       ...state,
       mixer: {
@@ -112,8 +121,13 @@ export class MixEngineImpl implements MixEngine {
           ...state.mixer.tracks,
           [trackId]: {
             ...state.mixer.tracks[trackId],
-            sends: [...state.mixer.tracks[trackId].sends, send],
+            sends: { ...state.mixer.tracks[trackId].sends, [send.id]: send },
+            sendsOrder: [...state.mixer.tracks[trackId].sendsOrder, send.id],
           },
+        },
+        returnTracks: {
+          ...state.mixer.returnTracks,
+          [returnTrackId]: returnTrack,
         },
       },
     };
@@ -125,12 +139,14 @@ export class MixEngineImpl implements MixEngine {
    * @param name - The name of the return track.
    * @returns The updated state.
    */
-  createReturnTrack(state: MixState, name: string): MixState {
+  createReturnTrack(state: MixState, name?: string): MixState {
     const returnTrack = this.trackService.createReturnTrack(name);
-    this.routingService.connectTrackOutput(
-      returnTrack,
+
+    this.routingService.connect(
+      returnTrack.outputNode,
       state.mixer.masterTrack.inputNode,
     );
+
     return {
       ...state,
       mixer: {
@@ -139,19 +155,27 @@ export class MixEngineImpl implements MixEngine {
           ...state.mixer.returnTracks,
           [returnTrack.id]: returnTrack,
         },
+        returnTracksOrder: [...state.mixer.returnTracksOrder, returnTrack.id],
       },
     };
   }
 
   /**
-   * Creates a new sound chain.
+   * Creates a new sound chain. An empty chain is added to the sound chain.
+   * The chain output node is connected to the sound chain output node.
    * @param state - The current state.
    * @param trackId - The id of the track to add the chain to.
    * @param name - The name of the sound chain.
    * @returns The updated state.
    */
-  createSoundChain(state: MixState, trackId: string, name: string): MixState {
+  createSoundChain(state: MixState, trackId: string, name?: string): MixState {
     const soundChain = this.trackService.createSoundChain(name);
+    const chain = this.trackService.createChain();
+    soundChain.chains = { [chain.id]: chain };
+    soundChain.chainsOrder = [chain.id];
+
+    this.routingService.connect(chain.outputNode, soundChain.outputNode);
+
     return {
       ...state,
       mixer: {
@@ -163,6 +187,7 @@ export class MixEngineImpl implements MixEngine {
             soundChain,
           },
         },
+        returnTracksOrder: [...state.mixer.returnTracksOrder, soundChain.id],
       },
     };
   }
@@ -179,7 +204,7 @@ export class MixEngineImpl implements MixEngine {
   createChain(
     state: MixState,
     trackId: string,
-    name: string,
+    name?: string,
     instrument: AudioNode | null = null,
   ): MixState {
     const soundChain = state.mixer.tracks[trackId].soundChain;
@@ -226,7 +251,7 @@ export class MixEngineImpl implements MixEngine {
       if (track.inputNode) {
         this.routingService.disposeNode(track.inputNode);
       }
-      track.sends.forEach((send) => {
+      Object.values(track.sends).forEach((send) => {
         this.routingService.disposeNode(send.outputNode);
       });
     }

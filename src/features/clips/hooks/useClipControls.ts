@@ -13,8 +13,8 @@ export const useClipControls = (clipId: string) => {
   const fadeOut = clip.fadeOut;
 
   const playClip = useCallback(
-    (startTime?: number) => {
-      compositionEngine.playClip(clipId, startTime);
+    async (startTime?: number) => {
+      await compositionEngine.playClip(clipId, startTime);
     },
     [compositionEngine, clipId],
   );

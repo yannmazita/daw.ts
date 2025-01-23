@@ -1,17 +1,17 @@
 // src/features/mix/components/MixerBar.tsx
-
 import { Button } from "@/common/shadcn/ui/button";
-import { useSoundChainManager } from "../hooks/useSoundChainManager";
-import { useState } from "react";
+import { useSoundChainOperations } from "../hooks/useSoundChainOperations";
+import { useUIStore } from "@/core/stores/useUIStore";
+import { useSoundChain } from "../hooks/useSoundChain";
 
 export const MixerBar: React.FC = () => {
-  const [selectedSoundChain, setSelectedSoundChain] = useState<string | null>(
-    null,
-  );
-  const { createSoundChain } = useSoundChainManager();
+  const { createSoundChain } = useSoundChainOperations();
+  const { clickedComponentId } = useUIStore();
+  const { soundChain } = useSoundChain(clickedComponentId ?? "");
+
   const handleCreateSoundChain = () => {
-    const soundChainId = createSoundChain();
-    setSelectedSoundChain(soundChainId);
+    if (!soundChain || !clickedComponentId) return;
+    createSoundChain(clickedComponentId);
   };
 
   return (
