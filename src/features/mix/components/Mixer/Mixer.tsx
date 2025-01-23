@@ -8,10 +8,12 @@ import { cn } from "@/common/shadcn/lib/utils";
 import { ScrollArea, ScrollBar } from "@/common/shadcn/ui/scroll-area";
 import { MixerBar } from "../MixerBar";
 import { MasterTrackControls } from "./MixerUnits/MasterTrackControls";
+import { useSelection } from "@/common/hooks/useSelection";
 
 export const Mixer: React.FC = () => {
   const { tracksOrder } = useTrackOperations();
   const { returnTracksOrder } = useReturnTrackOperations();
+  const { handleClickedTrack } = useSelection();
 
   return (
     <>
@@ -25,11 +27,16 @@ export const Mixer: React.FC = () => {
                 key={trackId}
                 trackId={trackId}
                 className={cn(index === 0 && "ml-1")}
+                onClick={() => handleClickedTrack(trackId)}
               />
             ))}
             {/* Return tracks */}
             {returnTracksOrder.map((trackId) => (
-              <ReturnTrackControls key={trackId} trackId={trackId} />
+              <ReturnTrackControls
+                key={trackId}
+                trackId={trackId}
+                onClick={() => handleClickedTrack(trackId)}
+              />
             ))}
             {/* Sound Chains */}
             {tracksOrder.map((trackId) => (
@@ -39,7 +46,10 @@ export const Mixer: React.FC = () => {
           <ScrollBar orientation="horizontal" />
         </ScrollArea>
         {/* Master Track - fixed position */}
-        <MasterTrackControls className="border-l" />
+        <MasterTrackControls
+          className="border-l"
+          onClick={() => handleClickedTrack("master")}
+        />
       </div>
     </>
   );

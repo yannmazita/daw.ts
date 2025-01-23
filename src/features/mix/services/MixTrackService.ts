@@ -33,7 +33,7 @@ export class MixTrackService {
     const track: Track = {
       id: crypto.randomUUID(),
       type,
-      name: name ?? "New Track",
+      name: name ?? `New ${type} Track`,
       inputNode,
       outputNode,
       panNode,

@@ -5,19 +5,19 @@ import { useEffect, useState, useRef } from "react";
 import { VolumeControl } from "../MixerUnits/VolumeControl";
 import { PanControl } from "../MixerUnits/PanControl";
 import { TrackButtons } from "../MixerUnits/TrackButtons";
-import { useSelection } from "@/common/hooks/useSelection";
 import { useTrack } from "@/features/mix/hooks/useTrack";
 
 interface TrackControlsProps {
   trackId: string;
   className?: string;
+  onClick?: () => void;
 }
 
 export const TrackControls: React.FC<TrackControlsProps> = ({
   trackId,
   className,
+  onClick,
 }) => {
-  const { handleClickedTrack } = useSelection();
   const {
     track,
     pan,
@@ -63,7 +63,7 @@ export const TrackControls: React.FC<TrackControlsProps> = ({
   return (
     <div
       className={cn("flex h-full w-40 min-w-40 flex-col px-1 py-2", className)}
-      onClick={() => handleClickedTrack(trackId)}
+      onClick={onClick}
     >
       <div className="mx-1 text-sm">{track.name}</div>
       <div className="bg-muted">

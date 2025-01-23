@@ -9,7 +9,6 @@ import {
 } from "@/common/shadcn/ui/context-menu";
 import { useTrackOperations } from "@/features/mix/hooks/useTrackOperations";
 import { useClipOperations } from "@/features/clips/hooks/useClipOperations";
-import { useSelection } from "@/common/hooks/useSelection";
 import { useCallback, useRef, useMemo } from "react";
 import { useEngineStore } from "@/core/stores/useEngineStore";
 
@@ -17,14 +16,15 @@ interface TrackLaneProps {
   trackId: string;
   className?: string;
   isPlaceholder?: boolean;
+  onClick?: () => void;
 }
 
 export const TrackLane: React.FC<TrackLaneProps> = ({
   trackId,
   className,
   isPlaceholder = false,
+  onClick,
 }) => {
-  const { handleClickedTrack } = useSelection();
   const { importMidi, createClip } = useClipOperations();
   const { tracks } = useTrackOperations();
   const track = tracks[trackId];
@@ -79,7 +79,7 @@ export const TrackLane: React.FC<TrackLaneProps> = ({
             "relative h-24 w-max min-w-full border-b border-border bg-muted",
             className,
           )}
-          onClick={() => handleClickedTrack(trackId)}
+          onClick={onClick}
         >
           {trackClipIds.map((clipId: string) => (
             <Clip key={clipId} clipId={clipId} />

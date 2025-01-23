@@ -6,19 +6,19 @@ import { VolumeControl } from "../MixerUnits/VolumeControl";
 import { PanControl } from "../MixerUnits/PanControl";
 import { DeviceButtons } from "../MixerUnits/DeviceButtons";
 import { TrackButtons } from "./TrackButtons";
-import { useSelection } from "@/common/hooks/useSelection";
 import { useReturnTrack } from "@/features/mix/hooks/useReturnTrack";
 
 interface ReturnTrackControlsProps {
   trackId: string;
   className?: string;
+  onClick?: () => void;
 }
 
 export const ReturnTrackControls: React.FC<ReturnTrackControlsProps> = ({
   trackId,
   className,
+  onClick,
 }) => {
-  const { handleClickedTrack } = useSelection();
   const {
     returnTrack,
     pan,
@@ -64,7 +64,7 @@ export const ReturnTrackControls: React.FC<ReturnTrackControlsProps> = ({
 
   return (
     <div
-      onClick={() => handleClickedTrack(trackId)}
+      onClick={onClick}
       className={cn(
         "flex h-full w-40 min-w-40 cursor-pointer flex-col px-1 py-2",
         className,

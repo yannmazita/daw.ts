@@ -22,13 +22,41 @@ export class MixEngineImpl implements MixEngine {
   }
 
   /**
-   * Initializes the mixer with a master track.
+   * Initializes the mixer with a master track, 2 midi tracks and 2 audio tracks.
    * @param state - The current state.
    * @returns The updated state.
    */
   initializeMixer(state: MixState): MixState {
     const masterTrack = this.createMasterTrack();
-    return { ...state, mixer: { ...state.mixer, masterTrack } };
+    const newState1 = this.createTrack(state, "midi");
+    const newState2 = this.createTrack(state, "midi");
+    const newState3 = this.createTrack(state, "audio");
+    const newState4 = this.createTrack(state, "audio");
+    return {
+      ...state,
+      mixer: {
+        ...state.mixer,
+        masterTrack,
+        tracks: {
+          ...state.mixer.tracks,
+          [newState1.mixer.tracksOrder[0]]:
+            newState1.mixer.tracks[newState1.mixer.tracksOrder[0]],
+          [newState2.mixer.tracksOrder[0]]:
+            newState2.mixer.tracks[newState2.mixer.tracksOrder[0]],
+          [newState3.mixer.tracksOrder[0]]:
+            newState3.mixer.tracks[newState3.mixer.tracksOrder[0]],
+          [newState4.mixer.tracksOrder[0]]:
+            newState4.mixer.tracks[newState4.mixer.tracksOrder[0]],
+        },
+        tracksOrder: [
+          ...state.mixer.tracksOrder,
+          newState1.mixer.tracksOrder[0],
+          newState2.mixer.tracksOrder[0],
+          newState3.mixer.tracksOrder[0],
+          newState4.mixer.tracksOrder[0],
+        ],
+      },
+    };
   }
 
   /**

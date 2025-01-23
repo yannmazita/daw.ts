@@ -6,17 +6,17 @@ import { VolumeControl } from "../MixerUnits/VolumeControl";
 import { PanControl } from "../MixerUnits/PanControl";
 import { DeviceButtons } from "../MixerUnits/DeviceButtons";
 import { TrackButtons } from "./TrackButtons";
-import { useSelection } from "@/common/hooks/useSelection";
 import { useMasterTrack } from "@/features/mix/hooks/useMasterTrack";
 
 interface MasterTrackControlsProps {
   className?: string;
+  onClick?: () => void;
 }
 
 export const MasterTrackControls: React.FC<MasterTrackControlsProps> = ({
   className,
+  onClick,
 }) => {
-  const { handleClickedTrack } = useSelection();
   const {
     masterTrack,
     pan,
@@ -60,7 +60,7 @@ export const MasterTrackControls: React.FC<MasterTrackControlsProps> = ({
 
   return (
     <div
-      onClick={() => handleClickedTrack("master")}
+      onClick={onClick}
       className={cn(
         "flex h-full w-40 min-w-40 cursor-pointer flex-col px-1 py-2",
         className,
