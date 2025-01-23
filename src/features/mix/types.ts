@@ -2,9 +2,11 @@
 import { AudioNode } from "@/core/types/audio";
 
 export type Device = SoundChain | AudioNode;
+export type TrackType = "audio" | "midi";
 
 export interface Track {
   id: string;
+  type: TrackType;
   name: string;
   inputNode: AudioNode;
   outputNode: GainNode;
@@ -87,12 +89,12 @@ export interface MasterTrack {
 
 export interface MixEngine {
   initializeMixer(state: MixState): MixState;
-  createTrack(state: MixState, name?: string): MixState;
+  createTrack(state: MixState, type: TrackType, name?: string): MixState;
   createSend(
     state: MixState,
     trackId: string,
     returnTrackId: string,
-    name: string,
+    name?: string,
   ): MixState;
   createReturnTrack(state: MixState, name?: string): MixState;
   createSoundChain(state: MixState, trackId: string, name?: string): MixState;

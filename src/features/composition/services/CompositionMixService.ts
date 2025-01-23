@@ -1,5 +1,5 @@
 // src/features/composition/services/CompositionMixService.ts
-import { MixEngine } from "@/features/mix/types";
+import { MixEngine, TrackType } from "@/features/mix/types";
 import { useEngineStore } from "@/core/stores/useEngineStore";
 
 export class CompositionMixService {
@@ -9,9 +9,9 @@ export class CompositionMixService {
     useEngineStore.setState({ mix: newState });
   }
 
-  createTrack(name?: string): void {
+  createTrack(type: TrackType, name?: string): void {
     const state = useEngineStore.getState().mix;
-    const newState = this.mixEngine.createTrack(state, name);
+    const newState = this.mixEngine.createTrack(state, type, name);
     useEngineStore.setState({ mix: newState });
   }
 

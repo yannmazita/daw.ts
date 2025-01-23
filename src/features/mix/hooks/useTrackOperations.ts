@@ -2,14 +2,15 @@
 import { useCallback } from "react";
 import { useCompositionEngine } from "@/core/engines/EngineManager";
 import { useEngineStore } from "@/core/stores/useEngineStore";
+import { TrackType } from "../types";
 
 export const useTrackOperations = () => {
   const compositionEngine = useCompositionEngine();
   const tracks = useEngineStore((state) => state.mix.mixer.tracks);
   const tracksOrder = useEngineStore((state) => state.mix.mixer.tracksOrder);
   const createTrack = useCallback(
-    (name?: string) => {
-      return compositionEngine.createTrack(name);
+    (type: TrackType, name?: string) => {
+      return compositionEngine.createTrack(type, name);
     },
     [compositionEngine],
   );

@@ -3,7 +3,7 @@ import { CompositionEngine } from "../types";
 import { TransportEngine } from "../../transport/types";
 import { SamplerEngine } from "../../sampler/types";
 import { ClipEngine, CompositionClip } from "../../clips/types";
-import { MixEngine } from "../../mix/types";
+import { MixEngine, TrackType } from "../../mix/types";
 import { AutomationEngine } from "../../automation/types";
 import { CompositionTransportService } from "./CompositionTransportService";
 import { CompositionSamplerService } from "./CompositionSamplerService";
@@ -76,8 +76,8 @@ export class CompositionEngineImpl implements CompositionEngine {
   }
 
   // Mix methods
-  createTrack(name?: string): void {
-    return this.mixService.createTrack(name);
+  createTrack(type: TrackType, name?: string): void {
+    return this.mixService.createTrack(type, name);
   }
   createSend(trackId: string, returnTrackId: string, name?: string): void {
     return this.mixService.createSend(trackId, returnTrackId, name);

@@ -4,9 +4,12 @@ import { TrackLane } from "./TrackLane";
 import { TrackHeader } from "./TrackHeader";
 import { cn } from "@/common/shadcn/lib/utils";
 import { ScrollArea, ScrollBar } from "@/common/shadcn/ui/scroll-area";
+import { useDummyTrack } from "@/features/mix/hooks/useDummyTrack";
+import { DummyTrackHeader, DummyTrackLane } from "./DummyTrack";
 
 export const TimelineGrid: React.FC = () => {
   const { tracksOrder } = useTrackOperations();
+  const dummyTrackIds = useDummyTrack(tracksOrder.length);
 
   return (
     <div className="h-full overflow-hidden border border-border">
@@ -16,6 +19,9 @@ export const TimelineGrid: React.FC = () => {
           <div className="border-r border-border bg-background">
             {tracksOrder.map((trackId) => (
               <TrackHeader key={trackId} trackId={trackId} />
+            ))}
+            {dummyTrackIds.map((dummyId) => (
+              <DummyTrackHeader key={dummyId} />
             ))}
           </div>
 
@@ -27,7 +33,17 @@ export const TimelineGrid: React.FC = () => {
                   key={trackId}
                   trackId={trackId}
                   className={cn(
-                    index === tracksOrder.length - 1 && "border-b-0",
+                    index === tracksOrder.length - 1 &&
+                      dummyTrackIds.length === 0 &&
+                      "border-b-0",
+                  )}
+                />
+              ))}
+              {dummyTrackIds.map((dummyId, index) => (
+                <DummyTrackLane
+                  key={dummyId}
+                  className={cn(
+                    index === dummyTrackIds.length - 1 && "border-b-0",
                   )}
                 />
               ))}

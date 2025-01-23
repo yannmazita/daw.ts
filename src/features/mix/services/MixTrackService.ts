@@ -5,6 +5,7 @@ import {
   ReturnTrack,
   SoundChain,
   Chain,
+  TrackType,
 } from "@/features/mix/types";
 import { AudioNode } from "@/core/types/audio";
 import { MixRoutingService } from "./MixRoutingService";
@@ -24,13 +25,14 @@ export class MixTrackService {
    * @param name - The name of the track.
    * @returns The created track.
    */
-  createTrack(name?: string): Track {
+  createTrack(type: TrackType, name?: string): Track {
     const inputNode = this.audioContext.createGain();
     const outputNode = this.audioContext.createGain();
     const panNode = this.audioContext.createStereoPanner();
 
     const track: Track = {
       id: crypto.randomUUID(),
+      type,
       name: name ?? "New Track",
       inputNode,
       outputNode,

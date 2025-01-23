@@ -1,5 +1,5 @@
 // src/features/mix/services/MixEngine.ts
-import { MasterTrack, MixEngine, MixState } from "../types";
+import { MasterTrack, MixEngine, MixState, TrackType } from "../types";
 import { MixRoutingService } from "./MixRoutingService";
 import { MixTrackService } from "./MixTrackService";
 import { MixParameterService } from "./MixParameterService";
@@ -68,8 +68,8 @@ export class MixEngineImpl implements MixEngine {
    * @param name - The name of the track.
    * @returns The updated state.
    */
-  createTrack(state: MixState, name?: string): MixState {
-    const track = this.trackService.createTrack(name);
+  createTrack(state: MixState, type: TrackType, name?: string): MixState {
+    const track = this.trackService.createTrack(type, name);
     const masterTrack = state.mixer.masterTrack;
     this.routingService.connectTrackInput(track);
     this.routingService.connect(track.outputNode, masterTrack.inputNode);
