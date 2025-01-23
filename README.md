@@ -41,7 +41,7 @@ Because sometimes a picture is worth a thousand words.
 
 ```mermaid
 graph LR
-    subgraph Master Track
+    subgraph MasterTrack
         MT_Input(Master Input) --> MT_Pan(Pan)
         MT_Pan --> MT_Gain(Gain)
         MT_Gain --> MT_Output(Destination)
@@ -55,7 +55,7 @@ graph LR
         Track_Pan --> Track_Output(Track Output)
     end
 
-    subgraph Sound Chain
+    subgraph SoundChain
         SC_Input(Sound Chain Input) --> Chain1{Chain 1?}
         Chain1 -- Yes --> Chain1_Output(Chain 1 Output)
         Chain1 -- No --> SC_Output
@@ -76,7 +76,7 @@ graph LR
         Chain_Pan --> Chain_Output(Chain Output)
     end
 
-    subgraph Return Track
+    subgraph ReturnTrack
         RT_Input(Return Input) --> RT_Pan(Pan)
         RT_Pan --> RT_Output(Return Output)
     end
@@ -89,11 +89,11 @@ graph LR
     RT_Output --> MT_Input
     Send_Output --> RT_Input
 
-    style Master_Track fill:#f9f,stroke:#333,stroke-width:2px
+    style MasterTrack fill:#f9f,stroke:#333,stroke-width:2px
     style Track fill:#ccf,stroke:#333,stroke-width:2px
-    style Sound_Chain fill:#cff,stroke:#333,stroke-width:2px
+    style SoundChain fill:#cff,stroke:#333,stroke-width:2px
     style Chain fill:#cfc,stroke:#333,stroke-width:2px
-    style Return_Track fill:#ffc,stroke:#333,stroke-width:2px
+    style ReturnTrack fill:#ffc,stroke:#333,stroke-width:2px
     style Send fill:#fcc,stroke:#333,stroke-width:2px
 ```
 
