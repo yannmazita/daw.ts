@@ -1,18 +1,19 @@
 // src/features/mix/components/Mixer/Mixer.tsx
-import { useTrackOperations } from "@/features/composition/hooks/useTrackOperations";
-import { useMixerTrackOperations } from "../../hooks/useMixerTrackOperations";
-import { CompositionTrackControls } from "./MixerUnits/CompositionTrackControls";
-import { MixerTrackControls } from "./MixerUnits/MixerTrackControls";
+import { useTrackOperations } from "@/features/mix/hooks/useTrackOperations";
+import { useReturnTrackOperations } from "../../hooks/useReturnTrackOperations";
+import { TrackControls } from "./MixerUnits/TrackControls";
+import { ReturnTrackControls } from "./MixerUnits/ReturnTrackControls";
 import { SoundChainControls } from "./MixerUnits/SoundChainControls";
 import { cn } from "@/common/shadcn/lib/utils";
 import { ScrollArea, ScrollBar } from "@/common/shadcn/ui/scroll-area";
-import { useSoundChainManager } from "../../hooks/useSoundChainManager";
 import { MixerBar } from "../MixerBar";
+import { MasterTrackControls } from "./MixerUnits/MasterTrackControls";
+import { useSelection } from "@/common/hooks/useSelection";
 
 export const Mixer: React.FC = () => {
-  const { trackOrder } = useTrackOperations();
-  const { mixerTrackOrder } = useMixerTrackOperations();
-  const { soundChains } = useSoundChainManager();
+  const { tracksOrder } = useTrackOperations();
+  const { returnTracksOrder } = useReturnTrackOperations();
+  const { handleClickedTrack } = useSelection();
 
   return (
     <>
@@ -21,34 +22,33 @@ export const Mixer: React.FC = () => {
         <ScrollArea className="h-full [&>div>div]:h-full [&>div]:h-full [&_[data-radix-scroll-area-viewport]]:h-full">
           <div className="flex h-full flex-row">
             {/* Regular tracks */}
-            {trackOrder.map((trackId, index) => (
-              <CompositionTrackControls
+            {tracksOrder.map((trackId, index) => (
+              <TrackControls
                 key={trackId}
                 trackId={trackId}
                 className={cn(index === 0 && "ml-1")}
+                onClick={() => handleClickedTrack(trackId)}
               />
             ))}
-            {/* Mixer tracks (excluding master) */}
-            {mixerTrackOrder
-              .filter((trackId) => trackId !== "master")
-              .map((trackId) => (
-                <MixerTrackControls key={trackId} trackId={trackId} />
-              ))}
-            {/* Sound Chains */}
-            {Object.keys(soundChains).map((soundChainId) => (
-              <SoundChainControls
-                key={soundChainId}
-                soundChainId={soundChainId}
+            {/* Return tracks */}
+            {returnTracksOrder.map((trackId) => (
+              <ReturnTrackControls
+                key={trackId}
+                trackId={trackId}
+                onClick={() => handleClickedTrack(trackId)}
               />
+            ))}
+            {/* Sound Chains */}
+            {tracksOrder.map((trackId) => (
+              <SoundChainControls key={trackId} trackId={trackId} />
             ))}
           </div>
           <ScrollBar orientation="horizontal" />
         </ScrollArea>
-        {/* Master unit - fixed position */}
-        <MixerTrackControls
-          key="master"
-          trackId="master"
+        {/* Master Track - fixed position */}
+        <MasterTrackControls
           className="border-l"
+          onClick={() => handleClickedTrack("master")}
         />
       </div>
     </>

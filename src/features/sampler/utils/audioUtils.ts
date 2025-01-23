@@ -7,7 +7,6 @@ As part of this project, this code is distributed under the terms of the GNU Gen
 import { ParseOpcodeObj } from "@sfz-tools/core/dist/types/parse";
 import { AudioControlEvent } from "../types/audio";
 import { midiNameToNum } from "@sfz-tools/core/dist/utils";
-import { SFZRegion } from "../types";
 
 const regionDefaults = {
   lochan: 0,
@@ -55,9 +54,9 @@ const checkRegion = (
 };
 
 export const checkRegions = (
-  regions: SFZRegion[],
+  regions: ParseOpcodeObj[],
   controlEvent: AudioControlEvent,
-): SFZRegion => {
+) => {
   const random = Math.random();
   return regions.filter((region: ParseOpcodeObj) => {
     if (!region.lokey && region.key) region.lokey = region.key;
@@ -74,14 +73,13 @@ const midiNameToNumConvert = (val: string | number) => {
   return parseInt(val, 10);
 };
 
-export const midiNamesToNum = (regions: SFZRegion[]) => {
-  const regionsWithMidi = regions.map((region) => {
+export const midiNamesToNum = (regions: ParseOpcodeObj[]) => {
+  for (const region of regions) {
     if (region.lokey) region.lokey = midiNameToNumConvert(region.lokey);
     if (region.hikey) region.hikey = midiNameToNumConvert(region.hikey);
     if (region.key) region.key = midiNameToNumConvert(region.key);
     if (region.pitch_keycenter)
       region.pitch_keycenter = midiNameToNumConvert(region.pitch_keycenter);
-    return region;
-  });
-  return regionsWithMidi;
+  }
+  return regions;
 };

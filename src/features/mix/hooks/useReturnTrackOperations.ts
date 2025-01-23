@@ -1,37 +1,39 @@
-// src/features/mix/hooks/useTrackOperations.ts
+// src/features/mix/hooks/useReturnTrackOperations.ts
 import { useCallback } from "react";
 import { useCompositionEngine } from "@/core/engines/EngineManager";
 import { useEngineStore } from "@/core/stores/useEngineStore";
 
-export const useMixerTrackOperations = () => {
+export const useReturnTrackOperations = () => {
   const compositionEngine = useCompositionEngine();
-  const mixerTracks = useEngineStore((state) => state.mix.mixerTracks);
-  const mixerTrackOrder = useEngineStore((state) => state.mix.mixerTrackOrder);
+  const returnTracks = useEngineStore((state) => state.mix.mixer.returnTracks);
+  const returnTracksOrder = useEngineStore(
+    (state) => state.mix.mixer.returnTracksOrder,
+  );
 
   const createMixerTrack = useCallback(
     (name?: string) => {
-      return compositionEngine.createMixerTrack("return", name);
+      return compositionEngine.createReturnTrack(name);
     },
     [compositionEngine],
   );
 
   const deleteMixerTrack = useCallback(
     (trackId: string) => {
-      compositionEngine.deleteMixerTrack(trackId);
+      console.log("todo: implement deleteMixerTrack", trackId);
     },
     [compositionEngine],
   );
 
   const moveMixerTrack = useCallback(
     (trackId: string, newIndex: number) => {
-      compositionEngine.moveMixerTrack(trackId, newIndex);
+      console.log("todo: implement moveMixerTrack", trackId, newIndex);
     },
     [compositionEngine],
   );
 
   return {
-    mixerTracks,
-    mixerTrackOrder,
+    returnTracks,
+    returnTracksOrder,
     createMixerTrack,
     deleteMixerTrack,
     moveMixerTrack,

@@ -5,10 +5,6 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/common/shadcn/ui/tabs";
-import { useEngineStore } from "@/core/stores/useEngineStore";
-import { useUIStore } from "@/core/stores/useUIStore";
-import { DeviceUnit } from "@/features/mix/components/Mixer/DeviceUnit";
-import { useMemo } from "react";
 
 export const DetailView: React.FC = () => {
   return (
@@ -20,7 +16,7 @@ export const DetailView: React.FC = () => {
           <TabsTrigger value="clip">Clip</TabsTrigger>
         </TabsList>
         <TabsContent value="devices" className="h-full">
-          <DeviceTabContent />
+          <div className="p-4">Device View</div>
         </TabsContent>
         <TabsContent value="automation" className="h-full">
           <div className="p-4">Automation View</div>
@@ -29,27 +25,6 @@ export const DetailView: React.FC = () => {
           <div className="p-4">Clip View</div>
         </TabsContent>
       </Tabs>
-    </div>
-  );
-};
-
-const DeviceTabContent: React.FC = () => {
-  const { clickedComponentId } = useUIStore();
-  const { devices } = useEngineStore((state) => state.mix);
-
-  const selectedParentId = clickedComponentId;
-
-  const filteredDevices = useMemo(() => {
-    return Object.values(devices).filter(
-      (device) => device.parentId === selectedParentId,
-    );
-  }, [devices, selectedParentId]);
-
-  return (
-    <div className="flex flex-row gap-2 p-4">
-      {filteredDevices.map((device) => (
-        <DeviceUnit key={device.id} device={device} />
-      ))}
     </div>
   );
 };

@@ -4,7 +4,6 @@ import { SamplerEngine } from "../sampler/types";
 import { ClipEngine } from "../clips/types";
 import { MixEngine } from "../mix/types";
 import { AutomationEngine } from "../automation/types";
-import { TrackEngine } from "../tracks/types";
 
 export interface CompositionState {}
 
@@ -13,9 +12,8 @@ export interface CompositionEngine {
   samplerEngine: SamplerEngine;
   mixEngine: MixEngine;
   clipEngine: ClipEngine;
-  trackEngine: TrackEngine;
   automationEngine: AutomationEngine;
 
   // Cleanup
-  dispose(): void;
+  dispose(): Promise<void>;
 }

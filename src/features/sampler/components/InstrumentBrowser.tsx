@@ -1,19 +1,10 @@
 // src/features/sampler/components/InstrumentBrowser.tsx
 import { Button } from "@/common/shadcn/ui/button";
-import { useState } from "react";
 import { useInstrumentBrowser } from "../hooks/useInstrumentBrowser";
 import { InstrumentsTree } from "./InstrumentsTree";
 
 export const InstrumentBrowser: React.FC = () => {
-  const { instruments, filesTree, filesMap, loadInstrument } =
-    useInstrumentBrowser();
-  const [selectedInstrument, setSelectedInstrument] = useState<
-    string | undefined
-  >();
-
-  const handleInstrumentChange = (value: string) => {
-    setSelectedInstrument(value);
-  };
+  const { filesTree, filesMap, loadInstrument } = useInstrumentBrowser();
 
   const handleFileClick = async (content: string): Promise<void> => {
     console.log("File clicked:", content);

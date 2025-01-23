@@ -1,734 +1,300 @@
 // src/features/mix/services/MixEngine.ts
-import * as Tone from "tone";
-import {
-  MixEngine,
-  MixState,
-  Send,
-  MixerTrack,
-  Device,
-  SoundChain,
-  DeviceType,
-} from "../types";
-import {
-  createMixerTrackNodes,
-  createDeviceNode,
-} from "@/common/utils/audioNodes";
-import {
-  addSendToState,
-  removeSendFromState,
-  updateDevice,
-  updateMixerTrack,
-  updateMixState,
-  updateSoundChain,
-} from "../utils/stateUtils";
-import {
-  disposeDevice,
-  disposeMixerTrack,
-  disposeSend,
-  disposeSoundChain,
-} from "../utils/cleanupUtils";
-import {
-  calculateMasterLevel,
-  captureRoutingState,
-  connectMixerTrackChain,
-  connectSend,
-  connectSoundChain,
-  restoreSendRouting,
-} from "../utils/routingUtils";
-import { validateSendRouting, validateSendUpdate } from "../utils/validation";
-import { moveMixerTrackInOrder } from "../utils/orderUtils";
-import { initialMixerTrackControlState } from "../utils/initialState";
-import { ToneWithBypass } from "@/core/types/audio";
-import { EngineState } from "@/core/stores/useEngineStore";
+import { MasterTrack, MixEngine, MixState, TrackType } from "../types";
+import { MixRoutingService } from "./MixRoutingService";
+import { MixTrackService } from "./MixTrackService";
+import { MixParameterService } from "./MixParameterService";
 
+/**
+ * Main class for the mix engine.
+ */
 export class MixEngineImpl implements MixEngine {
-  private disposed = false;
+  private routingService: MixRoutingService;
+  private trackService: MixTrackService;
+  private parameterService: MixParameterService;
 
-  initializeMix(state: MixState): MixState {
-    console.log("Initializing mixer tracks:", state.mixerTracks);
-
-    try {
-      if (state.mixerTracks.master) {
-        // We have a persisted master track, reinitialize its nodes
-        console.log("Reinitializing persisted master track");
-        const nodes = createMixerTrackNodes();
-
-        // Connect nodes
-        nodes.input.connect(nodes.meter);
-        nodes.input.connect(nodes.channel);
-
-        // Update state with new nodes
-        return updateMixState(state, {
-          mixerTracks: {
-            ...state.mixerTracks,
-            master: {
-              ...state.mixerTracks.master,
-              ...nodes,
-              deviceIds: state.mixerTracks.master.deviceIds,
-              controls: state.mixerTracks.master.controls,
-            },
-          },
-        });
-      } else {
-        // No persisted master track, create new one
-        return this.createMixerTrack(state, "master", "Master Track");
-      }
-    } catch (error) {
-      console.error("Failed to initialize mixer tracks:", error);
-      throw error;
-    }
+  constructor(private audioContext: AudioContext) {
+    this.routingService = new MixRoutingService(this.audioContext);
+    this.trackService = new MixTrackService(
+      this.audioContext,
+      this.routingService,
+    );
+    this.parameterService = new MixParameterService(this.audioContext);
   }
 
-  createMixerTrack(
+  /**
+   * Initializes the mixer with a master track, 2 midi tracks and 2 audio tracks.
+   * @param state - The current state.
+   * @returns The updated state.
+   */
+  initializeMixer(state: MixState): MixState {
+    const masterTrack = this.createMasterTrack();
+    const newState1 = this.createTrack(state, "midi");
+    const newState2 = this.createTrack(state, "midi");
+    const newState3 = this.createTrack(state, "audio");
+    const newState4 = this.createTrack(state, "audio");
+    return {
+      ...state,
+      mixer: {
+        ...state.mixer,
+        masterTrack,
+        tracks: {
+          ...state.mixer.tracks,
+          [newState1.mixer.tracksOrder[0]]:
+            newState1.mixer.tracks[newState1.mixer.tracksOrder[0]],
+          [newState2.mixer.tracksOrder[0]]:
+            newState2.mixer.tracks[newState2.mixer.tracksOrder[0]],
+          [newState3.mixer.tracksOrder[0]]:
+            newState3.mixer.tracks[newState3.mixer.tracksOrder[0]],
+          [newState4.mixer.tracksOrder[0]]:
+            newState4.mixer.tracks[newState4.mixer.tracksOrder[0]],
+        },
+        tracksOrder: [
+          ...state.mixer.tracksOrder,
+          newState1.mixer.tracksOrder[0],
+          newState2.mixer.tracksOrder[0],
+          newState3.mixer.tracksOrder[0],
+          newState4.mixer.tracksOrder[0],
+        ],
+      },
+    };
+  }
+
+  /**
+   * Creates a master track.
+   * The Master Track input node is connected to pan then to destination (speakers etc).
+   * @returns The created master track.
+   */
+  private createMasterTrack(): MasterTrack {
+    const inputNode = this.audioContext.createGain();
+    const gainNode = this.audioContext.createGain();
+    const outputNode = this.audioContext.destination;
+    const panNode = this.audioContext.createStereoPanner();
+
+    const masterTrack: MasterTrack = {
+      id: "master",
+      name: "Master Track",
+      inputNode,
+      gainNode,
+      outputNode,
+      panNode,
+      isMuted: false,
+      isSoloed: false,
+      previousGain: 1,
+      effects: {},
+      effectsOrder: [],
+    };
+    this.routingService.connect(masterTrack.inputNode, masterTrack.panNode);
+    this.routingService.connect(masterTrack.panNode, masterTrack.gainNode);
+    this.routingService.connect(masterTrack.gainNode, masterTrack.outputNode);
+    return masterTrack;
+  }
+
+  /**
+   * Creates a new track.
+   * @param state - The current state.
+   * New tracks send to the Master Track by default.
+   * @param name - The name of the track.
+   * @returns The updated state.
+   */
+  createTrack(state: MixState, type: TrackType, name?: string): MixState {
+    const track = this.trackService.createTrack(type, name);
+    const masterTrack = state.mixer.masterTrack;
+    this.routingService.connectTrackInput(track);
+    this.routingService.connect(track.outputNode, masterTrack.inputNode);
+    return {
+      ...state,
+      mixer: {
+        ...state.mixer,
+        tracks: { ...state.mixer.tracks, [track.id]: track },
+        tracksOrder: [...state.mixer.tracksOrder, track.id],
+      },
+    };
+  }
+
+  /**
+   * Creates a new send for a track.
+   * @param state - The current state.
+   * @param trackId - The id of the track to create the send for.
+   * @param returnTrackId - The id of the return track to send to.
+   * @param name - The name of the send.
+   * @returns The updated state.
+   * @throws If track or return track is not found.
+   */
+  createSend(
     state: MixState,
-    type: MixerTrack["type"] = "return",
+    trackId: string,
+    returnTrackId: string,
     name?: string,
   ): MixState {
-    let id = null;
-    if (type === "master") {
-      id = "master";
-    } else {
-      id = crypto.randomUUID();
-    }
-    const nodes = createMixerTrackNodes();
-    console.log("Mixer track nodes created:", nodes);
+    const track = state.mixer.tracks[trackId];
+    const returnTrack = state.mixer.returnTracks[returnTrackId];
 
-    try {
-      nodes.input.connect(nodes.meter);
-      nodes.input.connect(nodes.channel);
-    } catch (error) {
-      console.error("Failed to connect mixer track nodes");
-      throw error;
+    if (!track || !returnTrack) {
+      throw new Error("Track or return track not found");
     }
 
-    const newMixerTrack: MixerTrack = {
-      id,
-      name: name ?? `${type} ${id.slice(0, 6)}`,
-      type,
-      ...nodes,
-      deviceIds: [],
-      controls: { ...initialMixerTrackControlState },
+    const send = this.trackService.createSend(track, returnTrack, name);
+
+    if (!returnTrack.inputNode) {
+      const inputNode = this.audioContext.createGain();
+      returnTrack.inputNode = inputNode;
+    }
+    this.routingService.connect(send.outputNode, returnTrack.inputNode);
+
+    return {
+      ...state,
+      mixer: {
+        ...state.mixer,
+        tracks: {
+          ...state.mixer.tracks,
+          [trackId]: {
+            ...state.mixer.tracks[trackId],
+            sends: { ...state.mixer.tracks[trackId].sends, [send.id]: send },
+            sendsOrder: [...state.mixer.tracks[trackId].sendsOrder, send.id],
+          },
+        },
+        returnTracks: {
+          ...state.mixer.returnTracks,
+          [returnTrackId]: returnTrack,
+        },
+      },
     };
+  }
 
-    try {
-      return updateMixState(state, {
-        mixerTracks: {
-          ...state.mixerTracks,
-          [id]: newMixerTrack,
+  /**
+   * Creates a new return track.
+   * @param state - The current state.
+   * @param name - The name of the return track.
+   * @returns The updated state.
+   */
+  createReturnTrack(state: MixState, name?: string): MixState {
+    const returnTrack = this.trackService.createReturnTrack(name);
+
+    this.routingService.connect(
+      returnTrack.outputNode,
+      state.mixer.masterTrack.inputNode,
+    );
+
+    return {
+      ...state,
+      mixer: {
+        ...state.mixer,
+        returnTracks: {
+          ...state.mixer.returnTracks,
+          [returnTrack.id]: returnTrack,
         },
-        mixerTrackOrder:
-          type === "master"
-            ? state.mixerTrackOrder
-            : [...state.mixerTrackOrder, id],
-      });
-    } catch (error) {
-      console.error("Failed to create mixer track");
-      throw error;
-    }
+        returnTracksOrder: [...state.mixer.returnTracksOrder, returnTrack.id],
+      },
+    };
   }
 
-  deleteMixerTrack(state: MixState, id: string): MixState {
-    const mixerTrack = state.mixerTracks[id];
-    const devices = state.devices;
+  /**
+   * Creates a new sound chain. An empty chain is added to the sound chain.
+   * The chain output node is connected to the sound chain output node.
+   * @param state - The current state.
+   * @param trackId - The id of the track to add the chain to.
+   * @param name - The name of the sound chain.
+   * @returns The updated state.
+   */
+  createSoundChain(state: MixState, trackId: string, name?: string): MixState {
+    const soundChain = this.trackService.createSoundChain(name);
+    const chain = this.trackService.createChain();
+    soundChain.chains = { [chain.id]: chain };
+    soundChain.chainsOrder = [chain.id];
 
-    if (!mixerTrack || id === "master") {
-      throw new Error("Could not delete mixer track");
-    }
+    this.routingService.connect(chain.outputNode, soundChain.outputNode);
 
-    try {
-      disposeMixerTrack(mixerTrack, devices);
-      const { [id]: _, ...remainingMixerTracks } = state.mixerTracks;
-      return updateMixState(state, {
-        mixerTracks: remainingMixerTracks,
-        mixerTrackOrder: state.mixerTrackOrder.filter(
-          (trackId) => trackId !== id,
-        ),
-      });
-    } catch (error) {
-      console.error("Failed to delete mixer track:", error);
-      throw error;
-    }
-  }
-
-  moveMixerTrack(state: MixState, trackId: string, newIndex: number): MixState {
-    const mixerTrack = state.mixerTracks[trackId];
-
-    if (!mixerTrack) {
-      throw new Error("Mixer track not found");
-    }
-
-    try {
-      const newOrder = moveMixerTrackInOrder(trackId, newIndex, state);
-      return updateMixState(state, {
-        mixerTrackOrder: newOrder,
-      });
-    } catch (error) {
-      console.error(`Failed to move mixer track ${trackId}:`, error);
-      throw error;
-    }
-  }
-
-  setSolo(state: MixState, mixerTrackId: string, solo: boolean): MixState {
-    // Placeholder for solo functionality
-    return state;
-  }
-
-  setMute(state: MixState, mixerTrackId: string, mute: boolean): MixState {
-    const mixerTrack = state.mixerTracks[mixerTrackId];
-
-    if (!mixerTrack) {
-      throw new Error(`Mixer track ${mixerTrackId} not found`);
-    }
-
-    try {
-      mixerTrack.channel.mute = mute;
-
-      return updateMixState(state, {
-        mixerTracks: {
-          ...state.mixerTracks,
-          [mixerTrackId]: {
-            ...mixerTrack,
-            controls: {
-              ...mixerTrack.controls,
-              mute,
-            },
+    return {
+      ...state,
+      mixer: {
+        ...state.mixer,
+        tracks: {
+          ...state.mixer.tracks,
+          [trackId]: {
+            ...state.mixer.tracks[trackId],
+            soundChain,
           },
         },
-      });
-    } catch (error) {
-      console.error(
-        `Failed to set mute state for mixer track ${mixerTrackId}:`,
-        error,
-      );
-      throw error;
-    }
+        returnTracksOrder: [...state.mixer.returnTracksOrder, soundChain.id],
+      },
+    };
   }
 
-  setPan(state: MixState, mixerTrackId: string, pan: number): MixState {
-    const mixerTrack = state.mixerTracks[mixerTrackId];
-
-    if (!mixerTrack) {
-      throw new Error(`Mixer track ${mixerTrackId} not found`);
-    }
-
-    const clampedPan = Math.max(-1, Math.min(1, pan));
-
-    try {
-      mixerTrack.channel.pan.value = clampedPan;
-
-      return updateMixState(state, {
-        mixerTracks: {
-          ...state.mixerTracks,
-          [mixerTrackId]: {
-            ...mixerTrack,
-            controls: {
-              ...mixerTrack.controls,
-              pan: clampedPan,
-            },
-          },
-        },
-      });
-    } catch (error) {
-      console.error(
-        `Failed to set pan for mixer track ${mixerTrackId}:`,
-        error,
-      );
-      throw error;
-    }
-  }
-
-  setVolume(state: MixState, mixerTrackId: string, volume: number): MixState {
-    const mixerTrack = state.mixerTracks[mixerTrackId];
-    if (!mixerTrack) {
-      throw new Error(`Mixer track ${mixerTrackId} not found`);
-    }
-    const clampedVolume = Math.max(-100, Math.min(6, volume));
-    try {
-      mixerTrack.channel.volume.value = clampedVolume;
-      return updateMixState(state, {
-        mixerTracks: {
-          ...state.mixerTracks,
-          [mixerTrackId]: {
-            ...mixerTrack,
-            controls: {
-              ...mixerTrack.controls,
-              volume: clampedVolume,
-            },
-          },
-        },
-      });
-    } catch (error) {
-      console.error(
-        `Failed to set volume for mixer track ${mixerTrackId}:`,
-        error,
-      );
-      throw error;
-    }
-  }
-
-  getMeterValues(state: MixState, mixerTrackId: string): number | number[] {
-    const mixerTrack = state.mixerTracks[mixerTrackId];
-    if (!mixerTrack) {
-      throw new Error(`Mixer track ${mixerTrackId} not found`);
-    }
-    return mixerTrack.meter.getValue();
-  }
-
-  addDevice(
+  /**
+   * Creates a new chain.
+   * @param state - The current state.
+   * @param trackId - The id of the sound chain track.
+   * @param name - The name of the chain.
+   * @param instrument - The instrument node of the chain.
+   * @returns The updated state.
+   * @throws If track has no sound chain.
+   */
+  createChain(
     state: MixState,
-    parentId: string,
-    deviceType: DeviceType,
+    trackId: string,
+    name?: string,
+    instrument: AudioNode | null = null,
   ): MixState {
-    const id = crypto.randomUUID();
-    const mixerTrack = state.mixerTracks[parentId];
-    const soundChain = state.soundChains[parentId];
-    const masterTrack = state.mixerTracks.master;
+    const soundChain = state.mixer.tracks[trackId].soundChain;
+    let chain = null;
 
-    if (!mixerTrack && !soundChain) {
-      throw new Error(`Mixer track or sound chain ${parentId} not found`);
+    if (!soundChain) {
+      throw new Error("Track has no sound chain");
     }
 
-    const node = createDeviceNode(deviceType);
-    try {
-      const device: Device = {
-        id,
-        type: deviceType,
-        name: deviceType,
-        bypass: false,
-        node,
-        parentId,
-      };
-
-      const updatedState = updateDevice(state, id, device);
-      let newState = { ...updatedState };
-      if (mixerTrack) {
-        newState = {
-          ...updateMixerTrack(updatedState, parentId, {
-            deviceIds: [...(mixerTrack?.deviceIds || []), id],
-          }),
-        };
-      } else if (soundChain) {
-        newState = {
-          ...updateSoundChain(updatedState, parentId, {
-            deviceIds: [...(soundChain?.deviceIds || []), id],
-          }),
-        };
-      }
-
-      // Get updated track reference
-      const updatedTrack = newState.mixerTracks[parentId];
-      const updatedDevices = newState.devices;
-      // Connect with master track reference
-      if (updatedTrack) {
-        connectMixerTrackChain(updatedTrack, masterTrack, updatedDevices);
-      } else if (soundChain) {
-        connectSoundChain(soundChain, updatedDevices);
-      }
-
-      return { ...state, ...newState };
-    } catch (error) {
-      console.error(`Failed to add ${deviceType} device to track ${parentId}`);
-      throw error;
+    if (instrument) {
+      chain = this.trackService.createChain(name, instrument);
+    } else {
+      chain = this.trackService.createChain(name);
     }
-  }
+    this.routingService.connectChainOutput(chain, soundChain.outputNode);
 
-  removeDevice(state: MixState, parentId: string, deviceId: string): MixState {
-    const devices = state.devices;
-    const mixerTrack = state.mixerTracks[parentId];
-    const soundChain = state.soundChains[parentId];
-    const masterTrack = state.mixerTracks.master;
-
-    if (!devices[deviceId]) {
-      throw new Error(`Device ${deviceId} not found`);
-    }
-    if (!mixerTrack && !soundChain) {
-      throw new Error(`Mixer track or sound chain ${parentId} not found`);
-    }
-    if (mixerTrack && !masterTrack) {
-      throw new Error("Master track not found");
-    }
-
-    try {
-      // Remove device from state
-      const { [deviceId]: _, ...remainingDevices } = state.devices;
-
-      let newState = {
-        ...state,
-        devices: remainingDevices,
-      };
-      if (mixerTrack) {
-        newState = {
-          ...state,
-          devices: remainingDevices,
-          mixerTracks: {
-            ...state.mixerTracks,
-            [parentId]: {
-              ...mixerTrack,
-              deviceIds: mixerTrack.deviceIds.filter((id) => id !== deviceId),
-            },
-          },
-        };
-      } else if (soundChain) {
-        newState = {
-          ...state,
-          devices: remainingDevices,
-          soundChains: {
-            ...state.soundChains,
-            [parentId]: {
+    return {
+      ...state,
+      mixer: {
+        ...state.mixer,
+        tracks: {
+          ...state.mixer.tracks,
+          [trackId]: {
+            ...state.mixer.tracks[trackId],
+            soundChain: {
               ...soundChain,
-              deviceIds: soundChain.deviceIds.filter((id) => id !== deviceId),
+              chains: { ...soundChain.chains, [chain.id]: chain },
+              chainsOrder: [...soundChain.chainsOrder, chain.id],
             },
           },
-        };
-      }
-
-      // Get updated track reference
-      const updatedTrack = newState.mixerTracks[parentId];
-      const updatedDevices = newState.devices;
-
-      // Reconnect the chain within setState with master track reference
-      if (updatedTrack) {
-        connectMixerTrackChain(updatedTrack, masterTrack, updatedDevices);
-      } else if (soundChain) {
-        connectSoundChain(soundChain, updatedDevices);
-      }
-
-      // Dispose device after state update
-      try {
-        disposeDevice(devices[deviceId]);
-      } catch (disposeError) {
-        console.warn(`Failed to dispose device ${deviceId}:`, disposeError);
-        // Continue execution as state is already updated
-      }
-
-      return { ...state, ...newState };
-    } catch (error) {
-      console.error(
-        `Failed to remove device ${deviceId} from track ${parentId}:`,
-        error,
-      );
-      // Attempt to restore connection if state update failed
-      try {
-        if (mixerTrack) {
-          connectMixerTrackChain(mixerTrack, masterTrack, devices);
-        } else if (soundChain) {
-          connectSoundChain(soundChain, devices);
-        }
-      } catch (restoreError) {
-        console.error("Failed to restore track connection:", restoreError);
-      }
-      throw error;
-    }
-  }
-
-  updateDevice(
-    state: MixState,
-    parentId: string,
-    deviceId: string,
-    updates: Partial<Device>,
-  ): MixState {
-    const device = state.devices[deviceId];
-    const mixerTrack = state.mixerTracks[parentId];
-    const soundChain = state.soundChains[parentId];
-
-    if (!device || (!mixerTrack && !soundChain)) {
-      throw new Error("Device or mixer track/soundchain not found");
-    }
-
-    try {
-      // Update bypass state
-      if (
-        updates.bypass !== undefined &&
-        (device.node as ToneWithBypass).bypass
-      ) {
-        (device.node as ToneWithBypass).bypass(updates.bypass);
-      }
-
-      // Update other parameters
-      if (updates.options) {
-        Object.entries(updates.options).forEach(([key, value]) => {
-          if (
-            device.node[key as keyof typeof device.node] instanceof Tone.Param
-          ) {
-            (
-              device.node[key as keyof typeof device.node] as Tone.Param<any>
-            ).value = value;
-          } else if (key in device.node) {
-            (device.node as any)[key] = value;
-          }
-        });
-      }
-
-      return updateDevice(state, deviceId, {
-        ...device,
-        ...updates,
-        node: device.node,
-      });
-    } catch (error) {
-      console.error("Failed to update device:", error);
-      throw error;
-    }
-  }
-
-  createSend(state: EngineState, fromId: string, toId: string): EngineState {
-    const id = crypto.randomUUID();
-    const sourceTrack = state.tracks.tracks[fromId];
-    const returnTrack = state.mix.mixerTracks[toId];
-
-    if (!sourceTrack) {
-      throw new Error(`Source track ${fromId} not found`);
-    } else if (!returnTrack) {
-      throw new Error(`Return track ${toId} not found`);
-    }
-
-    const validation = validateSendRouting(
-      fromId,
-      toId,
-      state.tracks.tracks,
-      state.mix.mixerTracks,
-      state.mix.sends,
-      state.mix.trackSends,
-    );
-
-    if (!validation.isValid) {
-      throw new Error(`Invalid send routing: ${validation.error}`);
-    }
-
-    try {
-      const send: Send = {
-        id,
-        name: `Send to ${returnTrack.name}`,
-        sourceTrackId: fromId,
-        returnTrackId: toId,
-        preFader: false,
-        gain: new Tone.Gain(0),
-      };
-
-      // Connect the send before updating state
-      connectSend(send, sourceTrack, returnTrack);
-
-      return {
-        ...state,
-        mix: addSendToState(state.mix, send),
-      };
-    } catch (error) {
-      console.error("Failed to create send:", error);
-      throw error;
-    }
-  }
-
-  updateSend(
-    state: EngineState,
-    baseTrackId: string,
-    sendId: string,
-    updates: Partial<Send>,
-  ): EngineState {
-    const send = state.mix.sends[sendId];
-    const sourceTrack = state.tracks.tracks[baseTrackId];
-    const masterTrack = state.mix.mixerTracks.master;
-
-    if (!send || !sourceTrack || !masterTrack) {
-      throw new Error("Send, source track, or master track not found");
-    }
-
-    const validation = validateSendUpdate(
-      send,
-      sourceTrack,
-      state.mix.mixerTracks,
-      updates,
-    );
-    if (!validation.isValid) {
-      throw new Error(validation.error);
-    }
-
-    const originalState = captureRoutingState(send, sourceTrack);
-
-    try {
-      const updatedSend = {
-        ...send,
-        ...updates,
-        gain: updates.gain ?? send.gain,
-      };
-      const returnTrack = state.mix.mixerTracks[updatedSend.returnTrackId];
-
-      try {
-        // Handle any routing changes
-        if (updates.returnTrackId || updates.preFader !== undefined) {
-          connectSend(updatedSend, sourceTrack, returnTrack);
-
-          // Update master level for post-fader changes
-          if (!updatedSend.preFader) {
-            sourceTrack.channel.volume.value = calculateMasterLevel(
-              updatedSend.gain.gain.value,
-              updatedSend.preFader,
-            );
-          }
-        }
-
-        return {
-          ...state,
-          mix: {
-            ...state.mix,
-            sends: {
-              ...state.mix.sends,
-              [sendId]: updatedSend,
-            },
-          },
-        };
-      } catch (audioError) {
-        restoreSendRouting(send, sourceTrack, returnTrack, originalState);
-        throw audioError;
-      }
-    } catch (error) {
-      console.error(`Failed to update send ${sendId}:`, error);
-      throw error;
-    }
-  }
-
-  removeSend(state: MixState, baseTrackId: string, sendId: string): MixState {
-    const send = state.sends[sendId];
-    const sourceTrack = state.mixerTracks[baseTrackId];
-
-    if (!send || !sourceTrack) {
-      throw new Error("Send or source track not found");
-    }
-
-    if (send.sourceTrackId !== baseTrackId) {
-      throw new Error("Send doesn't belong to specified track");
-    }
-
-    try {
-      // If it was post-fader, restore master level
-      if (!send.preFader) {
-        sourceTrack.channel.volume.value = 1;
-      }
-
-      // Dispose audio nodes
-      disposeSend(send);
-
-      // Update state
-      return removeSendFromState(state, sendId);
-    } catch (error) {
-      console.error(`Failed to remove send ${sendId}:`, error);
-      throw error;
-    }
-  }
-
-  setSendAmount(
-    state: EngineState,
-    baseTrackId: string,
-    sendId: string,
-    amount: number,
-  ): EngineState {
-    const send = state.mix.sends[sendId];
-    const sourceTrack = state.tracks.tracks[baseTrackId];
-    const masterTrack = state.mix.mixerTracks.master;
-
-    if (!send || !sourceTrack || !masterTrack) {
-      throw new Error("Send, source track, or master track not found");
-    }
-
-    try {
-      const clampedAmount = Math.max(0, Math.min(1, amount));
-      const masterAmount = calculateMasterLevel(clampedAmount, send.preFader);
-
-      // Update send gain
-      send.gain.gain.value = clampedAmount;
-      sourceTrack.channel.volume.value = masterAmount;
-
-      return {
-        ...state,
-        mix: {
-          ...state.mix,
-          sends: {
-            ...state.mix.sends,
-            [sendId]: send,
-          },
         },
-      };
-    } catch (error) {
-      console.error("Failed to set send amount:", error);
-      throw error;
-    }
+      },
+    };
   }
 
-  getTrackSends(state: MixState, baseTrackId: string): Send[] {
-    const sendIds = state.trackSends[baseTrackId] || [];
-    return sendIds.map((id) => state.sends[id]).filter(Boolean);
-  }
-
-  disconnectTrackSends(state: MixState, baseTrackId: string): MixState {
-    const sends = this.getTrackSends(state, baseTrackId);
-    let newState = state;
-
-    sends.forEach((send) => {
-      try {
-        send.gain.disconnect();
-        newState = removeSendFromState(newState, send.id);
-      } catch (error) {
-        console.warn(`Failed to disconnect send ${send.id}:`, error);
+  /**
+   * Disposes of the mix engine and releases resources.
+   */
+  async dispose(state: MixState): Promise<void> {
+    // Dispose all nodes
+    for (const trackId in state.mixer.tracks) {
+      const track = state.mixer.tracks[trackId];
+      this.routingService.disposeNode(track.outputNode);
+      if (track.inputNode) {
+        this.routingService.disposeNode(track.inputNode);
       }
-    });
-    return newState;
-  }
-
-  createSoundChain(state: MixState, name?: string): MixState {
-    const id = crypto.randomUUID();
-    const input = new Tone.Gain();
-    const output = new Tone.Gain();
-
-    try {
-      const soundChain: SoundChain = {
-        id,
-        name: name ?? `Sound Chain ${id.slice(0, 6)}`,
-        deviceIds: [],
-        input,
-        output,
-      };
-
-      return updateMixState(state, {
-        soundChains: {
-          ...state.soundChains,
-          [id]: soundChain,
-        },
+      Object.values(track.sends).forEach((send) => {
+        this.routingService.disposeNode(send.outputNode);
       });
-    } catch (error) {
-      console.error("Failed to create sound chain");
-      // Clean up on error
-      input.dispose();
-      output.dispose();
-      throw error;
     }
-  }
 
-  dispose(state: MixState): MixState {
-    if (this.disposed) return state;
-    this.disposed = true;
-
-    const devices = state.devices;
-    const soundChains = state.soundChains;
-
-    try {
-      // Dispose all mixer tracks and their devices
-      Object.values(state.mixerTracks).forEach((mixerTrack) => {
-        disposeMixerTrack(mixerTrack, devices);
-      });
-      Object.values(soundChains).forEach((soundChain) => {
-        disposeSoundChain(soundChain, devices);
-      });
-
-      // Reset state
-      return {
-        mixerTracks: {},
-        mixerTrackOrder: ["master"],
-        devices: {},
-        sends: {},
-        trackSends: {},
-        soundChains: {},
-      };
-    } catch (error) {
-      console.error("Error during engine disposal");
-      throw error;
+    for (const returnTrackId in state.mixer.returnTracks) {
+      const returnTrack = state.mixer.returnTracks[returnTrackId];
+      this.routingService.disposeNode(returnTrack.outputNode);
+      if (returnTrack.inputNode) {
+        this.routingService.disposeNode(returnTrack.inputNode);
+      }
     }
+
+    this.routingService.disposeNode(state.mixer.masterTrack.inputNode);
+    this.routingService.disposeNode(state.mixer.masterTrack.outputNode);
+    // Close the audio context
+    await this.audioContext.close();
   }
 }

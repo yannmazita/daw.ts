@@ -10,6 +10,4 @@ export interface AudioControlEvent {
   velocity: number;
 }
 
-export interface AudioKeyboardMap {
-  [name: number]: boolean;
-}
+export type AudioKeyboardMap = Record<number, boolean>;

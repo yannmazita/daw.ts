@@ -1,6 +1,21 @@
 // src/core/types/audio.ts
-import { ToneAudioNode } from "tone";
-
-export type ToneWithBypass = ToneAudioNode & {
-  bypass: (bypass: boolean) => void;
-};
+export type AudioNode =
+  | GainNode
+  | OscillatorNode
+  | AudioBufferSourceNode
+  | BiquadFilterNode
+  | StereoPannerNode
+  | AnalyserNode
+  | ConvolverNode
+  | DelayNode
+  | DynamicsCompressorNode
+  | WaveShaperNode
+  | MediaElementAudioSourceNode
+  | MediaStreamAudioSourceNode
+  | ChannelSplitterNode
+  | ChannelMergerNode
+  | IIRFilterNode
+  | ConstantSourceNode
+  | PannerNode
+  | AudioWorkletNode
+  | AudioDestinationNode;

@@ -6,7 +6,6 @@ import { SamplerState } from "@/features/sampler/types";
 import { ClipState } from "@/features/clips/types";
 import { MixState } from "@/features/mix/types";
 import { AutomationState } from "@/features/automation/types";
-import { TrackState } from "@/features/tracks/types";
 import { CompositionState } from "@/features/composition/types";
 import { initialTransportState } from "@/features/transport/utils/initialState";
 import { initialSamplerState } from "@/features/sampler/utils/initialState";
@@ -14,7 +13,6 @@ import { initialClipState } from "@/features/clips/utils/initialState";
 import { initialMixState } from "@/features/mix/utils/initialState";
 import { initialAutomationState } from "@/features/automation/utils/initialState";
 import { initialCompositionState } from "@/features/composition/utils/initialState";
-import { initialTrackState } from "@/features/tracks/utils/initialState";
 
 export interface EngineState {
   transport: TransportState;
@@ -22,7 +20,6 @@ export interface EngineState {
   clips: ClipState;
   mix: MixState;
   automation: AutomationState;
-  tracks: TrackState;
   composition: CompositionState;
 }
 
@@ -33,7 +30,6 @@ export const useEngineStore = create<EngineState>()(
     clips: initialClipState,
     mix: initialMixState,
     automation: initialAutomationState,
-    tracks: initialTrackState,
     composition: initialCompositionState,
   })),
 );

@@ -4,46 +4,49 @@ This file includes code released under the CC0 1.0 Universal (CC0 1.0) Public Do
 See: https://github.com/sfzlab/sfz-web-player
 As part of this project, this code is distributed under the terms of the GNU General Public License version 3.
 */
-import * as Tone from "tone";
-import { SamplerEngine, SamplerState } from "../types";
-import { FileLoader } from "../utils/fileLoader";
-import { Midi } from "@tonejs/midi";
-import { EngineState } from "@/core/stores/useEngineStore";
-import { pathGetExt, pathGetRoot } from "@sfz-tools/core/dist/utils";
-import { apiJson } from "@sfz-tools/core/dist/api";
 import {
   directoryOpen,
   FileWithDirectoryAndFileHandle,
 } from "browser-fs-access";
-import { HeaderPreset } from "../types/player";
+import { SamplerEngine, SamplerState } from "../types";
+import { FileLoaderService } from "./FileLoaderService";
+import { pathGetExt, pathGetRoot } from "@sfz-tools/core/dist/utils";
+import { SfzParsingService } from "./SfzParsingService";
+import { FileLocal, FileRemote } from "../types/files";
+import { ParseOpcodeObj } from "@sfz-tools/core/dist/types/parse";
 
 export class SamplerEngineImpl implements SamplerEngine {
-  private loader: FileLoader = new FileLoader();
+  private loader: FileLoaderService;
+  private parser: SfzParsingService;
 
-  private loadDirectory(
-    root: string,
-    files: string[] | FileWithDirectoryAndFileHandle[],
-  ) {
-    let audioFile: string | FileWithDirectoryAndFileHandle | undefined;
+  constructor(private audioContext: AudioContext) {
+    this.loader = new FileLoaderService(audioContext);
+    this.parser = new SfzParsingService(this.loader);
+  }
+
+  private loadDirectory(files: string[] | FileWithDirectoryAndFileHandle[]) {
+    let audioFile: string | undefined;
     let audioFileDepth = 1000;
-    let audioFileJson: string | FileWithDirectoryAndFileHandle | undefined;
+    let audioFileJson: string | undefined;
     let audioFileJsonDepth = 1000;
-    let interfaceFile: string | FileWithDirectoryAndFileHandle | undefined;
+    let interfaceFile: string | undefined;
     let interfaceFileDepth = 1000;
+    let root = "";
     for (const file of files) {
       const path: string =
         typeof file === "string" ? file : file.webkitRelativePath;
+      if (typeof file !== "string") root = pathGetRoot(file.webkitRelativePath);
       const depth: number = path.match(/\//g)?.length ?? 0;
       if (pathGetExt(path) === "sfz" && depth < audioFileDepth) {
-        audioFile = file;
+        audioFile = path;
         audioFileDepth = depth;
       }
       if (path.endsWith(".sfz.json") && depth < audioFileJsonDepth) {
-        audioFileJson = file;
+        audioFileJson = path;
         audioFileJsonDepth = depth;
       }
       if (pathGetExt(path) === "xml" && depth < interfaceFileDepth) {
-        interfaceFile = file;
+        interfaceFile = path;
         interfaceFileDepth = depth;
       }
     }
@@ -53,72 +56,112 @@ export class SamplerEngineImpl implements SamplerEngine {
     this.loader.resetFiles();
     this.loader.setRoot(root);
     this.loader.addDirectory(files);
-    return audioFile;
+    return { audioFile, audioFileJson, interfaceFile, root };
   }
 
-  async loadLocalInstrument(state: SamplerState): Promise<SamplerState> {
+  private async selectLocalFiles() {
     try {
       const blobs: FileWithDirectoryAndFileHandle[] = (await directoryOpen({
         recursive: true,
       })) as FileWithDirectoryAndFileHandle[];
+      if (!blobs || blobs.length === 0) throw new Error("No files selected");
       console.log(`${blobs.length} files selected.`);
-      const root = pathGetRoot(blobs[0].webkitRelativePath);
-      this.loadDirectory(root, blobs);
-      return state;
+      return this.loadDirectory(blobs);
     } catch (err: any) {
-      if (err.name !== "AbortError") {
-        console.error(err);
+      if (err.name === "AbortError") {
+        console.log("The user aborted a request.");
+        throw new Error("The user aborted a request.");
       }
-      console.warn("The user aborted a request.");
-      return state;
+      console.error("Error selecting local files:", err);
+      throw new Error(`Error selecting local files: ${err.message}`);
     }
   }
 
-  async loadRemoteInstrument(
-    preset: HeaderPreset,
-    state: SamplerState,
-  ): Promise<SamplerState> {
-    const branch: string = preset.branch ?? "compact";
-    const response: any = await apiJson(
-      `https://api.github.com/repos/${preset.id}/git/trees/${branch}?recursive=1`,
-    );
-    const paths: string[] = response.tree.map(
-      (file: any) =>
-        `https://raw.githubusercontent.com/${preset.id}/${branch}/${file.path}`,
-    );
-    const root = `https://raw.githubusercontent.com/${preset.id}/${branch}/`;
-    const audioFile = this.loadDirectory(root, paths);
-    return await this.loadSfz(state, audioFile, root);
+  private async loadAndParseSfz(
+    filePath: string,
+    signal?: AbortSignal,
+  ): Promise<ParseOpcodeObj[]> {
+    try {
+      const file: FileLocal | FileRemote | undefined =
+        this.loader.files[filePath] || this.loader.addFile(filePath);
+      if (!file) throw new Error(`SFZ file not found: ${filePath}`);
+      const controller = this.loader.createAbortController(file.path);
+      const loadedFile = await this.loader.getFile(
+        file,
+        false,
+        controller.signal,
+      );
+      if (!loadedFile)
+        throw new Error(`SFZ file could not be loaded: ${filePath}`);
+      const regions = await this.parser.parse(loadedFile);
+      this.loader.abortFileLoad(file.path);
+      return regions;
+    } catch (error: any) {
+      if (signal?.aborted) {
+        console.log("SFZ file loading aborted:", filePath);
+        throw new Error(`SFZ file loading aborted: ${filePath}`);
+      }
+      console.error("Error loading and parsing SFZ file:", filePath, error);
+      throw new Error(
+        `Error loading and parsing SFZ file: ${filePath} ${error.message}`,
+      );
+    }
   }
 
-  async startSamplerPlayback(
-    state: EngineState,
-    clipId: string,
-    startTime = 0,
-  ): Promise<EngineState> {
-    const clip = state.clips.clips[clipId];
-    const midi = clip.data as Midi;
-    console.log("midi", midi);
-    Tone.getTransport().PPQ = midi.header.ppq;
-
-    // todo
-    return state;
+  private async loadAndParseJson(
+    filePath: string,
+    signal?: AbortSignal,
+  ): Promise<ParseOpcodeObj[]> {
+    try {
+      const file: FileLocal | FileRemote | undefined =
+        this.loader.files[filePath] || this.loader.addFile(filePath);
+      if (!file) throw new Error(`JSON file not found: ${filePath}`);
+      const controller = this.loader.createAbortController(file.path);
+      const loadedFile = await this.loader.getFile(
+        file,
+        false,
+        controller.signal,
+      );
+      if (!loadedFile)
+        throw new Error(`JSON file could not be loaded: ${filePath}`);
+      const regions = await this.parser.parse(loadedFile);
+      this.loader.abortFileLoad(file.path);
+      return regions;
+    } catch (error: any) {
+      if (signal?.aborted) {
+        console.log("JSON file loading aborted:", filePath);
+        throw new Error(`JSON file loading aborted: ${filePath}`);
+      }
+      console.error("Error loading and parsing JSON file:", filePath, error);
+      throw new Error(
+        `Error loading and parsing JSON file: ${filePath} ${error.message}`,
+      );
+    }
   }
 
-  getInstrumentsLoader(): FileLoader {
+  async loadLocalInstrument() {
+    try {
+      const { audioFile, audioFileJson, root } = await this.selectLocalFiles();
+      this.loader.setRoot(root);
+      let regions: ParseOpcodeObj[] = [];
+      if (audioFile) {
+        regions = await this.loadAndParseSfz(audioFile);
+      }
+      if (audioFileJson) {
+        regions = await this.loadAndParseJson(audioFileJson);
+      }
+      console.log("regions", regions);
+    } catch (err: any) {
+      console.error("Error loading local instrument:", err);
+    }
+  }
+
+  getFileLoader(): FileLoaderService {
     return this.loader;
   }
 
-  dispose(state: SamplerState): SamplerState {
-    for (const samplerId in state.samplers) {
-      state.samplers[samplerId].dispose();
-    }
-    for (const instrumentId in state.instruments) {
-      const instrument = state.instruments[instrumentId];
-      for (const sampleId in instrument.samples) {
-        instrument.samples[sampleId].dispose();
-      }
-    }
-    return { instruments: {}, samplers: {} };
+  async dispose(state: SamplerState): Promise<SamplerState> {
+    this.loader.resetFiles();
+    return Promise.resolve(state);
   }
 }

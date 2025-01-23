@@ -1,5 +1,12 @@
 // src/features/transport/types.ts
 
+export interface TransportClockConfig {
+  tapTimeout: number;
+  maxTapHistory: number;
+  minTapInterval: number;
+  maxTapInterval: number;
+}
+
 export interface TransportState {
   isPlaying: boolean;
   isRecording: boolean;
@@ -49,8 +56,7 @@ export interface TransportEngine {
   getTransportDuration(): number;
   setTransportDuration(state: TransportState, duration: number): TransportState;
   getTransportPosition(): number;
-  setTransportPosition(state: TransportState, position: number): TransportState;
 
   // Cleanup
-  dispose(state: TransportState): void;
+  dispose(state: TransportState): Promise<void>;
 }

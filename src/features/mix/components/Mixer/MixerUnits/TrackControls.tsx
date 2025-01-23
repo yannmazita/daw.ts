@@ -1,49 +1,39 @@
-// src/features/mix/components/Mixer/MixerTrackControls.tsx
-import { useEffect, useState, useRef } from "react";
-import { useTrackStatus } from "@/features/composition/hooks/useTrackStatus";
-import { useMixerTrackControls } from "../../../hooks/useMixerTrackControls";
+// src/features/mix/components/Mixer/MixerUnits/CompositionTrackControls.tsx
 import { cn } from "@/common/shadcn/lib/utils";
-import { useDeviceManager } from "../../../hooks/useDeviceManager";
-import { DeviceType } from "../../../types";
 import { Meter } from "@/common/components/Meter/Meter";
+import { useEffect, useState, useRef } from "react";
 import { VolumeControl } from "../MixerUnits/VolumeControl";
 import { PanControl } from "../MixerUnits/PanControl";
-import { DeviceButtons } from "../MixerUnits/DeviceButtons";
-import { TrackButtons } from "./TrackButtons";
-import { useSelection } from "@/common/hooks/useSelection";
+import { TrackButtons } from "../MixerUnits/TrackButtons";
+import { useTrack } from "@/features/mix/hooks/useTrack";
 
-interface MixerTrackControlsProps {
+interface TrackControlsProps {
   trackId: string;
   className?: string;
+  onClick?: () => void;
 }
 
-export const MixerTrackControls: React.FC<MixerTrackControlsProps> = ({
+export const TrackControls: React.FC<TrackControlsProps> = ({
   trackId,
   className,
+  onClick,
 }) => {
-  const { handleClickedTrack } = useSelection();
-  const trackState = useTrackStatus(trackId);
   const {
+    track,
     pan,
     volume,
     muted,
     soloed,
+    armed,
     setPan,
     setVolume,
     toggleMute,
     toggleSolo,
+    toggleArmed,
     getMeterValues,
-  } = useMixerTrackControls(trackId);
+  } = useTrack(trackId);
+  const [localVolume, setLocalVolume] = useState(volume.toString());
   const meterRef = useRef<HTMLDivElement>(null);
-  const [selectedDevice, setSelectedDevice] = useState<string | null>(null);
-  const [deviceOptions, setDeviceOptions] = useState<any>({});
-  const { addDevice } = useDeviceManager(trackId);
-
-  const handleAddDevice = (type: DeviceType) => {
-    const deviceId = addDevice(type);
-    setSelectedDevice(deviceId);
-    setDeviceOptions({});
-  };
 
   useEffect(() => {
     let animationFrameId: number;
@@ -66,15 +56,16 @@ export const MixerTrackControls: React.FC<MixerTrackControlsProps> = ({
     return () => cancelAnimationFrame(animationFrameId);
   }, [getMeterValues]);
 
+  useEffect(() => {
+    setLocalVolume(volume.toString());
+  }, [volume]);
+
   return (
     <div
-      onClick={() => handleClickedTrack(trackId)}
-      className={cn(
-        "flex h-full w-40 min-w-40 cursor-pointer flex-col px-1 py-2",
-        className,
-      )}
+      className={cn("flex h-full w-40 min-w-40 flex-col px-1 py-2", className)}
+      onClick={onClick}
     >
-      <div className="mx-1 text-sm font-bold">{trackState?.name}</div>
+      <div className="mx-1 text-sm">{track.name}</div>
       <div className="bg-muted">
         <div className="flex flex-row justify-between p-4">
           <Meter getMeterValues={getMeterValues} />
@@ -89,13 +80,10 @@ export const MixerTrackControls: React.FC<MixerTrackControlsProps> = ({
               className="flex flex-col"
               muted={muted}
               soloed={soloed}
+              armed={armed}
               toggleMute={toggleMute}
               toggleSolo={toggleSolo}
-            />
-            <DeviceButtons
-              className="mt-auto"
-              onAddEffect={() => handleAddDevice("effect")}
-              onAddProcessor={() => handleAddDevice("processor")}
+              toggleArmed={toggleArmed}
             />
           </div>
         </div>
