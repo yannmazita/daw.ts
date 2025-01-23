@@ -156,6 +156,8 @@ sequenceDiagram
     deactivate TransportClock
 ```
 
+</details>
+
 <details>
     <summary>
     Transport Engine Playback Start
