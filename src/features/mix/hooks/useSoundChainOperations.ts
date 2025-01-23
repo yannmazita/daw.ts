@@ -8,6 +8,7 @@ export const useSoundChainOperations = () => {
 
   const createSoundChain = useCallback(
     (trackId: string, name?: string) => {
+      console.log("Creating sound chain", trackId, name);
       return compositionEngine.createSoundChain(trackId, name);
     },
     [compositionEngine],

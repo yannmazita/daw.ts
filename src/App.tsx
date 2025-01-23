@@ -6,6 +6,12 @@ import { useEffect } from "react";
 import { Browser } from "./features/browser/components/Browser";
 import { DetailView } from "@/common/components/DetailView";
 import { Mixer } from "./features/mix/components/Mixer/Mixer";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
+} from "@/common/shadcn/ui/context-menu";
 
 export const App: React.FC = () => {
   useEffect(() => {
@@ -17,22 +23,29 @@ export const App: React.FC = () => {
   }, []);
 
   return (
-    <Layout>
-      <div className="grid h-full grid-rows-4">
-        <div className="row-span-3 grid grid-cols-12">
-          <Browser />
-          <div className="col-span-9 flex flex-col overflow-hidden">
-            <div className="flex-grow overflow-hidden">
-              <TimelineGrid />
+    <ContextMenu>
+      <ContextMenuTrigger>
+        <Layout>
+          <div className="grid h-full grid-rows-4">
+            <div className="row-span-3 grid grid-cols-12">
+              <Browser />
+              <div className="col-span-9 flex flex-col overflow-hidden">
+                <div className="flex-grow overflow-hidden">
+                  <TimelineGrid />
+                </div>
+                <Mixer />
+              </div>
             </div>
-            <Mixer />
+            <div className="grid grid-cols-12">
+              <DetailView />
+            </div>
           </div>
-        </div>
-        <div className="grid grid-cols-12">
-          <DetailView />
-        </div>
-      </div>
-    </Layout>
+        </Layout>
+      </ContextMenuTrigger>
+      <ContextMenuContent>
+        <ContextMenuItem>Settings</ContextMenuItem>
+      </ContextMenuContent>
+    </ContextMenu>
   );
 };
 

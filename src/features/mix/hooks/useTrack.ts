@@ -13,19 +13,19 @@ export const useTrack = (trackId: string) => {
   }, [compositionEngine, trackId, track]);
 
   const volume = useEngineStore(
-    (state) => state.mix.mixer.tracks[trackId].outputNode.gain.value,
+    (state) => state.mix.mixer.tracks[trackId]?.outputNode.gain.value,
   );
 
   const pan = useEngineStore(
-    (state) => state.mix.mixer.tracks[trackId].outputNode.gain.value,
+    (state) => state.mix.mixer.tracks[trackId]?.outputNode.gain.value,
   );
 
   const muted = useEngineStore(
-    (state) => state.mix.mixer.tracks[trackId].isMuted,
+    (state) => state.mix.mixer.tracks[trackId]?.isMuted,
   );
 
   const soloed = useEngineStore(
-    (state) => state.mix.mixer.tracks[trackId].isSoloed,
+    (state) => state.mix.mixer.tracks[trackId]?.isSoloed,
   );
 
   const setVolume = useCallback(

@@ -2,7 +2,7 @@
 
 Work in progress! Very early stage.
 
-`daw.ts` is a Digital Audio Workstation (DAW) application built with TypeScript, [React](https://react.dev/), [Zustand](https://github.com/pmndrs/zustand), and [Tone.js](https://tonejs.github.io/).
+`daw.ts` is a Digital Audio Workstation (DAW) application built with TypeScript, [React](https://react.dev/), [Zustand](https://github.com/pmndrs/zustand), and leveraging the [Web Audio browser API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API).
 
 ![screenshot](https://github.com/user-attachments/assets/9ef3c5b1-001e-40e0-a901-cd18a7838254)
 
@@ -237,7 +237,7 @@ _Not fully implemented yet._ This engine manages automation lanes and paramater 
 
 ### Clip Engine
 
-This engine manages clips (MIDI clips and audio clips), MIDI file parsing, audio buffers etc.
+_Not fully implemented yet._ This engine manages clips (MIDI clips and audio clips), MIDI file parsing, audio buffers etc.
 
 ### Mix Engine
 
@@ -245,7 +245,7 @@ This engine manages mixing, sends, routing, sound chains etc. Audio processing i
 
 ### Sampler Engine
 
-This engine manages SFZ instrument loading/caching, sampling playback
+_Not fully implemented yet._ This engine manages SFZ instrument loading/caching, sampling playback
 
 ### Transport Engine
 
