@@ -28,7 +28,11 @@ export const App: React.FC = () => {
         <Layout>
           <div className="grid h-full grid-rows-4">
             <div className="row-span-3 grid grid-cols-12">
-              <Browser />
+              <div className="col-span-3 flex flex-col overflow-hidden">
+                <div className="flex-grow overflow-hidden">
+                  <Browser />
+                </div>
+              </div>
               <div className="col-span-9 flex flex-col overflow-hidden">
                 <div className="flex-grow overflow-hidden">
                   <TimelineGrid />

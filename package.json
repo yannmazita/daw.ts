@@ -42,6 +42,7 @@
     "tailwindcss": "^3.4.14",
     "typescript": "^5.6.3",
     "typescript-eslint": "^8.12.2",
+    "use-resize-observer": "^9.1.0",
     "vite": "^5.4.12",
     "vite-plugin-node-polyfills": "^0.22.0",
     "vitest": "^2.1.4"
@@ -51,6 +52,7 @@
     "@dnd-kit/modifiers": "^9.0.0",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
+    "@radix-ui/react-accordion": "^1.2.2",
     "@radix-ui/react-collapsible": "^1.1.2",
     "@radix-ui/react-context-menu": "^2.2.3",
     "@radix-ui/react-dialog": "^1.1.2",
@@ -71,6 +73,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.456.0",
+    "midifile-ts": "^1.5.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-resizable-panels": "^2.1.7",
