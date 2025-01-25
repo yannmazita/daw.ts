@@ -1,5 +1,7 @@
 // src/features/mix/types.ts
-import { AudioNode } from "@/core/types/audio";
+import { MixParameterService } from "./services/MixParameterService";
+import { MixTrackService } from "./services/MixTrackService";
+import { MixRoutingService } from "./services/MixRoutingService";
 
 export type Device = SoundChain | AudioNode;
 export type TrackType = "audio" | "midi";
@@ -11,6 +13,7 @@ export interface Track {
   inputNode: AudioNode;
   outputNode: GainNode;
   panNode: StereoPannerNode;
+  isSoundChainActive: boolean;
   isMuted: boolean;
   isSoloed: boolean;
   previousGain: number;
@@ -59,9 +62,10 @@ export interface Chain {
 export interface SoundChain {
   id: string;
   name: string;
+  inputNode: AudioNode;
+  outputNode: GainNode;
   chains: Record<string, Chain>;
   chainsOrder: string[];
-  outputNode: AudioNode;
 }
 
 export interface Mixer {
@@ -101,9 +105,16 @@ export interface MixEngine {
   createChain(
     state: MixState,
     trackId: string,
+    position: number,
     name?: string,
     instrument?: AudioNode | null,
   ): MixState;
+
+  toggleSoundChain(state: MixState, trackId: string): MixState;
+
+  getRoutingService(): MixRoutingService;
+  getTrackService(): MixTrackService;
+  getParameterService(): MixParameterService;
 
   dispose(state: MixState): Promise<void>;
 }

@@ -7,21 +7,15 @@ import {
   Chain,
   TrackType,
 } from "@/features/mix/types";
-import { AudioNode } from "@/core/types/audio";
-import { MixRoutingService } from "./MixRoutingService";
 
 /**
  * Manages tracks within the mix engine.
  */
 export class MixTrackService {
-  constructor(
-    private audioContext: AudioContext,
-    private routingService: MixRoutingService,
-  ) {}
+  constructor(private audioContext: AudioContext) {}
 
   /**
    * Creates a new track.
-   * The pan node is connected to the output node on track creation.
    * @param name - The name of the track.
    * @returns The created track.
    */
@@ -37,6 +31,7 @@ export class MixTrackService {
       inputNode,
       outputNode,
       panNode,
+      isSoundChainActive: false,
       isMuted: false,
       isSoloed: false,
       previousGain: 1,
@@ -44,7 +39,6 @@ export class MixTrackService {
       sendsOrder: [],
       soundChain: null,
     };
-    this.routingService.connect(track.panNode, track.outputNode);
     return track;
   }
 
@@ -70,7 +64,6 @@ export class MixTrackService {
 
   /**
    * Creates a new return track. Return track pan node is wired to output node.
-   * The pan node is connected to the output node on return track creation.
    * @param name - The name of the return track.
    * @returns The created return track.
    */
@@ -91,7 +84,6 @@ export class MixTrackService {
       effects: {},
       effectsOrder: [],
     };
-    this.routingService.connect(returnTrack.panNode, returnTrack.outputNode);
     return returnTrack;
   }
 
@@ -101,13 +93,15 @@ export class MixTrackService {
    * @returns The created sound chain.
    */
   createSoundChain(name?: string): SoundChain {
+    const inputNode = this.audioContext.createGain();
     const outputNode = this.audioContext.createGain();
     const soundChain: SoundChain = {
       id: crypto.randomUUID(),
       name: name ?? "New Sound Chain",
+      inputNode,
+      outputNode,
       chains: {},
       chainsOrder: [],
-      outputNode,
     };
     return soundChain;
   }
@@ -136,10 +130,6 @@ export class MixTrackService {
       keyZone: null,
       velocityZone: null,
     };
-    if (instrument) {
-      this.routingService.connect(instrument, chain.panNode);
-    }
-    this.routingService.connect(chain.panNode, chain.outputNode);
     return chain;
   }
 

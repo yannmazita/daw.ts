@@ -2,7 +2,7 @@
 import { CompositionEngine } from "../types";
 import { TransportEngine } from "../../transport/types";
 import { SamplerEngine } from "../../sampler/types";
-import { ClipEngine, CompositionClip } from "../../clips/types";
+import { ClipEngine } from "../../clips/types";
 import { MixEngine, TrackType } from "../../mix/types";
 import { AutomationEngine } from "../../automation/types";
 import { CompositionTransportService } from "./CompositionTransportService";
@@ -11,6 +11,7 @@ import { CompositionMixService } from "./CompositionMixService";
 import { CompositionClipService } from "./CompositionClipService";
 import { CompositionAutomationService } from "./CompositionAutomationService";
 import { FileLoaderService } from "@/features/sampler/services/FileLoaderService";
+import { MidiFile } from "midifile-ts";
 
 export class CompositionEngineImpl implements CompositionEngine {
   private disposed = false;
@@ -105,55 +106,11 @@ export class CompositionEngineImpl implements CompositionEngine {
   }
 
   // Clip Methods
-  importMidi(
-    file: File,
-    clipId?: string,
-    trackId?: string,
-    instrumentId?: string,
-  ): Promise<void> {
-    return this.clipService.importMidi(file, clipId, trackId, instrumentId);
+  importMidiFile(trackId: string, file: File, name?: string): void {
+    return this.clipService.importMidiFile(trackId, file, name);
   }
-  exportMidi(clipId: string): Promise<void> {
-    return this.clipService.exportMidi(clipId);
-  }
-  createClip(
-    type: CompositionClip["type"],
-    startTime: number,
-    parentId: string,
-    name?: string,
-    instrumentId?: string,
-  ): void {
-    return this.clipService.createClip(
-      type,
-      startTime,
-      parentId,
-      name,
-      instrumentId,
-    );
-  }
-  deleteClip(clipId: string): void {
-    return this.clipService.deleteClip(clipId);
-  }
-  moveClip(clipId: string, startTime: number): void {
-    return this.clipService.moveClip(clipId, startTime);
-  }
-  setClipFades(clipId: string, fadeIn: number, fadeOut: number): void {
-    return this.clipService.setClipFades(clipId, fadeIn, fadeOut);
-  }
-  setClipInstrument(clipId: string, instrumentId: string): void {
-    return this.clipService.setClipInstrument(clipId, instrumentId);
-  }
-  async playClip(clipId: string, startTime?: number): Promise<void> {
-    return this.clipService.playClip(clipId, startTime);
-  }
-  pauseClip(clipId: string): void {
-    return this.clipService.pauseClip(clipId);
-  }
-  stopClip(clipId: string): void {
-    return this.clipService.stopClip(clipId);
-  }
-  getClipPlaybackPosition(clipId: string): number {
-    return this.clipService.getClipPlaybackPosition(clipId);
+  createMidiClip(trackId: string, midiData: MidiFile, name?: string): void {
+    return this.clipService.createMidiClip(trackId, midiData, name);
   }
 
   async dispose(): Promise<void> {

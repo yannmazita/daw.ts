@@ -14,10 +14,7 @@ export class MixEngineImpl implements MixEngine {
 
   constructor(private audioContext: AudioContext) {
     this.routingService = new MixRoutingService(this.audioContext);
-    this.trackService = new MixTrackService(
-      this.audioContext,
-      this.routingService,
-    );
+    this.trackService = new MixTrackService(this.audioContext);
     this.parameterService = new MixParameterService(this.audioContext);
   }
 
@@ -91,6 +88,8 @@ export class MixEngineImpl implements MixEngine {
 
   /**
    * Creates a new track.
+   * Track input is wired to track pan, track pan to track output,
+   * track output to master track input.
    * @param state - The current state.
    * New tracks send to the Master Track by default.
    * @param name - The name of the track.
@@ -99,7 +98,8 @@ export class MixEngineImpl implements MixEngine {
   createTrack(state: MixState, type: TrackType, name?: string): MixState {
     const track = this.trackService.createTrack(type, name);
     const masterTrack = state.mixer.masterTrack;
-    this.routingService.connectTrackInput(track);
+    this.routingService.connect(track.inputNode, track.panNode);
+    this.routingService.connect(track.panNode, track.outputNode);
     this.routingService.connect(track.outputNode, masterTrack.inputNode);
     return {
       ...state,
@@ -163,6 +163,7 @@ export class MixEngineImpl implements MixEngine {
 
   /**
    * Creates a new return track.
+   * Return track pan is connected to return track output.
    * @param state - The current state.
    * @param name - The name of the return track.
    * @returns The updated state.
@@ -170,6 +171,7 @@ export class MixEngineImpl implements MixEngine {
   createReturnTrack(state: MixState, name?: string): MixState {
     const returnTrack = this.trackService.createReturnTrack(name);
 
+    this.routingService.connect(returnTrack.panNode, returnTrack.outputNode);
     this.routingService.connect(
       returnTrack.outputNode,
       state.mixer.masterTrack.inputNode,
@@ -190,19 +192,42 @@ export class MixEngineImpl implements MixEngine {
 
   /**
    * Creates a new sound chain. An empty chain is added to the sound chain.
-   * The chain output node is connected to the sound chain output node.
+   * If track sound chain is active, track input is wired to sound chain input,
+   * sound chain input to chain pan, chain pan to chain output, chain output to
+   * sound chain output, sound chain output to track pan. Else only sound chain
+   * and chain piping is done.
    * @param state - The current state.
    * @param trackId - The id of the track to add the chain to.
    * @param name - The name of the sound chain.
+   * @throws If track is not found or already has a sound chain.
    * @returns The updated state.
    */
   createSoundChain(state: MixState, trackId: string, name?: string): MixState {
+    const track = state.mixer.tracks[trackId];
+
+    if (!track) {
+      throw new Error("Track not found");
+    } else if (track.soundChain) {
+      throw new Error("Track already has a sound chain");
+    }
+
     const soundChain = this.trackService.createSoundChain(name);
     const chain = this.trackService.createChain();
     soundChain.chains = { [chain.id]: chain };
     soundChain.chainsOrder = [chain.id];
 
-    this.routingService.connect(chain.outputNode, soundChain.outputNode);
+    if (track.isSoundChainActive) {
+      this.routingService.disconnect(track.inputNode, track.panNode);
+      this.routingService.connect(track.inputNode, soundChain.inputNode);
+      this.routingService.connect(soundChain.inputNode, chain.panNode);
+      this.routingService.connect(chain.panNode, chain.outputNode);
+      this.routingService.connect(chain.outputNode, soundChain.outputNode);
+      this.routingService.connect(soundChain.outputNode, track.panNode);
+    } else {
+      this.routingService.connect(soundChain.inputNode, chain.panNode);
+      this.routingService.connect(chain.panNode, chain.outputNode);
+      this.routingService.connect(chain.outputNode, soundChain.outputNode);
+    }
 
     return {
       ...state,
@@ -211,7 +236,7 @@ export class MixEngineImpl implements MixEngine {
         tracks: {
           ...state.mixer.tracks,
           [trackId]: {
-            ...state.mixer.tracks[trackId],
+            ...track,
             soundChain,
           },
         },
@@ -223,6 +248,7 @@ export class MixEngineImpl implements MixEngine {
   /**
    * Creates a new chain.
    * @param state - The current state.
+   * @param position - The chain position.
    * @param trackId - The id of the sound chain track.
    * @param name - The name of the chain.
    * @param instrument - The instrument node of the chain.
@@ -232,6 +258,7 @@ export class MixEngineImpl implements MixEngine {
   createChain(
     state: MixState,
     trackId: string,
+    position: number,
     name?: string,
     instrument: AudioNode | null = null,
   ): MixState {
@@ -247,7 +274,6 @@ export class MixEngineImpl implements MixEngine {
     } else {
       chain = this.trackService.createChain(name);
     }
-    this.routingService.connectChainOutput(chain, soundChain.outputNode);
 
     return {
       ...state,
@@ -266,6 +292,61 @@ export class MixEngineImpl implements MixEngine {
         },
       },
     };
+  }
+
+  /**
+   * Toggle sound chain bypass in audio processing.
+   * @param state - The current state.
+   * @param trackId - The id of the track where sound chain is to be bypassed.
+   * @throws If track is not found or has no sound chain.
+   * @returns The updated state.
+   */
+  toggleSoundChain(state: MixState, trackId: string): MixState {
+    const track = state.mixer.tracks[trackId];
+
+    if (!track) {
+      throw new Error("Track not found");
+    } else if (!track.soundChain) {
+      throw new Error("Track has no sound chain");
+    }
+
+    const soundChain = track.soundChain;
+
+    if (track.isSoundChainActive) {
+      this.routingService.disconnect(track.inputNode, soundChain.inputNode);
+      this.routingService.disconnect(soundChain.outputNode, track.panNode);
+      this.routingService.connect(track.inputNode, track.panNode);
+    } else {
+      this.routingService.disconnect(track.inputNode, track.panNode);
+      this.routingService.connect(track.inputNode, soundChain.inputNode);
+      this.routingService.connect(soundChain.outputNode, track.panNode);
+    }
+
+    return {
+      ...state,
+      mixer: {
+        ...state.mixer,
+        tracks: {
+          ...state.mixer.tracks,
+          [trackId]: {
+            ...track,
+            isSoundChainActive: !track.isSoundChainActive,
+          },
+        },
+      },
+    };
+  }
+
+  getRoutingService(): MixRoutingService {
+    return this.routingService;
+  }
+
+  getTrackService(): MixTrackService {
+    return this.trackService;
+  }
+
+  getParameterService(): MixParameterService {
+    return this.parameterService;
   }
 
   /**

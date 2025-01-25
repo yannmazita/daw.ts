@@ -1,109 +1,31 @@
 // src/features/composition/services/CompositionClipService.ts
 import { useEngineStore } from "@/core/stores/useEngineStore";
-import { ClipEngine, CompositionClip } from "@/features/clips/types";
+import { ClipEngine } from "@/features/clips/types";
+import { MidiFile } from "midifile-ts";
 
 export class CompositionClipService {
   constructor(private readonly clipEngine: ClipEngine) {}
 
-  async importMidi(
-    file: File,
-    clipId?: string,
-    trackId?: string,
-    instrumentId?: string,
-  ): Promise<void> {
-    const state = useEngineStore.getState().clips;
-    const newState = await this.clipEngine.importMidi(
-      state,
-      file,
-      clipId,
-      trackId,
-      instrumentId,
-    );
-    useEngineStore.setState({ clips: newState });
-  }
-
-  async exportMidi(clipId: string): Promise<void> {
-    const state = useEngineStore.getState().clips;
-    // todo
-    return new Promise(() => {});
-  }
-
-  createClip(
-    type: CompositionClip["type"],
-    startTime: number,
-    parentId: string,
-    name?: string,
-    instrumentId?: string,
-  ): void {
-    const state = useEngineStore.getState().clips;
-    const newState = this.clipEngine.createClip(
-      state,
-      type,
-      startTime,
-      parentId,
-      name,
-      instrumentId,
-    );
-    useEngineStore.setState({ clips: newState });
-  }
-
-  deleteClip(clipId: string): void {
-    const state = useEngineStore.getState().clips;
-    const newState = this.clipEngine.deleteClip(state, clipId);
-    useEngineStore.setState({ clips: newState });
-  }
-
-  moveClip(clipId: string, startTime: number): void {
-    const state = useEngineStore.getState().clips;
-    const newState = this.clipEngine.moveClip(state, clipId, startTime);
-    useEngineStore.setState({ clips: newState });
-  }
-
-  setClipFades(clickId: string, fadeIn: number, fadeOut: number): void {
-    const state = useEngineStore.getState().clips;
-    const newState = this.clipEngine.setClipFades(
-      state,
-      clickId,
-      fadeIn,
-      fadeOut,
-    );
-    useEngineStore.setState({ clips: newState });
-  }
-
-  setClipInstrument(clipId: string, instrumentId: string): void {
-    const state = useEngineStore.getState().clips;
-    const newState = this.clipEngine.setClipInstrument(
-      state,
-      clipId,
-      instrumentId,
-    );
-    useEngineStore.setState({ clips: newState });
-  }
-
-  async playClip(clipId: string, startTime?: number): Promise<void> {
+  importMidiFile(trackId: string, file: File, name?: string): void {
     const state = useEngineStore.getState();
-    const newState = await this.clipEngine.playClip(state, clipId, startTime);
-    useEngineStore.setState({
-      clips: newState.clips,
-      sampler: newState.sampler,
-    });
+    const newClipsState = this.clipEngine.importMidiFile(
+      state,
+      trackId,
+      file,
+      name,
+    );
+    useEngineStore.setState({ clips: newClipsState });
   }
 
-  pauseClip(clipId: string): void {
-    const state = useEngineStore.getState().clips;
-    const newState = this.clipEngine.pauseClip(state, clipId);
-    useEngineStore.setState({ clips: newState });
-  }
-
-  stopClip(clipId: string): void {
-    const state = useEngineStore.getState().clips;
-    const newState = this.clipEngine.stopClip(state, clipId);
-    useEngineStore.setState({ clips: newState });
-  }
-
-  getClipPlaybackPosition(clipId: string): number {
-    const state = useEngineStore.getState().clips;
-    return this.clipEngine.getClipPlaybackPosition(state, clipId);
+  createMidiClip(trackId: string, midiData: MidiFile, name?: string): void {
+    const state = useEngineStore.getState();
+    const newClipsState = this.clipEngine.createMidiClip(
+      state,
+      trackId,
+      midiData,
+      name,
+    );
+    useEngineStore.setState({ clips: newClipsState });
   }
 
   dispose(): void {

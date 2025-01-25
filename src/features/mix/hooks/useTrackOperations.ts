@@ -26,11 +26,20 @@ export const useTrackOperations = () => {
     },
     [compositionEngine],
   );
+
+  const importMidiFile = useCallback(
+    (trackId: string, file: File, name?: string) => {
+      compositionEngine.importMidiFile(trackId, file, name);
+    },
+    [compositionEngine],
+  );
+
   return {
     tracks,
     tracksOrder,
     createTrack,
     deleteTrack,
     moveTrack,
+    importMidiFile,
   };
 };

@@ -56,24 +56,24 @@ graph LR
     end
 
     subgraph SoundChain
-        SC_Input(Sound Chain Input) --> Chain1{Chain 1?}
-        Chain1 -- Yes --> Chain1_Output(Chain 1 Output)
-        Chain1 -- No --> SC_Output
+        SC_Input(Sound Chain Input) --> Chain1_Output(Chain 1 Output)
         Chain1_Output --> Chain2{Chain 2?}
-         Chain2 -- Yes --> Chain2_Output(Chain 2 Output)
+        Chain2 -- Yes --> Chain2_Output(Chain 2 Output)
         Chain2 -- No --> SC_Output
-        Chain2_Output --> ...
-        ... --> SC_Output(Sound Chain Output Node)
+        Chain2_Output --> Chain3{Chain 3?}
+        Chain3 -- Yes --> Chain3_Output(Chain 3 Output)
+        Chain3 -- No --> SC_Output
+        Chain3_Output --> ... --> SC_Output(Sound Chain Output Node)
     end
 
     subgraph Chain
-        Chain_Instrument{Instrument?} -- Yes --> Chain_Pan
+        Chain_Instrument{Instrument?} -- Yes --> Chain_InstrumentNode(Instrument Node)
         Chain_Instrument -- No --> Chain_Effects{Effects?}
-        Chain_InstrumentNode(Instrument Node) --> Chain_Pan(Pan)
+        Chain_InstrumentNode --> Chain_Effects
         Chain_Effects -- Yes --> Chain_EffectsNodes(Effects Nodes)
-        Chain_Effects -- No --> Chain_Pan
-        Chain_EffectsNodes --> Chain_Pan
-        Chain_Pan --> Chain_Output(Chain Output)
+        Chain_Effects -- No --> Pan
+        Chain_EffectsNodes --> Pan
+        Pan --> Chain_Output(Chain Output)
     end
 
     subgraph ReturnTrack
