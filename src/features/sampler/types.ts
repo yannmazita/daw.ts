@@ -1,25 +1,4 @@
 // src/features/sampler/types.ts
-import { FileLoaderService } from "./services/FileLoaderService";
-
-export interface Instrument {
-  id: string;
-  name: string;
-  type: string;
-  data: any;
-  outputNode: AudioNode;
-}
-
-export interface SamplerState {
-  instruments: Record<string, Instrument>;
-}
-
-export interface SamplerEngine {
-  loadLocalInstrument(): Promise<void>;
-  getFileLoader(): FileLoaderService;
-
-  dispose(state: SamplerState): Promise<SamplerState>;
-}
-
 export interface RegionDefaults {
   lochan: number;
   hichan: number;
@@ -37,4 +16,51 @@ export interface RegionDefaults {
   hirand: number;
   lobpm: number;
   hibpm: number;
+}
+
+// Core types for SFZ player
+export interface SfzOptions {
+  preload?: PreloadMode;
+  root?: string;
+}
+
+export enum PreloadMode {
+  ON_DEMAND = "on-demand",
+  SEQUENTIAL = "sequential",
+}
+
+export interface SfzControlEvent {
+  channel: number;
+  note: number;
+  velocity: number;
+}
+
+export interface SfzRegion {
+  sample?: string;
+  lokey?: number;
+  hikey?: number;
+  pitch_keycenter?: number;
+  pitch_keytrack?: number;
+  tune?: number;
+  transpose?: number;
+  volume?: number;
+  pan?: number;
+  offset?: number;
+  end?: number;
+  loop_mode?: string;
+  loop_start?: number;
+  loop_end?: number;
+}
+
+export interface AudioFile {
+  buffer: AudioBuffer | null;
+  path: string;
+}
+
+export interface SamplerState {}
+
+export interface SamplerEngine {
+  loadLocalInstrument(): Promise<void>;
+
+  dispose(state: SamplerState): Promise<SamplerState>;
 }
