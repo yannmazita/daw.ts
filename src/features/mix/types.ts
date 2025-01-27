@@ -47,6 +47,7 @@ export interface ReturnTrack {
 export interface Chain {
   id: string;
   name: string;
+  inputNode: GainNode;
   outputNode: GainNode;
   instrument: AudioNode | null;
   effects: Record<string, AudioNode>;

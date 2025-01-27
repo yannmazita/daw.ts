@@ -3,6 +3,7 @@ import { MasterTrack, MixEngine, MixState, TrackType } from "../types";
 import { MixRoutingService } from "./MixRoutingService";
 import { MixTrackService } from "./MixTrackService";
 import { MixParameterService } from "./MixParameterService";
+import { SamplerEngine } from "@/features/sampler/types";
 
 /**
  * Main class for the mix engine.
@@ -252,6 +253,7 @@ export class MixEngineImpl implements MixEngine {
    * @param trackId - The id of the sound chain track.
    * @param name - The name of the chain.
    * @param instrument - The instrument node of the chain.
+   * @param samplerEngine - Optional Sampler Engine instance to connect to this chain.
    * @returns The updated state.
    * @throws If track has no sound chain.
    */
@@ -261,6 +263,7 @@ export class MixEngineImpl implements MixEngine {
     position: number,
     name?: string,
     instrument: AudioNode | null = null,
+    samplerEngine: SamplerEngine | null = null,
   ): MixState {
     const soundChain = state.mixer.tracks[trackId].soundChain;
     let chain = null;
@@ -273,6 +276,16 @@ export class MixEngineImpl implements MixEngine {
       chain = this.trackService.createChain(name, instrument);
     } else {
       chain = this.trackService.createChain(name);
+    }
+
+    this.routingService.connect(chain.panNode, chain.outputNode);
+    if (instrument) {
+      this.routingService.connect(instrument, chain.inputNode);
+    } else if (samplerEngine) {
+      this.routingService.connect(
+        samplerEngine.getOutputNode(),
+        chain.inputNode,
+      );
     }
 
     return {

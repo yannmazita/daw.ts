@@ -98,12 +98,6 @@ export class CompositionEngineImpl implements CompositionEngine {
   }
 
   // Sampler methods
-  async loadLocalInstrument(): Promise<void> {
-    return this.samplerService.loadLocalInstrument();
-  }
-  getFileLoader(): FileLoaderService {
-    return this.samplerService.getFileLoader();
-  }
 
   // Clip Methods
   importMidiFile(trackId: string, file: File, name?: string): void {

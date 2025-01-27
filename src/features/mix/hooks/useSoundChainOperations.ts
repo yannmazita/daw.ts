@@ -2,9 +2,11 @@
 import { useCallback } from "react";
 import { useCompositionEngine } from "@/core/engines/EngineManager";
 import { SoundChain } from "../types";
+import { useEngineStore } from "@/core/stores/useEngineStore";
 
 export const useSoundChainOperations = () => {
   const compositionEngine = useCompositionEngine();
+  const tracks = useEngineStore((state) => state.mix.mixer.tracks);
 
   const createSoundChain = useCallback(
     (trackId: string, name?: string) => {

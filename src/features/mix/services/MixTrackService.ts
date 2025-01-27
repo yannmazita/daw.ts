@@ -108,17 +108,18 @@ export class MixTrackService {
 
   /**
    * Creates a new chain.
-   * The pan node is wired to the output node. When provided, the instrument is wired to the pan node.
    * @param name - The name of the chain.
    * @param instrument - The instrument node of the chain.
    * @returns The created chain.
    */
   createChain(name?: string, instrument?: AudioNode): Chain {
+    const inputNode = this.audioContext.createGain();
     const outputNode = this.audioContext.createGain();
     const panNode = this.audioContext.createStereoPanner();
     const chain: Chain = {
       id: crypto.randomUUID(),
       name: name ?? "New Chain",
+      inputNode,
       outputNode,
       instrument: instrument ?? null,
       effects: {},

@@ -60,7 +60,6 @@ export interface AudioFile {
 export interface SamplerState {}
 
 export interface SamplerEngine {
-  loadLocalInstrument(): Promise<void>;
-
+  getOutputNode(): GainNode;
   dispose(state: SamplerState): Promise<SamplerState>;
 }
