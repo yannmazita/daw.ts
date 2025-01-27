@@ -6,7 +6,7 @@ Work in progress! Very early stage.
 
 It aims to be performant and extensible for audio production in the browser.
 
-![Screenshot of daw.ts showing the main view](https://github.com/user-attachments/assets/9ef3c5b1-001e-40e0-a901-cd18a7838254)
+![Screenshot of daw.ts showing the main view](https://github.com/user-attachments/assets/50e4a17d-70db-4112-aa6c-2d3f31275bf2)
 
 ## Getting Started
 
