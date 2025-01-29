@@ -51,7 +51,7 @@ export const Meter: React.FC<MeterProps> = ({
       <div
         key={index}
         className={cn(
-          "h-1 w-10 rounded-sm transition-opacity duration-150",
+          "h-1 w-10 rounded-xs transition-opacity duration-150",
           colorClass,
           {
             "opacity-100": isLit,

@@ -1,6 +1,7 @@
 // src/features/composition/components/TrackLane.tsx
 import { cn } from "@/common/shadcn/lib/utils";
 import { Clip } from "@/features/clips/components/Clip";
+import { useSoundChainOperations } from "@/features/mix/hooks/useSoundChainOperations";
 
 interface TrackLaneProps {
   trackId: string;
@@ -15,6 +16,7 @@ export const TrackLane: React.FC<TrackLaneProps> = ({
   isPlaceholder = false,
   onClick,
 }) => {
+  const { createSoundChain } = useSoundChainOperations();
   /*
   const trackClipIds = useMemo(() => {
     return Object.keys(clips).filter(

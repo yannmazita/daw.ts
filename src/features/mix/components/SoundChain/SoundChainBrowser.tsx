@@ -1,8 +1,5 @@
 // src/features/mix/components/SoundChain/SoundChainBrowser.tsx
 import { cn } from "@/common/shadcn/lib/utils";
-import { useTrack } from "../../hooks/useTrack";
-import { useTrackOperations } from "../../hooks/useTrackOperations";
-import { useSoundChain } from "../../hooks/useSoundChain";
 import { useSoundChainOperations } from "../../hooks/useSoundChainOperations";
 
 interface SoundChainBrowserProps {
@@ -12,5 +9,14 @@ interface SoundChainBrowserProps {
 export const SoundChainBrowser: React.FC<SoundChainBrowserProps> = ({
   className,
 }) => {
-  return <div className={cn("", className)}></div>;
+  const { tracksWithSoundChains } = useSoundChainOperations();
+  return (
+    <div className={cn("", className)}>
+      <ul>
+        {tracksWithSoundChains.map((track) => (
+          <li key={track.id}>{track.name}</li>
+        ))}
+      </ul>
+    </div>
+  );
 };

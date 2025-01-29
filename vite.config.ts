@@ -4,8 +4,19 @@ import { nodePolyfills } from "vite-plugin-node-polyfills";
 import { defineConfig } from "vite";
 import path from "path";
 
+const ReactCompilerConfig = {
+  /* ... */
+};
+
 export default defineConfig({
-  plugins: [react(), nodePolyfills()],
+  plugins: [
+    react({
+      babel: {
+        plugins: [["babel-plugin-react-compiler", ReactCompilerConfig]],
+      },
+    }),
+    nodePolyfills(),
+  ],
   envDir: "./",
   resolve: {
     alias: {

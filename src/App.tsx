@@ -6,14 +6,28 @@ import { useEffect } from "react";
 import { Browser } from "./features/browser/components/Browser";
 import { DetailView } from "@/common/components/DetailView";
 import { Mixer } from "./features/mix/components/Mixer/Mixer";
-import {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuTrigger,
-} from "@/common/shadcn/ui/context-menu";
+import { CustomContextMenu } from "@/common/components/CustomContextMenu";
 
 export const App: React.FC = () => {
+  const baseItems = [
+    {
+      id: "copy",
+      type: "item" as const,
+      label: "Copy",
+      onClick: () => console.log("Copy clicked"),
+    },
+    {
+      id: "sep1",
+      type: "separator" as const,
+    },
+    {
+      id: "share",
+      type: "item" as const,
+      label: "Share",
+      onClick: () => console.log("Share clicked"),
+    },
+  ];
+
   useEffect(() => {
     EngineManager.getInstance();
 
@@ -23,33 +37,26 @@ export const App: React.FC = () => {
   }, []);
 
   return (
-    <ContextMenu>
-      <ContextMenuTrigger>
-        <Layout>
-          <div className="grid h-full grid-rows-4">
-            <div className="row-span-3 grid grid-cols-12">
-              <div className="col-span-3 flex flex-col overflow-hidden">
-                <div className="flex-grow overflow-hidden">
-                  <Browser />
-                </div>
-              </div>
-              <div className="col-span-9 flex flex-col overflow-hidden">
-                <div className="flex-grow overflow-hidden">
-                  <TimelineGrid />
-                </div>
-                <Mixer />
-              </div>
-            </div>
-            <div className="grid grid-cols-12">
-              <DetailView />
+    <Layout>
+      <div className="grid h-full grid-rows-4">
+        <div className="row-span-3 grid grid-cols-12">
+          <div className="col-span-3 flex flex-col overflow-hidden">
+            <div className="flex-grow overflow-hidden">
+              <Browser />
             </div>
           </div>
-        </Layout>
-      </ContextMenuTrigger>
-      <ContextMenuContent>
-        <ContextMenuItem>Settings</ContextMenuItem>
-      </ContextMenuContent>
-    </ContextMenu>
+          <div className="col-span-9 flex flex-col overflow-hidden">
+            <div className="flex-grow overflow-hidden">
+              <TimelineGrid />
+            </div>
+            <Mixer />
+          </div>
+        </div>
+        <div className="grid grid-cols-12">
+          <DetailView />
+        </div>
+      </div>
+    </Layout>
   );
 };
 

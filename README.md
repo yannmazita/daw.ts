@@ -47,33 +47,39 @@ graph LR
         MT_Gain --> MT_Output(Destination)
     end
 
-    subgraph Track
-        Track_Input(Track Input) --> SoundChainOutput{Sound Chain Output?}
-        SoundChainOutput -- Yes --> SC_Output(Sound Chain Output Node)
-        SoundChainOutput -- No --> Track_Pan
-        SC_Output --> Track_Pan(Pan)
+    subgraph Track["Track (MIDI/Audio)"]
+        Track_Input(Track Input) --> BypassCheck{SoundChain Active?}
+        BypassCheck -- Yes --> SC_Input
+        BypassCheck -- No --> Track_Pan(Pan)
+        SC_Output --> Track_Pan
         Track_Pan --> Track_Output(Track Output)
     end
 
     subgraph SoundChain
-        SC_Input(Sound Chain Input) --> Chain1_Output(Chain 1 Output)
-        Chain1_Output --> Chain2{Chain 2?}
-        Chain2 -- Yes --> Chain2_Output(Chain 2 Output)
-        Chain2 -- No --> SC_Output
-        Chain2_Output --> Chain3{Chain 3?}
-        Chain3 -- Yes --> Chain3_Output(Chain 3 Output)
-        Chain3 -- No --> SC_Output
-        Chain3_Output --> ... --> SC_Output(Sound Chain Output Node)
-    end
+        SC_Input(SoundChain Input) --> Chain1_Input
+        subgraph Chain1["Chain 1"]
+            Chain1_Input(Input) --> Chain1_Instrument["Instrument (SamplerEngine)"]
+            Chain1_Instrument --> Chain1_Effects{Effects}
+            Chain1_Effects --> Chain1_Pan(Pan)
+            Chain1_Pan --> Chain1_Output(Output)
+        end
+        Chain1_Output --> Chain2_Input
 
-    subgraph Chain
-        Chain_Instrument{Instrument?} -- Yes --> Chain_InstrumentNode(Instrument Node)
-        Chain_Instrument -- No --> Chain_Effects{Effects?}
-        Chain_InstrumentNode --> Chain_Effects
-        Chain_Effects -- Yes --> Chain_EffectsNodes(Effects Nodes)
-        Chain_Effects -- No --> Pan
-        Chain_EffectsNodes --> Pan
-        Pan --> Chain_Output(Chain Output)
+        subgraph Chain2["Chain 2"]
+            Chain2_Input(Input) --> Chain2_Instrument["Instrument (SamplerEngine)"]
+            Chain2_Instrument --> Chain2_Effects{Effects}
+            Chain2_Effects --> Chain2_Pan(Pan)
+            Chain2_Pan --> Chain2_Output(Output)
+        end
+        Chain2_Output --> ChainN_Input
+
+        subgraph ChainN["Chain n"]
+            ChainN_Input(Input) --> ChainN_Instrument["Instrument (SamplerEngine)"]
+            ChainN_Instrument --> ChainN_Effects{Effects}
+            ChainN_Effects --> ChainN_Pan(Pan)
+            ChainN_Pan --> ChainN_Output(Output)
+        end
+        ChainN_Output --> SC_Output(SoundChain Output)
     end
 
     subgraph ReturnTrack
@@ -85,6 +91,7 @@ graph LR
         Send_Output(Send Output)
     end
 
+    %% Main Mix Routing
     Track_Output --> MT_Input
     RT_Output --> MT_Input
     Send_Output --> RT_Input
@@ -92,7 +99,9 @@ graph LR
     style MasterTrack fill:#f9f,stroke:#333,stroke-width:2px
     style Track fill:#ccf,stroke:#333,stroke-width:2px
     style SoundChain fill:#cff,stroke:#333,stroke-width:2px
-    style Chain fill:#cfc,stroke:#333,stroke-width:2px
+    style Chain1 fill:#cfc,stroke:#333,stroke-width:2px
+    style Chain2 fill:#cfc,stroke:#333,stroke-width:2px
+    style ChainN fill:#cfc,stroke:#333,stroke-width:2px
     style ReturnTrack fill:#ffc,stroke:#333,stroke-width:2px
     style Send fill:#fcc,stroke:#333,stroke-width:2px
 ```

@@ -50,6 +50,20 @@ export interface SfzRegion {
   loop_mode?: string;
   loop_start?: number;
   loop_end?: number;
+  lochan?: number;
+  hichan?: number;
+  lovel?: number;
+  hivel?: number;
+  lobend?: number;
+  hibend?: number;
+  lochanaft?: number;
+  hichanaft?: number;
+  lopolyaft?: number;
+  hipolyaft?: number;
+  lorand?: number;
+  hirand?: number;
+  lobpm?: number;
+  hibpm?: number;
 }
 
 export interface AudioFile {

@@ -249,8 +249,8 @@ export class MixEngineImpl implements MixEngine {
   /**
    * Creates a new chain.
    * @param state - The current state.
-   * @param position - The chain position.
    * @param trackId - The id of the sound chain track.
+   * @param position - The chain position.
    * @param name - The name of the chain.
    * @param instrument - The instrument node of the chain.
    * @param samplerEngine - Optional Sampler Engine instance to connect to this chain.
@@ -262,8 +262,7 @@ export class MixEngineImpl implements MixEngine {
     trackId: string,
     position: number,
     name?: string,
-    instrument: AudioNode | null = null,
-    samplerEngine: SamplerEngine | null = null,
+    instrument: SamplerEngine | null = null,
   ): MixState {
     const soundChain = state.mixer.tracks[trackId].soundChain;
     let chain = null;
@@ -273,19 +272,15 @@ export class MixEngineImpl implements MixEngine {
     }
 
     if (instrument) {
-      chain = this.trackService.createChain(name, instrument);
+      chain = this.trackService.createChain(name, instrument.getOutputNode());
     } else {
       chain = this.trackService.createChain(name);
     }
 
     this.routingService.connect(chain.panNode, chain.outputNode);
     if (instrument) {
-      this.routingService.connect(instrument, chain.inputNode);
-    } else if (samplerEngine) {
-      this.routingService.connect(
-        samplerEngine.getOutputNode(),
-        chain.inputNode,
-      );
+      // Connect SamplerEngine output if provided
+      this.routingService.connect(instrument.getOutputNode(), chain.inputNode);
     }
 
     return {

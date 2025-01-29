@@ -6,7 +6,7 @@ import * as AccordionPrimitive from "@radix-ui/react-accordion";
 import { ScrollArea } from "@/common/shadcn/ui/scroll-area";
 import { cn } from "@/common/shadcn/lib/utils";
 import { ChevronRight, type LucideIcon } from "lucide-react";
-import useResizeObserver from "use-resize-observer";
+import { useResizeObserver } from "@/common/hooks/useResizeObserver";
 
 interface TreeDataItem {
   id: string;
@@ -83,11 +83,20 @@ const Tree = React.forwardRef<HTMLDivElement, TreeProps>(
       return ids;
     }, [data, initialSlelectedItemId]);
 
-    const { ref: refRoot, width, height } = useResizeObserver();
+    const { ref: refRoot, width, height } = useResizeObserver<HTMLDivElement>();
 
     return (
-      <div ref={refRoot} className={cn("overflow-hidden", className)}>
-        <ScrollArea style={{ width, height }}>
+      <div
+        ref={refRoot}
+        className={cn("overflow-hidden", className)}
+        style={{ height: "100%" }}
+      >
+        <ScrollArea
+          style={{
+            width: width || "100%",
+            height: height || "100%",
+          }}
+        >
           <div className="relative p-2">
             <TreeItem
               data={data}
@@ -237,7 +246,7 @@ const Leaf = React.forwardRef<
 });
 
 const AccordionTrigger = React.forwardRef<
-  React.ElementRef<typeof AccordionPrimitive.Trigger>,
+  React.ComponentRef<typeof AccordionPrimitive.Trigger>,
   React.ComponentPropsWithoutRef<typeof AccordionPrimitive.Trigger>
 >(({ className, children, ...props }, ref) => (
   <AccordionPrimitive.Header>
@@ -257,7 +266,7 @@ const AccordionTrigger = React.forwardRef<
 AccordionTrigger.displayName = AccordionPrimitive.Trigger.displayName;
 
 const AccordionContent = React.forwardRef<
-  React.ElementRef<typeof AccordionPrimitive.Content>,
+  React.ComponentRef<typeof AccordionPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof AccordionPrimitive.Content>
 >(({ className, children, ...props }, ref) => (
   <AccordionPrimitive.Content

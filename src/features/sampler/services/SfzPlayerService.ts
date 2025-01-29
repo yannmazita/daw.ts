@@ -1,13 +1,41 @@
 // src/features/sampler/services/SfzPlayerService.ts
 import { parseSfz, parseHeaders } from "@sfz-tools/core/dist/parse";
 import { midiNameToNum, pathGetDirectory } from "@sfz-tools/core/dist/utils";
-import { SfzOptions, PreloadMode, SfzControlEvent, SfzRegion } from "../types";
+import {
+  SfzOptions,
+  PreloadMode,
+  SfzControlEvent,
+  SfzRegion,
+  RegionDefaults,
+} from "../types";
 import { FileLoaderService } from "./FileLoaderService";
 import { ParseOpcodeObj } from "@sfz-tools/core/dist/types/parse";
 
 export class SfzPlayerService {
   private regions: SfzRegion[] = [];
   private options: SfzOptions;
+  private bend = 0; // todo: Implement bend control
+  private chanaft = 64; // todo: Implement chanaft control
+  private polyaft = 64; // todo: Implement polyaft control
+  private bpm = 120; // todo: Implement bpm control
+  private regionDefaults: RegionDefaults = {
+    lochan: 0,
+    hichan: 15,
+    lokey: 0,
+    hikey: 127,
+    lovel: 0,
+    hivel: 127,
+    lobend: -8192,
+    hibend: 8192,
+    lochanaft: 0,
+    hichanaft: 127,
+    lopolyaft: 0,
+    hipolyaft: 127,
+    lorand: 0,
+    hirand: 1,
+    lobpm: 0,
+    hibpm: 500,
+  };
 
   constructor(
     private audioContext: AudioContext,
@@ -142,9 +170,25 @@ export class SfzPlayerService {
    * @returns True if the region matches the event
    * */
   private isRegionMatch(region: SfzRegion, event: SfzControlEvent): boolean {
+    const rand = Math.random();
     return (
-      (!region.lokey || event.note >= region.lokey) &&
-      (!region.hikey || event.note <= region.hikey)
+      region.sample != null &&
+      (region.lochan === undefined || event.channel >= region.lochan) &&
+      (region.hichan === undefined || event.channel <= region.hichan) &&
+      (region.lokey === undefined || event.note >= region.lokey) &&
+      (region.hikey === undefined || event.note <= region.hikey) &&
+      (region.lovel === undefined || event.velocity >= region.lovel) &&
+      (region.hivel === undefined || event.velocity <= region.hivel) &&
+      (region.lobend === undefined || this.bend >= region.lobend) &&
+      (region.hibend === undefined || this.bend <= region.hibend) &&
+      (region.lochanaft === undefined || this.chanaft >= region.lochanaft) &&
+      (region.hichanaft === undefined || this.chanaft <= region.hichanaft) &&
+      (region.lopolyaft === undefined || this.polyaft >= region.lopolyaft) &&
+      (region.hipolyaft === undefined || this.polyaft <= region.hipolyaft) &&
+      (region.lorand === undefined || rand >= region.lorand) &&
+      (region.hirand === undefined || rand <= region.hirand) &&
+      (region.lobpm === undefined || this.bpm >= region.lobpm) &&
+      (region.hibpm === undefined || this.bpm <= region.hibpm)
     );
   }
 

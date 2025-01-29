@@ -2,8 +2,8 @@
 import { MixParameterService } from "./services/MixParameterService";
 import { MixTrackService } from "./services/MixTrackService";
 import { MixRoutingService } from "./services/MixRoutingService";
+import { SamplerEngine } from "@/features/sampler/types";
 
-export type Device = SoundChain | AudioNode;
 export type TrackType = "audio" | "midi";
 
 export interface Track {
@@ -49,7 +49,7 @@ export interface Chain {
   name: string;
   inputNode: GainNode;
   outputNode: GainNode;
-  instrument: AudioNode | null;
+  instrument: SamplerEngine | null;
   effects: Record<string, AudioNode>;
   effectsOrder: string[];
   panNode: StereoPannerNode;
@@ -103,12 +103,13 @@ export interface MixEngine {
   ): MixState;
   createReturnTrack(state: MixState, name?: string): MixState;
   createSoundChain(state: MixState, trackId: string, name?: string): MixState;
+
   createChain(
     state: MixState,
     trackId: string,
     position: number,
     name?: string,
-    instrument?: AudioNode | null,
+    instrument?: AudioNode | SamplerEngine | null,
   ): MixState;
 
   toggleSoundChain(state: MixState, trackId: string): MixState;
