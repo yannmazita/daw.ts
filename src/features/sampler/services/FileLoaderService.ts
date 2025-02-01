@@ -13,6 +13,11 @@ export class FileLoaderService {
     this.root = path;
   }
 
+  /**
+   * Load an audio file.
+   * @param path - The path to the audio file.
+   * @returns The decoded audio buffer.
+   * */
   async loadAudioFile(path: string): Promise<AudioBuffer> {
     const fullPath = this.root + path;
 

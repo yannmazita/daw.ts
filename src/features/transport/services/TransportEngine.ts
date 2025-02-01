@@ -179,6 +179,10 @@ export class TransportEngineImpl implements TransportEngine {
     }
   }
 
+  getTempo(): number {
+    return this.clock.getTempo();
+  }
+
   /**
    * Sets transport time signature.
    * @param state - The current transport state.

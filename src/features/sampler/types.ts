@@ -36,7 +36,7 @@ export interface SfzControlEvent {
 }
 
 export interface SfzRegion {
-  sample?: string;
+  sample?: string; // File path of the sample
   lokey?: number;
   hikey?: number;
   pitch_keycenter?: number;

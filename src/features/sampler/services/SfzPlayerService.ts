@@ -10,6 +10,7 @@ import {
 } from "../types";
 import { FileLoaderService } from "./FileLoaderService";
 import { ParseOpcodeObj } from "@sfz-tools/core/dist/types/parse";
+import { TransportEngine } from "@/features/transport/types";
 
 export class SfzPlayerService {
   private regions: SfzRegion[] = [];
@@ -17,7 +18,6 @@ export class SfzPlayerService {
   private bend = 0; // todo: Implement bend control
   private chanaft = 64; // todo: Implement chanaft control
   private polyaft = 64; // todo: Implement polyaft control
-  private bpm = 120; // todo: Implement bpm control
   private regionDefaults: RegionDefaults = {
     lochan: 0,
     hichan: 15,
@@ -40,6 +40,7 @@ export class SfzPlayerService {
   constructor(
     private audioContext: AudioContext,
     private fileLoader: FileLoaderService,
+    private transport: TransportEngine,
     options: SfzOptions = {},
   ) {
     this.options = {
@@ -129,7 +130,7 @@ export class SfzPlayerService {
       matchingRegions[Math.floor(Math.random() * matchingRegions.length)];
 
     try {
-      // Load audio if needed
+      // Load sample audio file
       const audioBuffer = await this.fileLoader.loadAudioFile(region.sample!);
 
       // Create and configure source
@@ -171,6 +172,7 @@ export class SfzPlayerService {
    * */
   private isRegionMatch(region: SfzRegion, event: SfzControlEvent): boolean {
     const rand = Math.random();
+    const currentBpm = this.transport.getTempo();
     return (
       region.sample != null &&
       (region.lochan === undefined || event.channel >= region.lochan) &&
@@ -187,8 +189,8 @@ export class SfzPlayerService {
       (region.hipolyaft === undefined || this.polyaft <= region.hipolyaft) &&
       (region.lorand === undefined || rand >= region.lorand) &&
       (region.hirand === undefined || rand <= region.hirand) &&
-      (region.lobpm === undefined || this.bpm >= region.lobpm) &&
-      (region.hibpm === undefined || this.bpm <= region.hibpm)
+      (region.lobpm === undefined || currentBpm >= region.lobpm) &&
+      (region.hibpm === undefined || currentBpm <= region.hibpm)
     );
   }
 

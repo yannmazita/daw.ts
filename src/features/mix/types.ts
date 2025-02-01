@@ -20,6 +20,7 @@ export interface Track {
   sends: Record<string, Send>;
   sendsOrder: string[];
   soundChain: SoundChain | null;
+  instrument: SamplerEngine | null;
 }
 
 export interface Send {

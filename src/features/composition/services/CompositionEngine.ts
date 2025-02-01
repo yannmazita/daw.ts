@@ -10,7 +10,6 @@ import { CompositionSamplerService } from "./CompositionSamplerService";
 import { CompositionMixService } from "./CompositionMixService";
 import { CompositionClipService } from "./CompositionClipService";
 import { CompositionAutomationService } from "./CompositionAutomationService";
-import { FileLoaderService } from "@/features/sampler/services/FileLoaderService";
 import { MidiFile } from "midifile-ts";
 
 export class CompositionEngineImpl implements CompositionEngine {

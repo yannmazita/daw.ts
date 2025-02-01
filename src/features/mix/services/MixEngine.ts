@@ -89,16 +89,24 @@ export class MixEngineImpl implements MixEngine {
 
   /**
    * Creates a new track.
-   * Track input is wired to track pan, track pan to track output,
-   * track output to master track input.
+   * Track input is wired to track pan, track pan to track output, track output
+   * to master track input. New tracks send to the Master Track by default.
    * @param state - The current state.
-   * New tracks send to the Master Track by default.
    * @param name - The name of the track.
    * @returns The updated state.
    */
   createTrack(state: MixState, type: TrackType, name?: string): MixState {
     const track = this.trackService.createTrack(type, name);
     const masterTrack = state.mixer.masterTrack;
+
+    /*
+    if (track.samplerInstance) {
+      this.routingService.connect(
+        track.samplerInstance.getOutputNode(),
+        track.inputNode,
+      );
+    }
+    */
     this.routingService.connect(track.inputNode, track.panNode);
     this.routingService.connect(track.panNode, track.outputNode);
     this.routingService.connect(track.outputNode, masterTrack.inputNode);
@@ -252,8 +260,7 @@ export class MixEngineImpl implements MixEngine {
    * @param trackId - The id of the sound chain track.
    * @param position - The chain position.
    * @param name - The name of the chain.
-   * @param instrument - The instrument node of the chain.
-   * @param samplerEngine - Optional Sampler Engine instance to connect to this chain.
+   * @param instrument - The instrument of the chain.
    * @returns The updated state.
    * @throws If track has no sound chain.
    */
@@ -272,7 +279,7 @@ export class MixEngineImpl implements MixEngine {
     }
 
     if (instrument) {
-      chain = this.trackService.createChain(name, instrument.getOutputNode());
+      chain = this.trackService.createChain(name, instrument);
     } else {
       chain = this.trackService.createChain(name);
     }
