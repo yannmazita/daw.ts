@@ -12,7 +12,7 @@ export class SamplerEngineImpl implements SamplerEngine {
   constructor(
     private audioContext: AudioContext,
     private transport: TransportEngine,
-    private routingSeriver: MixRoutingService,
+    private routingService: MixRoutingService,
   ) {
     this.loader = new FileLoaderService(this.audioContext);
   }
@@ -21,6 +21,7 @@ export class SamplerEngineImpl implements SamplerEngine {
    * Create a sampler instrument for a track.
    * @param state - The current engine state.
    * @param trackId - The parent track ID.
+   * @param name - Optional sampler name.
    * @returns The updated engine state.
    * @throws If track is not found, or if track does not have
    * a sound chain when chainId is given.
@@ -28,6 +29,7 @@ export class SamplerEngineImpl implements SamplerEngine {
   createSamplerInstrumentForTrack(
     state: EngineState,
     trackId: string,
+    name?: string,
   ): EngineState {
     const track = state.mix.mixer.tracks[trackId];
 
@@ -41,7 +43,7 @@ export class SamplerEngineImpl implements SamplerEngine {
       this.loader,
     );
     const instrumentNode = instrument.getOutputNode();
-    this.routingSeriver.connect(instrumentNode, track.inputNode);
+    this.routingService.connect(instrumentNode, track.inputNode);
 
     return {
       ...state,
@@ -64,6 +66,7 @@ export class SamplerEngineImpl implements SamplerEngine {
           ...state.sampler.samplers,
           [id]: {
             id,
+            name: name ?? "New Sampler",
             trackId,
             instrument,
           },
@@ -85,6 +88,7 @@ export class SamplerEngineImpl implements SamplerEngine {
     state: EngineState,
     trackId: string,
     chainId: string,
+    name?: string,
   ): EngineState {
     const track = state.mix.mixer.tracks[trackId];
 
@@ -103,7 +107,7 @@ export class SamplerEngineImpl implements SamplerEngine {
       this.loader,
     );
     const instrumentNode = instrument.getOutputNode();
-    this.routingSeriver.connect(
+    this.routingService.connect(
       instrumentNode,
       track.soundChain.chains[chainId].inputNode,
     );
@@ -138,6 +142,7 @@ export class SamplerEngineImpl implements SamplerEngine {
           ...state.sampler.samplers,
           [id]: {
             id,
+            name: name ?? "New Sampler",
             trackId,
             chainId,
             instrument,
@@ -149,8 +154,9 @@ export class SamplerEngineImpl implements SamplerEngine {
 
   async dispose(state: SamplerState): Promise<SamplerState> {
     Object.values(state.samplers).forEach((sampler) => {
-      sampler.instrument.getOutputNode().disconnect();
+      sampler.instrument.dispose();
     });
+    this.loader.dispose();
     return Promise.resolve({ samplers: {} });
   }
 }

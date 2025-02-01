@@ -42,7 +42,16 @@ export class FileLoaderService {
     return response.text();
   }
 
+  clearRegionCache(path: string) {
+    const fullPath = this.root + path;
+    this.bufferCache.delete(fullPath);
+  }
+
   clearCache() {
     this.bufferCache.clear();
+  }
+
+  dispose() {
+    this.clearCache();
   }
 }

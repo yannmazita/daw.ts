@@ -209,7 +209,11 @@ export class SfzPlayerService {
   }
 
   dispose() {
-    this.fileLoader.clearCache();
+    for (const region of this.regions) {
+      if (region.sample) {
+        this.fileLoader.clearRegionCache(region.sample);
+      }
+    }
     this.regions = [];
   }
 }

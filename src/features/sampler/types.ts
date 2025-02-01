@@ -76,6 +76,7 @@ export interface AudioFile {
 
 export interface Sampler {
   id: string;
+  name: string;
   trackId: string;
   chainId?: string;
   instrument: SamplerInstrumentService;
@@ -89,11 +90,13 @@ export interface SamplerEngine {
   createSamplerInstrumentForTrack(
     state: EngineState,
     trackId: string,
+    name?: string,
   ): EngineState;
   createSamplerInstrumentForChain(
     state: EngineState,
     trackId: string,
     chainId: string,
+    name?: string,
   ): EngineState;
 
   dispose(state: SamplerState): Promise<SamplerState>;

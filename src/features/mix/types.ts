@@ -7,6 +7,11 @@ import { SamplerEngine } from "@/features/sampler/types";
 export type TrackType = "audio" | "midi";
 export type InstrumentType = "sampler" | "synth";
 
+export interface Instrument {
+  getOutputNode(): GainNode;
+  dispose(): void;
+}
+
 export interface Track {
   id: string;
   type: TrackType;

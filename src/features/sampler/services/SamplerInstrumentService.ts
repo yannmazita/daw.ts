@@ -2,8 +2,9 @@
 import { TransportEngine } from "@/features/transport/types";
 import { FileLoaderService } from "./FileLoaderService";
 import { SfzPlayerService } from "./SfzPlayerService";
+import { Instrument } from "@/features/mix/types";
 
-export class SamplerInstrumentService {
+export class SamplerInstrumentService implements Instrument {
   private player: SfzPlayerService;
   private outputNode: GainNode;
 
@@ -24,5 +25,10 @@ export class SamplerInstrumentService {
 
   getOutputNode(): GainNode {
     return this.outputNode;
+  }
+
+  dispose(): void {
+    this.outputNode.disconnect();
+    this.player.dispose();
   }
 }
