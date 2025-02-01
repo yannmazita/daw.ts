@@ -112,6 +112,14 @@ export class SfzPlayerService {
     }
   }
 
+  async handleMidiEvent(event: MidiEvent) {
+    await this.playNote({
+      channel: event.channel,
+      note: event.note,
+      velocity: event.velocity,
+    });
+  }
+
   /**
    * Play a note based on the control event
    * @param event - Control event to play

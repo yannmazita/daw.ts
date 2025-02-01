@@ -97,6 +97,20 @@ export class CompositionEngineImpl implements CompositionEngine {
   }
 
   // Sampler methods
+  createSamplerInstrumentForTrack(trackId: string, name?: string): void {
+    return this.samplerService.createSamplerInstrumentForTrack(trackId, name);
+  }
+  createSamplerInstrumentForChain(
+    trackId: string,
+    chainId: string,
+    name?: string,
+  ): void {
+    return this.samplerService.createSamplerInstrumentForChain(
+      trackId,
+      chainId,
+      name,
+    );
+  }
 
   // Clip Methods
   importMidiFile(trackId: string, file: File, name?: string): void {
