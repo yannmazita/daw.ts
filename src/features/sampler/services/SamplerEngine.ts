@@ -103,7 +103,10 @@ export class SamplerEngineImpl implements SamplerEngine {
       this.loader,
     );
     const instrumentNode = instrument.getOutputNode();
-    // todo: chain routing
+    this.routingSeriver.connect(
+      instrumentNode,
+      track.soundChain.chains[chainId].inputNode,
+    );
 
     return {
       ...state,
