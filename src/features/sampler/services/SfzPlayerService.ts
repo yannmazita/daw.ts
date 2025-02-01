@@ -209,6 +209,7 @@ export class SfzPlayerService {
   }
 
   dispose() {
+    // naive, sample might be used by other instance requiring a reload
     for (const region of this.regions) {
       if (region.sample) {
         this.fileLoader.clearRegionCache(region.sample);

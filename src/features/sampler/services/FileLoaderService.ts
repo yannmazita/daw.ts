@@ -2,6 +2,8 @@
 export class FileLoaderService {
   private audioContext: AudioContext;
   private bufferCache: Map<string, AudioBuffer>;
+  private lruQueue: string[] = [];
+  private maxCacheSize = 1024 * 1024 * 1024 * 2; // 2 GB
   private root = "";
 
   constructor(audioContext: AudioContext) {
@@ -11,6 +13,30 @@ export class FileLoaderService {
 
   setRoot(path: string) {
     this.root = path;
+  }
+
+  private updateLRU(fullPath: string) {
+    this.lruQueue = this.lruQueue.filter((p) => p !== fullPath);
+    this.lruQueue.push(fullPath);
+  }
+
+  private enforceMemoryLimit() {
+    let totalSize = 0;
+    for (const buffer of this.bufferCache.values()) {
+      totalSize += buffer.length * 4; // audio samples in AudioBuffer are float32 ie 4 bytes
+    }
+
+    while (totalSize > this.maxCacheSize) {
+      const headPath = this.lruQueue.shift();
+      if (!headPath) {
+        break;
+      }
+      const buffer = this.bufferCache.get(headPath);
+      if (buffer) {
+        totalSize -= buffer.length * 4;
+        this.bufferCache.delete(headPath);
+      }
+    }
   }
 
   /**
@@ -23,6 +49,7 @@ export class FileLoaderService {
 
     // Check cache first
     if (this.bufferCache.has(fullPath)) {
+      this.updateLRU(fullPath);
       return this.bufferCache.get(fullPath)!;
     }
 
@@ -33,6 +60,8 @@ export class FileLoaderService {
 
     // Cache for reuse
     this.bufferCache.set(fullPath, audioBuffer);
+    this.lruQueue.push(fullPath);
+    this.enforceMemoryLimit();
 
     return audioBuffer;
   }
