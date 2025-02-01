@@ -26,10 +26,14 @@ export class EngineManager {
       this._audioContext,
     );
     console.log("Transport Engine initialized");
-    this._sampler = new SamplerEngineImpl(this._audioContext, this._transport);
-    console.log("Sampler Engine initialized");
     this._mix = new MixEngineImpl(this._audioContext);
     console.log("Mix Engine initialized");
+    this._sampler = new SamplerEngineImpl(
+      this._audioContext,
+      this._transport,
+      this._mix.getRoutingService(),
+    );
+    console.log("Sampler Engine initialized");
     this._clips = new ClipEngineImpl(
       this._audioContext,
       this._mix.getRoutingService(),
@@ -39,8 +43,8 @@ export class EngineManager {
     console.log("Automation Engine initialized");
     this._composition = new CompositionEngineImpl(
       this._transport,
-      this._sampler,
       this._mix,
+      this._sampler,
       this._clips,
       this._automation,
     );

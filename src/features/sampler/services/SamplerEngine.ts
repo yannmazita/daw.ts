@@ -4,6 +4,7 @@ import { SamplerEngine, SamplerState } from "../types";
 import { SamplerInstrumentService } from "./SamplerInstrumentService";
 import { EngineState } from "@/core/stores/useEngineStore";
 import { FileLoaderService } from "./FileLoaderService";
+import { MixRoutingService } from "@/features/mix/services/MixRoutingService";
 
 export class SamplerEngineImpl implements SamplerEngine {
   private loader: FileLoaderService;
@@ -11,6 +12,7 @@ export class SamplerEngineImpl implements SamplerEngine {
   constructor(
     private audioContext: AudioContext,
     private transport: TransportEngine,
+    private routingSeriver: MixRoutingService,
   ) {
     this.loader = new FileLoaderService(this.audioContext);
   }
@@ -39,6 +41,7 @@ export class SamplerEngineImpl implements SamplerEngine {
       this.loader,
     );
     const instrumentNode = instrument.getOutputNode();
+    this.routingSeriver.connect(instrumentNode, track.inputNode);
 
     return {
       ...state,
@@ -100,6 +103,7 @@ export class SamplerEngineImpl implements SamplerEngine {
       this.loader,
     );
     const instrumentNode = instrument.getOutputNode();
+    // todo: chain routing
 
     return {
       ...state,
@@ -141,6 +145,9 @@ export class SamplerEngineImpl implements SamplerEngine {
   }
 
   async dispose(state: SamplerState): Promise<SamplerState> {
-    return Promise.resolve(state);
+    Object.values(state.samplers).forEach((sampler) => {
+      sampler.instrument.getOutputNode().disconnect();
+    });
+    return Promise.resolve({ samplers: {} });
   }
 }

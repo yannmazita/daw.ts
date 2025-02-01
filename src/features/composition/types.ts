@@ -9,8 +9,8 @@ export interface CompositionState {}
 
 export interface CompositionEngine {
   transportEngine: TransportEngine;
-  samplerEngine: SamplerEngine;
   mixEngine: MixEngine;
+  samplerEngine: SamplerEngine;
   clipEngine: ClipEngine;
   automationEngine: AutomationEngine;
 

@@ -1,11 +1,5 @@
 // src/features/mix/services/MixEngine.ts
-import {
-  InstrumentType,
-  MasterTrack,
-  MixEngine,
-  MixState,
-  TrackType,
-} from "../types";
+import { MasterTrack, MixEngine, MixState, TrackType } from "../types";
 import { MixRoutingService } from "./MixRoutingService";
 import { MixTrackService } from "./MixTrackService";
 import { MixParameterService } from "./MixParameterService";
@@ -276,6 +270,7 @@ export class MixEngineImpl implements MixEngine {
     chain = this.trackService.createChain(name);
 
     this.routingService.connect(chain.panNode, chain.outputNode);
+    // todo: thorough chain routing mechanism with chain position
 
     return {
       ...state,
