@@ -41,6 +41,7 @@ export class SfzPlayerService {
     private audioContext: AudioContext,
     private fileLoader: FileLoaderService,
     private transport: TransportEngine,
+    private outputNode: GainNode,
     options: SfzOptions = {},
   ) {
     this.options = {
@@ -143,13 +144,13 @@ export class SfzPlayerService {
         source.detune.value = semitones * 100; // 100 cents per semitone
       }
 
-      // Apply volume/pan
+      // Apply volume
       const gainNode = this.audioContext.createGain();
       gainNode.gain.value = this.calculateGain(region);
 
       // Connect nodes
       source.connect(gainNode);
-      gainNode.connect(this.audioContext.destination);
+      gainNode.connect(this.outputNode);
 
       // Play with offset if specified
       const startTime = this.audioContext.currentTime;

@@ -7,7 +7,6 @@ import {
   Chain,
   TrackType,
 } from "@/features/mix/types";
-import { SamplerEngine } from "@/features/sampler/types";
 
 /**
  * Manages tracks within the mix engine.
@@ -17,7 +16,7 @@ export class MixTrackService {
 
   /**
    * Creates a new track.
-   * @param name - The name of the track.
+   * @param name - Optional name of the track.
    * @returns The created track.
    */
   createTrack(type: TrackType, name?: string): Track {
@@ -32,6 +31,7 @@ export class MixTrackService {
       inputNode,
       outputNode,
       panNode,
+      instrumentNode: null,
       isSoundChainActive: false,
       isMuted: false,
       isSoloed: false,
@@ -39,7 +39,6 @@ export class MixTrackService {
       sends: {},
       sendsOrder: [],
       soundChain: null,
-      instrument: null,
     };
     return track;
   }
@@ -111,10 +110,9 @@ export class MixTrackService {
   /**
    * Creates a new chain.
    * @param name - The name of the chain.
-   * @param instrument - The instrument node of the chain.
    * @returns The created chain.
    */
-  createChain(name?: string, instrument?: SamplerEngine): Chain {
+  createChain(name?: string): Chain {
     const inputNode = this.audioContext.createGain();
     const outputNode = this.audioContext.createGain();
     const panNode = this.audioContext.createStereoPanner();
@@ -123,7 +121,7 @@ export class MixTrackService {
       name: name ?? "New Chain",
       inputNode,
       outputNode,
-      instrument: instrument ?? null,
+      instrumentNode: null,
       effects: {},
       effectsOrder: [],
       panNode,

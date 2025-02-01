@@ -1,4 +1,7 @@
 // src/features/sampler/types.ts
+import { EngineState } from "@/core/stores/useEngineStore";
+import { SamplerInstrumentService } from "./services/SamplerInstrumentService";
+
 export interface RegionDefaults {
   lochan: number;
   hichan: number;
@@ -71,9 +74,27 @@ export interface AudioFile {
   path: string;
 }
 
-export interface SamplerState {}
+export interface Sampler {
+  id: string;
+  trackId: string;
+  chainId?: string;
+  instrument: SamplerInstrumentService;
+}
+
+export interface SamplerState {
+  samplers: Record<string, Sampler>;
+}
 
 export interface SamplerEngine {
-  getOutputNode(): GainNode;
+  createSamplerInstrumentForTrack(
+    state: EngineState,
+    trackId: string,
+  ): EngineState;
+  createSamplerInstrumentForChain(
+    state: EngineState,
+    trackId: string,
+    chainId: string,
+  ): EngineState;
+
   dispose(state: SamplerState): Promise<SamplerState>;
 }

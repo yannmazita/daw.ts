@@ -1,5 +1,7 @@
 // src/features/mix/services/MixRoutingService.ts
 
+import { Chain, Track } from "../types";
+
 /**
  * Handles audio routing within the mix engine.
  */
@@ -40,5 +42,19 @@ export class MixRoutingService {
     if ("disconnect" in node) {
       node.disconnect();
     }
+  }
+
+  routeNewTrackInstrument(track: Track): void {
+    if (!track.instrumentNode) {
+      throw new Error("Track does not have an instrument node.");
+    }
+    this.connect(track.instrumentNode, track.inputNode);
+  }
+
+  routeNewChainInstrument(chain: Chain): void {
+    if (!chain.instrumentNode) {
+      throw new Error("Chain does not have an instrument node.");
+    }
+    this.connect(chain.instrumentNode, chain.inputNode);
   }
 }

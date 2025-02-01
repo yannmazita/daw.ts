@@ -1,9 +1,14 @@
 // src/features/mix/services/MixEngine.ts
-import { MasterTrack, MixEngine, MixState, TrackType } from "../types";
+import {
+  InstrumentType,
+  MasterTrack,
+  MixEngine,
+  MixState,
+  TrackType,
+} from "../types";
 import { MixRoutingService } from "./MixRoutingService";
 import { MixTrackService } from "./MixTrackService";
 import { MixParameterService } from "./MixParameterService";
-import { SamplerEngine } from "@/features/sampler/types";
 
 /**
  * Main class for the mix engine.
@@ -99,14 +104,6 @@ export class MixEngineImpl implements MixEngine {
     const track = this.trackService.createTrack(type, name);
     const masterTrack = state.mixer.masterTrack;
 
-    /*
-    if (track.samplerInstance) {
-      this.routingService.connect(
-        track.samplerInstance.getOutputNode(),
-        track.inputNode,
-      );
-    }
-    */
     this.routingService.connect(track.inputNode, track.panNode);
     this.routingService.connect(track.panNode, track.outputNode);
     this.routingService.connect(track.outputNode, masterTrack.inputNode);
@@ -260,7 +257,6 @@ export class MixEngineImpl implements MixEngine {
    * @param trackId - The id of the sound chain track.
    * @param position - The chain position.
    * @param name - The name of the chain.
-   * @param instrument - The instrument of the chain.
    * @returns The updated state.
    * @throws If track has no sound chain.
    */
@@ -269,7 +265,6 @@ export class MixEngineImpl implements MixEngine {
     trackId: string,
     position: number,
     name?: string,
-    instrument: SamplerEngine | null = null,
   ): MixState {
     const soundChain = state.mixer.tracks[trackId].soundChain;
     let chain = null;
@@ -278,17 +273,9 @@ export class MixEngineImpl implements MixEngine {
       throw new Error("Track has no sound chain");
     }
 
-    if (instrument) {
-      chain = this.trackService.createChain(name, instrument);
-    } else {
-      chain = this.trackService.createChain(name);
-    }
+    chain = this.trackService.createChain(name);
 
     this.routingService.connect(chain.panNode, chain.outputNode);
-    if (instrument) {
-      // Connect SamplerEngine output if provided
-      this.routingService.connect(instrument.getOutputNode(), chain.inputNode);
-    }
 
     return {
       ...state,
