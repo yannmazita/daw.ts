@@ -227,6 +227,7 @@ _Not fully implemented yet._ Responsibilites not yet defined, it should handle a
 
 ### Planned
 
+- FileSystemDirectoryHandle fallback as only FileWithDirectoryAndFileHandle (Blink) is properly used.
 - Automation
 - UI enhancements
 
