@@ -11,6 +11,7 @@ import { CompositionMixService } from "./CompositionMixService";
 import { CompositionClipService } from "./CompositionClipService";
 import { CompositionAutomationService } from "./CompositionAutomationService";
 import { MidiFile } from "midifile-ts";
+import { FileWithDirectoryAndFileHandle } from "browser-fs-access";
 
 export class CompositionEngineImpl implements CompositionEngine {
   private disposed = false;
@@ -110,6 +111,11 @@ export class CompositionEngineImpl implements CompositionEngine {
       chainId,
       name,
     );
+  }
+  loadDirectory(
+    blobs: FileWithDirectoryAndFileHandle[] | FileSystemDirectoryHandle[],
+  ): void {
+    return this.samplerService.loadDirectory(blobs);
   }
 
   // Clip Methods

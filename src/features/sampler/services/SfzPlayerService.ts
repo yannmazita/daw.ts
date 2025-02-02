@@ -9,7 +9,7 @@ import {
   RegionDefaults,
 } from "../types";
 import { FileLoaderService } from "./FileLoaderService";
-import { ParseOpcodeObj } from "@sfz-tools/core/dist/types/parse";
+import { ParseHeader, ParseOpcodeObj } from "@sfz-tools/core/dist/types/parse";
 import { TransportEngine } from "@/features/transport/types";
 
 export class SfzPlayerService {
@@ -48,10 +48,6 @@ export class SfzPlayerService {
       preload: PreloadMode.ON_DEMAND,
       ...options,
     };
-
-    if (options.root) {
-      this.fileLoader.setRoot(options.root);
-    }
   }
 
   private midiNameToNumConvert(val: string | number) {
@@ -80,44 +76,44 @@ export class SfzPlayerService {
   }
 
   /**
-   * Load an SFZ file and parse it
-   * @param path - Path to the SFZ file
-   * @returns True if successful, false otherwise
+   * Load an SFZ file and parse it.
+   * The method expects a directory containing at least one .sfz file
+   * to have been loaded using FileLoaderService.loadDirectory
+   * @param sfzPath - Path to the SFZ file
+   * @throws If .sfz loading fails.
    * */
-  async loadSfz(path: string) {
+  async loadSfz(sfzPath: string) {
     try {
       // Load and parse SFZ file
-      const sfzContent = await this.fileLoader.loadTextFile(path);
-      const prefix = pathGetDirectory(path);
-      const headers = await parseSfz(sfzContent, prefix);
-      this.regions = this.midiNamesToNum(parseHeaders(headers, prefix));
+      const sfzContent = await this.fileLoader.loadSfzFile(sfzPath);
+      const headers = (await parseSfz(
+        sfzContent,
+        pathGetDirectory(sfzPath),
+      )) as ParseHeader[];
+      this.regions = this.midiNamesToNum(
+        parseHeaders(headers, pathGetDirectory(sfzPath)),
+      );
 
       // Preload samples if needed
       if (this.options.preload === PreloadMode.SEQUENTIAL) {
         await this.preloadSamples();
       }
-
-      return true;
     } catch (error) {
-      console.error("Error loading SFZ:", error);
-      return false;
+      console.error(`Error loading SFZ ${sfzPath}`);
+      throw error;
     }
   }
 
   private async preloadSamples() {
     for (const region of this.regions) {
       if (region.sample) {
-        await this.fileLoader.loadAudioFile(region.sample);
+        try {
+          await this.fileLoader.loadAudioFile(region.sample);
+        } catch (error) {
+          console.warn(`Error preloading sample: ${region.sample}`);
+        }
       }
     }
-  }
-
-  async handleMidiEvent(event: MidiEvent) {
-    await this.playNote({
-      channel: event.channel,
-      note: event.note,
-      velocity: event.velocity,
-    });
   }
 
   /**

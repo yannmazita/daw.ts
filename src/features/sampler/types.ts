@@ -1,6 +1,8 @@
 // src/features/sampler/types.ts
 import { EngineState } from "@/core/stores/useEngineStore";
 import { SamplerInstrumentService } from "./services/SamplerInstrumentService";
+import { FileLoaderService } from "./services/FileLoaderService";
+import { FileWithDirectoryAndFileHandle } from "browser-fs-access";
 
 export interface RegionDefaults {
   lochan: number;
@@ -98,6 +100,10 @@ export interface SamplerEngine {
     chainId: string,
     name?: string,
   ): EngineState;
+
+  loadDirectory(
+    blobs: FileWithDirectoryAndFileHandle[] | FileSystemDirectoryHandle[],
+  ): void;
 
   dispose(state: SamplerState): Promise<SamplerState>;
 }

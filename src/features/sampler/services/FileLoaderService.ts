@@ -1,18 +1,17 @@
 // src/features/sampler/services/FileLoaderService.ts
+import { FileWithDirectoryAndFileHandle } from "browser-fs-access";
+
 export class FileLoaderService {
   private audioContext: AudioContext;
   private bufferCache: Map<string, AudioBuffer>;
   private lruQueue: string[] = [];
   private maxCacheSize = 1024 * 1024 * 1024 * 2; // 2 GB
-  private root = "";
+  private fileMap: Map<string, FileWithDirectoryAndFileHandle>;
 
   constructor(audioContext: AudioContext) {
     this.audioContext = audioContext;
     this.bufferCache = new Map();
-  }
-
-  setRoot(path: string) {
-    this.root = path;
+    this.fileMap = new Map(); // stores paths of all files loaded from directory
   }
 
   private updateLRU(fullPath: string) {
@@ -39,36 +38,67 @@ export class FileLoaderService {
     }
   }
 
+  loadDirectory(
+    blobs: FileWithDirectoryAndFileHandle[] | FileSystemDirectoryHandle[],
+  ) {
+    // Reset state for new directory
+    this.fileMap.clear();
+    this.bufferCache.clear();
+
+    // Process blobs
+    blobs.forEach((blob) => {
+      if ("webkitRelativePath" in blob) {
+        // ie: we're dealing with FileWithDirectoryAndFileHandle
+        this.fileMap.set(blob.webkitRelativePath, blob);
+        // todo: handle FileSystemDirectoryHandle
+      }
+    });
+    console.log("Loaded directory", this.fileMap);
+  }
+
   /**
    * Load an audio file.
-   * @param path - The path to the audio file.
+   * @param relativePath - Audio file relative path.
    * @returns The decoded audio buffer.
+   * @throws If file not found in file map.
    * */
-  async loadAudioFile(path: string): Promise<AudioBuffer> {
-    const fullPath = this.root + path;
-
+  async loadAudioFile(relativePath: string): Promise<AudioBuffer> {
     // Check cache first
-    if (this.bufferCache.has(fullPath)) {
-      this.updateLRU(fullPath);
-      return this.bufferCache.get(fullPath)!;
+    if (this.bufferCache.has(relativePath)) {
+      this.updateLRU(relativePath);
+      return this.bufferCache.get(relativePath)!;
+    }
+
+    // Get file from map
+    const file = this.fileMap.get(relativePath);
+    if (!file) {
+      throw new Error(`File not found: ${relativePath}`);
     }
 
     // Load and decode audio file
-    const response = await fetch(fullPath);
-    const arrayBuffer = await response.arrayBuffer();
+    const arrayBuffer = await file.arrayBuffer();
     const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
 
     // Cache for reuse
-    this.bufferCache.set(fullPath, audioBuffer);
-    this.lruQueue.push(fullPath);
+    this.bufferCache.set(file.webkitRelativePath, audioBuffer);
+    this.lruQueue.push(file.webkitRelativePath);
     this.enforceMemoryLimit();
 
     return audioBuffer;
   }
 
-  async loadTextFile(path: string): Promise<string> {
-    const response = await fetch(this.root + path);
-    return response.text();
+  /**
+   * Load an SFZ file.
+   * @param relativePath - SFZ file relative path.
+   * @returns The SFZ file content.
+   * @throws If file not found.
+   * */
+  async loadSfzFile(relativePath: string): Promise<string> {
+    const file = this.fileMap.get(relativePath);
+    if (!file) {
+      throw new Error(`File not found: ${relativePath}`);
+    }
+    return file.text();
   }
 
   clearRegionCache(path: string) {

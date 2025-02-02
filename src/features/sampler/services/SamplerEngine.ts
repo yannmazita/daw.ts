@@ -5,6 +5,7 @@ import { SamplerInstrumentService } from "./SamplerInstrumentService";
 import { EngineState } from "@/core/stores/useEngineStore";
 import { FileLoaderService } from "./FileLoaderService";
 import { MixRoutingService } from "@/features/mix/services/MixRoutingService";
+import { FileWithDirectoryAndFileHandle } from "browser-fs-access";
 
 export class SamplerEngineImpl implements SamplerEngine {
   private loader: FileLoaderService;
@@ -150,6 +151,12 @@ export class SamplerEngineImpl implements SamplerEngine {
         },
       },
     };
+  }
+
+  loadDirectory(
+    blobs: FileWithDirectoryAndFileHandle[] | FileSystemDirectoryHandle[],
+  ): void {
+    this.loader.loadDirectory(blobs);
   }
 
   async dispose(state: SamplerState): Promise<SamplerState> {

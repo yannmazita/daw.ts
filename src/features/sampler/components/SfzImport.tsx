@@ -2,12 +2,15 @@
 import { cn } from "@/common/shadcn/lib/utils";
 import { Import } from "lucide-react";
 import { Button } from "@/common/shadcn/ui/button";
+import { useSfzImport } from "@/features/sampler/hooks/useSfzImport";
 
 interface SfzImportProps {
   className?: string;
 }
 
 export const SfzImport: React.FC<SfzImportProps> = ({ className }) => {
+  const { loadDirectory } = useSfzImport();
+
   return (
     <div
       className={cn(
@@ -17,13 +20,15 @@ export const SfzImport: React.FC<SfzImportProps> = ({ className }) => {
     >
       <div className="flex flex-col items-center justify-center">
         <Import size={48} />
-        <div>Drop .sfz</div>
+        <div className="text-center">Drop .sfz directory</div>
+        <div className="my-10 text-center">Or</div>
         <Button
           variant="outline"
           size="sm"
-          className="mt-20 h-5 w-fit rounded-none"
+          className="h-5 w-fit rounded-none"
+          onClick={loadDirectory}
         >
-          Browse files
+          Pick directory
         </Button>
       </div>
     </div>
