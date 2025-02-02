@@ -34,7 +34,9 @@ export class CompositionSamplerService {
   loadDirectory(
     blobs: FileWithDirectoryAndFileHandle[] | FileSystemDirectoryHandle[],
   ): void {
-    this.samplerEngine.loadDirectory(blobs);
+    const state = useEngineStore.getState().sampler;
+    const newState = this.samplerEngine.loadDirectory(state, blobs);
+    useEngineStore.setState({ sampler: newState });
   }
 
   async dispose(): Promise<void> {

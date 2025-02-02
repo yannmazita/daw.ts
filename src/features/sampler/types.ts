@@ -72,8 +72,17 @@ export interface Sampler {
   instrument: SamplerInstrumentService;
 }
 
+export interface SfzFileStatus {
+  path: string;
+  lastLoaded: number | null;
+  loaded: boolean;
+  error: string | null;
+}
+
 export interface SamplerState {
   samplers: Record<string, Sampler>;
+  sfzFilesFound: Record<string, SfzFileStatus>;
+  sfzFilesFoundOrder: string[];
 }
 
 export interface SamplerEngine {
@@ -90,8 +99,9 @@ export interface SamplerEngine {
   ): EngineState;
 
   loadDirectory(
+    state: SamplerState,
     blobs: FileWithDirectoryAndFileHandle[] | FileSystemDirectoryHandle[],
-  ): void;
+  ): SamplerState;
 
   dispose(state: SamplerState): Promise<SamplerState>;
 }

@@ -6,6 +6,7 @@ import {
   SfzControlEvent,
   SfzRegion,
   RegionDefaults,
+  SamplerState,
 } from "../types";
 import { FileLoaderService } from "./FileLoaderService";
 import { ParseHeader, ParseOpcodeObj } from "@sfz-tools/core/dist/types/parse";
@@ -72,10 +73,18 @@ export class SfzPlayerService {
    * Load an SFZ file and parse it.
    * The method expects a directory containing at least one .sfz file
    * to have been loaded using FileLoaderService.loadDirectory
-   * @param sfzPath - Path to the SFZ file
-   * @throws If .sfz loading fails.
+   * @param state: The current sampler state.
+   * @param sfzPath - Path to the SFZ file.
+   * @returns The updated state.
+   * @throws If .sfz not found.
    * */
-  async loadSfz(sfzPath: string) {
+  async loadSfz(state: SamplerState, sfzPath: string): Promise<SamplerState> {
+    const sfzFileFound = state.sfzFilesFound[sfzPath];
+
+    if (!sfzFileFound) {
+      throw new Error(`SFZ file not found: ${sfzPath}`);
+    }
+
     try {
       // Load and parse SFZ file
       const sfzContent = await this.fileLoader.loadSfzFile(sfzPath);
@@ -91,9 +100,22 @@ export class SfzPlayerService {
       if (this.preloadMode === PreloadMode.SEQUENTIAL) {
         await this.preloadSamples();
       }
+
+      sfzFileFound.loaded = true;
+      sfzFileFound.lastLoaded = Date.now();
+
+      return {
+        ...state,
+        sfzFilesFound: { ...state.sfzFilesFound, [sfzPath]: sfzFileFound },
+      };
     } catch (error) {
-      console.error(`Error loading SFZ ${sfzPath}`);
-      throw error;
+      console.warn(`Failed loading SFZ ${sfzPath}`);
+      sfzFileFound.error = error.message;
+
+      return {
+        ...state,
+        sfzFilesFound: { ...state.sfzFilesFound, [sfzPath]: sfzFileFound },
+      };
     }
   }
 

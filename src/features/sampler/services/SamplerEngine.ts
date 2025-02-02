@@ -154,9 +154,10 @@ export class SamplerEngineImpl implements SamplerEngine {
   }
 
   loadDirectory(
+    state: SamplerState,
     blobs: FileWithDirectoryAndFileHandle[] | FileSystemDirectoryHandle[],
-  ): void {
-    this.loader.loadDirectory(blobs);
+  ): SamplerState {
+    return this.loader.loadDirectory(state, blobs);
   }
 
   async dispose(state: SamplerState): Promise<SamplerState> {
@@ -164,6 +165,10 @@ export class SamplerEngineImpl implements SamplerEngine {
       sampler.instrument.dispose();
     });
     this.loader.dispose();
-    return Promise.resolve({ samplers: {} });
+    return Promise.resolve({
+      samplers: {},
+      sfzFilesFound: {},
+      sfzFilesFoundOrder: [],
+    });
   }
 }

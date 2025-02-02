@@ -1,5 +1,6 @@
 // src/features/sampler/services/FileLoaderService.ts
 import { FileWithDirectoryAndFileHandle } from "browser-fs-access";
+import { SamplerState, SfzFileStatus } from "../types";
 
 export class FileLoaderService {
   private audioContext: AudioContext;
@@ -38,9 +39,19 @@ export class FileLoaderService {
     }
   }
 
+  /**
+   * Load a directory.
+   * @param state - The current sampler state.
+   * @param blobs - The files blobs from the directory.
+   * @returns The updated state.
+   */
   loadDirectory(
+    state: SamplerState,
     blobs: FileWithDirectoryAndFileHandle[] | FileSystemDirectoryHandle[],
-  ) {
+  ): SamplerState {
+    const sfzFiles: Record<string, SfzFileStatus> = {};
+    const sfzFilesOrder: string[] = [];
+
     // Reset state for new directory
     this.fileMap.clear();
     this.bufferCache.clear();
@@ -49,18 +60,35 @@ export class FileLoaderService {
     blobs.forEach((blob) => {
       if ("webkitRelativePath" in blob) {
         // ie: we're dealing with FileWithDirectoryAndFileHandle
-        this.fileMap.set(blob.webkitRelativePath, blob);
         // todo: handle FileSystemDirectoryHandle
+        const path = blob.webkitRelativePath;
+        this.fileMap.set(path, blob);
+
+        if (blob.name.endsWith(".sfz")) {
+          sfzFiles[path] = {
+            path,
+            lastLoaded: null,
+            loaded: false,
+            error: null,
+          };
+          sfzFilesOrder.push(path);
+        }
       }
     });
     console.log("Loaded directory", this.fileMap);
+
+    return {
+      ...state,
+      sfzFilesFound: { ...state.sfzFilesFound, ...sfzFiles },
+      sfzFilesFoundOrder: [...state.sfzFilesFoundOrder, ...sfzFilesOrder],
+    };
   }
 
   /**
    * Load an audio file.
    * @param relativePath - Audio file relative path.
    * @returns The decoded audio buffer.
-   * @throws If file not found in file map.
+   * @throws If file not found in file map or audio load fails.
    * */
   async loadAudioFile(relativePath: string): Promise<AudioBuffer> {
     // Check cache first
@@ -75,16 +103,21 @@ export class FileLoaderService {
       throw new Error(`File not found: ${relativePath}`);
     }
 
-    // Load and decode audio file
-    const arrayBuffer = await file.arrayBuffer();
-    const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
+    try {
+      // Load and decode audio file
+      const arrayBuffer = await file.arrayBuffer();
+      const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
 
-    // Cache for reuse
-    this.bufferCache.set(file.webkitRelativePath, audioBuffer);
-    this.lruQueue.push(file.webkitRelativePath);
-    this.enforceMemoryLimit();
+      // Cache for reuse
+      this.bufferCache.set(file.webkitRelativePath, audioBuffer);
+      this.lruQueue.push(file.webkitRelativePath);
+      this.enforceMemoryLimit();
 
-    return audioBuffer;
+      return audioBuffer;
+    } catch (error) {
+      console.error(`Error loading audio file: ${relativePath}`);
+      throw error;
+    }
   }
 
   /**
@@ -101,9 +134,8 @@ export class FileLoaderService {
     return file.text();
   }
 
-  clearRegionCache(path: string) {
-    const fullPath = this.root + path;
-    this.bufferCache.delete(fullPath);
+  clearRegionCache(relativePath: string) {
+    this.bufferCache.delete(relativePath);
   }
 
   clearCache() {

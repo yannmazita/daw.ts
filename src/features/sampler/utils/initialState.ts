@@ -2,6 +2,7 @@
 import { SamplerState } from "../types";
 
 export const initialSamplerState: SamplerState = {
-  instruments: {},
   samplers: {},
+  sfzFilesFound: {},
+  sfzFilesFoundOrder: [],
 };
