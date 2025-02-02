@@ -1,7 +1,6 @@
 // src/features/sampler/types.ts
 import { EngineState } from "@/core/stores/useEngineStore";
 import { SamplerInstrumentService } from "./services/SamplerInstrumentService";
-import { FileLoaderService } from "./services/FileLoaderService";
 import { FileWithDirectoryAndFileHandle } from "browser-fs-access";
 
 export interface RegionDefaults {
@@ -21,12 +20,6 @@ export interface RegionDefaults {
   hirand: number;
   lobpm: number;
   hibpm: number;
-}
-
-// Core types for SFZ player
-export interface SfzOptions {
-  preload?: PreloadMode;
-  root?: string;
 }
 
 export enum PreloadMode {
@@ -69,11 +62,6 @@ export interface SfzRegion {
   hirand?: number;
   lobpm?: number;
   hibpm?: number;
-}
-
-export interface AudioFile {
-  buffer: AudioBuffer | null;
-  path: string;
 }
 
 export interface Sampler {

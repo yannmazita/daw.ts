@@ -2,7 +2,6 @@
 import { parseSfz, parseHeaders } from "@sfz-tools/core/dist/parse";
 import { midiNameToNum, pathGetDirectory } from "@sfz-tools/core/dist/utils";
 import {
-  SfzOptions,
   PreloadMode,
   SfzControlEvent,
   SfzRegion,
@@ -14,7 +13,7 @@ import { TransportEngine } from "@/features/transport/types";
 
 export class SfzPlayerService {
   private regions: SfzRegion[] = [];
-  private options: SfzOptions;
+  private preloadMode: PreloadMode = PreloadMode.ON_DEMAND;
   private bend = 0; // todo: Implement bend control
   private chanaft = 64; // todo: Implement chanaft control
   private polyaft = 64; // todo: Implement polyaft control
@@ -42,13 +41,7 @@ export class SfzPlayerService {
     private fileLoader: FileLoaderService,
     private transport: TransportEngine,
     private outputNode: GainNode,
-    options: SfzOptions = {},
-  ) {
-    this.options = {
-      preload: PreloadMode.ON_DEMAND,
-      ...options,
-    };
-  }
+  ) {}
 
   private midiNameToNumConvert(val: string | number) {
     if (typeof val === "number") return val;
@@ -95,7 +88,7 @@ export class SfzPlayerService {
       );
 
       // Preload samples if needed
-      if (this.options.preload === PreloadMode.SEQUENTIAL) {
+      if (this.preloadMode === PreloadMode.SEQUENTIAL) {
         await this.preloadSamples();
       }
     } catch (error) {
