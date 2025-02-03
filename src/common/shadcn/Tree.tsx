@@ -151,21 +151,21 @@ const TreeItem = React.forwardRef<HTMLDivElement, TreeItemProps>(
                     <AccordionPrimitive.Item value={item.id}>
                       <AccordionTrigger
                         className={cn(
-                          "px-2 before:absolute before:left-0 before:-z-10 before:h-[1.75rem] before:w-full before:bg-muted/80 before:opacity-0 hover:before:opacity-100",
+                          "px-2 before:absolute before:left-0 before:-z-10 before:h-[1.75rem] before:w-full hover:bg-muted dark:hover:bg-muted/50",
                           selectedItemId === item.id &&
-                            "text-accent-foreground before:border-l-2 before:border-l-accent-foreground/50 before:bg-accent before:opacity-100 dark:before:border-0",
+                            "bg-muted before:border-l-2 before:border-l-accent-foreground/50 dark:bg-muted/50",
                         )}
                         onClick={() => handleSelectChange(item)}
                       >
                         {item.icon && (
                           <item.icon
-                            className="mr-2 h-4 w-4 shrink-0 text-accent-foreground/50"
+                            className="mr-2 h-4 w-4 shrink-0 text-primary"
                             aria-hidden="true"
                           />
                         )}
                         {!item.icon && FolderIcon && (
                           <FolderIcon
-                            className="mr-2 h-4 w-4 shrink-0 text-accent-foreground/50"
+                            className="mr-2 h-4 w-4 shrink-0 text-primary"
                             aria-hidden="true"
                           />
                         )}
@@ -221,22 +221,21 @@ const Leaf = React.forwardRef<
     <div
       ref={ref}
       className={cn(
-        "flex cursor-pointer items-center px-2 py-2 before:absolute before:left-0 before:right-1 before:-z-10 before:h-[1.75rem] before:w-full before:bg-muted/80 before:opacity-0 hover:before:opacity-100",
+        "flex cursor-pointer items-center px-2 py-2 before:absolute before:left-0 before:right-1 before:-z-10 before:h-[1.75rem] before:w-full hover:bg-muted dark:hover:bg-muted/50",
         className,
-        isSelected &&
-          "text-accent-foreground before:border-l-2 before:border-l-accent-foreground/50 before:bg-accent before:opacity-100 dark:before:border-0",
+        isSelected && "bg-muted dark:bg-muted/50",
       )}
       {...props}
     >
       {item.icon && (
         <item.icon
-          className="mr-2 h-4 w-4 shrink-0 text-accent-foreground/50"
+          className="mr-2 h-4 w-4 shrink-0 text-primary"
           aria-hidden="true"
         />
       )}
       {!item.icon && Icon && (
         <Icon
-          className="mr-2 h-4 w-4 shrink-0 text-accent-foreground/50"
+          className="mr-2 h-4 w-4 shrink-0 text-primary"
           aria-hidden="true"
         />
       )}
