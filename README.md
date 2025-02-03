@@ -60,15 +60,15 @@ graph TD
 
     EM --> AC[Audio Context]
 
-    style EM fill:#eee,stroke:#333,stroke-dasharray: 5 5
-    style CE fill:#f9f,stroke:#333
-    style ZS fill:#eff,stroke:#333
-    style AC fill:#eff,stroke:#333
-    style ME fill:#ccf,stroke:#333
-    style SE fill:#cff,stroke:#333
-    style CLE fill:#cfc,stroke:#333
-    style TE fill:#ffc,stroke:#333
-    style AE fill:#fcf,stroke:#333
+    style EM fill:#808080,stroke:#333,stroke-dasharray: 5 5
+    style CE fill:#6a89cc,stroke:#333
+    style ZS fill:#4a69bd,stroke:#333
+    style AC fill:#4a69bd,stroke:#333
+    style ME fill:#6a89cc,stroke:#333
+    style SE fill:#6a89cc,stroke:#333
+    style CLE fill:#6a89cc,stroke:#333
+    style TE fill:#6a89cc,stroke:#333
+    style AE fill:#6a89cc,stroke:#333
 ```
 
 </details>
@@ -162,14 +162,14 @@ graph LR
     RT_Output --> MT_Input
     Send_Output --> RT_Input
 
-    style MasterTrack fill:#f9f,stroke:#333,stroke-width:2px
-    style Track fill:#ccf,stroke:#333,stroke-width:2px
-    style SoundChain fill:#cff,stroke:#333,stroke-width:2px
-    style Chain1 fill:#cfc,stroke:#333,stroke-width:2px
-    style Chain2 fill:#cfc,stroke:#333,stroke-width:2px
-    style ChainN fill:#cfc,stroke:#333,stroke-width:2px
-    style ReturnTrack fill:#ffc,stroke:#333,stroke-width:2px
-    style Send fill:#fcc,stroke:#333,stroke-width:2px
+    style MasterTrack fill:#8854d0,stroke:#333,stroke-width:2px
+    style Track fill:#6a89cc,stroke:#333,stroke-width:2px
+    style SoundChain fill:#38ada9,stroke:#333,stroke-width:2px
+    style Chain1 fill:#78e08f,stroke:#333,stroke-width:2px
+    style Chain2 fill:#78e08f,stroke:#333,stroke-width:2px
+    style ChainN fill:#78e08f,stroke:#333,stroke-width:2px
+    style ReturnTrack fill:#fa983a,stroke:#333,stroke-width:2px
+    style Send fill:#eb2f06,stroke:#333,stroke-width:2px
     style Track_InstrumentInput dashed
     style Track_ClipOutput dashed
 ```
