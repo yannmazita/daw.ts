@@ -34,6 +34,7 @@ export interface TransportEngine {
 
   // Settings
   setTempo(state: TransportState, tempo: number): TransportState;
+  getTempo(): number;
   setTimeSignature(
     state: TransportState,
     numerator: number,

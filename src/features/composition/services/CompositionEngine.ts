@@ -10,27 +10,27 @@ import { CompositionSamplerService } from "./CompositionSamplerService";
 import { CompositionMixService } from "./CompositionMixService";
 import { CompositionClipService } from "./CompositionClipService";
 import { CompositionAutomationService } from "./CompositionAutomationService";
-import { FileLoaderService } from "@/features/sampler/services/FileLoaderService";
 import { MidiFile } from "midifile-ts";
+import { FileWithDirectoryAndFileHandle } from "browser-fs-access";
 
 export class CompositionEngineImpl implements CompositionEngine {
   private disposed = false;
   private readonly transportService: CompositionTransportService;
-  private readonly samplerService: CompositionSamplerService;
   private readonly mixService: CompositionMixService;
+  private readonly samplerService: CompositionSamplerService;
   private readonly clipService: CompositionClipService;
   private readonly automationService: CompositionAutomationService;
 
   constructor(
     public readonly transportEngine: TransportEngine,
-    public readonly samplerEngine: SamplerEngine,
     public readonly mixEngine: MixEngine,
+    public readonly samplerEngine: SamplerEngine,
     public readonly clipEngine: ClipEngine,
     public readonly automationEngine: AutomationEngine,
   ) {
     this.transportService = new CompositionTransportService(transportEngine);
-    this.samplerService = new CompositionSamplerService(samplerEngine);
     this.mixService = new CompositionMixService(mixEngine);
+    this.samplerService = new CompositionSamplerService(samplerEngine);
     this.clipService = new CompositionClipService(clipEngine);
     this.automationService = new CompositionAutomationService(automationEngine);
   }
@@ -98,6 +98,25 @@ export class CompositionEngineImpl implements CompositionEngine {
   }
 
   // Sampler methods
+  createSamplerInstrumentForTrack(trackId: string, name?: string): void {
+    return this.samplerService.createSamplerInstrumentForTrack(trackId, name);
+  }
+  createSamplerInstrumentForChain(
+    trackId: string,
+    chainId: string,
+    name?: string,
+  ): void {
+    return this.samplerService.createSamplerInstrumentForChain(
+      trackId,
+      chainId,
+      name,
+    );
+  }
+  loadDirectory(
+    blobs: FileWithDirectoryAndFileHandle[] | FileSystemDirectoryHandle[],
+  ): void {
+    return this.samplerService.loadDirectory(blobs);
+  }
 
   // Clip Methods
   importMidiFile(trackId: string, file: File, name?: string): void {
@@ -113,8 +132,8 @@ export class CompositionEngineImpl implements CompositionEngine {
     }
     this.disposed = true;
     await this.transportService.dispose();
-    await this.samplerService.dispose();
     await this.mixService.dispose();
+    await this.samplerService.dispose();
     this.clipService.dispose();
   }
 

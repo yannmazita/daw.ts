@@ -21,7 +21,8 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/common/shadcn/ui/sheet";
-import { SampleBrowser } from "@/features/mix/components/Sample/SampleBrowser";
+import { SamplerSheet } from "@/features/sampler/components/SamplerSheet";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 
 interface BrowserProps {
   className?: string;
@@ -102,25 +103,27 @@ export const Browser: React.FC<BrowserProps> = ({ className }) => {
         onOpenChange={setIsSoundChainBrowserOpen}
       >
         <SheetContent side="bottom" className="h-1/3">
-          <SheetHeader>
-            <SheetTitle>Sound Chains</SheetTitle>
-            <SheetDescription>
-              Browse and manage your sound chains here.
-            </SheetDescription>
-          </SheetHeader>
+          <VisuallyHidden>
+            <SheetHeader>
+              <SheetTitle>Sound Chains</SheetTitle>
+              <SheetDescription>
+                Manage your sound chains here.
+              </SheetDescription>
+            </SheetHeader>
+          </VisuallyHidden>
           <SoundChainBrowser />
         </SheetContent>
       </Sheet>
 
       <Sheet open={isSampleBrowserOpen} onOpenChange={setIsSampleBrowserOpen}>
-        <SheetContent side="bottom" className="h-1/3">
-          <SheetHeader>
-            <SheetTitle>Sample Browser</SheetTitle>
-            <SheetDescription>
-              Browse and manage your samples here.
-            </SheetDescription>
-          </SheetHeader>
-          <SampleBrowser />
+        <SheetContent side="bottom" className="flex h-1/3 flex-col">
+          <VisuallyHidden>
+            <SheetHeader>
+              <SheetTitle>Samples</SheetTitle>
+              <SheetDescription>Manage your samples here.</SheetDescription>
+            </SheetHeader>
+          </VisuallyHidden>
+          <SamplerSheet />
         </SheetContent>
       </Sheet>
     </div>

@@ -5,6 +5,12 @@ import { MixRoutingService } from "./services/MixRoutingService";
 import { SamplerEngine } from "@/features/sampler/types";
 
 export type TrackType = "audio" | "midi";
+export type InstrumentType = "sampler" | "synth";
+
+export interface Instrument {
+  getOutputNode(): GainNode;
+  dispose(): void;
+}
 
 export interface Track {
   id: string;
@@ -13,6 +19,7 @@ export interface Track {
   inputNode: AudioNode;
   outputNode: GainNode;
   panNode: StereoPannerNode;
+  instrumentNode: GainNode | null;
   isSoundChainActive: boolean;
   isMuted: boolean;
   isSoloed: boolean;
@@ -49,7 +56,7 @@ export interface Chain {
   name: string;
   inputNode: GainNode;
   outputNode: GainNode;
-  instrument: SamplerEngine | null;
+  instrumentNode: GainNode | null;
   effects: Record<string, AudioNode>;
   effectsOrder: string[];
   panNode: StereoPannerNode;

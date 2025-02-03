@@ -1,4 +1,8 @@
 // src/features/sampler/types.ts
+import { EngineState } from "@/core/stores/useEngineStore";
+import { SamplerInstrumentService } from "./services/SamplerInstrumentService";
+import { FileWithDirectoryAndFileHandle } from "browser-fs-access";
+
 export interface RegionDefaults {
   lochan: number;
   hichan: number;
@@ -18,12 +22,6 @@ export interface RegionDefaults {
   hibpm: number;
 }
 
-// Core types for SFZ player
-export interface SfzOptions {
-  preload?: PreloadMode;
-  root?: string;
-}
-
 export enum PreloadMode {
   ON_DEMAND = "on-demand",
   SEQUENTIAL = "sequential",
@@ -36,7 +34,7 @@ export interface SfzControlEvent {
 }
 
 export interface SfzRegion {
-  sample?: string;
+  sample?: string; // File path of the sample
   lokey?: number;
   hikey?: number;
   pitch_keycenter?: number;
@@ -66,14 +64,45 @@ export interface SfzRegion {
   hibpm?: number;
 }
 
-export interface AudioFile {
-  buffer: AudioBuffer | null;
-  path: string;
+export interface Sampler {
+  id: string;
+  name: string;
+  trackId: string;
+  chainId?: string;
+  instrument: SamplerInstrumentService;
 }
 
-export interface SamplerState {}
+export interface SfzFileStatus {
+  id: string;
+  path: string;
+  lastLoaded: number | null;
+  loaded: boolean;
+  error: string | null;
+}
+
+export interface SamplerState {
+  samplers: Record<string, Sampler>;
+  sfzFilesFound: Record<string, SfzFileStatus>;
+  sfzFilesFoundOrder: string[];
+}
 
 export interface SamplerEngine {
-  getOutputNode(): GainNode;
+  createSamplerInstrumentForTrack(
+    state: EngineState,
+    trackId: string,
+    name?: string,
+  ): EngineState;
+  createSamplerInstrumentForChain(
+    state: EngineState,
+    trackId: string,
+    chainId: string,
+    name?: string,
+  ): EngineState;
+
+  loadDirectory(
+    state: SamplerState,
+    blobs: FileWithDirectoryAndFileHandle[] | FileSystemDirectoryHandle[],
+  ): SamplerState;
+
   dispose(state: SamplerState): Promise<SamplerState>;
 }

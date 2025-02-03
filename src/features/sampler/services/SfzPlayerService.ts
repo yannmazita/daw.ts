@@ -2,22 +2,22 @@
 import { parseSfz, parseHeaders } from "@sfz-tools/core/dist/parse";
 import { midiNameToNum, pathGetDirectory } from "@sfz-tools/core/dist/utils";
 import {
-  SfzOptions,
   PreloadMode,
   SfzControlEvent,
   SfzRegion,
   RegionDefaults,
+  SamplerState,
 } from "../types";
 import { FileLoaderService } from "./FileLoaderService";
-import { ParseOpcodeObj } from "@sfz-tools/core/dist/types/parse";
+import { ParseHeader, ParseOpcodeObj } from "@sfz-tools/core/dist/types/parse";
+import { TransportEngine } from "@/features/transport/types";
 
 export class SfzPlayerService {
   private regions: SfzRegion[] = [];
-  private options: SfzOptions;
+  private preloadMode: PreloadMode = PreloadMode.ON_DEMAND;
   private bend = 0; // todo: Implement bend control
   private chanaft = 64; // todo: Implement chanaft control
   private polyaft = 64; // todo: Implement polyaft control
-  private bpm = 120; // todo: Implement bpm control
   private regionDefaults: RegionDefaults = {
     lochan: 0,
     hichan: 15,
@@ -40,17 +40,9 @@ export class SfzPlayerService {
   constructor(
     private audioContext: AudioContext,
     private fileLoader: FileLoaderService,
-    options: SfzOptions = {},
-  ) {
-    this.options = {
-      preload: PreloadMode.ON_DEMAND,
-      ...options,
-    };
-
-    if (options.root) {
-      this.fileLoader.setRoot(options.root);
-    }
-  }
+    private transport: TransportEngine,
+    private outputNode: GainNode,
+  ) {}
 
   private midiNameToNumConvert(val: string | number) {
     if (typeof val === "number") return val;
@@ -78,34 +70,63 @@ export class SfzPlayerService {
   }
 
   /**
-   * Load an SFZ file and parse it
-   * @param path - Path to the SFZ file
-   * @returns True if successful, false otherwise
+   * Load an SFZ file and parse it.
+   * The method expects a directory containing at least one .sfz file
+   * to have been loaded using FileLoaderService.loadDirectory
+   * @param state: The current sampler state.
+   * @param sfzPath - Path to the SFZ file.
+   * @returns The updated state.
+   * @throws If .sfz not found.
    * */
-  async loadSfz(path: string) {
+  async loadSfz(state: SamplerState, sfzPath: string): Promise<SamplerState> {
+    const sfzFileFound = state.sfzFilesFound[sfzPath];
+
+    if (!sfzFileFound) {
+      throw new Error(`SFZ file not found: ${sfzPath}`);
+    }
+
     try {
       // Load and parse SFZ file
-      const sfzContent = await this.fileLoader.loadTextFile(path);
-      const prefix = pathGetDirectory(path);
-      const headers = await parseSfz(sfzContent, prefix);
-      this.regions = this.midiNamesToNum(parseHeaders(headers, prefix));
+      const sfzContent = await this.fileLoader.loadSfzFile(sfzPath);
+      const headers = (await parseSfz(
+        sfzContent,
+        pathGetDirectory(sfzPath),
+      )) as ParseHeader[];
+      this.regions = this.midiNamesToNum(
+        parseHeaders(headers, pathGetDirectory(sfzPath)),
+      );
 
       // Preload samples if needed
-      if (this.options.preload === PreloadMode.SEQUENTIAL) {
+      if (this.preloadMode === PreloadMode.SEQUENTIAL) {
         await this.preloadSamples();
       }
 
-      return true;
+      sfzFileFound.loaded = true;
+      sfzFileFound.lastLoaded = Date.now();
+
+      return {
+        ...state,
+        sfzFilesFound: { ...state.sfzFilesFound, [sfzPath]: sfzFileFound },
+      };
     } catch (error) {
-      console.error("Error loading SFZ:", error);
-      return false;
+      console.warn(`Failed loading SFZ ${sfzPath}`);
+      sfzFileFound.error = error.message;
+
+      return {
+        ...state,
+        sfzFilesFound: { ...state.sfzFilesFound, [sfzPath]: sfzFileFound },
+      };
     }
   }
 
   private async preloadSamples() {
     for (const region of this.regions) {
       if (region.sample) {
-        await this.fileLoader.loadAudioFile(region.sample);
+        try {
+          await this.fileLoader.loadAudioFile(region.sample);
+        } catch (error) {
+          console.warn(`Error preloading sample: ${region.sample}`);
+        }
       }
     }
   }
@@ -129,7 +150,7 @@ export class SfzPlayerService {
       matchingRegions[Math.floor(Math.random() * matchingRegions.length)];
 
     try {
-      // Load audio if needed
+      // Load sample audio file
       const audioBuffer = await this.fileLoader.loadAudioFile(region.sample!);
 
       // Create and configure source
@@ -142,13 +163,13 @@ export class SfzPlayerService {
         source.detune.value = semitones * 100; // 100 cents per semitone
       }
 
-      // Apply volume/pan
+      // Apply volume
       const gainNode = this.audioContext.createGain();
       gainNode.gain.value = this.calculateGain(region);
 
       // Connect nodes
       source.connect(gainNode);
-      gainNode.connect(this.audioContext.destination);
+      gainNode.connect(this.outputNode);
 
       // Play with offset if specified
       const startTime = this.audioContext.currentTime;
@@ -171,6 +192,7 @@ export class SfzPlayerService {
    * */
   private isRegionMatch(region: SfzRegion, event: SfzControlEvent): boolean {
     const rand = Math.random();
+    const currentBpm = this.transport.getTempo();
     return (
       region.sample != null &&
       (region.lochan === undefined || event.channel >= region.lochan) &&
@@ -187,8 +209,8 @@ export class SfzPlayerService {
       (region.hipolyaft === undefined || this.polyaft <= region.hipolyaft) &&
       (region.lorand === undefined || rand >= region.lorand) &&
       (region.hirand === undefined || rand <= region.hirand) &&
-      (region.lobpm === undefined || this.bpm >= region.lobpm) &&
-      (region.hibpm === undefined || this.bpm <= region.hibpm)
+      (region.lobpm === undefined || currentBpm >= region.lobpm) &&
+      (region.hibpm === undefined || currentBpm <= region.hibpm)
     );
   }
 
@@ -206,7 +228,12 @@ export class SfzPlayerService {
   }
 
   dispose() {
-    this.fileLoader.clearCache();
+    // naive, sample might be used by other instance requiring a reload
+    for (const region of this.regions) {
+      if (region.sample) {
+        this.fileLoader.clearRegionCache(region.sample);
+      }
+    }
     this.regions = [];
   }
 }
