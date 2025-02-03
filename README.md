@@ -224,6 +224,7 @@ _Not fully implemented yet._ Responsibilites not yet defined, it should handle a
 - MIDI event routing system
 - Clip transport synchronization
 - Sample-accurate scheduling
+- Clip visualisation
 
 ### Planned
 
