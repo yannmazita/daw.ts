@@ -34,16 +34,22 @@ export function DataTable<TData, TValue>({
   });
 
   return (
-    <div
-      className={cn("flex h-full flex-col overflow-hidden border", className)}
-    >
-      <div className="border-b">
+    <div className={cn("flex h-full flex-col border", className)}>
+      {/* Fixed Header */}
+      <div className="">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id}>
+                  <TableHead
+                    key={header.id}
+                    style={{
+                      width: header.getSize(),
+                      minWidth: header.getSize(),
+                      maxWidth: header.getSize(),
+                    }}
+                  >
                     {header.isPlaceholder
                       ? null
                       : flexRender(
@@ -57,6 +63,8 @@ export function DataTable<TData, TValue>({
           </TableHeader>
         </Table>
       </div>
+
+      {/* Scrollable Body */}
       <ScrollArea className="flex-1">
         <Table>
           <TableBody>
@@ -67,7 +75,14 @@ export function DataTable<TData, TValue>({
                   data-state={row.getIsSelected() && "selected"}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
+                    <TableCell
+                      key={cell.id}
+                      style={{
+                        width: cell.column.getSize(),
+                        minWidth: cell.column.getSize(),
+                        maxWidth: cell.column.getSize(),
+                      }}
+                    >
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext(),
