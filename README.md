@@ -6,7 +6,7 @@ Work in progress! Very early stage and actively developed.
 
 Designed for high-performance audio processing with live editing capabilities.
 
-![Screenshot of daw.ts showing the main view](https://github.com/user-attachments/assets/50e4a17d-70db-4112-aa6c-2d3f31275bf2)
+![Screenshot of daw.ts showing the main view](https://github.com/user-attachments/assets/785d0c3d-7c5b-411b-a07f-2e5c2ea01193)
 
 ## Getting Started
 
