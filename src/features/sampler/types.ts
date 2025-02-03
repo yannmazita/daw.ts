@@ -73,6 +73,7 @@ export interface Sampler {
 }
 
 export interface SfzFileStatus {
+  id: string;
   path: string;
   lastLoaded: number | null;
   loaded: boolean;

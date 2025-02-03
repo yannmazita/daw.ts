@@ -66,6 +66,7 @@ export class FileLoaderService {
 
         if (blob.name.endsWith(".sfz")) {
           sfzFiles[path] = {
+            id: crypto.randomUUID(),
             path,
             lastLoaded: null,
             loaded: false,

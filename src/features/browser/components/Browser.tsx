@@ -116,7 +116,7 @@ export const Browser: React.FC<BrowserProps> = ({ className }) => {
       </Sheet>
 
       <Sheet open={isSampleBrowserOpen} onOpenChange={setIsSampleBrowserOpen}>
-        <SheetContent side="bottom" className="h-1/3">
+        <SheetContent side="bottom" className="flex h-1/3 flex-col">
           <VisuallyHidden>
             <SheetHeader>
               <SheetTitle>Samples</SheetTitle>

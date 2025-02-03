@@ -9,13 +9,9 @@ interface SamplerSheetProps {
 
 export const SamplerSheet: React.FC<SamplerSheetProps> = ({ className }) => {
   return (
-    <div className={cn("grid h-full grid-cols-12", className)}>
-      <div className="col-span-1">
-        <SfzImport />
-      </div>
-      <div className="col-span-11">
-        <SampleManagement />
-      </div>
+    <div className={cn("flex h-full flex-row", className)}>
+      <SfzImport />
+      <SampleManagement className="flex-1" />
     </div>
   );
 };
