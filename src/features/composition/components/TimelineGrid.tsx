@@ -16,7 +16,7 @@ export const TimelineGrid: React.FC = () => {
   return (
     <div className="h-full overflow-hidden border border-border">
       <ScrollArea className="h-full" type="scroll">
-        <div className="grid grid-cols-[auto,1fr]">
+        <div className="grid grid-cols-[auto_1fr]">
           {/* Fixed Headers Column */}
           <div className="border-r border-border bg-background">
             {tracksOrder.map((trackId) => (

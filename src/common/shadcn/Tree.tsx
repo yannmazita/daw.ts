@@ -239,7 +239,7 @@ const Leaf = React.forwardRef<
           aria-hidden="true"
         />
       )}
-      <span className="flex-grow truncate text-sm">{item.name}</span>
+      <span className="grow truncate text-sm">{item.name}</span>
     </div>
   );
 });
@@ -252,7 +252,7 @@ const AccordionTrigger = React.forwardRef<
     <AccordionPrimitive.Trigger
       ref={ref}
       className={cn(
-        "flex w-full flex-1 items-center py-2 transition-all last:[&[data-state=open]>svg]:rotate-90",
+        "flex w-full flex-1 items-center py-2 transition-all [&[data-state=open]>svg]:last:rotate-90",
         className,
       )}
       {...props}

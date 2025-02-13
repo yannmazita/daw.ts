@@ -18,8 +18,8 @@ export const Mixer: React.FC = () => {
   return (
     <>
       <MixerBar />
-      <div className="row-span-1 grid h-80 grid-cols-[1fr,auto] border border-border">
-        <ScrollArea className="h-full [&>div>div]:h-full [&>div]:h-full [&_[data-radix-scroll-area-viewport]]:h-full">
+      <div className="row-span-1 grid h-80 grid-cols-[1fr_auto] border border-border">
+        <ScrollArea className="h-full [&>div>div]:h-full [&>div]:h-full **:data-radix-scroll-area-viewport:h-full">
           <div className="flex h-full flex-row">
             {/* Regular tracks */}
             {tracksOrder.map((trackId, index) => (

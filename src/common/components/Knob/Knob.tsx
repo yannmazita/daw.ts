@@ -183,7 +183,7 @@ export const Knob: React.FC<KnobProps> = ({
     <div
       ref={containerRef}
       className={cn(
-        "relative flex items-center justify-center focus:outline-none",
+        "relative flex items-center justify-center focus:outline-hidden",
         className,
       )}
       style={{ width: `${radius * 2}px`, height: `${radius * 2}px` }}

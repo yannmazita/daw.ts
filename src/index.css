@@ -1,65 +1,152 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
-* {
-  min-width: 0;
+@plugin 'tailwindcss-animate';
+@plugin '@tailwindcss/typography';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-ts-blue: #5bcefa;
+  --color-ts-pink: #f5a9b8;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --color-sidebar: var(--sidebar-background);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --radius: var(--radius);
 }
 
+/*
+  The default border color has changed to `currentColor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
 @layer base {
-  :root {
-    --background: 230 15% 95%;
-    --foreground: 230 25% 20%;
-    --card: 230 15% 98%;
-    --card-foreground: 230 25% 20%;
-    --popover: 230 15% 98%;
-    --popover-foreground: 230 25% 20%;
-    --primary: 260 100% 60%;
-    --primary-foreground: 230 10% 98%;
-    --secondary: 230 15% 90%;
-    --secondary-foreground: 260 100% 60%;
-    --muted: 230 10% 92%;
-    --muted-foreground: 230 20% 40%;
-    --accent: 135 100% 60%;
-    --accent-foreground: 230 10% 98%;
-    --destructive: 0 100% 60%;
-    --destructive-foreground: 230 10% 98%;
-    --border: 230 15% 85%;
-    --input: 230 15% 85%;
-    --ring: 260 100% 60%;
-    --chart-1: 260 100% 60%;
-    --chart-2: 135 100% 60%;
-    --chart-3: 30 100% 60%;
-    --chart-4: 310 100% 60%;
-    --chart-5: 190 100% 60%;
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentColor);
+  }
+}
+
+@utility input-no-wheel {
+  /* Standard property */
+  appearance: textfield;
+
+  /* Chrome, Safari, Edge, Opera */
+  &::-webkit-outer-spin-button,
+  &::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
   }
 
-  .dark {
-    --background: 230 15% 15%;
-    --foreground: 60 30% 96%;
-    --card: 230 15% 17%;
-    --card-foreground: 60 30% 96%;
-    --popover: 230 15% 17%;
-    --popover-foreground: 60 30% 96%;
-    --primary: 260 100% 70%;
-    --primary-foreground: 230 10% 10%;
-    --secondary: 230 15% 25%;
-    --secondary-foreground: 260 100% 70%;
-    --muted: 230 15% 22%;
-    --muted-foreground: 60 20% 70%;
-    --accent: 135 100% 70%;
-    --accent-foreground: 230 10% 10%;
-    --destructive: 0 100% 70%;
-    --destructive-foreground: 230 10% 98%;
-    --border: 230 15% 25%;
-    --input: 230 15% 25%;
-    --ring: 260 100% 70%;
-    --chart-1: 260 100% 70%;
-    --chart-2: 135 100% 70%;
-    --chart-3: 30 100% 70%;
-    --chart-4: 310 100% 70%;
-    --chart-5: 190 100% 70%;
+  /* Firefox */
+  &[type="number"] {
+    -moz-appearance: textfield;
   }
+}
+
+@layer utilities {
+  * {
+    min-width: 0;
+  }
+}
+
+:root {
+  --background: hsl(230, 15%, 95%);
+  --foreground: hsl(230, 25%, 20%);
+  --card: hsl(230, 15%, 98%);
+  --card-foreground: hsl(230, 25%, 20%);
+  --popover: hsl(230, 15%, 98%);
+  --popover-foreground: hsl(230, 25%, 20%);
+  --primary: hsl(260, 100%, 60%);
+  --primary-foreground: hsl(230, 10%, 98%);
+  --secondary: hsl(230, 15%, 90%);
+  --secondary-foreground: hsl(260, 100%, 60%);
+  --muted: hsl(230, 10%, 92%);
+  --muted-foreground: hsl(230, 20%, 40%);
+  --accent: hsl(135, 100%, 60%);
+  --accent-foreground: hsl(230, 10%, 98%);
+  --destructive: hsl(0, 100%, 60%);
+  --destructive-foreground: hsl(230, 10%, 98%);
+  --border: hsl(230, 15%, 85%);
+  --input: hsl(230, 15%, 85%);
+  --ring: hsl(260, 100%, 60%);
+  --chart-1: hsl(260, 100%, 60%);
+  --chart-2: hsl(135, 100%, 60%);
+  --chart-3: hsl(30, 100%, 60%);
+  --chart-4: hsl(310, 100%, 60%);
+  --chart-5: hsl(190, 100%, 60%);
+}
+
+.dark {
+  --background: hsl(230, 15%, 15%);
+  --foreground: hsl(60, 30%, 96%);
+  --card: hsl(230, 15%, 17%);
+  --card-foreground: hsl(60, 30%, 96%);
+  --popover: hsl(230, 15%, 17%);
+  --popover-foreground: hsl(60, 30%, 96%);
+  --primary: hsl(260, 100%, 70%);
+  --primary-foreground: hsl(230, 10%, 10%);
+  --secondary: hsl(230, 15%, 25%);
+  --secondary-foreground: hsl(260, 100%, 70%);
+  --muted: hsl(230, 15%, 22%);
+  --muted-foreground: hsl(60, 20%, 70%);
+  --accent: hsl(135, 100%, 70%);
+  --accent-foreground: hsl(230, 10%, 10%);
+  --destructive: hsl(0, 100%, 70%);
+  --destructive-foreground: hsl(230, 10%, 98%);
+  --border: hsl(230, 15%, 25%);
+  --input: hsl(230, 15%, 25%);
+  --ring: hsl(260, 100%, 70%);
+  --chart-1: hsl(260, 100%, 70%);
+  --chart-2: hsl(135, 100%, 70%);
+  --chart-3: hsl(30, 100%, 70%);
+  --chart-4: hsl(310, 100%, 70%);
+  --chart-5: hsl(190, 100%, 70%);
 }
 
 @layer base {
@@ -68,24 +155,5 @@
   }
   body {
     @apply bg-background text-foreground;
-  }
-}
-
-@layer utilities {
-  .input-no-wheel {
-    /* Standard property */
-    appearance: textfield;
-
-    /* Chrome, Safari, Edge, Opera */
-    &::-webkit-outer-spin-button,
-    &::-webkit-inner-spin-button {
-      -webkit-appearance: none;
-      margin: 0;
-    }
-
-    /* Firefox */
-    &[type="number"] {
-      -moz-appearance: textfield;
-    }
   }
 }
