@@ -41,12 +41,12 @@ export const App: React.FC = () => {
       <div className="grid h-full grid-rows-4">
         <div className="row-span-3 grid grid-cols-12">
           <div className="col-span-3 flex flex-col overflow-hidden">
-            <div className="flex-grow overflow-hidden">
+            <div className="grow overflow-hidden">
               <Browser />
             </div>
           </div>
           <div className="col-span-9 flex flex-col overflow-hidden">
-            <div className="flex-grow overflow-hidden">
+            <div className="grow overflow-hidden">
               <TimelineGrid />
             </div>
             <Mixer />
