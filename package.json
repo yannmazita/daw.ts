@@ -11,9 +11,6 @@
     "build": "vite build",
     "preview": "vite preview",
     "clean": "rm -rf ./dist && rm -f ./node_modules/.tmp/tsconfig.electron.tsbuildinfo",
-    "electron:compile": "tsc -b ./tsconfig.electron.json --verbose",
-    "electron:build": "npm run electron:compile && electron-builder",
-    "electron:dev": "npm run electron:compile && electron .",
     "app:dev": "npm run electron:dev & npm run dev",
     "app:build": "npm run build && npm run electron:build",
     "test:unit": "vitest"
@@ -28,8 +25,6 @@
     "@types/react-dom": "19.0.3",
     "@vitejs/plugin-react": "^4.3.4",
     "babel-plugin-react-compiler": "^19.0.0-beta-30d8a17-20250209",
-    "electron": "^34.2.0",
-    "electron-builder": "^25.1.8",
     "eslint": "^9.20.1",
     "eslint-config-prettier": "^10.0.1",
     "eslint-plugin-react-compiler": "^19.0.0-beta-30d8a17-20250209",
