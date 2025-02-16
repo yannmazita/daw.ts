@@ -3,6 +3,7 @@ import react from "@vitejs/plugin-react";
 import { nodePolyfills } from "vite-plugin-node-polyfills";
 import { defineConfig } from "vite";
 import path from "path";
+import tailwindcss from "@tailwindcss/vite";
 
 const ReactCompilerConfig = {
   /* ... */
@@ -16,6 +17,7 @@ export default defineConfig({
       },
     }),
     nodePolyfills(),
+    tailwindcss(),
   ],
   envDir: "./",
   resolve: {
