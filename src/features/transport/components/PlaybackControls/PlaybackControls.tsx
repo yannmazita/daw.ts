@@ -28,7 +28,7 @@ export const PlaybackControls: React.FC = () => {
   }, [tempo]);
 
   return (
-    <div className="flexjflex-col">
+    <div className="flex flex-col">
       <div className="flex gap-x-4">
         <div className="flex items-center gap-x-2">
           {/* Tempo Controls */}
