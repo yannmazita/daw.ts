@@ -1,6 +1,6 @@
 # daw.ts
 
-Work in progress! Very early stage and actively developed.
+Work in progress! Very early stage.
 
 `daw.ts` is a Digital Audio Workstation (DAW) application built with TypeScript, [React](https://react.dev/), [Zustand](https://github.com/pmndrs/zustand), and leveraging the [Web Audio browser API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API).
 
